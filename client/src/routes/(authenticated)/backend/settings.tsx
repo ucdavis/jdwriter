@@ -1,7 +1,16 @@
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
 import { isAdmin } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, Note, PageHeader } from '@/shared/ui/primitives.tsx';
-import { adminsQueryOptions, useAdmins, useGrantAdmin, useRevokeAdmin } from '@/queries/admin.ts';
+import {
+  adminsQueryOptions,
+  apiKeyQueryOptions,
+  useAdmins,
+  useApiKeyStatus,
+  useClearApiKey,
+  useGrantAdmin,
+  useRevokeAdmin,
+  useSetApiKey,
+} from '@/queries/admin.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -11,7 +20,10 @@ export const Route = createFileRoute('/(authenticated)/backend/settings')({
   component: SettingsPage,
   loader: async ({ context }: { context: RouterContext }) => {
     if (await isAdmin(context.queryClient)) {
-      await context.queryClient.ensureQueryData(adminsQueryOptions());
+      await Promise.all([
+        context.queryClient.ensureQueryData(adminsQueryOptions()),
+        context.queryClient.ensureQueryData(apiKeyQueryOptions()),
+      ]);
     }
   },
 });
@@ -22,10 +34,11 @@ function SettingsPage() {
       <PageHeader
         back={{ label: 'Back to envelopes', to: '/backend' }}
         eyebrow="Back end · settings"
-        sub="Who can reach the back end. Everyone else who signs in can author and classify."
+        sub="Who can reach the back end, and the API key the app uses. Everyone who signs in can author and classify."
         title="Settings"
       />
       <AdminsPanel />
+      <ApiKeyPanel />
     </AdminOnly>
   );
 }
@@ -110,6 +123,100 @@ function AdminsPanel() {
           </li>
         ))}
       </ul>
+    </Card>
+  );
+}
+
+function ApiKeyPanel() {
+  const { data: status } = useApiKeyStatus();
+  const save = useSetApiKey();
+  const clear = useClearApiKey();
+  const [key, setKey] = useState('');
+  const error = save.error ?? clear.error;
+
+  const inUse =
+    status?.source === 'app'
+      ? `Key entered here, ending …${status.lastFour}${
+          status.updatedBy ? ` — set by ${status.updatedBy}` : ''
+        }${status.updatedAt ? ` on ${when(status.updatedAt)}` : ''}.`
+      : status?.source === 'configuration'
+        ? `Key from server configuration, ending …${status.lastFour}.`
+        : 'No key — intake, classification and building a JD are unavailable.';
+
+  return (
+    <Card className="mt-5 p-5">
+      <Eyebrow>Anthropic API key</Eyebrow>
+      <p className="mt-1 text-[13px] text-base-content/65">
+        A key entered here is checked with Anthropic, stored encrypted, and used in place of
+        the one in server configuration until it is removed. It can&apos;t be viewed again —
+        only its last four characters are shown.
+      </p>
+
+      <div className="mt-3 flex items-center gap-2 text-[13px]">
+        <Badge
+          tone={status?.source === 'none' ? 'red' : status?.source === 'app' ? 'green' : 'accent'}
+        >
+          {status?.source === 'app' ? 'in app' : status?.source ?? '…'}
+        </Badge>
+        <span data-testid="api-key-in-use">{status ? inUse : 'Loading…'}</span>
+      </div>
+
+      {status?.storedKeyUnreadable ? (
+        <div className="mt-3">
+          <Note tone="yellow">
+            A key was entered here before but can no longer be decrypted (the server&apos;s
+            encryption keys changed). Enter it again.
+          </Note>
+        </div>
+      ) : null}
+
+      <form
+        className="mt-4 flex items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          save.mutate(key, { onSuccess: () => setKey('') });
+        }}
+      >
+        <input
+          aria-label="New Anthropic API key"
+          autoComplete="off"
+          className="input input-sm input-bordered w-96"
+          onChange={(e) => setKey(e.target.value)}
+          placeholder="sk-ant-…"
+          type="password"
+          value={key}
+        />
+        <button
+          className="btn btn-primary btn-sm"
+          disabled={!key.trim() || save.isPending}
+          type="submit"
+        >
+          {save.isPending ? 'Checking…' : status?.source === 'app' ? 'Replace key' : 'Save key'}
+        </button>
+        {status?.source === 'app' ? (
+          <button
+            className="btn btn-ghost btn-sm text-error"
+            disabled={clear.isPending}
+            onClick={() => clear.mutate(undefined)}
+            type="button"
+          >
+            Remove
+          </button>
+        ) : null}
+      </form>
+      {status?.source === 'app' ? (
+        <p className="mt-2 text-[11.5px] text-base-content/50">
+          {status.configurationHasKey
+            ? 'Removing it switches back to the key in server configuration.'
+            : 'There is no key in server configuration, so removing this one turns model features off.'}
+        </p>
+      ) : null}
+
+      {error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(error)}</Note>
+        </div>
+      ) : null}
     </Card>
   );
 }

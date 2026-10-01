@@ -1,6 +1,7 @@
 import profilesFixture from './profiles.json' with { type: 'json' };
 import { delay, http, HttpResponse } from 'msw';
 import type {
+  ApiKeyStatus,
   AdminsResponse,
   AssembledJd,
   BootstrapCreateResponse,
@@ -480,6 +481,41 @@ export const handlers = [
       uncodedSample: ['Systemwide Academic Personnel Analyst 3'],
     });
   }),
+
+  http.get('/api/admin/settings/api-key', () =>
+    HttpResponse.json<ApiKeyStatus>({
+      configurationHasKey: true,
+      lastFour: 'cfg1',
+      source: 'configuration',
+      storedKeyUnreadable: false,
+      updatedAt: null,
+      updatedBy: null,
+    })
+  ),
+
+  http.put('/api/admin/settings/api-key', async ({ request }) => {
+    const { key } = (await request.json()) as { key: string };
+    await delay(600);
+    return HttpResponse.json<ApiKeyStatus>({
+      configurationHasKey: true,
+      lastFour: key.slice(-4),
+      source: 'app',
+      storedKeyUnreadable: false,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'Mock Admin',
+    });
+  }),
+
+  http.delete('/api/admin/settings/api-key', () =>
+    HttpResponse.json<ApiKeyStatus>({
+      configurationHasKey: true,
+      lastFour: 'cfg1',
+      source: 'configuration',
+      storedKeyUnreadable: false,
+      updatedAt: null,
+      updatedBy: null,
+    })
+  ),
 
   http.get('/api/admin/admins', () =>
     HttpResponse.json<AdminsResponse>({

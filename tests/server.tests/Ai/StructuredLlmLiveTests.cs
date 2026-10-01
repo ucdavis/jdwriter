@@ -39,7 +39,7 @@ public class StructuredLlmLiveTests
         // The test host does not load server/.env, so the key comes from the exported environment
         // variable. Configuration is built the same way the app builds it, minus the file.
         var configuration = new ConfigurationBuilder().AddEnvironmentVariables().Build();
-        var llm = new StructuredLlm(NullLogger<StructuredLlm>.Instance, configuration);
+        var llm = new StructuredLlm(NullLogger<StructuredLlm>.Instance, new FixedKey(configuration["ANTHROPIC_API_KEY"]));
 
         llm.HasApiKey.Should().BeTrue(
             "set ANTHROPIC_API_KEY (server/.env is loaded by the app, not by the test host)");
@@ -69,5 +69,11 @@ public class StructuredLlmLiveTests
         result.Index.Should().Be(1, "the description is unambiguously data analysis");
         result.Confidence.Should().BeInRange(0, 100);
         result.Rationale.Should().NotBeNullOrWhiteSpace();
+    }
+
+    private sealed class FixedKey(string? key) : IApiKeySource
+    {
+        public string? Current => key;
+        public void Invalidate() { }
     }
 }

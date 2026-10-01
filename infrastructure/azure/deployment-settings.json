@@ -11,6 +11,13 @@
       "valueType": "string",
       "requiredWhen": "deploy_infra",
       "description": "Comma-separated UC Davis login IDs that are always JDWriter admins. They cannot be removed from the app, so the back end can never be left without an admin. Further admins are added in the app's Settings page."
+    },
+    {
+      "githubName": "ANTHROPIC_API_KEY",
+      "appServiceName": "ANTHROPIC_API_KEY",
+      "classification": "secret",
+      "valueType": "string",
+      "description": "Anthropic API key for intake, classification and assembly. An admin can also enter or rotate a key in the app's Settings page; that one, stored encrypted, takes precedence while it is set."
     }
   ]
 }

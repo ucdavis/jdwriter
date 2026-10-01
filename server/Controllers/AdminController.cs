@@ -1,3 +1,4 @@
+using Server.Core.Ai;
 using Server.Core.Data;
 using Server.Core.Access;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ namespace Server.Controllers;
 public sealed record IngestClassRequest(string Code, string? CorpusDir);
 public sealed record BootstrapRequest(string Title);
 public sealed record AdminGrantRequest(string LoginId);
+public sealed record ApiKeyRequest(string Key);
 
 /// <summary>
 /// Corpus and standards operations.
@@ -37,6 +39,7 @@ public class AdminController : ApiControllerBase
     private readonly IConfiguration _config;
     private readonly AdminAccess _admins;
     private readonly AppDbContext _db;
+    private readonly ApiKeySettings _apiKey;
 
     public AdminController(
         IngestPipeline pipeline,
@@ -47,7 +50,8 @@ public class AdminController : ApiControllerBase
         ITitleCodeService titleCodes,
         IConfiguration config,
         AdminAccess admins,
-        AppDbContext db)
+        AppDbContext db,
+        ApiKeySettings apiKey)
     {
         _pipeline = pipeline;
         _bootstrapper = bootstrapper;
@@ -58,6 +62,47 @@ public class AdminController : ApiControllerBase
         _config = config;
         _admins = admins;
         _db = db;
+        _apiKey = apiKey;
+    }
+
+    private async Task<int?> CurrentUserIdAsync(CancellationToken ct)
+    {
+        var me = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        return await _db.AppUsers.Where(u => u.NameIdentifier == me)
+            .Select(u => (int?)u.Id).FirstOrDefaultAsync(ct);
+    }
+
+    // ---------------------------------------------------------------- Anthropic API key
+
+    /// <summary>Which key is in use and where it came from. Never the key itself.</summary>
+    [HttpGet("settings/api-key")]
+    public async Task<IActionResult> ApiKeyStatus(CancellationToken ct) =>
+        Ok(await _apiKey.GetStatusAsync(ct));
+
+    /// <summary>
+    /// Store a key entered by an admin, encrypted, after checking it with Anthropic. Write-only:
+    /// the response is the status (last four characters), never the key.
+    /// </summary>
+    [HttpPut("settings/api-key")]
+    public async Task<IActionResult> SetApiKey(ApiKeyRequest body, CancellationToken ct)
+    {
+        try
+        {
+            await _apiKey.SetAsync(body.Key, await CurrentUserIdAsync(ct), ct);
+            return Ok(await _apiKey.GetStatusAsync(ct));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Remove the app-entered key; the configured key, if any, takes over.</summary>
+    [HttpDelete("settings/api-key")]
+    public async Task<IActionResult> ClearApiKey(CancellationToken ct)
+    {
+        await _apiKey.ClearAsync(ct);
+        return Ok(await _apiKey.GetStatusAsync(ct));
     }
 
     // ---------------------------------------------------------------- admin whitelist
@@ -73,12 +118,9 @@ public class AdminController : ApiControllerBase
     [HttpPost("admins")]
     public async Task<IActionResult> GrantAdmin(AdminGrantRequest body, CancellationToken ct)
     {
-        var me = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var grantedBy = await _db.AppUsers.Where(u => u.NameIdentifier == me)
-            .Select(u => (int?)u.Id).FirstOrDefaultAsync(ct);
         try
         {
-            var login = await _admins.GrantAsync(body.LoginId, grantedBy, ct);
+            var login = await _admins.GrantAsync(body.LoginId, await CurrentUserIdAsync(ct), ct);
             return Ok(new { loginId = login });
         }
         catch (ArgumentException ex)

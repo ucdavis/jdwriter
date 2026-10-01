@@ -60,6 +60,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // ---- users
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<AdminGrant> AdminGrants => Set<AdminGrant>();
+    public DbSet<AppSecret> AppSecrets => Set<AppSecret>();
 
     // Index-bearing string columns need an explicit length: SQL Server caps a key at 900 bytes,
     // and nvarchar(max) cannot be indexed at all. Free text is deliberately left unbounded.
@@ -343,6 +344,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(x => x.NameIdentifier).IsUnique();
             e.Property(x => x.LoginId).HasMaxLength(64);
             e.HasIndex(x => x.LoginId);
+        });
+
+        b.Entity<AppSecret>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(100);
+            e.HasIndex(x => x.Name).IsUnique();
+            e.Property(x => x.LastFour).HasMaxLength(4);
+            e.HasOne(x => x.UpdatedBy).WithMany()
+                .HasForeignKey(x => x.UpdatedByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<AdminGrant>(e =>

@@ -93,6 +93,10 @@ try
     builder.Services.AddScoped<ITitleCodeService, TitleCodeService>();
 
     // Every model call in the system goes through this one seam.
+    builder.Services.AddMemoryCache();
+    builder.Services.AddSingleton<IApiKeySource, ApiKeySource>();
+    builder.Services.AddSingleton<IApiKeyVerifier, AnthropicKeyVerifier>();
+    builder.Services.AddScoped<ApiKeySettings>();
     builder.Services.AddSingleton<IStructuredLlm, StructuredLlm>();
 
     // ---- data access
@@ -173,7 +177,8 @@ try
         {
             app.Logger.LogWarning(
                 "No Anthropic API key configured. Browsing and the corpus work; intake, "
-                + "classification and assembly will return 503. Set ANTHROPIC_API_KEY in server/.env.");
+                + "classification and assembly will return 503. An admin can enter a key in "
+                + "Settings, or set ANTHROPIC_API_KEY (server/.env locally; an App Service setting in Azure).");
         }
     }
 

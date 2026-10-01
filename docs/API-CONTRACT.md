@@ -258,6 +258,21 @@ grantedAt: string | null; displayName: string | null; lastSeenAt: string | null 
 ### `DELETE /api/admin/admins/{loginId}` — Admin
 `400` for a configured admin (remove it from configuration instead) and for removing yourself.
 
+### `GET | PUT | DELETE /api/admin/settings/api-key` — Admin
+```ts
+type ApiKeyStatus = { source: "app" | "configuration" | "none"; lastFour: string | null;
+  updatedBy: string | null; updatedAt: string | null;
+  storedKeyUnreadable: boolean; configurationHasKey: boolean }
+```
+`GET` → status. `PUT { key }` → status, after checking the key with Anthropic's free token-counting
+endpoint; `400` with a message if it is malformed or rejected, and nothing is stored. `DELETE` →
+status, falling back to the configured key. **Write-only: no endpoint ever returns the key.**
+
+A key entered here is encrypted with ASP.NET Core Data Protection before it is stored and takes
+precedence over `ANTHROPIC_API_KEY` from configuration (the template's standard path: a GitHub
+Environment secret applied as an App Service setting). If the Data Protection key ring is lost, the
+stored key reads as `storedKeyUnreadable` and the configured key is used until an admin re-enters it.
+
 ### `POST /api/admin/bootstrap` — Admin
 `{ title: string }  →  { slug, title, ucJobCode, envelopeSource }`. `400` naming the successor when
 the code is superseded.

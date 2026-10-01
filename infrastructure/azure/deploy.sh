@@ -35,8 +35,8 @@ USAGE
   printf '%s\n' \
     'Deployment settings overlay: infrastructure/azure/deployment-settings.json' \
     'Template defaults: infrastructure/azure/deployment-settings-defaults.json' \
-    'ADMIN_BOOTSTRAP_LOGIN_IDS, AUTH_CALLBACK_PATH, AUTH_CLIENT_ID, AUTH_DOMAIN' \
-    '  AUTH_INSTANCE, AUTH_TENANT_ID, NOTIFICATION_BASE_URL' \
+    'ADMIN_BOOTSTRAP_LOGIN_IDS, ANTHROPIC_API_KEY, AUTH_CALLBACK_PATH, AUTH_CLIENT_ID' \
+    '  AUTH_DOMAIN, AUTH_INSTANCE, AUTH_TENANT_ID, NOTIFICATION_BASE_URL' \
     '  NOTIFICATION_DEFAULT_APP_NAME, NOTIFICATION_DEFAULT_BUTTON_TEXT' \
     '  OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS' \
     '  OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_RESOURCE_ATTRIBUTES, OTEL_SERVICE_NAME' \
@@ -267,6 +267,7 @@ if (( ${#disabled_settings[@]} > 0 )); then
 fi
 
 add_setting "Admin__BootstrapLoginIds" "${ADMIN_BOOTSTRAP_LOGIN_IDS:-}"
+add_setting "ANTHROPIC_API_KEY" "${ANTHROPIC_API_KEY:-}"
 add_setting "Auth__CallbackPath" "${AUTH_CALLBACK_PATH:-/signin-oidc}"
 add_setting "Auth__ClientId" "${AUTH_CLIENT_ID:-}"
 add_setting "Auth__Domain" "${AUTH_DOMAIN:-}"

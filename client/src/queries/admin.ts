@@ -1,6 +1,7 @@
 import { fetchJson } from '../lib/api.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  ApiKeyStatus,
   AdminsResponse,
   BootstrapCreateResponse,
   BootstrapResponse,
@@ -101,3 +102,33 @@ export const useRevokeAdmin = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'admins'] }),
   });
 };
+
+export const apiKeyQueryOptions = () => ({
+  queryFn: () => fetchJson<ApiKeyStatus>('/api/admin/settings/api-key'),
+  queryKey: ['admin', 'api-key'] as const,
+});
+
+export const useApiKeyStatus = () => useQuery(apiKeyQueryOptions());
+
+const useApiKeyMutation = <TArg,>(request: (arg: TArg) => Promise<ApiKeyStatus>) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: request,
+    // The response IS the new status, so it replaces the cached one directly.
+    onSuccess: (status) => queryClient.setQueryData(['admin', 'api-key'], status),
+  });
+};
+
+/** Write-only: the key goes up once and only its status ever comes back. */
+export const useSetApiKey = () =>
+  useApiKeyMutation((key: string) =>
+    fetchJson<ApiKeyStatus>('/api/admin/settings/api-key', {
+      body: JSON.stringify({ key }),
+      method: 'PUT',
+    })
+  );
+
+export const useClearApiKey = () =>
+  useApiKeyMutation(() =>
+    fetchJson<ApiKeyStatus>('/api/admin/settings/api-key', { method: 'DELETE' })
+  );

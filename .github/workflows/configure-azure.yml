@@ -29,6 +29,7 @@ jobs:
       APP_NAME: ${{ vars.APP_NAME || 'webapp' }}
       # <deployment-settings:workflow-env>
       ADMIN_BOOTSTRAP_LOGIN_IDS: ${{ vars.ADMIN_BOOTSTRAP_LOGIN_IDS }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       AUTH_CALLBACK_PATH: ${{ vars.AUTH_CALLBACK_PATH || '/signin-oidc' }}
       AUTH_CLIENT_ID: ${{ vars.AUTH_CLIENT_ID }}
       AUTH_DOMAIN: ${{ vars.AUTH_DOMAIN }}
@@ -214,6 +215,7 @@ jobs:
           fi
 
           add_setting "Admin__BootstrapLoginIds" "$ADMIN_BOOTSTRAP_LOGIN_IDS"
+          add_setting "ANTHROPIC_API_KEY" "$ANTHROPIC_API_KEY"
           add_setting "Auth__CallbackPath" "$AUTH_CALLBACK_PATH"
           add_setting "Auth__ClientId" "$AUTH_CLIENT_ID"
           add_setting "Auth__Domain" "$AUTH_DOMAIN"

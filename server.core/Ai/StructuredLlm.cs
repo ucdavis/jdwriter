@@ -75,41 +75,45 @@ public sealed class StructuredLlm : IStructuredLlm
     public const string Model = "claude-opus-5";
 
     private readonly ILogger<StructuredLlm> _logger;
-    private readonly Lazy<AnthropicClient> _client;
-    private readonly string? _apiKey;
+    private readonly IApiKeySource _keys;
     private readonly bool _tokenDebug;
+    private readonly object _clientLock = new();
+    private (string Key, AnthropicClient Client)? _client;
 
-    public StructuredLlm(ILogger<StructuredLlm> logger, IConfiguration configuration)
+    public StructuredLlm(ILogger<StructuredLlm> logger, IApiKeySource keys)
     {
         _logger = logger;
 
-        // Read through IConfiguration, not Environment.GetEnvironmentVariable.
-        //
-        // The app loads server/.env into configuration; it does NOT export those values into the
-        // process environment. Reading the raw environment therefore found nothing, HasApiKey
-        // reported false, and every model-backed endpoint returned 503 "no API key configured" on a
-        // machine where the key was sitting right there in the file the app had just read.
-        //
-        // The SDK's zero-arg constructor reads the environment too, so the key is passed
-        // explicitly rather than left to be rediscovered.
-        _apiKey = configuration["ANTHROPIC_API_KEY"];
-
-        _client = new Lazy<AnthropicClient>(() => string.IsNullOrEmpty(_apiKey)
-            ? new AnthropicClient()
-            : new AnthropicClient { ApiKey = _apiKey });
+        // The key is resolved per call, not captured here: an admin can rotate it in Settings and
+        // the next call must use the new one without a restart. It is passed to the SDK
+        // explicitly — the SDK's zero-arg constructor reads the process environment, which does
+        // NOT contain what the app loaded from server/.env, and that once produced 503 "no API
+        // key configured" on a machine where the key was sitting in the file the app had read.
+        _keys = keys;
 
         // Off by default and kept deliberately: measuring before optimizing reordered the whole
         // priority list last time, because char-count estimates were badly wrong.
         _tokenDebug = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("JDW_TOKEN_DEBUG"));
     }
 
-    /// <summary>
-    /// Whether a key is configured, from configuration OR the ambient environment — the SDK accepts
-    /// either, and a developer who exported the variable should not be told it is missing.
-    /// </summary>
-    public bool HasApiKey =>
-        !string.IsNullOrEmpty(_apiKey)
-        || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY"));
+    /// <summary>Whether a key is available — entered in the app, or configured.</summary>
+    public bool HasApiKey => !string.IsNullOrEmpty(_keys.Current);
+
+    /// <summary>One client per key, rebuilt only when the key changes.</summary>
+    private AnthropicClient Client()
+    {
+        var key = _keys.Current
+                  ?? throw new StructuredLlmException("No Anthropic API key is configured.");
+        lock (_clientLock)
+        {
+            if (_client is not { } current || current.Key != key)
+            {
+                _client = (key, new AnthropicClient { ApiKey = key });
+            }
+
+            return _client.Value.Client;
+        }
+    }
 
     public async Task<T> StructuredAsync<T>(StructuredRequest request, CancellationToken ct = default)
     {
@@ -137,7 +141,7 @@ public sealed class StructuredLlm : IStructuredLlm
             Messages = [new() { Role = Role.User, Content = request.User }],
         };
 
-        var response = await _client.Value.Messages.Create(parameters, cancellationToken: ct);
+        var response = await Client().Messages.Create(parameters, cancellationToken: ct);
 
         if (_tokenDebug)
         {

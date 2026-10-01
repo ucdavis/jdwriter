@@ -436,5 +436,16 @@ export type AdminEntry = {
 
 export type AdminsResponse = { admins: AdminEntry[] };
 
+/** Where the Anthropic key in use came from. Never contains the key. */
+export type ApiKeyStatus = {
+  configurationHasKey: boolean;
+  lastFour: string | null;
+  source: 'app' | 'configuration' | 'none';
+  /** A key is stored but can no longer be decrypted; configuration is being used instead. */
+  storedKeyUnreadable: boolean;
+  updatedAt: string | null;
+  updatedBy: string | null;
+};
+
 /** 4xx bodies. The message is written for the user and is rendered verbatim. */
 export type ApiError = { message: string };
