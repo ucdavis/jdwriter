@@ -1,5 +1,6 @@
 import { Badge, Card, Eyebrow, Note } from '@/shared/ui/primitives.tsx';
 import type { AssembledJd } from '@/lib/contracts.ts';
+import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
 /**
@@ -28,7 +29,21 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
       )}
 
       <div className="flex items-center justify-between">
-        <Eyebrow>Finished job description</Eyebrow>
+        <div className="flex items-center gap-2">
+          <Eyebrow>Finished job description</Eyebrow>
+          {result.authoredJdId ? (
+            <span className="text-[12px] text-base-content/65" data-testid="saved-status">
+              Saved as{' '}
+              <Badge tone={result.status === 'ready' ? 'green' : 'yellow'}>
+                {result.status === 'ready' ? 'Ready' : 'Draft'}
+              </Badge>{' '}
+              ·{' '}
+              <Link className="text-primary hover:underline" to="/jds">
+                My JDs
+              </Link>
+            </span>
+          ) : null}
+        </div>
         <button
           className="btn btn-primary btn-sm"
           disabled={!publishable}

@@ -258,25 +258,26 @@ public class JdAssemblerTests
     }
 
     [Fact]
-    public async Task An_under_allocated_draft_cannot_be_persisted()
+    public async Task An_under_allocated_draft_is_saved_only_as_a_draft()
     {
-        // The guard lives at the persistence boundary rather than relying on the caller to check
-        // CanPublish: a field that can be ignored is a field that will be.
+        // Drafts are kept (they are what gets fed back into the corpus), so the 100% invariant
+        // lives in the status: Ready is derived from the allocation at the persistence boundary
+        // and nowhere else, and nothing is rescaled to reach it.
         var inputs = JdTestData.Inputs();
         inputs.KeptResponsibilities[1].PctTime = 10;
 
         var (assembler, _) = Build(CleanGeneration());
         var result = await assembler.AssembleAsync(JdTestData.Profile(), inputs, JdTestData.Rules());
 
-        var act = () => result.ToEntity(classProfileId: 1);
+        var entity = result.ToEntity(classProfileId: 1, inputs: inputs);
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*30%*unassigned*")
-            .WithMessage("*exactly 100%*");
+        entity.Status.Should().Be(AuthoredJdStatus.Draft);
+        entity.UnallocatedPct.Should().Be(30);
+        entity.KeyResponsibilities.Sum(r => r.PctTime).Should().Be(70, "the author's numbers are kept, not rescaled");
     }
 
     [Fact]
-    public async Task An_over_allocated_draft_cannot_be_persisted_either()
+    public async Task An_over_allocated_draft_is_saved_only_as_a_draft_too()
     {
         var inputs = JdTestData.Inputs();
         inputs.KeptResponsibilities[0].PctTime = 80;
@@ -284,9 +285,30 @@ public class JdAssemblerTests
         var (assembler, _) = Build(CleanGeneration());
         var result = await assembler.AssembleAsync(JdTestData.Profile(), inputs, JdTestData.Rules());
 
-        var act = () => result.ToEntity(classProfileId: 1);
+        var entity = result.ToEntity(classProfileId: 1, inputs: inputs);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("*20%*over-assigned*");
+        entity.Status.Should().Be(AuthoredJdStatus.Draft);
+        entity.UnallocatedPct.Should().Be(-20);
+    }
+
+    [Fact]
+    public async Task A_fully_allocated_jd_is_ready_and_keeps_what_the_author_added()
+    {
+        var inputs = JdTestData.Inputs();
+        inputs.AddedItems = ["Coordinates the unit's annual symposium"];
+        inputs.Notes = "Replaces a retiring incumbent.";
+
+        var (assembler, _) = Build(CleanGeneration());
+        var result = await assembler.AssembleAsync(JdTestData.Profile(), inputs, JdTestData.Rules());
+
+        var entity = result.ToEntity(classProfileId: 1, inputs: inputs, envelopeSource: EnvelopeSource.Manual);
+
+        entity.Status.Should().Be(AuthoredJdStatus.Ready);
+        entity.UnallocatedPct.Should().Be(0);
+        entity.Notes.Should().Be("Replaces a retiring incumbent.");
+        entity.EnvelopeSource.Should().Be(EnvelopeSource.Manual);
+        entity.Items.Where(i => i.Kind == AuthoredJdListKind.AuthorAddition).Select(i => i.Text)
+            .Should().Equal("Coordinates the unit's annual symposium");
     }
 
     [Fact]

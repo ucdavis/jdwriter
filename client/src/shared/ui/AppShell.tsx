@@ -43,6 +43,12 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
           >
             Classify
           </Link>
+          <Link
+            className="text-[12px] font-medium text-white/75 hover:text-ucd-gold"
+            to="/jds"
+          >
+            My JDs
+          </Link>
           {isAdmin ? (
             <Link
               className="text-[12px] font-medium text-white/75 hover:text-ucd-gold"

@@ -71,6 +71,8 @@ export const BuildFlow = ({
   const state = useBuildState(envelope);
   const check = useEnvelopeCheck();
   const assemble = useAssembleJd();
+  // Set by the first assemble; sent back on later ones so they revise the same saved JD.
+  const [savedId, setSavedId] = useState<number | null>(null);
 
   const error = check.error ?? assemble.error;
   const busy = check.isPending || assemble.isPending;
@@ -79,7 +81,15 @@ export const BuildFlow = ({
   const runCheck = () =>
     check.mutate(state.buildRequest(slug), { onSuccess: () => setStep('check') });
   const runAssemble = () =>
-    assemble.mutate(state.buildRequest(slug), { onSuccess: () => setStep('final') });
+    assemble.mutate(
+      { ...state.buildRequest(slug), authoredJdId: savedId },
+      {
+        onSuccess: (result) => {
+          setSavedId(result.authoredJdId);
+          setStep('final');
+        },
+      }
+    );
 
   return (
     <div className="space-y-5">
@@ -409,7 +419,19 @@ export const BuildFlow = ({
         </Card>
       ) : null}
 
-      {step === 'final' && assemble.data ? <FinalJd result={assemble.data} /> : null}
+      {step === 'final' && assemble.data ? (
+        <>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setStep('tailor')}
+            type="button"
+          >
+            ← Back to tailoring
+          </button>
+          {/* Assembling again from here revises this same saved JD rather than adding one. */}
+          <FinalJd result={assemble.data} />
+        </>
+      ) : null}
     </div>
   );
 };

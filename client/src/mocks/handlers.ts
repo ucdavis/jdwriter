@@ -1,6 +1,8 @@
 import profilesFixture from './profiles.json' with { type: 'json' };
 import { delay, http, HttpResponse } from 'msw';
 import type {
+  SavedJd,
+  SavedJdListResponse,
   ApiKeyStatus,
   AdminsResponse,
   AssembledJd,
@@ -100,7 +102,35 @@ const misfitsFor = (threshold: number): MisfitsResponse => {
   };
 };
 
+/** What the mocked build has "saved" this session, so My JDs has something to show. */
+let savedJds: SavedJd[] = [];
+
 export const handlers = [
+  http.get('/api/jds', () =>
+    HttpResponse.json<SavedJdListResponse>({
+      jds: [...savedJds].reverse().map((j) => ({
+        createdAt: j.createdAt,
+        createdBy: j.createdBy,
+        department: j.department,
+        id: j.authoredJdId ?? 0,
+        slug: j.slug,
+        status: j.status,
+        title: j.title,
+        ucJobCode: j.ucJobCode,
+        unallocatedPct: j.unallocatedPct,
+        updatedAt: j.updatedAt,
+        workingTitle: j.workingTitle,
+      })),
+    })
+  ),
+
+  http.get('/api/jds/:id', ({ params }) => {
+    const jd = savedJds.find((j) => j.authoredJdId === Number(params.id));
+    return jd
+      ? HttpResponse.json<SavedJd>(jd)
+      : HttpResponse.json({ message: 'That job description was not found.' }, { status: 404 });
+  }),
+
   http.get('/api/user/me', () =>
     HttpResponse.json({
       email: 'ndlewis@ucdavis.edu',
@@ -374,6 +404,7 @@ export const handlers = [
     const body = (await request.json()) as BuildRequest;
     const profile = profileOf(body.slug);
     await delay(900);
+    const authoredJdId = body.authoredJdId ?? savedJds.length + 1;
     const envelope = profile?.envelope;
 
     // Percentages are recomputed server-side to sum to 100. Mirrored here so the UI is
@@ -390,7 +421,8 @@ export const handlers = [
 
     const unallocatedPct = 100 - normalised.reduce((sum, r) => sum + r.pctTime, 0);
 
-    return HttpResponse.json<AssembledJd>({
+    const assembled: AssembledJd = {
+      authoredJdId,
       bargainingUnit: profile?.unionCode.consensus ?? null,
       canPublish: unallocatedPct === 0,
       complianceEdits: [
@@ -420,11 +452,22 @@ export const handlers = [
       },
       salaryGrade: profile?.salaryGrade.consensus ?? null,
       slug: body.slug,
+      status: unallocatedPct === 0 ? 'ready' : 'draft',
       title: profile?.title ?? '',
       ucJobCode: profile?.ucJobCode ?? '',
       unallocatedPct,
       workingTitle: body.workingTitle || (profile?.title ?? ''),
-    });
+    };
+    const saved: SavedJd = {
+      ...assembled,
+      authorAdditions: body.addedItems,
+      createdAt: new Date().toISOString(),
+      createdBy: 'Mock Admin',
+      notes: body.notes,
+      updatedAt: new Date().toISOString(),
+    };
+    savedJds = [...savedJds.filter((j) => j.authoredJdId !== authoredJdId), saved];
+    return HttpResponse.json<AssembledJd>(assembled);
   }),
 
   http.post('/api/envelope/save', async ({ request }) => {

@@ -1,3 +1,4 @@
+using Server.Helpers;
 using Server.Core.Ai;
 using Server.Core.Data;
 using Server.Core.Access;
@@ -65,13 +66,6 @@ public class AdminController : ApiControllerBase
         _apiKey = apiKey;
     }
 
-    private async Task<int?> CurrentUserIdAsync(CancellationToken ct)
-    {
-        var me = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        return await _db.AppUsers.Where(u => u.NameIdentifier == me)
-            .Select(u => (int?)u.Id).FirstOrDefaultAsync(ct);
-    }
-
     // ---------------------------------------------------------------- Anthropic API key
 
     /// <summary>Which key is in use and where it came from. Never the key itself.</summary>
@@ -88,7 +82,7 @@ public class AdminController : ApiControllerBase
     {
         try
         {
-            await _apiKey.SetAsync(body.Key, await CurrentUserIdAsync(ct), ct);
+            await _apiKey.SetAsync(body.Key, await User.IdAsync(_db, ct), ct);
             return Ok(await _apiKey.GetStatusAsync(ct));
         }
         catch (ArgumentException ex)
@@ -120,7 +114,7 @@ public class AdminController : ApiControllerBase
     {
         try
         {
-            var login = await _admins.GrantAsync(body.LoginId, await CurrentUserIdAsync(ct), ct);
+            var login = await _admins.GrantAsync(body.LoginId, await User.IdAsync(_db, ct), ct);
             return Ok(new { loginId = login });
         }
         catch (ArgumentException ex)

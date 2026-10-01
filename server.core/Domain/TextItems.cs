@@ -91,6 +91,22 @@ public enum AuthoredJdListKind
     ConditionOfEmployment,
     WorkEnvironment,
     PhysicalRequirement,
+
+    /// <summary>
+    /// Something the author added beyond the envelope. Not part of the JD's text — it is kept
+    /// because what authors add is exactly what feeding JDs back into the corpus needs to see.
+    /// </summary>
+    AuthorAddition,
+}
+
+/// <summary>
+/// Where a saved JD stands. Derived from the allocation at save time and never set by hand: a JD
+/// whose key responsibilities do not total exactly 100% can be saved, but only ever as a Draft.
+/// </summary>
+public enum AuthoredJdStatus
+{
+    Draft,
+    Ready,
 }
 
 /// <summary>Which consensus attribute a stored distribution describes.</summary>

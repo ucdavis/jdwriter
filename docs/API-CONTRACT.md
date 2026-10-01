@@ -140,7 +140,8 @@ could not express any of that.
   keptWorkEnvironment: string[];
   addedItems: string[];   // every user-added item across all sections — this is what the
                           // envelope check polices, and an empty list skips the call entirely
-  notes: string }
+  notes: string;
+  authoredJdId?: number | null }  // from a previous assemble in this session: revise that saved JD
 // response
 { jd: { jobSummary: string;
         keyResponsibilities: Array<{ functionName: string; pctTime: number; duties: string[] }>;
@@ -152,7 +153,9 @@ could not express any of that.
   slug: string; title: string; workingTitle: string; department: string; ucJobCode: string;
   salaryGrade: string | null; flsaStatus: string | null; bargainingUnit: string | null;
   unallocatedPct: number;   // 0 when the kept set already sums to 100
-  canPublish: boolean }     // exactly unallocatedPct === 0
+  canPublish: boolean;      // exactly unallocatedPct === 0
+  status: "draft" | "ready";
+  authoredJdId: number }    // every assembly is saved; this is the record
 ```
 
 **`pctTime` is carried through verbatim from the envelope, NOT rescaled**, and the endpoint refuses
@@ -168,6 +171,22 @@ the same judgement.
 The client must show a running total, name the shortfall, and disable publishing until it is exactly
 100 — with the reason next to the disabled control, not only in a toast. The server enforces it
 regardless.
+
+**Every assembly is saved** (`AuthoredJd`), with the author's additions beyond the envelope, their
+notes, and how the envelope had been produced — the material for feeding JDs back into the corpus.
+`status` is derived from the allocation at save time and nowhere else: a JD whose time is not
+exactly 100% is saved, but only ever as `draft`. Sending back `authoredJdId` revises the caller's
+own saved JD in place; anyone else's id is ignored and a new record is created.
+
+### `GET /api/jds` — Author
+`{ jds: Array<{ id; slug; title; workingTitle; department; ucJobCode; status; unallocatedPct;
+createdBy; createdAt; updatedAt }> }`, newest first — the caller's own. `?scope=all` lists everyone's
+and is Admin-only (`403` otherwise).
+
+### `GET /api/jds/{id}` — Author
+The saved JD in the assemble response's shape, plus `authorAdditions: string[]`, `notes`,
+`createdBy`, `createdAt`, `updatedAt`. `404` for a JD that is neither yours nor visible to you as an
+admin — not `403`, so ids cannot be probed.
 
 ### `JobEnvelope` on the wire
 

@@ -278,6 +278,8 @@ export type ClassifyResponse = {
 
 export type BuildRequest = {
   addedItems: string[];
+  /** The saved JD this build session already wrote; re-assembling updates it. */
+  authoredJdId?: number | null;
   department: string;
   keptCerts: string[];
   keptEducation: string[];
@@ -307,10 +309,14 @@ export type ComplianceEdit = {
   source: 'llm' | 'rule';
 };
 
+export type JdStatus = 'draft' | 'ready';
+
 export type AssembledJd = {
+  /** Every assembly is saved; this is the record it was written to. */
+  authoredJdId: number | null;
   // The class attributes travel at the top level, beside the draft, as the server sends them.
   bargainingUnit: string | null;
-  /** True exactly when `unallocatedPct` is 0. The server refuses to persist otherwise. */
+  /** True exactly when `unallocatedPct` is 0 — the only way a saved JD can be Ready. */
   canPublish: boolean;
   complianceEdits: ComplianceEdit[];
   department: string;
@@ -329,6 +335,8 @@ export type AssembledJd = {
   };
   salaryGrade: string | null;
   slug: string;
+  /** Draft until the time totals exactly 100%. */
+  status: JdStatus;
   title: string;
   ucJobCode: string;
   /**
@@ -420,6 +428,33 @@ export type BootstrapCreateResponse = {
   slug: string;
   title: string;
   ucJobCode: string;
+};
+
+// ---------------------------------------------------------------- saved JDs
+
+export type SavedJdSummary = {
+  createdAt: string;
+  createdBy: string | null;
+  department: string;
+  id: number;
+  slug: string;
+  status: JdStatus;
+  title: string;
+  ucJobCode: string;
+  unallocatedPct: number;
+  updatedAt: string;
+  workingTitle: string;
+};
+
+export type SavedJdListResponse = { jds: SavedJdSummary[] };
+
+/** A saved JD: the build's result shape plus who wrote it, when, and what they added. */
+export type SavedJd = AssembledJd & {
+  authorAdditions: string[];
+  createdAt: string;
+  createdBy: string | null;
+  notes: string;
+  updatedAt: string;
 };
 
 // ---------------------------------------------------------------- settings

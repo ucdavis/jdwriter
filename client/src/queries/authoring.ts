@@ -53,10 +53,14 @@ export const useEnvelopeCheck = () =>
     mutationFn: post<BuildRequest, EnvelopeCheckResponse>('/api/build/check'),
   });
 
-export const useAssembleJd = () =>
-  useMutation({
+export const useAssembleJd = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: post<BuildRequest, AssembledJd>('/api/build/assemble'),
+    // Every assembly is saved, so the saved-JD lists are stale afterwards.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jds'] }),
   });
+};
 
 export const useSaveEnvelope = () => {
   const queryClient = useQueryClient();

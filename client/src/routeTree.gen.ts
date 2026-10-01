@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as authenticatedRouteRouteImport } from './routes/(authenticated)/route'
 import { Route as authenticatedIndexRouteImport } from './routes/(authenticated)/index'
 import { Route as authenticatedClassifyRouteImport } from './routes/(authenticated)/classify'
+import { Route as authenticatedJdsIndexRouteImport } from './routes/(authenticated)/jds.index'
 import { Route as authenticatedBackendIndexRouteImport } from './routes/(authenticated)/backend/index'
+import { Route as authenticatedJdsIdRouteImport } from './routes/(authenticated)/jds.$id'
 import { Route as authenticatedClassSlugRouteImport } from './routes/(authenticated)/class.$slug'
 import { Route as authenticatedBackendSettingsRouteImport } from './routes/(authenticated)/backend/settings'
 import { Route as authenticatedBackendFitRouteImport } from './routes/(authenticated)/backend/fit'
@@ -36,12 +38,22 @@ const authenticatedClassifyRoute = authenticatedClassifyRouteImport.update({
   path: '/classify',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
+const authenticatedJdsIndexRoute = authenticatedJdsIndexRouteImport.update({
+  id: '/jds/',
+  path: '/jds/',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any)
 const authenticatedBackendIndexRoute =
   authenticatedBackendIndexRouteImport.update({
     id: '/backend/',
     path: '/backend/',
     getParentRoute: () => authenticatedRouteRoute,
   } as any)
+const authenticatedJdsIdRoute = authenticatedJdsIdRouteImport.update({
+  id: '/jds/$id',
+  path: '/jds/$id',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any)
 const authenticatedClassSlugRoute = authenticatedClassSlugRouteImport.update({
   id: '/class/$slug',
   path: '/class/$slug',
@@ -95,7 +107,9 @@ export interface FileRoutesByFullPath {
   '/backend/fit': typeof authenticatedBackendFitRoute
   '/backend/settings': typeof authenticatedBackendSettingsRoute
   '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
+  '/jds/$id': typeof authenticatedJdsIdRoute
   '/backend': typeof authenticatedBackendIndexRoute
+  '/jds': typeof authenticatedJdsIndexRoute
   '/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
   '/backend/jds/$slug': typeof authenticatedBackendJdsSlugRoute
   '/backend/standard/$slug': typeof authenticatedBackendStandardSlugRoute
@@ -108,7 +122,9 @@ export interface FileRoutesByTo {
   '/backend/fit': typeof authenticatedBackendFitRoute
   '/backend/settings': typeof authenticatedBackendSettingsRoute
   '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
+  '/jds/$id': typeof authenticatedJdsIdRoute
   '/backend': typeof authenticatedBackendIndexRoute
+  '/jds': typeof authenticatedJdsIndexRoute
   '/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
   '/backend/jds/$slug': typeof authenticatedBackendJdsSlugRoute
   '/backend/standard/$slug': typeof authenticatedBackendStandardSlugRoute
@@ -123,7 +139,9 @@ export interface FileRoutesById {
   '/(authenticated)/backend/fit': typeof authenticatedBackendFitRoute
   '/(authenticated)/backend/settings': typeof authenticatedBackendSettingsRoute
   '/(authenticated)/class/$slug': typeof authenticatedClassSlugRouteWithChildren
+  '/(authenticated)/jds/$id': typeof authenticatedJdsIdRoute
   '/(authenticated)/backend/': typeof authenticatedBackendIndexRoute
+  '/(authenticated)/jds/': typeof authenticatedJdsIndexRoute
   '/(authenticated)/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
   '/(authenticated)/backend/jds/$slug': typeof authenticatedBackendJdsSlugRoute
   '/(authenticated)/backend/standard/$slug': typeof authenticatedBackendStandardSlugRoute
@@ -138,7 +156,9 @@ export interface FileRouteTypes {
     | '/backend/fit'
     | '/backend/settings'
     | '/class/$slug'
+    | '/jds/$id'
     | '/backend'
+    | '/jds'
     | '/backend/edit/$slug'
     | '/backend/jds/$slug'
     | '/backend/standard/$slug'
@@ -151,7 +171,9 @@ export interface FileRouteTypes {
     | '/backend/fit'
     | '/backend/settings'
     | '/class/$slug'
+    | '/jds/$id'
     | '/backend'
+    | '/jds'
     | '/backend/edit/$slug'
     | '/backend/jds/$slug'
     | '/backend/standard/$slug'
@@ -165,7 +187,9 @@ export interface FileRouteTypes {
     | '/(authenticated)/backend/fit'
     | '/(authenticated)/backend/settings'
     | '/(authenticated)/class/$slug'
+    | '/(authenticated)/jds/$id'
     | '/(authenticated)/backend/'
+    | '/(authenticated)/jds/'
     | '/(authenticated)/backend/edit/$slug'
     | '/(authenticated)/backend/jds/$slug'
     | '/(authenticated)/backend/standard/$slug'
@@ -200,11 +224,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedClassifyRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
+    '/(authenticated)/jds/': {
+      id: '/(authenticated)/jds/'
+      path: '/jds'
+      fullPath: '/jds'
+      preLoaderRoute: typeof authenticatedJdsIndexRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
     '/(authenticated)/backend/': {
       id: '/(authenticated)/backend/'
       path: '/backend'
       fullPath: '/backend'
       preLoaderRoute: typeof authenticatedBackendIndexRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/jds/$id': {
+      id: '/(authenticated)/jds/$id'
+      path: '/jds/$id'
+      fullPath: '/jds/$id'
+      preLoaderRoute: typeof authenticatedJdsIdRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
     '/(authenticated)/class/$slug': {
@@ -286,7 +324,9 @@ interface authenticatedRouteRouteChildren {
   authenticatedBackendFitRoute: typeof authenticatedBackendFitRoute
   authenticatedBackendSettingsRoute: typeof authenticatedBackendSettingsRoute
   authenticatedClassSlugRoute: typeof authenticatedClassSlugRouteWithChildren
+  authenticatedJdsIdRoute: typeof authenticatedJdsIdRoute
   authenticatedBackendIndexRoute: typeof authenticatedBackendIndexRoute
+  authenticatedJdsIndexRoute: typeof authenticatedJdsIndexRoute
   authenticatedBackendEditSlugRoute: typeof authenticatedBackendEditSlugRoute
   authenticatedBackendJdsSlugRoute: typeof authenticatedBackendJdsSlugRoute
   authenticatedBackendStandardSlugRoute: typeof authenticatedBackendStandardSlugRoute
@@ -299,7 +339,9 @@ const authenticatedRouteRouteChildren: authenticatedRouteRouteChildren = {
   authenticatedBackendFitRoute: authenticatedBackendFitRoute,
   authenticatedBackendSettingsRoute: authenticatedBackendSettingsRoute,
   authenticatedClassSlugRoute: authenticatedClassSlugRouteWithChildren,
+  authenticatedJdsIdRoute: authenticatedJdsIdRoute,
   authenticatedBackendIndexRoute: authenticatedBackendIndexRoute,
+  authenticatedJdsIndexRoute: authenticatedJdsIndexRoute,
   authenticatedBackendEditSlugRoute: authenticatedBackendEditSlugRoute,
   authenticatedBackendJdsSlugRoute: authenticatedBackendJdsSlugRoute,
   authenticatedBackendStandardSlugRoute: authenticatedBackendStandardSlugRoute,

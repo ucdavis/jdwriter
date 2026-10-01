@@ -85,6 +85,7 @@ try
     // add scoped services here
     builder.Services.AddScoped<IDbInitializer, DbInitializer>();
     builder.Services.AddScoped<AdminAccess>();
+    builder.Services.AddScoped<AuthoredJdStore>();
     builder.Services.AddScoped<IUserService, UserService>();
 
     // The title reference is read on nearly every corpus path and rebuilt only on import, so the

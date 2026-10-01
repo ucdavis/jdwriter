@@ -34,6 +34,22 @@ public class AuthoredJd
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 
+    /// <summary>Ready only when the time is fully allocated. See <see cref="AuthoredJdStatus"/>.</summary>
+    public AuthoredJdStatus Status { get; set; }
+
+    /// <summary>Percent of time not accounted for at save time; non-zero exactly when Draft.</summary>
+    public int UnallocatedPct { get; set; }
+
+    /// <summary>The author's free-text notes to HR, as entered in the build.</summary>
+    public string Notes { get; set; } = "";
+
+    /// <summary>
+    /// How the class's envelope had been produced when this JD was written against it. A JD written
+    /// against a standard-derived or hand-edited envelope is different evidence from one written
+    /// against a corpus-learned envelope, and re-mapping envelopes from saved JDs needs to know.
+    /// </summary>
+    public EnvelopeSource? EnvelopeSource { get; set; }
+
     public List<AuthoredJdResponsibility> KeyResponsibilities { get; set; } = [];
     public List<AuthoredJdListItem> Items { get; set; } = [];
     public List<ComplianceEdit> ComplianceEdits { get; set; } = [];

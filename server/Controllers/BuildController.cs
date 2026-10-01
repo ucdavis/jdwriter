@@ -6,6 +6,7 @@ using Server.Core.Data;
 using Server.Core.Domain;
 using Server.Core.Jd;
 using Server.Core.Profiles;
+using Server.Helpers;
 
 namespace Server.Controllers;
 
@@ -31,6 +32,12 @@ public sealed class BuildRequest
     public List<string> KeptWorkEnvironment { get; set; } = [];
     public List<string> AddedItems { get; set; } = [];
     public string Notes { get; set; } = "";
+
+    /// <summary>
+    /// The saved JD this build session already wrote, from a previous assemble's response. When
+    /// it is the caller's own, re-assembling updates it instead of saving another copy.
+    /// </summary>
+    public int? AuthoredJdId { get; set; }
 
     public BuildInputs ToInputs() => new()
     {
@@ -58,14 +65,20 @@ public class BuildController : ApiControllerBase
     private readonly IClassProfileRepository _profiles;
     private readonly AppDbContext _db;
     private readonly IStructuredLlm _llm;
+    private readonly AuthoredJdStore _saved;
 
     public BuildController(
-        IJdAssembler assembler, IClassProfileRepository profiles, AppDbContext db, IStructuredLlm llm)
+        IJdAssembler assembler,
+        IClassProfileRepository profiles,
+        AppDbContext db,
+        IStructuredLlm llm,
+        AuthoredJdStore saved)
     {
         _assembler = assembler;
         _profiles = profiles;
         _db = db;
         _llm = llm;
+        _saved = saved;
     }
 
     /// <summary>
@@ -121,10 +134,14 @@ public class BuildController : ApiControllerBase
         // Rules live in the database so HR can change policy language without a deployment.
         var rules = await _db.ComplianceRules.AsNoTracking().ToListAsync(ct);
 
-        var assembled = await _assembler.AssembleAsync(profile, body.ToInputs(), rules, ct);
+        var inputs = body.ToInputs();
+        var assembled = await _assembler.AssembleAsync(profile, inputs, rules, ct);
 
-        // Returned even when it cannot be published: the author has to SEE the draft in order to
+        // Every assembly is saved — as a Draft until the time totals exactly 100%. It is also
+        // returned even when it cannot be published: the author has to SEE the draft in order to
         // decide where the unallocated time should go.
+        assembled.AuthoredJdId = await _saved.SaveAsync(
+            assembled, inputs, profile, await User.IdAsync(_db, ct), body.AuthoredJdId, ct);
         return Ok(assembled);
     }
 }

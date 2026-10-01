@@ -163,29 +163,29 @@ public sealed class AssembledJd
     /// </summary>
     public bool CanPublish => UnallocatedPct == 0;
 
+    /// <summary>Draft or Ready, from the allocation. Mirrors what is saved.</summary>
+    public AuthoredJdStatus Status => CanPublish ? AuthoredJdStatus.Ready : AuthoredJdStatus.Draft;
+
+    /// <summary>The saved record this assembly was written to; send it back to update it.</summary>
+    public int? AuthoredJdId { get; set; }
+
     public List<ComplianceEditRecord> ComplianceEdits { get; set; } = [];
 
     /// <summary>
-    /// Map to the persisted shape. Ordinals are assigned here because SQL has no inherent row
-    /// order and these lists all read in sequence.
+    /// The entity for this draft: a new record carrying everything the author produced, its status,
+    /// and the author's additions beyond the envelope.
+    ///
+    /// Drafts are saved — every assembly is kept, because those are what will be fed back into the
+    /// corpus. The 100% invariant survives as the status: <see cref="AuthoredJdStatus.Ready"/> is
+    /// assigned here from <see cref="CanPublish"/> and nowhere else, so a JD whose time is under- or
+    /// over-allocated can only ever be a Draft. Nothing is rescaled to make it Ready.
     /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// The draft does not account for exactly 100% of the author's time. This throws rather than
-    /// relying on the caller to check <see cref="CanPublish"/>, because a field that can be ignored
-    /// is a field that will be: the persistence boundary is the last place the invariant can still
-    /// be enforced.
-    /// </exception>
-    public AuthoredJd ToEntity(int classProfileId, int? createdByUserId = null)
+    public AuthoredJd ToEntity(
+        int classProfileId,
+        int? createdByUserId = null,
+        BuildInputs? inputs = null,
+        EnvelopeSource? envelopeSource = null)
     {
-        if (!CanPublish)
-        {
-            var direction = UnallocatedPct > 0 ? "unassigned" : "over-assigned by";
-            throw new InvalidOperationException(
-                $"Cannot persist \"{WorkingTitle}\": {Math.Abs(UnallocatedPct)}% of the position's " +
-                $"time is {direction}. Key responsibilities must account for exactly 100%. " +
-                "The author needs to reallocate before this can be published.");
-        }
-
         var now = DateTimeOffset.UtcNow;
 
         var entity = new AuthoredJd
@@ -202,6 +202,10 @@ public sealed class AssembledJd
             CreatedByUserId = createdByUserId,
             CreatedAt = now,
             UpdatedAt = now,
+            Status = CanPublish ? AuthoredJdStatus.Ready : AuthoredJdStatus.Draft,
+            UnallocatedPct = UnallocatedPct,
+            Notes = inputs?.Notes ?? "",
+            EnvelopeSource = envelopeSource,
         };
 
         for (var i = 0; i < Jd.KeyResponsibilities.Count; i++)
@@ -238,6 +242,7 @@ public sealed class AssembledJd
         AddItems(AuthoredJdListKind.ConditionOfEmployment, Jd.ConditionsOfEmployment);
         AddItems(AuthoredJdListKind.WorkEnvironment, Jd.WorkEnvironment);
         AddItems(AuthoredJdListKind.PhysicalRequirement, Jd.PhysicalRequirements);
+        AddItems(AuthoredJdListKind.AuthorAddition, inputs?.AddedItems ?? []);
 
         for (var i = 0; i < ComplianceEdits.Count; i++)
         {
