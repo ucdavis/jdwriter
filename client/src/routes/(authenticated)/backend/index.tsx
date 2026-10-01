@@ -3,11 +3,11 @@ import {
   IngestPanel,
   StandardsPanel,
 } from '@/features/backend/AdminPanels.tsx';
-import { ANALYST_ROLE, AnalystOnly } from '@/shared/ui/AppShell.tsx';
+import { AnalystOnly } from '@/shared/ui/AppShell.tsx';
 import { Badge, Card, PageHeader, Stat } from '@/shared/ui/primitives.tsx';
 import type { Tone } from '@/shared/ui/primitives.tsx';
 import { classSummaryQueryOptions, useClassSummary } from '@/queries/classes.ts';
-import { meQueryOptions } from '@/queries/user.ts';
+import { isAnalyst } from '@/queries/user.ts';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import type { ClassSummary, EnvelopeSource } from '@/lib/contracts.ts';
 import type { RouterContext } from '@/main.tsx';
@@ -15,10 +15,7 @@ import type { RouterContext } from '@/main.tsx';
 export const Route = createFileRoute('/(authenticated)/backend/')({
   component: BackendPage,
   loader: async ({ context }: { context: RouterContext }) => {
-    // The summary is Analyst-only. Prefetching it for an Author would 403 into the app-wide
-    // "not authorized to use this application" error instead of AnalystOnly's explanation.
-    const me = await context.queryClient.ensureQueryData(meQueryOptions());
-    if (me.roles.includes(ANALYST_ROLE)) {
+    if (await isAnalyst(context.queryClient)) {
       await context.queryClient.ensureQueryData(classSummaryQueryOptions());
     }
   },

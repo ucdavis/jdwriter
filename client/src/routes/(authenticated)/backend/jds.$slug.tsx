@@ -1,4 +1,5 @@
 import { AnalystOnly } from '@/shared/ui/AppShell.tsx';
+import { isAnalyst } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { coverageQueryOptions } from '@/queries/classes.ts';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -7,13 +8,17 @@ import type { RouterContext } from '@/main.tsx';
 
 export const Route = createFileRoute('/(authenticated)/backend/jds/$slug')({
   component: CoveragePage,
-  loader: ({
+  loader: async ({
     context,
     params,
   }: {
     context: RouterContext;
     params: { slug: string };
-  }) => context.queryClient.ensureQueryData(coverageQueryOptions(params.slug)),
+  }) => {
+    if (await isAnalyst(context.queryClient)) {
+      await context.queryClient.ensureQueryData(coverageQueryOptions(params.slug));
+    }
+  },
 });
 
 /**
@@ -22,11 +27,20 @@ export const Route = createFileRoute('/(authenticated)/backend/jds/$slug')({
  * is the target the envelope is designed around.
  */
 function CoveragePage() {
+  return (
+    <AnalystOnly>
+      <CoverageContent />
+    </AnalystOnly>
+  );
+}
+
+// Inside the gate so the Analyst-only query never fires for an Author.
+function CoverageContent() {
   const { slug } = Route.useParams();
   const { data: coverage } = useSuspenseQuery(coverageQueryOptions(slug));
 
   return (
-    <AnalystOnly>
+    <>
       <PageHeader
         back={{ label: 'Back to envelopes', to: '/backend' }}
         eyebrow="Back end · backwards coverage"
@@ -99,6 +113,6 @@ function CoveragePage() {
           </Card>
         </div>
       )}
-    </AnalystOnly>
+    </>
   );
 }

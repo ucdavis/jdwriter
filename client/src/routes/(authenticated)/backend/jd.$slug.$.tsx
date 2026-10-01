@@ -1,4 +1,5 @@
 import { AnalystOnly } from '@/shared/ui/AppShell.tsx';
+import { isAnalyst } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { jdDetailQueryOptions } from '@/queries/classes.ts';
@@ -7,16 +8,19 @@ import type { RouterContext } from '@/main.tsx';
 
 export const Route = createFileRoute('/(authenticated)/backend/jd/$slug/$')({
   component: JdReviewPage,
-  loader: ({
+  loader: async ({
     context,
     params,
   }: {
     context: RouterContext;
     params: { _splat?: string; slug: string };
-  }) =>
-    context.queryClient.ensureQueryData(
-      jdDetailQueryOptions(params.slug, params._splat ?? '')
-    ),
+  }) => {
+    if (await isAnalyst(context.queryClient)) {
+      await context.queryClient.ensureQueryData(
+        jdDetailQueryOptions(params.slug, params._splat ?? '')
+      );
+    }
+  },
 });
 
 /**
@@ -28,6 +32,15 @@ export const Route = createFileRoute('/(authenticated)/backend/jd/$slug/$')({
  * the drift the review-and-nudge workflow exists to pull back toward standard.
  */
 function JdReviewPage() {
+  return (
+    <AnalystOnly>
+      <JdReviewContent />
+    </AnalystOnly>
+  );
+}
+
+// Inside the gate so the Analyst-only query never fires for an Author.
+function JdReviewContent() {
   const { _splat, slug } = Route.useParams();
   const { data } = useSuspenseQuery(jdDetailQueryOptions(slug, _splat ?? ''));
   const { envelope, profile, record } = data;
@@ -48,7 +61,7 @@ function JdReviewPage() {
     .join(' · ');
 
   return (
-    <AnalystOnly>
+    <>
       <PageHeader
         back={{ label: 'Back to review', to: '/backend/fit' }}
         eyebrow={`${profile.title} · code ${profile.ucJobCode}`}
@@ -173,7 +186,7 @@ function JdReviewPage() {
           </div>
         </Card>
       </div>
-    </AnalystOnly>
+    </>
   );
 }
 

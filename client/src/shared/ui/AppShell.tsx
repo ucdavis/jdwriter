@@ -2,8 +2,9 @@ import { Link } from '@tanstack/react-router';
 import { useUser } from '@/shared/auth/UserContext.tsx';
 import type { ReactNode } from 'react';
 
-/** HR classification analysts get the curation surfaces. Cosmetic — the server enforces it. */
-export const ANALYST_ROLE = 'Analyst';
+import { ANALYST_ROLE } from '@/queries/user.ts';
+
+export { ANALYST_ROLE };
 
 export const useIsAnalyst = () => {
   const user = useUser();

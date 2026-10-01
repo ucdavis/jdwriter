@@ -1,4 +1,5 @@
 import { AnalystOnly } from '@/shared/ui/AppShell.tsx';
+import { isAnalyst } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, Note, PageHeader } from '@/shared/ui/primitives.tsx';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
@@ -11,8 +12,11 @@ const CAP = 150;
 
 export const Route = createFileRoute('/(authenticated)/backend/fit')({
   component: FitPage,
-  loader: ({ context }: { context: RouterContext }) =>
-    context.queryClient.ensureQueryData(misfitsQueryOptions(90)),
+  loader: async ({ context }: { context: RouterContext }) => {
+    if (await isAnalyst(context.queryClient)) {
+      await context.queryClient.ensureQueryData(misfitsQueryOptions(90));
+    }
+  },
 });
 
 /**
@@ -23,6 +27,15 @@ export const Route = createFileRoute('/(authenticated)/backend/fit')({
  * offers a suggestion rather than a verdict.
  */
 function FitPage() {
+  return (
+    <AnalystOnly>
+      <FitContent />
+    </AnalystOnly>
+  );
+}
+
+// Inside the gate so the Analyst-only query never fires for an Author.
+function FitContent() {
   const { data } = useMisfits(90);
   const misfits = data?.misfits ?? [];
   const shown = misfits.slice(0, CAP);
@@ -30,7 +43,7 @@ function FitPage() {
   const threshold = data?.threshold ?? 90;
 
   return (
-    <AnalystOnly>
+    <>
       <PageHeader
         back={{ label: 'Back to envelopes', to: '/backend' }}
         eyebrow="Back end · goodness of fit"
@@ -68,7 +81,7 @@ function FitPage() {
           ) : null}
         </div>
       </div>
-    </AnalystOnly>
+    </>
   );
 }
 
