@@ -22,9 +22,13 @@ permissions:
   contents: read
 
 jobs:
+  # Until Azure is configured (Phase 9), pushes to main validate instead of deploying, so
+  # tests still run on GitHub and main is not red purely for missing Azure variables. Set
+  # the repository variable DEPLOY_ENABLED=true once the test environment's AZURE_*
+  # variables exist; from then on deploy_test runs and builds/tests the app itself.
   validate:
     name: Validate
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && vars.DEPLOY_ENABLED != 'true') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -80,7 +84,7 @@ jobs:
 
   deploy_test:
     name: Deploy test
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true' }}
     uses: ./.github/workflows/deploy-azure-appservice.yml
     permissions:
       contents: read
