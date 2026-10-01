@@ -1,0 +1,378 @@
+{
+  "manifest": {
+    "generatedFrom": "src/lib/standards/parse.ts on SYNTHETIC inputs",
+    "caveat": "Layout B has no real-world coverage. These inputs are built from the format's documented structure, so they pin the port to the reference's behavior but do NOT prove either implementation handles a real UC website PDF->Excel export.",
+    "cases": 10,
+    "layoutsSeen": [
+      "A",
+      "B",
+      "none"
+    ]
+  },
+  "synthetic": [
+    {
+      "file": "fixtures/inputs/standards/layout-b-basic.xlsx",
+      "why": "Two classes side by side, one item per row, every field present. Layout B states a job code but never a salary grade.",
+      "inputSha256": "6e5b8ea97c1e77b0c6813dd51791f148ea0eec5c02f46e10ee906878acc26c0d",
+      "layouts": [
+        {
+          "sheet": "Table 1",
+          "layout": "B"
+        }
+      ],
+      "standards": [
+        {
+          "longTitle": "Widget Analyst 2",
+          "code": "111111",
+          "persProg": "PSS",
+          "grade": "",
+          "flsa": "Non-Exempt",
+          "union": "",
+          "genericScope": "Applies working knowledge.",
+          "customScope": "Within a single unit.",
+          "keyResponsibilities": [
+            "Performs the first duty.",
+            "Performs the second duty."
+          ],
+          "ksa": [
+            "Knows the subject matter."
+          ],
+          "education": [
+            "Bachelor's degree or equivalent experience."
+          ],
+          "licenses": [
+            "Valid driver's license."
+          ],
+          "specialConditions": [
+            "Background check required."
+          ],
+          "titleKey": "widget analyst 2",
+          "titleCodeKey": "widget analyst 2"
+        },
+        {
+          "longTitle": "Widget Analyst 3",
+          "code": "222222",
+          "persProg": "PSS",
+          "grade": "",
+          "flsa": "Exempt",
+          "union": "",
+          "genericScope": "Applies advanced knowledge.",
+          "customScope": "Across several units.",
+          "keyResponsibilities": [
+            "Performs the first duty at level three.",
+            "Performs the second duty."
+          ],
+          "ksa": [
+            "Knows the subject matter deeply."
+          ],
+          "education": [
+            "Bachelor's degree or equivalent experience."
+          ],
+          "licenses": [],
+          "specialConditions": [],
+          "titleKey": "widget analyst 3",
+          "titleCodeKey": "widget analyst 3"
+        }
+      ]
+    },
+    {
+      "file": "fixtures/inputs/standards/layout-b-continuation.xlsx",
+      "why": "A long cell wraps onto an UNLABELED continuation row; its text must append to the item that row belongs to, not start a new one.",
+      "inputSha256": "3285e86cf17158c21fa2b9fc078a7ca2955e47bcefeeac9982fa96679c7899b3",
+      "layouts": [
+        {
+          "sheet": "Table 1",
+          "layout": "B"
+        }
+      ],
+      "standards": [
+        {
+          "longTitle": "Widget Planner 1",
+          "code": "333333",
+          "persProg": "PSS",
+          "grade": "",
+          "flsa": "Non-Exempt",
+          "union": "",
+          "genericScope": "",
+          "customScope": "",
+          "keyResponsibilities": [
+            "Coordinates the schedule and reconciles it against the plan.",
+            "Reports on progress."
+          ],
+          "ksa": [],
+          "education": [],
+          "licenses": [],
+          "specialConditions": [],
+          "titleKey": "widget planner 1",
+          "titleCodeKey": "widget planner 1"
+        }
+      ]
+    },
+    {
+      "file": "fixtures/inputs/standards/layout-b-continuation-after-page-break.xlsx",
+      "why": "THE documented killer: the repeating page header sits BETWEEN an item and its wrapped text, so header rows must not reset the continuation pointer.",
+      "inputSha256": "6982202e9c1a3b91756b30f89a22476475f76c36aa6d4782fc194f802f1c1071",
+      "layouts": [
+        {
+          "sheet": "Table 1",
+          "layout": "B"
+        }
+      ],
+      "standards": [
+        {
+          "longTitle": "Widget Planner 2",
+          "code": "444444",
+          "persProg": "PSS",
+          "grade": "",
+          "flsa": "Exempt",
+          "union": "",
+          "genericScope": "",
+          "customScope": "",
+          "keyResponsibilities": [
+            "Leads the effort and carries it to completion.",
+            "Reviews the outcome."
+          ],
+          "ksa": [],
+          "education": [],
+          "licenses": [],
+          "specialConditions": [],
+          "titleKey": "widget planner 2",
+          "titleCodeKey": "widget planner 2"
+        }
+      ]
+    },
+    {
+      "file": "fixtures/inputs/standards/layout-b-unmapped-label-does-not-reset.xlsx",
+      "why": "A column-B label the parser does not map is skipped WITHOUT clearing the pending pointer, so a later continuation row still finds its item.",
+      "inputSha256": "ee5cf71957d5f051983236228c46373fd86dc3fa435c179ff2e14094a53fa857",
+      "layouts": [
+        {
+          "sheet": "Table 1",
+          "layout": "B"
+        }
+      ],
+      "standards": [
+        {
+          "longTitle": "Widget Officer 3",
+          "code": "555555",
+          "persProg": "MSP",
+          "grade": "",
+          "flsa": "Exempt",
+          "union": "",
+          "genericScope": "",
+          "customScope": "",
+          "keyResponsibilities": [
+            "Administers the program and reports to leadership."
+          ],
+          "ksa": [],
+          "education": [],
+          "licenses": [],
+          "specialConditions": [],
+          "titleKey": "widget officer 3",
+          "titleCodeKey": "widget officer 3"
+        }
+      ]
+    },
+    {
+      "file": "fixtures/inputs/standards/layout-b-column-a-content-is-not-continuation.xlsx",
+      "why": "A row with content in column A is page furniture, not wrapped text — it must be skipped rather than appended.",
+      "inputSha256": "77a3c63eca103fed1f15fca87fe35f7d0422e5fa2cee4397bf79cd6f8447a3d1",
+      "layouts": [
+        {
+          "sheet": "Table 1",
+          "layout": "B"
+        }
+      ],
+      "standards": [
+        {
+          "longTitle": "Widget Officer 4",
+          "code": "666666",
+          "persProg": "MSP",
+          "grade": "",
+          "flsa": "Exempt",
+          "union": "",
+          "genericScope": "",
+          "customScope": "",
+          "keyResponsibilities": [
+            "Directs the unit and sets its direction."
+          ],
+          "ksa": [],
+          "education": [],
+          "licenses": [],
+          "specialConditions": [],
+          "titleKey": "widget officer 4",
+          "titleCodeKey": "widget officer 4"
+        }
+      ]
+    },
+    {
+      "file": "fixtures/inputs/standards/layout-b-missing-job-title.xlsx",
+      "why": "A class column with no Job Title is dropped: without a title there is nothing to join a standard to.",
+      "inputSha256": "c65f47cc9c92e589e41c8807ddf053c097c1fa412350f22ebb65307661b75c53",
+      "layouts": [
+        {
+          "sheet": "Table 1",
+          "layout": "B"
+        }
+      ],
+      "standards": [
+        {
+          "longTitle": "Widget Tech 1",
+          "code": "777777",
+          "persProg": "",
+          "grade": "",
+          "flsa": "",
+          "union": "",
+          "genericScope": "",
+          "customScope": "",
+          "keyResponsibilities": [
+            "Does the work."
+          ],
+          "ksa": [],
+          "education": [],
+          "licenses": [],
+          "specialConditions": [],
+          "titleKey": "widget technician 1",
+          "titleCodeKey": "widget technician 1"
+        }
+      ]
+    },
+    {
+      "file": "fixtures/inputs/standards/layout-b-repeated-header-differs.xlsx",
+      "why": "A repeating page header whose values DIFFER: the FIRST value must win. Identical repeats cannot distinguish first-wins from last-wins, so this case is what pins it.",
+      "inputSha256": "96a22079cee2f3d6d89ed1a31ea9044e916913a9aa5dbf50d9fd5725ff0a25be",
+      "layouts": [
+        {
+          "sheet": "Table 1",
+          "layout": "B"
+        }
+      ],
+      "standards": [
+        {
+          "longTitle": "Widget Clerk 1",
+          "code": "123123",
+          "persProg": "PSS",
+          "grade": "",
+          "flsa": "Non-Exempt",
+          "union": "",
+          "genericScope": "",
+          "customScope": "",
+          "keyResponsibilities": [
+            "Files the paperwork.",
+            "Sorts the mail."
+          ],
+          "ksa": [],
+          "education": [],
+          "licenses": [],
+          "specialConditions": [],
+          "titleKey": "widget clerk 1",
+          "titleCodeKey": "widget clerk 1"
+        }
+      ]
+    },
+    {
+      "file": "fixtures/inputs/standards/layout-b-short-items-are-dropped.xlsx",
+      "why": "Items of two characters or fewer are split artifacts, not content, and are dropped — the same length-3 floor layout A applies.",
+      "inputSha256": "9eae43f821689efa7e9cb3f803fc8c7ecb93ae8bc0aecf59cba53d15c79ce57f",
+      "layouts": [
+        {
+          "sheet": "Table 1",
+          "layout": "B"
+        }
+      ],
+      "standards": [
+        {
+          "longTitle": "Widget Clerk 2",
+          "code": "124124",
+          "persProg": "PSS",
+          "grade": "",
+          "flsa": "Non-Exempt",
+          "union": "",
+          "genericScope": "",
+          "customScope": "",
+          "keyResponsibilities": [
+            "Handles correspondence."
+          ],
+          "ksa": [
+            "Knows the filing system."
+          ],
+          "education": [],
+          "licenses": [],
+          "specialConditions": [],
+          "titleKey": "widget clerk 2",
+          "titleCodeKey": "widget clerk 2"
+        }
+      ]
+    },
+    {
+      "file": "fixtures/inputs/standards/layout-a-and-b-in-one-workbook.xlsx",
+      "why": "Each sheet is dispatched independently: layout A is tried first, then B. One workbook can legitimately contain both.",
+      "inputSha256": "ab208e0afe4e4b7ca6d44bd68e845db66b98666a12c82857f284c56cca906246",
+      "layouts": [
+        {
+          "sheet": "Side by Side",
+          "layout": "A"
+        },
+        {
+          "sheet": "Table 1",
+          "layout": "B"
+        }
+      ],
+      "standards": [
+        {
+          "longTitle": "Widget Manager 1",
+          "persProg": "MSP",
+          "grade": "Grade 21",
+          "flsa": "Exempt",
+          "union": "99",
+          "genericScope": "Manages a unit.",
+          "customScope": "",
+          "keyResponsibilities": [
+            "Sets direction.",
+            "Manages staff."
+          ],
+          "ksa": [
+            "Leadership.",
+            "Judgement."
+          ],
+          "education": [],
+          "licenses": [],
+          "specialConditions": [],
+          "titleKey": "widget manager 1",
+          "titleCodeKey": "widget manager 1"
+        },
+        {
+          "longTitle": "Widget Manager 2",
+          "code": "999999",
+          "persProg": "MSP",
+          "grade": "",
+          "flsa": "Exempt",
+          "union": "",
+          "genericScope": "",
+          "customScope": "",
+          "keyResponsibilities": [
+            "Manages several units."
+          ],
+          "ksa": [],
+          "education": [],
+          "licenses": [],
+          "specialConditions": [],
+          "titleKey": "widget manager 2",
+          "titleCodeKey": "widget manager 2"
+        }
+      ]
+    },
+    {
+      "file": "fixtures/inputs/standards/layout-neither.xlsx",
+      "why": "Neither a Long Title row nor a Job Title row: the sheet yields no standards rather than throwing.",
+      "inputSha256": "1cb6dcd6d34e23ae3830ac4bd16e985f2d7134a888f876a2c2a306b7d74a8811",
+      "layouts": [
+        {
+          "sheet": "Notes",
+          "layout": "none"
+        }
+      ],
+      "standards": []
+    }
+  ]
+}

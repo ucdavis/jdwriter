@@ -76,7 +76,7 @@ jobs:
         run: dotnet build app.sln --configuration Release --no-restore
 
       - name: Test .NET projects
-        run: dotnet test app.sln --configuration Release --no-build
+        run: dotnet test app.sln --configuration Release --no-build --settings .runsettings
 
   deploy_test:
     name: Deploy test

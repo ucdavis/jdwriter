@@ -1,0 +1,419 @@
+/**
+ * Wire types for every endpoint in docs/API-CONTRACT.md.
+ *
+ * Kept in one file and imported by both the query hooks and the MSW handlers, so a
+ * mock that drifts from the contract fails to compile rather than passing quietly.
+ *
+ * Three shapes here deliberately DIVERGE from that document because the POC's UI
+ * cannot be driven by what it specifies. Each is marked CONTRACT GAP with the reason;
+ * they are reported upward rather than silently absorbed.
+ */
+
+// ---------------------------------------------------------------- shared
+
+export type ClassMatch = {
+  confidence: number;
+  rationale: string;
+  slug: string;
+  title: string;
+  ucJobCode: string;
+};
+
+export type KeyResponsibility = {
+  duties: string[];
+  functionName: string;
+  pctTime: number;
+};
+
+export type JobEnvelope = {
+  conditionsOfEmployment: string[];
+  education: string[];
+  keyResponsibilities: KeyResponsibility[];
+  minQualifications: string[];
+  outOfEnvelope: string[];
+  physicalRequirements: string[];
+  prefQualifications: string[];
+  requiredCertifications: string[];
+  scopeStatement: string;
+  summary: string;
+  workEnvironment: string[];
+  workExperience: string[];
+};
+
+/** A value observed across a class's corpus, with how much of it agreed. */
+export type Distribution = {
+  agreement: number;
+  consensus: string | null;
+};
+
+export type ClassStandard = {
+  customScope: string;
+  education: string[];
+  flsa: string;
+  genericScope: string;
+  grade: string;
+  keyResponsibilities: string[];
+  ksa: string[];
+  licenses: string[];
+  longTitle: string;
+  persProg: string;
+  specialConditions: string[];
+  union: string;
+};
+
+// ---------------------------------------------------------------- reads
+
+export type ClassListItem = {
+  bargainingUnit?: string;
+  corpusSize?: number;
+  family?: string;
+  grade?: string;
+  /** False for an in-use UC Davis title with no ingested profile yet. */
+  ready: boolean;
+  slug: string;
+  title: string;
+  ucJobCode: string;
+};
+
+export type ClassListResponse = { classes: ClassListItem[] };
+
+export type EnvelopeSource = 'claude' | 'deterministic' | 'manual' | 'standard';
+
+/** Curation statistics for one ingested class — the analyst index. */
+export type ClassSummary = {
+  /** Zero means consolidation has not run for this class. */
+  consolidatedFunctions: number;
+  corpusSize: number;
+  /** Null when no backwards-coverage report exists — distinct from 0% coverage. */
+  coverageN: number | null;
+  ctJobFamily: string;
+  ctJobFunction: string;
+  /** Reported as stored. Anything but 100 is the signal that a class needs attention. */
+  envelopePctTotal: number;
+  envelopeResponsibilities: number;
+  envelopeSource: EnvelopeSource | null;
+  grade: string | null;
+  hasEnvelope: boolean;
+  /** Minimum qualifications: consolidated when present, else raw. */
+  ksas: number;
+  meanCoverage: number | null;
+  personnelProgram: string;
+  /** Responsibility categories: consolidated when present, else raw functions. */
+  responsibilities: number;
+  slug: string;
+  standardLinked: boolean;
+  title: string;
+  ucJobCode: string;
+  /** Share of JDs at 90% coverage or better, 0..1. */
+  wellCoveredPct: number | null;
+};
+
+export type ClassSummaryResponse = { classes: ClassSummary[] };
+
+export type ClassProfileResponse = {
+  corpusSize: number;
+  ctJobFamily: string;
+  ctJobFunction: string;
+  envelope: JobEnvelope | null;
+  envelopeSource: EnvelopeSource | null;
+  flsaStatus: Distribution;
+  leads: Distribution;
+  personnelProgram: string;
+  salaryGrade: Distribution;
+  slug: string;
+  sourceFiles: string[];
+  /** Null for roughly 46 of 65 classes. A normal state, not an error. */
+  standard: ClassStandard | null;
+  supervises: Distribution;
+  title: string;
+  ucJobCode: string;
+  unionCode: Distribution;
+  worksOutdoorsOver50pct: Distribution;
+};
+
+export type JdCoverage = {
+  coveredPct: number;
+  sourceFile: string;
+  uncovered: Array<{ name: string; pct: number }>;
+};
+
+export type CoverageReport = {
+  meanCoverage: number;
+  n: number;
+  perJd: JdCoverage[];
+  wellCoveredPct: number;
+};
+
+export type JdListItem = {
+  coveredPct: number | null;
+  departmentName: string;
+  sourceFile: string;
+  workingTitle: string;
+};
+
+export type JdDetailResponse = {
+  envelope: JobEnvelope | null;
+  profile: { slug: string; title: string; ucJobCode: string };
+  record: {
+    departmentName: string;
+    flsaStatus: string;
+    jobSummary: string;
+    leads: boolean | null;
+    qualifications: {
+      education: string;
+      ksaMin: string[];
+      ksaPref: string[];
+      licenses: string[];
+      minExperience: string[];
+    };
+    responsibilities: Array<{
+      duties: string[];
+      functionName: string;
+      /** Marked server-side against the class's CONSOLIDATED members. */
+      inEnvelope: boolean;
+      pct: number | null;
+    }>;
+    salaryGrade: string;
+    sourceFile: string;
+    supervises: boolean | null;
+    ucJobCode: string;
+    ucJobTitle: string;
+    unionCode: string;
+    workingTitle: string;
+  };
+};
+
+// ---------------------------------------------------------------- intake
+
+export type IntakeRequest = { request: string };
+export type IntakeResponse = { matches: ClassMatch[] };
+
+// ---------------------------------------------------------------- extraction
+
+export type DocKind = 'docx' | 'html' | 'pdf' | 'text' | 'xlsx';
+
+export type ExtractResponse = {
+  filename: string;
+  kind: DocKind;
+  note?: string | null;
+  /** The classification the FORM proposes. Never sent into the ranking prompt. */
+  proposed?: { code: string; ingested: boolean; title: string } | null;
+  text: string;
+};
+
+// ---------------------------------------------------------------- classify
+//
+// CONTRACT GAP 1. docs/API-CONTRACT.md models the response as a single `verdict`
+// object plus `alternatives`. The POC's UI needs materially more and cannot be driven
+// by that shape:
+//   • up to 4 `matches`, EACH with its own level judgement, coverage percentage and
+//     in/out function lists — the alternatives are compared on the same axes, not
+//     merely listed;
+//   • a top-level verdict TAXONOMY (clear | close-call | level-mismatch | weak) with a
+//     note, which is what the page leads with;
+//   • `distilled`, which tells the user how their document was read (and whether the
+//     free deterministic HRTMS path was used);
+//   • `basis` on the proposed assessment, so the UI can say the judgement came from an
+//     official standard rather than a corpus envelope.
+// Implemented to the POC's shape because that is the specification for the screen.
+
+export type LevelFit = 'above' | 'at' | 'below' | 'unclear';
+
+export type ClassifyMatch = {
+  confidence: number;
+  coveredPct: number;
+  inClass: string[];
+  levelFit: LevelFit;
+  levelNote: string;
+  outOfClass: string[];
+  rationale: string;
+  slug: string;
+  title: string;
+  ucJobCode: string;
+};
+
+export type ProposedAssessment = {
+  /** Envelope when the class has a corpus, else its official standard, else none. */
+  basis: 'envelope' | 'none' | 'standard';
+  code: string;
+  /** Set when the proposed code is superseded and was assessed as its successor. */
+  comparedAs?: string;
+  contradicts: Array<{ evidence: string; point: string }>;
+  fits: 'no' | 'partly' | 'yes';
+  missing: string[];
+  summary: string;
+  supports: string[];
+  title: string;
+};
+
+export type ClassifyVerdict = 'clear' | 'close-call' | 'level-mismatch' | 'weak';
+
+export type ClassifyRequest = {
+  description: string;
+  /** Sent SEPARATELY from the description so it cannot leak into the ranking prompt. */
+  proposedCode?: string | null;
+};
+
+export type ClassifyResponse = {
+  distilled: {
+    functions: Array<{ name: string }>;
+    source: 'hrtms' | 'text';
+    workingTitle: string;
+  };
+  matches: ClassifyMatch[];
+  proposed?: ProposedAssessment;
+  verdict: ClassifyVerdict;
+  verdictNote: string;
+};
+
+// ---------------------------------------------------------------- build
+//
+// CONTRACT GAP 2. docs/API-CONTRACT.md specifies the request as
+// `{ slug, workingTitle, department, keptDutyIds: number[], addedDuties: string[] }`.
+// Identifiers cannot express what the build screen actually produces: the author edits
+// function NAMES inline, adjusts each `pctTime` to reach 100, drops whole functions, and
+// keeps/drops items across six separate qualification sections. Sending ids would
+// discard every one of those edits. Implemented to the POC's shape, which sends the
+// resolved text.
+
+export type BuildRequest = {
+  addedItems: string[];
+  department: string;
+  keptCerts: string[];
+  keptEducation: string[];
+  keptMinKSA: string[];
+  keptPrefKSA: string[];
+  keptResponsibilities: KeyResponsibility[];
+  keptWorkEnvironment: string[];
+  keptWorkExperience: string[];
+  notes: string;
+  slug: string;
+  workingTitle: string;
+};
+
+export type EnvelopeCheckResponse = {
+  matchedSignals: string[];
+  rationale: string;
+  suggestedClass: string;
+  suggestedSlug: string;
+  verdict: 'borderline' | 'in_envelope' | 'out_of_envelope';
+};
+
+export type ComplianceEdit = {
+  after: string;
+  before: string;
+  reason: string;
+  section: string;
+  source: 'llm' | 'rule';
+};
+
+export type AssembledJd = {
+  // The class attributes travel at the top level, beside the draft, as the server sends them.
+  bargainingUnit: string | null;
+  /** True exactly when `unallocatedPct` is 0. The server refuses to persist otherwise. */
+  canPublish: boolean;
+  complianceEdits: ComplianceEdit[];
+  department: string;
+  flsaStatus: string | null;
+  jd: {
+    conditionsOfEmployment: string[];
+    education: string[];
+    jobSummary: string;
+    keyResponsibilities: KeyResponsibility[];
+    licensesCertifications: string[];
+    minKSA: string[];
+    physicalRequirements: string[];
+    prefKSA: string[];
+    workEnvironment: string[];
+    workExperience: string[];
+  };
+  salaryGrade: string | null;
+  slug: string;
+  title: string;
+  ucJobCode: string;
+  /**
+   * Percent of time not accounted for by the kept responsibilities. Non-zero means the JD
+   * is NOT publishable.
+   *
+   * This exists because dropping a standard responsibility carries the remaining
+   * percentages through verbatim, so a tailored JD can total less than 100. The shortfall
+   * is neither published silently nor rescaled away: rescaling would quietly turn a kept
+   * 50% into 71% with nobody told the number moved, which is exactly the kind of invisible
+   * edit the compliance trail exists to prevent. The author decides where freed time goes.
+   */
+  unallocatedPct: number;
+  workingTitle: string;
+};
+
+// ---------------------------------------------------------------- envelope editing
+
+export type EnvelopeSaveRequest = { envelope: JobEnvelope; slug: string };
+export type EnvelopeSaveResponse = { ok: true; slug: string };
+
+/**
+ * CONTRACT GAP 3a. The contract specifies `{ slug }`. The editor must check the
+ * UNSAVED envelope currently on screen — checking the saved one defeats the purpose,
+ * since the whole point is to see whether an edit degrades fit BEFORE committing it.
+ */
+export type CoverageCheckRequest = { envelope: JobEnvelope; slug: string };
+
+// ---------------------------------------------------------------- fit review
+//
+// CONTRACT GAP 3b. The contract has `POST /api/fit/suggest` returning
+// `{ suggestions: [{kind, detail, rationale}] }`, and no endpoint at all for the
+// cross-class misfit list the review page is built on. The POC's suggest call takes
+// `{ slug, sourceFile }` — a suggestion is about one JD, not one class — and returns
+// ranked ClassMatches, which is what lets the page say "this JD would fit X better".
+
+export type Misfit = {
+  classTitle: string;
+  coveredPct: number;
+  idiosyncratic: Array<{ name: string; pct: number }>;
+  slug: string;
+  sourceFile: string;
+  ucJobCode: string;
+};
+
+export type MisfitsResponse = {
+  misfits: Misfit[];
+  threshold: number;
+  totalJds: number;
+};
+
+export type FitSuggestRequest = { slug: string; sourceFile: string };
+export type FitSuggestResponse = { matches: ClassMatch[] };
+
+// ---------------------------------------------------------------- admin
+
+export type PendingClass = {
+  code: string;
+  fileCount: number;
+  slug: string;
+  title: string;
+};
+
+export type IngestScanResponse = { pending: PendingClass[] };
+
+export type StandardsIngestResponse = {
+  ambiguousCount: number;
+  coded: number;
+  count: number;
+  linkedCount: number;
+  linkedSample: string[];
+  sample: string[];
+  totalClasses: number;
+  uncodedSample: string[];
+};
+
+export type BootstrapCandidate = {
+  code: string;
+  family: string;
+  function: string;
+  grade: string;
+  title: string;
+};
+
+export type BootstrapResponse = { candidates: BootstrapCandidate[] };
+
+/** 4xx bodies. The message is written for the user and is rendered verbatim. */
+export type ApiError = { message: string };

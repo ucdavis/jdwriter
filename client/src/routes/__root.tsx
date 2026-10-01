@@ -8,8 +8,12 @@ const RootLayout = () => (
   <>
     <AnalyticsListener />
     <Outlet />
-    <ReactQueryDevtools buttonPosition="top-right" />
-    <TanStackRouterDevtools position="bottom-right" />
+    {import.meta.env.DEV ? (
+      <>
+        <ReactQueryDevtools buttonPosition="top-right" />
+        <TanStackRouterDevtools position="bottom-right" />
+      </>
+    ) : null}
   </>
 );
 

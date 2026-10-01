@@ -34,6 +34,8 @@ node_modules/
 x64/
 x86/
 build/
+# ...but not the client's build-flow feature, which this rule silently kept out of git.
+!client/src/features/build/
 bld/
 [Bb]in/
 [Oo]bj/

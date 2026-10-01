@@ -1,0 +1,156 @@
+{
+  "generatedFrom": "src/lib/ingest/parseHrtms.ts",
+  "privacy": "per-file SHA-256 of the canonicalized record; no JD text is emitted",
+  "files": 1367,
+  "parsed": 1367,
+  "failures": 0,
+  "corpusDigest": "3520814ce2e6e946deeb381cbdb8ff89823ae4d68899e04d25a334673bb11e31",
+  "totals": {
+    "responsibilities": 4443,
+    "duties": 21353,
+    "pemPopulated": 0,
+    "meanResponsibilitiesPerJd": 3.2502,
+    "meanDutiesPerJd": 15.6203,
+    "qualificationItems": {
+      "licenses": 257,
+      "minExperience": 3484,
+      "ksaMin": 4961,
+      "ksaPref": 1726,
+      "conditionsOfEmployment": 0,
+      "workEnvironment": 10040
+    }
+  },
+  "pctSum": {
+    "n": 1367,
+    "exactly100": 1361,
+    "min": 0,
+    "max": 200
+  },
+  "fieldFillRate": {
+    "businessUnit": "1367/1367",
+    "division": "1367/1367",
+    "departmentName": "1367/1367",
+    "departmentCode": "1367/1367",
+    "jdNumber": "1367/1367",
+    "ucPathPositionNumber": "1367/1367",
+    "ucJobTitle": "1367/1367",
+    "ucJobCode": "1367/1367",
+    "workingTitle": "1367/1367",
+    "ctJobFamily": "1367/1367",
+    "ctJobFunction": "1367/1367",
+    "personnelProgram": "1367/1367",
+    "salaryGrade": "1367/1367",
+    "flsaStatus": "1367/1367",
+    "unionCode": "1367/1367",
+    "reportsToPositionNumber": "1367/1367",
+    "jobSummary": "1367/1367"
+  },
+  "distributions": {
+    "ucJobCode": {
+      "009605": 154,
+      "009603": 143,
+      "009617": 118,
+      "009611": 95,
+      "009602": 74,
+      "004722": 69,
+      "009613": 65,
+      "004725": 47,
+      "004486": 46,
+      "008543": 44,
+      "006206": 40,
+      "008542": 33,
+      "004545": 32,
+      "009610": 28,
+      "004107": 23,
+      "008540": 21,
+      "004723": 20,
+      "008879": 20,
+      "007397": 16,
+      "004575": 12,
+      "004544": 11,
+      "006246": 11,
+      "006250": 11,
+      "007309": 10,
+      "009562": 10,
+      "006256": 9,
+      "000530": 8,
+      "000547": 8,
+      "000652": 8,
+      "004699": 8,
+      "004804": 8,
+      "007308": 8,
+      "008522": 8,
+      "009561": 8,
+      "005190": 7,
+      "005834": 7,
+      "006257": 7,
+      "007398": 7,
+      "007562": 7,
+      "007709": 7,
+      "004330": 6,
+      "005838": 6,
+      "006247": 6,
+      "006262": 6,
+      "007359": 6,
+      "007455": 6,
+      "000378": 5,
+      "004017": 5,
+      "004513": 5,
+      "004630": 5,
+      "004724": 5,
+      "005246": 5,
+      "005840": 5,
+      "009722": 5,
+      "004698": 4,
+      "006299": 4,
+      "007299": 4,
+      "007307": 4,
+      "008541": 4,
+      "005943": 3
+    },
+    "personnelProgram": {
+      "PSS": 1335,
+      "MSP": 32
+    },
+    "flsaStatus": {
+      "Non-Exempt": 992,
+      "Exempt": 375
+    },
+    "unionCode": {
+      "TX-Technical Professionals": 397,
+      "RX-Research Professionals": 311,
+      "99 - Non-Represented (PPSM)": 309,
+      "CX-Clerical/Admin": 217,
+      "SX-Service Workers": 128,
+      "RP - Research and Public Service Professionals": 5
+    },
+    "salaryGrade": {
+      "STEPS": 1058,
+      "Grade 21": 120,
+      "Grade 19": 73,
+      "Grade 23": 23,
+      "Grade 18": 21,
+      "Grade 25": 21,
+      "Grade 22": 19,
+      "Grade 20": 16,
+      "Grade 24": 11,
+      "Grade 16": 5
+    }
+  },
+  "triState": {
+    "supervises": {
+      "null": 1027,
+      "false": 333,
+      "true": 7
+    },
+    "leads": {
+      "null": 1027,
+      "false": 312,
+      "true": 28
+    },
+    "worksOutdoorsOver50pct": {
+      "false": 1004,
+      "true": 363
+    }
+  }
+}

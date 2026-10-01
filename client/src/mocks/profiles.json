@@ -1,0 +1,560 @@
+[
+  {
+    "corpusSize": 154,
+    "ctJobFamily": "Research and Laboratory",
+    "ctJobFunction": "Lab Instruction",
+    "envelope": {
+      "summary": "Synthetic summary for Lab Ast 1. Stands in for a generated envelope, which is not committed.",
+      "scopeStatement": "Synthetic scope statement: works under general direction within a single unit.",
+      "keyResponsibilities": [
+        {
+          "functionName": "Bench Preparation and Routine Assays",
+          "pctTime": 36,
+          "duties": [
+            "Plans bench preparation and routine assays tasks to unit standards (synthetic example 1).",
+            "Carries out bench preparation and routine assays tasks to unit standards (synthetic example 2).",
+            "Documents bench preparation and routine assays tasks to unit standards (synthetic example 3).",
+            "Coordinates bench preparation and routine assays tasks to unit standards (synthetic example 4).",
+            "Reviews bench preparation and routine assays tasks to unit standards (synthetic example 5)."
+          ]
+        },
+        {
+          "functionName": "Sample Intake and Tracking",
+          "pctTime": 31,
+          "duties": [
+            "Plans sample intake and tracking tasks to unit standards (synthetic example 1).",
+            "Carries out sample intake and tracking tasks to unit standards (synthetic example 2).",
+            "Documents sample intake and tracking tasks to unit standards (synthetic example 3).",
+            "Coordinates sample intake and tracking tasks to unit standards (synthetic example 4).",
+            "Reviews sample intake and tracking tasks to unit standards (synthetic example 5)."
+          ]
+        },
+        {
+          "functionName": "Equipment Care and Supplies",
+          "pctTime": 17,
+          "duties": [
+            "Plans equipment care and supplies tasks to unit standards (synthetic example 1).",
+            "Carries out equipment care and supplies tasks to unit standards (synthetic example 2).",
+            "Documents equipment care and supplies tasks to unit standards (synthetic example 3).",
+            "Coordinates equipment care and supplies tasks to unit standards (synthetic example 4).",
+            "Reviews equipment care and supplies tasks to unit standards (synthetic example 5)."
+          ]
+        },
+        {
+          "functionName": "Records and Data Entry",
+          "pctTime": 16,
+          "duties": [
+            "Plans records and data entry tasks to unit standards (synthetic example 1).",
+            "Carries out records and data entry tasks to unit standards (synthetic example 2).",
+            "Documents records and data entry tasks to unit standards (synthetic example 3).",
+            "Coordinates records and data entry tasks to unit standards (synthetic example 4).",
+            "Reviews records and data entry tasks to unit standards (synthetic example 5)."
+          ]
+        }
+      ],
+      "requiredCertifications": [
+        "Synthetic requiredCertifications 1 for UI development.",
+        "Synthetic requiredCertifications 2 for UI development.",
+        "Synthetic requiredCertifications 3 for UI development."
+      ],
+      "education": ["Synthetic education 1 for UI development."],
+      "workExperience": [
+        "Synthetic workExperience 1 for UI development.",
+        "Synthetic workExperience 2 for UI development.",
+        "Synthetic workExperience 3 for UI development."
+      ],
+      "minQualifications": [
+        "Synthetic minQualifications 1 for UI development.",
+        "Synthetic minQualifications 2 for UI development.",
+        "Synthetic minQualifications 3 for UI development.",
+        "Synthetic minQualifications 4 for UI development.",
+        "Synthetic minQualifications 5 for UI development.",
+        "Synthetic minQualifications 6 for UI development.",
+        "Synthetic minQualifications 7 for UI development."
+      ],
+      "prefQualifications": [
+        "Synthetic prefQualifications 1 for UI development.",
+        "Synthetic prefQualifications 2 for UI development.",
+        "Synthetic prefQualifications 3 for UI development.",
+        "Synthetic prefQualifications 4 for UI development."
+      ],
+      "conditionsOfEmployment": [
+        "Synthetic conditionsOfEmployment 1 for UI development.",
+        "Synthetic conditionsOfEmployment 2 for UI development.",
+        "Synthetic conditionsOfEmployment 3 for UI development."
+      ],
+      "workEnvironment": [
+        "Synthetic workEnvironment 1 for UI development.",
+        "Synthetic workEnvironment 2 for UI development.",
+        "Synthetic workEnvironment 3 for UI development.",
+        "Synthetic workEnvironment 4 for UI development."
+      ],
+      "physicalRequirements": [
+        "Synthetic physicalRequirements 1 for UI development.",
+        "Synthetic physicalRequirements 2 for UI development.",
+        "Synthetic physicalRequirements 3 for UI development."
+      ],
+      "outOfEnvelope": [
+        "Synthetic outOfEnvelope 1 for UI development.",
+        "Synthetic outOfEnvelope 2 for UI development.",
+        "Synthetic outOfEnvelope 3 for UI development.",
+        "Synthetic outOfEnvelope 4 for UI development.",
+        "Synthetic outOfEnvelope 5 for UI development.",
+        "Synthetic outOfEnvelope 6 for UI development."
+      ]
+    },
+    "envelopeSource": "claude",
+    "flsaStatus": {
+      "agreement": 1,
+      "consensus": "Non-Exempt"
+    },
+    "leads": {
+      "agreement": 0.8376623376623377,
+      "consensus": null
+    },
+    "personnelProgram": "PSS",
+    "salaryGrade": {
+      "agreement": 1,
+      "consensus": "STEPS"
+    },
+    "slug": "009605-lab-ast-1",
+    "sourceFiles": [
+      "Sample Class/JD-001.HTML",
+      "Sample Class/JD-002.HTML",
+      "Sample Class/JD-003.HTML",
+      "Sample Class/JD-004.HTML",
+      "Sample Class/JD-005.HTML",
+      "Sample Class/JD-006.HTML"
+    ],
+    "standard": null,
+    "supervises": {
+      "agreement": 0.8376623376623377,
+      "consensus": null
+    },
+    "title": "Lab Ast 1",
+    "ucJobCode": "009605",
+    "unionCode": {
+      "agreement": 1,
+      "consensus": "TX-Technical Professionals"
+    },
+    "worksOutdoorsOver50pct": {
+      "agreement": 0.6298701298701299,
+      "consensus": "false"
+    },
+    "__coverage": {
+      "meanCoverage": 97,
+      "n": 154,
+      "perJd": [
+        {
+          "coveredPct": 0,
+          "sourceFile": "Sample Class/JD-001.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 100
+            }
+          ]
+        },
+        {
+          "coveredPct": 20,
+          "sourceFile": "Sample Class/JD-002.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 80
+            }
+          ]
+        },
+        {
+          "coveredPct": 70,
+          "sourceFile": "Sample Class/JD-003.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 30
+            }
+          ]
+        },
+        {
+          "coveredPct": 75,
+          "sourceFile": "Sample Class/JD-004.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 25
+            }
+          ]
+        },
+        {
+          "coveredPct": 75,
+          "sourceFile": "Sample Class/JD-005.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 20
+            },
+            {
+              "name": "Unlisted function 2",
+              "pct": 5
+            }
+          ]
+        },
+        {
+          "coveredPct": 80,
+          "sourceFile": "Sample Class/JD-006.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 20
+            }
+          ]
+        },
+        {
+          "coveredPct": 85,
+          "sourceFile": "Sample Class/JD-007.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 15
+            }
+          ]
+        },
+        {
+          "coveredPct": 85,
+          "sourceFile": "Sample Class/JD-008.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 15
+            }
+          ]
+        },
+        {
+          "coveredPct": 85,
+          "sourceFile": "Sample Class/JD-009.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 15
+            }
+          ]
+        },
+        {
+          "coveredPct": 85,
+          "sourceFile": "Sample Class/JD-010.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 15
+            }
+          ]
+        },
+        {
+          "coveredPct": 90,
+          "sourceFile": "Sample Class/JD-011.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 10
+            }
+          ]
+        },
+        {
+          "coveredPct": 90,
+          "sourceFile": "Sample Class/JD-012.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 10
+            }
+          ]
+        }
+      ],
+      "wellCoveredPct": 0.935064935064935
+    }
+  },
+  {
+    "corpusSize": 3,
+    "ctJobFamily": "General Services",
+    "ctJobFunction": "Agriculture",
+    "envelope": {
+      "summary": "Synthetic summary for Agriculture Mgr 1. Stands in for a generated envelope, which is not committed.",
+      "scopeStatement": "Synthetic scope statement: works under general direction within a single unit.",
+      "keyResponsibilities": [
+        {
+          "functionName": "Site Operations and Budget",
+          "pctTime": 44,
+          "duties": [
+            "Plans site operations and budget tasks to unit standards (synthetic example 1).",
+            "Carries out site operations and budget tasks to unit standards (synthetic example 2).",
+            "Documents site operations and budget tasks to unit standards (synthetic example 3).",
+            "Coordinates site operations and budget tasks to unit standards (synthetic example 4).",
+            "Reviews site operations and budget tasks to unit standards (synthetic example 5).",
+            "Maintains site operations and budget tasks to unit standards (synthetic example 6)."
+          ]
+        },
+        {
+          "functionName": "Staff Supervision",
+          "pctTime": 34,
+          "duties": [
+            "Plans staff supervision tasks to unit standards (synthetic example 1).",
+            "Carries out staff supervision tasks to unit standards (synthetic example 2).",
+            "Documents staff supervision tasks to unit standards (synthetic example 3).",
+            "Coordinates staff supervision tasks to unit standards (synthetic example 4).",
+            "Reviews staff supervision tasks to unit standards (synthetic example 5)."
+          ]
+        },
+        {
+          "functionName": "Safety, Compliance and Research Support",
+          "pctTime": 22,
+          "duties": [
+            "Plans safety, compliance and research support tasks to unit standards (synthetic example 1).",
+            "Carries out safety, compliance and research support tasks to unit standards (synthetic example 2).",
+            "Documents safety, compliance and research support tasks to unit standards (synthetic example 3).",
+            "Coordinates safety, compliance and research support tasks to unit standards (synthetic example 4).",
+            "Reviews safety, compliance and research support tasks to unit standards (synthetic example 5).",
+            "Maintains safety, compliance and research support tasks to unit standards (synthetic example 6)."
+          ]
+        }
+      ],
+      "requiredCertifications": [
+        "Synthetic requiredCertifications 1 for UI development.",
+        "Synthetic requiredCertifications 2 for UI development."
+      ],
+      "education": ["Synthetic education 1 for UI development."],
+      "workExperience": [
+        "Synthetic workExperience 1 for UI development.",
+        "Synthetic workExperience 2 for UI development.",
+        "Synthetic workExperience 3 for UI development."
+      ],
+      "minQualifications": [
+        "Synthetic minQualifications 1 for UI development.",
+        "Synthetic minQualifications 2 for UI development.",
+        "Synthetic minQualifications 3 for UI development.",
+        "Synthetic minQualifications 4 for UI development.",
+        "Synthetic minQualifications 5 for UI development.",
+        "Synthetic minQualifications 6 for UI development.",
+        "Synthetic minQualifications 7 for UI development."
+      ],
+      "prefQualifications": [
+        "Synthetic prefQualifications 1 for UI development.",
+        "Synthetic prefQualifications 2 for UI development.",
+        "Synthetic prefQualifications 3 for UI development.",
+        "Synthetic prefQualifications 4 for UI development."
+      ],
+      "conditionsOfEmployment": [
+        "Synthetic conditionsOfEmployment 1 for UI development.",
+        "Synthetic conditionsOfEmployment 2 for UI development.",
+        "Synthetic conditionsOfEmployment 3 for UI development."
+      ],
+      "workEnvironment": [
+        "Synthetic workEnvironment 1 for UI development.",
+        "Synthetic workEnvironment 2 for UI development.",
+        "Synthetic workEnvironment 3 for UI development."
+      ],
+      "physicalRequirements": [
+        "Synthetic physicalRequirements 1 for UI development.",
+        "Synthetic physicalRequirements 2 for UI development.",
+        "Synthetic physicalRequirements 3 for UI development."
+      ],
+      "outOfEnvelope": [
+        "Synthetic outOfEnvelope 1 for UI development.",
+        "Synthetic outOfEnvelope 2 for UI development.",
+        "Synthetic outOfEnvelope 3 for UI development.",
+        "Synthetic outOfEnvelope 4 for UI development.",
+        "Synthetic outOfEnvelope 5 for UI development.",
+        "Synthetic outOfEnvelope 6 for UI development."
+      ]
+    },
+    "envelopeSource": "claude",
+    "flsaStatus": {
+      "agreement": 1,
+      "consensus": "Exempt"
+    },
+    "leads": {
+      "agreement": 0.6666666666666666,
+      "consensus": null
+    },
+    "personnelProgram": "MSP",
+    "salaryGrade": {
+      "agreement": 1,
+      "consensus": "Grade 24"
+    },
+    "slug": "005943-agriculture-mgr-1",
+    "sourceFiles": [
+      "Sample Class/JD-001.HTML",
+      "Sample Class/JD-002.HTML",
+      "Sample Class/JD-003.HTML"
+    ],
+    "standard": null,
+    "supervises": {
+      "agreement": 0.6666666666666666,
+      "consensus": null
+    },
+    "title": "Agriculture Mgr 1",
+    "ucJobCode": "005943",
+    "unionCode": {
+      "agreement": 1,
+      "consensus": "99 - Non-Represented (PPSM)"
+    },
+    "worksOutdoorsOver50pct": {
+      "agreement": 1,
+      "consensus": "true"
+    },
+    "__coverage": {
+      "meanCoverage": 98,
+      "n": 3,
+      "perJd": [
+        {
+          "coveredPct": 95,
+          "sourceFile": "Sample Class/JD-001.HTML",
+          "uncovered": [
+            {
+              "name": "Unlisted function 1",
+              "pct": 5
+            }
+          ]
+        },
+        {
+          "coveredPct": 100,
+          "sourceFile": "Sample Class/JD-002.HTML",
+          "uncovered": []
+        },
+        {
+          "coveredPct": 100,
+          "sourceFile": "Sample Class/JD-003.HTML",
+          "uncovered": []
+        }
+      ],
+      "wellCoveredPct": 1
+    }
+  },
+  {
+    "corpusSize": 0,
+    "ctJobFamily": "Student Services",
+    "ctJobFunction": "Academic Achievement Cnslng",
+    "envelope": {
+      "summary": "Synthetic summary for Academic Achievement Counselor 3. Stands in for a generated envelope, which is not committed.",
+      "scopeStatement": "Synthetic scope statement: works under general direction within a single unit.",
+      "keyResponsibilities": [
+        {
+          "functionName": "Student Advising",
+          "pctTime": 45,
+          "duties": [
+            "Plans student advising tasks to unit standards (synthetic example 1).",
+            "Carries out student advising tasks to unit standards (synthetic example 2).",
+            "Documents student advising tasks to unit standards (synthetic example 3).",
+            "Coordinates student advising tasks to unit standards (synthetic example 4).",
+            "Reviews student advising tasks to unit standards (synthetic example 5)."
+          ]
+        },
+        {
+          "functionName": "Workshops and Outreach",
+          "pctTime": 30,
+          "duties": [
+            "Plans workshops and outreach tasks to unit standards (synthetic example 1).",
+            "Carries out workshops and outreach tasks to unit standards (synthetic example 2).",
+            "Documents workshops and outreach tasks to unit standards (synthetic example 3).",
+            "Coordinates workshops and outreach tasks to unit standards (synthetic example 4).",
+            "Reviews workshops and outreach tasks to unit standards (synthetic example 5)."
+          ]
+        },
+        {
+          "functionName": "Campus Partnerships",
+          "pctTime": 15,
+          "duties": [
+            "Plans campus partnerships tasks to unit standards (synthetic example 1).",
+            "Carries out campus partnerships tasks to unit standards (synthetic example 2).",
+            "Documents campus partnerships tasks to unit standards (synthetic example 3).",
+            "Coordinates campus partnerships tasks to unit standards (synthetic example 4)."
+          ]
+        },
+        {
+          "functionName": "Peer Mentor Training",
+          "pctTime": 10,
+          "duties": [
+            "Plans peer mentor training tasks to unit standards (synthetic example 1).",
+            "Carries out peer mentor training tasks to unit standards (synthetic example 2).",
+            "Documents peer mentor training tasks to unit standards (synthetic example 3)."
+          ]
+        }
+      ],
+      "requiredCertifications": [],
+      "education": ["Synthetic education 1 for UI development."],
+      "workExperience": [
+        "Synthetic workExperience 1 for UI development.",
+        "Synthetic workExperience 2 for UI development.",
+        "Synthetic workExperience 3 for UI development."
+      ],
+      "minQualifications": [
+        "Synthetic minQualifications 1 for UI development.",
+        "Synthetic minQualifications 2 for UI development.",
+        "Synthetic minQualifications 3 for UI development.",
+        "Synthetic minQualifications 4 for UI development.",
+        "Synthetic minQualifications 5 for UI development.",
+        "Synthetic minQualifications 6 for UI development.",
+        "Synthetic minQualifications 7 for UI development."
+      ],
+      "prefQualifications": [
+        "Synthetic prefQualifications 1 for UI development.",
+        "Synthetic prefQualifications 2 for UI development.",
+        "Synthetic prefQualifications 3 for UI development."
+      ],
+      "conditionsOfEmployment": [
+        "Synthetic conditionsOfEmployment 1 for UI development.",
+        "Synthetic conditionsOfEmployment 2 for UI development.",
+        "Synthetic conditionsOfEmployment 3 for UI development."
+      ],
+      "workEnvironment": [
+        "Synthetic workEnvironment 1 for UI development.",
+        "Synthetic workEnvironment 2 for UI development.",
+        "Synthetic workEnvironment 3 for UI development.",
+        "Synthetic workEnvironment 4 for UI development."
+      ],
+      "physicalRequirements": [
+        "Synthetic physicalRequirements 1 for UI development.",
+        "Synthetic physicalRequirements 2 for UI development.",
+        "Synthetic physicalRequirements 3 for UI development."
+      ],
+      "outOfEnvelope": [
+        "Synthetic outOfEnvelope 1 for UI development.",
+        "Synthetic outOfEnvelope 2 for UI development.",
+        "Synthetic outOfEnvelope 3 for UI development.",
+        "Synthetic outOfEnvelope 4 for UI development.",
+        "Synthetic outOfEnvelope 5 for UI development."
+      ]
+    },
+    "envelopeSource": "standard",
+    "flsaStatus": {
+      "agreement": 1,
+      "consensus": "Exempt"
+    },
+    "leads": {
+      "agreement": 1,
+      "consensus": null
+    },
+    "personnelProgram": "PSS",
+    "salaryGrade": {
+      "agreement": 1,
+      "consensus": "Grade 20"
+    },
+    "slug": "004501-academic-achievement-counselor-3",
+    "sourceFiles": [],
+    "standard": null,
+    "supervises": {
+      "agreement": 1,
+      "consensus": null
+    },
+    "title": "Academic Achievement Counselor 3",
+    "ucJobCode": "004501",
+    "unionCode": {
+      "agreement": 1,
+      "consensus": "99"
+    },
+    "worksOutdoorsOver50pct": {
+      "agreement": 1,
+      "consensus": null
+    },
+    "__coverage": null
+  }
+]

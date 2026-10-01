@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default test filter.
+
+  Two categories are opt-in and must not run by default.
+
+  CorpusParity needs the 1,367-file HRTMS corpus, which is 150MB of real job
+  descriptions and is gitignored. Those tests FAIL rather than skip when it is
+  absent: a parity suite that quietly skips is worse than none, because the run
+  goes green and nobody learns the parser was never checked.
+
+  LiveApi calls the real Anthropic API. It costs money against a rate-limited key
+  and needs ANTHROPIC_API_KEY in the environment, which the test host does not
+  load from server/.env.
+
+  Run them deliberately with an explicit category filter:
+    npm run test:server:corpus
+    npm run test:server:live
+
+  (Note for future editors: an XML comment cannot contain a double hyphen, which
+  is why the raw CLI flags are not written out here. That mistake made this file
+  unparseable and silently broke `dotnet test` for everyone using it.)
+-->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category!=CorpusParity&amp;Category!=LiveApi</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>

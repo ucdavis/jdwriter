@@ -29,6 +29,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Golden fixtures generated from the POC by `npm run fixtures`. They are the oracle for
+         every ported module; see AGENTS.md. Copied to the output so tests read them by path. -->
+    <Content Include="Fixtures\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\server.core\server.core.csproj" />
     <ProjectReference Include="..\..\server\server.csproj" />
   </ItemGroup>

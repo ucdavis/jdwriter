@@ -1,0 +1,35 @@
+# Apple Silicon override for the local SQL service.
+#
+# Why this exists: mcr.microsoft.com/mssql/server:2022-latest is amd64-only. Under
+# QEMU on arm64 it does not merely run slowly, it fails to start at all —
+#
+#   /opt/mssql/bin/sqlservr: Invalid mapping of address 0x... in reserved address
+#   space below 0x400000000000
+#
+# Docker Desktop's Rosetta option papers over this; a plain aarch64 Linux VM
+# (Colima, Lima, Rancher) has no such option, so the service is simply unusable.
+#
+# azure-sql-edge ships a native arm64 build and runs the app's EF migrations
+# correctly. Two things to know about it: Microsoft has it on a retirement track,
+# and the image does not bundle sqlcmd, so ad-hoc queries need an external client.
+#
+# This file is ADDITIVE — apply it as a second -f after the base compose file, so
+# amd64 machines and CI are completely unaffected:
+#
+#   npm run db:up:arm64
+#
+# If this ever needs to become the default, the fix belongs upstream in
+# ucdavis/web-app-template rather than here: every Apple Silicon developer in the
+# college hits it on their first day.
+services:
+  sql:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    platform: linux/arm64
+    # The base file's healthcheck shells out to /opt/mssql-tools*/bin/sqlcmd, which
+    # this image does not contain. Probe the TCP port instead — it is what the app
+    # actually waits on.
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/1433' || exit 1"]
+      interval: 6s
+      timeout: 4s
+      retries: 30

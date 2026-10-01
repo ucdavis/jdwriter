@@ -6,6 +6,7 @@ import {
 import { HttpError } from '../../lib/api.ts';
 import { RouterContext } from '../../main.tsx';
 import { meQueryOptions } from '../../queries/user.ts';
+import { AppShell } from '@/shared/ui/AppShell.tsx';
 import { UserProvider } from '@/shared/auth/UserContext.tsx';
 
 export const Route = createFileRoute('/(authenticated)')({
@@ -14,7 +15,9 @@ export const Route = createFileRoute('/(authenticated)')({
   },
   component: () => (
     <UserProvider>
-      <Outlet />
+      <AppShell>
+        <Outlet />
+      </AppShell>
     </UserProvider>
   ),
   errorComponent: AuthenticatedRouteError,

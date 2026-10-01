@@ -1,13 +1,13 @@
 {
-  "name": "web-app-template",
+  "name": "jdwriter",
   "private": true,
   "engines": {
     "node": ">=22.18.0"
   },
   "scripts": {
-    "db:up": "docker compose -p web-app-template_devcontainer -f .devcontainer/docker-compose.yml up -d sql",
-    "db:down": "docker compose -p web-app-template_devcontainer -f .devcontainer/docker-compose.yml stop sql",
-    "db:logs": "docker compose -p web-app-template_devcontainer -f .devcontainer/docker-compose.yml logs -f sql",
+    "db:up": "docker compose -p jdwriter_devcontainer -f .devcontainer/docker-compose.yml up -d sql",
+    "db:down": "docker compose -p jdwriter_devcontainer -f .devcontainer/docker-compose.yml stop sql",
+    "db:logs": "docker compose -p jdwriter_devcontainer -f .devcontainer/docker-compose.yml logs -f sql",
     "deployment-settings:sync": "node scripts/sync-deployment-settings.mts --write",
     "deployment-settings:check": "npm run deployment-settings:typecheck && node scripts/sync-deployment-settings.mts --check",
     "deployment-settings:typecheck": "tsc -p tsconfig.scripts.json --noEmit",
@@ -15,7 +15,12 @@
     "start:server": "dotnet watch run --project server/server.csproj --launch-profile http-cli",
     "start:client": "cd client && npm run dev:open",
     "start:client:debug": "wait-on http-get://127.0.0.1:5165/health && cd client && npm run dev",
-    "start:client:when-server-ready": "wait-on http-get://127.0.0.1:5165/health && npm run start:client"
+    "start:client:when-server-ready": "wait-on http-get://127.0.0.1:5165/health && npm run start:client",
+    "db:up:arm64": "docker compose -p jdwriter_devcontainer -f .devcontainer/docker-compose.yml -f .devcontainer/docker-compose.arm64.yml up -d sql",
+    "db:down:arm64": "docker compose -p jdwriter_devcontainer -f .devcontainer/docker-compose.yml -f .devcontainer/docker-compose.arm64.yml stop sql",
+    "test:server": "dotnet test --settings .runsettings",
+    "test:server:corpus": "dotnet test --filter \"Category=CorpusParity\"",
+    "test:server:live": "dotnet test --filter \"Category=LiveApi\""
   },
   "devDependencies": {
     "@types/node": "^24.3.3",

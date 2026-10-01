@@ -1,0 +1,315 @@
+{
+  "manifest": {
+    "generatedFrom": "src/lib/titles.ts + src/lib/titleCodes.ts",
+    "note": "Oracle for the C# port. Regenerate only from a known-good TS build; a diff here means either a deliberate behavior change or a port bug.",
+    "counts": {
+      "titles": 3733,
+      "titleCodeRows": 3471,
+      "standards": 214,
+      "profiles": 65,
+      "keySplit": 898,
+      "looseCollisions": 499,
+      "resolvedOk": 3702,
+      "resolvedUnknown": 27,
+      "resolvedAmbiguous": 4,
+      "supersessions": 29,
+      "ambiguousSupersessions": 0,
+      "inUse": 1202
+    }
+  },
+  "titles": [
+    "ABSOLUTE RETURNS INV ANL 2",
+    "ACAD PERSONNEL SUPV 1",
+    "ACCOUNTING MGR 3",
+    "ADMIN OFCR 4 CX CEH",
+    "ADVOCATE 4",
+    "AMBUL CARE ADMSTN CRD 3",
+    "ANESTHETIST NURSE SR PD",
+    "APPLICATIONS PROGR 3",
+    "ATH PROFL 4 BYA",
+    "AUTO TCHN",
+    "Academic Personnel Analyst 3",
+    "Admissions Recruitment Specialist 4",
+    "BEH HEALTH CNSLNG MGR 2",
+    "BENEFITS PRG STRAT ANL 4",
+    "BLDG MGT SHOP LD",
+    "BUS SYS ANL 3",
+    "Business Systems Analyst 3",
+    "CARPENTER AS",
+    "CHARGE DESC ANL 3",
+    "CHILD LIFE SPEC 2 EX",
+    "CLIN APPLICATIONS PROFL 3",
+    "CLIN INFORMATICS MGR 2",
+    "CLIN NURSE EDUC MGR 2",
+    "CLIN SOCIAL WORKER 1 PD",
+    "CNSLNG PSYCHOLOGIST 3 HX",
+    "COMM AND NETWORK TCHL SUPV 2",
+    "CONCIERGE MGR 1",
+    "COUNSEL 1",
+    "CUSTODIAL HC MGR 1",
+    "Career Services Specialist 3 SV",
+    "DATA SYS ANL 4",
+    "DENTIST SHS SUPV 2",
+    "DIGITAL COMM SPEC 3",
+    "EDUCATOR 2 BYA",
+    "ELECTRN 1",
+    "EMPL DISABILITY SPEC 2",
+    "ENGR AID",
+    "EVENTS SPEC 3 CX",
+    "FAC MGT SPEC 4 CX",
+    "FEDERAL GOVT REL PROFL 1",
+    "FINANCIAL ANL 5",
+    "FIXED INCOME INV ANL 2",
+    "FUNDRAISING MGR 3",
+    "GENETIC CNSLR 1 EX",
+    "GROUNDS EQUIP OPR",
+    "HEALTH INFO MGT MGR 2",
+    "HOME HEALTH MGR 2",
+    "HOSP UNIT SVC CRD 1",
+    "HVY EQUIP OPS ENGR APPR",
+    "INDUSTRY ALLNS SUPV 2",
+    "INSPECTION MGR 3",
+    "IONM TCHNO",
+    "IT SCRTY ANL 5 TX",
+    "LAB GLASSBLOWER",
+    "LANDSCAPE GROUNDS SUPV 2",
+    "LIBRARY MGR 2",
+    "LOCKSMITH LD",
+    "MARINE OPS MGR 4",
+    "MATERIALS MGT HC SUPV 2",
+    "MED CTR FOOD SVC MGR AST",
+    "MED INTERPRETER SVC SUPV 2",
+    "MEDIA COMM SPEC 1",
+    "MUSEUM EDUC MGR 1",
+    "NEURO TCHNO PD",
+    "NURSE PRACT MGR 1",
+    "OMBUDSPERSON 5",
+    "ORTHOPEDIC TCHN PRN",
+    "PAT ACCESS SVC SUPV 2",
+    "PAT NAVGTR CLIN 5",
+    "PAT SUPP AST",
+    "PERF ARTIST 2",
+    "PHARMACY MGR 4",
+    "PHYS THER 4",
+    "PLNG SPEC 5",
+    "POPULATION HEALTH SPEC 5",
+    "PROCUREMENT MGR 4",
+    "PROJECT POLICY ANL 4",
+    "PSYCHOMETRIST SR CEH",
+    "Project Policy Anl 3 Rp",
+    "QLTY IMPV HC SPEC 1",
+    "RADLG TCHNO PRN",
+    "RECR PRG LEADER 2 BYA",
+    "REGISTRAR COLL SUPV 2",
+    "REHAB SVC MGR 2",
+    "RESP CARE SUPV 1",
+    "RSCH ADM 4",
+    "RSCH DATA ANL 2",
+    "SCENE TCHN PD",
+    "SKLD CRAFTS TRADES SUPV 1",
+    "SPORTS MED ATH TRAINER 2 HX",
+    "STDT ACAD SPEC 4 SV",
+    "STDT LIFE DEV MGR 1",
+    "STEAMFITTER WORKER LD",
+    "STY ENGR WORKER LD",
+    "SVC PARTNER LD",
+    "SYSWIDE ACAD PERS & PROG MGR 2",
+    "Systems Administrator 5",
+    "TELEVISION TCHN SR",
+    "TRAVEL MGT OFCR 4",
+    "USER EXP DESIGNER MGR 1",
+    "VOLUNTEER SVC MGR 1"
+  ],
+  "cases": [
+    {
+      "query": "acad prg mgt ofcr",
+      "queryWords": [
+        "academic",
+        "program",
+        "manager",
+        "officer"
+      ],
+      "matches": []
+    },
+    {
+      "query": "academic program management officer",
+      "queryWords": [
+        "academic",
+        "program",
+        "manager",
+        "officer"
+      ],
+      "matches": []
+    },
+    {
+      "query": "project and policy analyst",
+      "queryWords": [
+        "project",
+        "policy",
+        "analyst"
+      ],
+      "matches": [
+        "PROJECT POLICY ANL 4",
+        "Project Policy Anl 3 Rp"
+      ]
+    },
+    {
+      "query": "project policy anl",
+      "queryWords": [
+        "project",
+        "policy",
+        "analyst"
+      ],
+      "matches": [
+        "PROJECT POLICY ANL 4",
+        "Project Policy Anl 3 Rp"
+      ]
+    },
+    {
+      "query": "rsch data anl",
+      "queryWords": [
+        "research",
+        "data",
+        "analyst"
+      ],
+      "matches": [
+        "RSCH DATA ANL 2"
+      ]
+    },
+    {
+      "query": "research data analysis",
+      "queryWords": [
+        "research",
+        "data",
+        "analyst"
+      ],
+      "matches": [
+        "RSCH DATA ANL 2"
+      ]
+    },
+    {
+      "query": "system administrator",
+      "queryWords": [
+        "system",
+        "administrator"
+      ],
+      "matches": [
+        "Systems Administrator 5"
+      ]
+    },
+    {
+      "query": "sys adm",
+      "queryWords": [
+        "system",
+        "administrator"
+      ],
+      "matches": [
+        "Systems Administrator 5"
+      ]
+    },
+    {
+      "query": "bus sys anl supv",
+      "queryWords": [
+        "business",
+        "system",
+        "analyst",
+        "supervisor"
+      ],
+      "matches": []
+    },
+    {
+      "query": "business systems analysis supervisor",
+      "queryWords": [
+        "business",
+        "system",
+        "analyst",
+        "supervisor"
+      ],
+      "matches": []
+    },
+    {
+      "query": "farm laborer",
+      "queryWords": [
+        "farm",
+        "laborer"
+      ],
+      "matches": []
+    },
+    {
+      "query": "lab ast",
+      "queryWords": [
+        "laboratory",
+        "assistant"
+      ],
+      "matches": []
+    },
+    {
+      "query": "laboratory assistant",
+      "queryWords": [
+        "laboratory",
+        "assistant"
+      ],
+      "matches": []
+    },
+    {
+      "query": "hr generalist",
+      "queryWords": [
+        "human",
+        "resource",
+        "generalist"
+      ],
+      "matches": []
+    },
+    {
+      "query": "human resources",
+      "queryWords": [
+        "human",
+        "resource"
+      ],
+      "matches": []
+    },
+    {
+      "query": "sra",
+      "queryWords": [
+        "staff",
+        "research",
+        "associate"
+      ],
+      "matches": []
+    },
+    {
+      "query": "staff research associate",
+      "queryWords": [
+        "staff",
+        "research",
+        "associate"
+      ],
+      "matches": []
+    },
+    {
+      "query": "programming manager",
+      "queryWords": [
+        "programmer",
+        "manager"
+      ],
+      "matches": []
+    },
+    {
+      "query": "programmer manager",
+      "queryWords": [
+        "programmer",
+        "manager"
+      ],
+      "matches": []
+    },
+    {
+      "query": "underwater basket weaver",
+      "queryWords": [
+        "underwater",
+        "basket",
+        "weaver"
+      ],
+      "matches": []
+    }
+  ]
+}

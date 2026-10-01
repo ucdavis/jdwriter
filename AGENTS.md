@@ -1,5 +1,102 @@
 # Agent instructions
 
+## JDWriter: read this before the template guidance below
+
+This application is a **port**, not a greenfield build. It is being re-platformed from a
+working Next.js 16 proof of concept at `~/Desktop/Projects/JDWriter` onto this template. The
+migration plan is at `~/.claude/plans/iridescent-riding-deer.md`.
+
+**The POC is the specification.** Its TypeScript is the reference implementation and the parity
+oracle for every ported module. Keep it runnable. Do not retire it until parity holds.
+
+### Golden-fixture parity
+
+The POC's value is accumulated, empirically-earned quirks — Excel percent cells, four
+near-identical form variants, repeating page headers, a strict/loose title-key split. Hand-written
+C# unit tests would cover the cases we think of, which is the set that already works.
+
+So: `npm run fixtures` in the POC repo regenerates deterministic JSON oracles into `fixtures/`.
+Each ported module gets a test asserting it reproduces its fixture **exactly**. When a port and a
+fixture disagree, the fixture is right until proven otherwise.
+
+Extraction is only partly portable, and that boundary is deliberate: `kindFor`, `tidy` and the
+size thresholds are byte-parity testable; docx and pdf text extraction are **not**, because
+mammoth/unpdf and OpenXml/PdfPig disagree on whitespace and reading order. Those get behavioral
+tests, not fixtures. Never claim fixture coverage for them.
+
+### Layout B of the standards parser is a blind port
+
+No real layout-B workbook (a UC website PDF-to-Excel export) is available: every usable sheet in
+the 19 local workbooks is layout A. `parseFamilyTable` — the continuation pointer that survives
+repeating page headers — is therefore verified only against synthetic inputs built from the format
+as documented.
+
+That pins the C# to the reference's behavior. It proves nothing about either implementation against
+a real UC export. This was a deliberate call: get it running, fix bugs when a real file surfaces
+rather than let the gap block the port.
+
+When such a file appears: drop it in the POC's `Job Standards/`, run `npm run fixtures`, and the
+test `Layout_B_has_no_real_world_coverage_and_that_is_recorded` will FAIL — which is the signal to
+verify the port against it and delete the COVERAGE WARNING from `StandardsWorkbookParser`.
+
+### Corpus-dependent tests
+
+The HRTMS corpus is 1,367 real job descriptions, 150MB, gitignored — it cannot live in this repo.
+Tests that need it are tagged `Category=CorpusParity` and resolve it from `JDW_CORPUS_DIR`, or
+from a sibling POC checkout.
+
+Where the corpus is unavailable, exclude them explicitly:
+
+    dotnet test --filter "Category!=CorpusParity"
+
+They FAIL rather than silently pass when the corpus is missing. A parity suite that quietly skips
+is worse than none: the run goes green and nobody learns the parser was never checked.
+
+### Invariants that must survive the port
+
+Each of these was a real bug once. Preserve them explicitly, and do not "simplify" them away.
+
+- **The model decides, code assembles.** Return indices, never reproduced strings. Return only
+  the delta, never the document plus the delta. Recompute every number in C# — never trust a
+  model to preserve a `% time` summing to 100.
+- **Prompts port byte-for-byte.** Use C# raw string literals. Do not reflow, reword, or improve
+  prompt text during a port; a behavior change is indistinguishable from a port bug.
+- **The unit's proposed job code is withheld from the ranking prompt.** This is anti-anchoring,
+  not confidentiality. A model shown the answer the unit wants tends to ratify it, which makes the
+  confidence number meaningless. It is argued separately by a second call and compared afterward.
+- **Strict vs loose title keys.** `titleCodeKey` keeps bargaining-unit suffixes; `titleKey` drops
+  them. Merging them once collapsed 221 reference keys and produced silently *wrong* job codes.
+  Resolution returns null on ambiguity rather than guessing.
+- **Superseded job codes are remapped at parse time,** and every path that creates a profile
+  guards against them. Hiding a dead class from browse and the classifier is not sufficient.
+- **Six real JDs do not sum to 100% time** (range 0-200). Do not add a constraint requiring it.
+
+### Data handling
+
+JD records carry department names, UCPath position numbers, and reporting lines for real
+employees. **Raw JD records are never committed.** Fixtures for them are content hashes plus
+non-identifying shape statistics. Note that HRTMS filenames embed position numbers, so file paths
+are identifiers too.
+
+**Envelopes are not committed either** (decided 2026-10-01). They contain no position numbers, but
+they are products of the system, so they live in the database and nowhere in the repository. The
+MSW fixture keeps the shape of three real profiles with every piece of envelope text synthetic.
+Position Descriptions are cleared for commit; the one real PD in `pd.json` has no position numbers.
+
+Seed the real corpus into `prod` only. `test` gets a scrubbed subset.
+
+### Local environment
+
+SQL Server 2022 is amd64-only and **cannot run on Apple Silicon** — it aborts at startup under
+QEMU. Use `npm run db:up:arm64`, which overlays `.devcontainer/docker-compose.arm64.yml` to swap
+in `azure-sql-edge`. The override is additive; amd64 machines and CI use `npm run db:up`
+unchanged. Azure deployments are unaffected.
+
+That image has no bundled `sqlcmd`, and its TCP port opens several seconds before it accepts
+logins — wait for `ready for client connections` in `docker logs`, not just an open socket.
+
+---
+
 This is a full-stack web application template using modern React and .NET technologies. Please follow these guidelines when generating code suggestions.
 
 ## Pull requests

@@ -120,7 +120,7 @@ jobs:
         run: dotnet build app.sln --configuration Release --no-restore
 
       - name: Test .NET projects
-        run: dotnet test app.sln --configuration Release --no-build
+        run: dotnet test app.sln --configuration Release --no-build --settings .runsettings
 
       - name: Publish app
         run: dotnet publish server/server.csproj --configuration Release --output "$PWD/publish/web"

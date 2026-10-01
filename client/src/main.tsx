@@ -6,6 +6,7 @@ import './main.css';
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen.ts';
+import { startMockServiceWorker } from './mocks/start.ts';
 
 const queryClient = new QueryClient();
 
@@ -29,7 +30,11 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// Render the app
+// The mock worker is awaited BEFORE the first render so no request can escape before the
+// interceptor is installed — otherwise the very first /api/user/me would race it. In a
+// production build this resolves immediately and the branch is dropped by the bundler.
+await startMockServiceWorker();
+
 const rootElement = document.getElementById('root')!;
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);

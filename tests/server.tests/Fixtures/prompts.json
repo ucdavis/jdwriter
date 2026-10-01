@@ -1,0 +1,675 @@
+{
+  "manifest": {
+    "generatedFrom": "src/lib/intake/match.ts + src/lib/intake/classify.ts",
+    "note": "Prompt assembly and pure computation only. The model's ANSWER is not deterministic and is not tested here; the string we send it is, because a prompt that drifted during the port changes behaviour while everything still compiles."
+  },
+  "constants": {
+    "shortlistTarget": 16,
+    "skipShortlistBelow": 14,
+    "maxResults": 4,
+    "classifyMaxResults": 4
+  },
+  "systemPrompts": {
+    "shortlist": "You are a UC Davis HR classification analyst. Given a hiring manager's\nfree-text description of a role and a terse catalog of known job classes (title, Career Tracks\nfunction, and the names of their key responsibility functions), select every class that could\nplausibly fit the described work — by topic and by level.\n\nReturn up to 16 class numbers, most promising first. Be inclusive rather than\ndecisive: a later step compares the finalists in detail, so it is much worse to omit a plausible\nclass here than to include a marginal one. If little fits, return the closest few anyway.",
+    "rank": "You are a UC Davis HR classification analyst. Given a hiring manager's\nfree-text description of a role and a catalog of candidate job classes (title, summary, key\nresponsibilities), identify which class(es) best fit the described work. Return ranked matches,\nmost confident first, each with a 0-100 confidence and a one-sentence rationale grounded in BOTH\nthe request and the class's actual responsibilities — distinguishing topic *and* level. If nothing\nfits well, return the closest options with appropriately low confidence.\n\nSome classes include an OFFICIAL UC JOB STANDARD (scope + standard duties). Treat it as an\nauthoritative signal of the class's intended level and duty profile — use it, together with the\ncorpus responsibilities, to judge where the described work should land.",
+    "distill": "You are a UC Davis HR job analyst. You are given the full text of a job\ndescription a department has already written. Reduce it to its classification-relevant content.\n\nKeep: the job summary, every responsibility function with its % time and duties, supervisory\nscope, and the stated education / experience / KSA requirements.\n\nDiscard: department mission statements, EEO and background-check boilerplate, application\ninstructions, salary ranges, benefits, and anything about the hiring process rather than the work.\n\nPreserve the document's own level language — \"under general supervision\", \"independently\",\n\"serves as lead\", \"recognized expert\" — because it decides which LEVEL of a class this is.\nCondense wording, but do not invent duties, requirements, or % allocations that are not there.\nIf the document states no % time, use 0.",
+    "classifyRank": "You are a UC Davis HR classification analyst. A department has submitted a job\ndescription it already wrote, distilled below. Decide which known job class it should be\nclassified into.\n\nFor each candidate class, judge TWO things separately:\n  • TOPIC — is this the same kind of work as the class's responsibilities?\n  • LEVEL — is the described scope, independence, and supervisory responsibility below, at, or\n    above this class? A description can be squarely the right family and still be the wrong level.\n\nThen map the description's numbered functions onto the class: list the numbers your envelope\ncovers and the numbers it does not. A function is covered if its work plausibly falls under the\nclass's remit even if worded differently. Every function number appears in exactly one of the\ntwo lists.\n\nSome classes include an OFFICIAL UC JOB STANDARD (scope + standard duties). Treat it as the\nauthoritative statement of the class's intended level and duty profile.\n\nCalibrate confidence honestly. A department's own wording is often aspirational or inherited from\na neighboring class, so do not let a working title carry the decision — the duties do. If nothing\nfits well, say so with low confidence rather than forcing a match.",
+    "compare": "You are a UC Davis HR classification analyst. A department submitted a job\ndescription and asked for it to be classified into a specific job class. An independent analysis has\nalready been done without seeing their request; your job now is to assess THEIR proposed class on\nits merits.\n\nWork from the description's actual duties, level of independence, and scope. Be concrete and\nspecific: every conflict you list must point at particular wording or a particular duty in the\ndescription, not a general impression. If the proposed class genuinely fits, say so plainly — this\nis an assessment, not a search for objections.\n\nDistinguish two different problems: work the description contains that falls OUTSIDE the proposed\nclass, and work the proposed class expects that the description does not contain. A description can\nfail to fit for either reason, and they call for different fixes."
+  },
+  "inputs": {
+    "withEnvelope": {
+      "slug": "006256-rsch-data-anl-2",
+      "ucJobCode": "006256",
+      "title": "Rsch Data Anl 2",
+      "ctJobFamily": "Research",
+      "ctJobFunction": "Research Data Analysis",
+      "personnelProgram": "PSS",
+      "corpusSize": 9,
+      "salaryGrade": {
+        "values": [
+          {
+            "value": "Grade 21",
+            "count": 1
+          }
+        ],
+        "consensus": "Grade 21",
+        "agreement": 1
+      },
+      "flsaStatus": {
+        "values": [
+          {
+            "value": "Exempt",
+            "count": 1
+          }
+        ],
+        "consensus": "Exempt",
+        "agreement": 1
+      },
+      "unionCode": {
+        "values": [
+          {
+            "value": "RX-Research Professionals",
+            "count": 1
+          }
+        ],
+        "consensus": "RX-Research Professionals",
+        "agreement": 1
+      },
+      "supervises": {
+        "values": [
+          {
+            "value": false,
+            "count": 1
+          }
+        ],
+        "consensus": false,
+        "agreement": 1
+      },
+      "leads": {
+        "values": [
+          {
+            "value": null,
+            "count": 1
+          }
+        ],
+        "consensus": null,
+        "agreement": 1
+      },
+      "worksOutdoorsOver50pct": {
+        "values": [
+          {
+            "value": false,
+            "count": 1
+          }
+        ],
+        "consensus": false,
+        "agreement": 1
+      },
+      "functions": [],
+      "representativeSummary": "Applies professional research data concepts to collect, clean and analyse study data, and reports findings to investigators across a range of protocols and instruments.",
+      "licenses": [],
+      "education": [],
+      "minExperience": [],
+      "ksaMin": [],
+      "ksaPref": [],
+      "workEnvironment": [],
+      "envelope": {
+        "summary": "Analyses research data and reports findings under general supervision.",
+        "scopeStatement": "Works under general supervision on defined studies within one unit.",
+        "keyResponsibilities": [
+          {
+            "functionName": "DATA ANALYSIS",
+            "pctTime": 60,
+            "duties": [
+              "Cleans and analyses study datasets.",
+              "Produces summary statistics."
+            ]
+          },
+          {
+            "functionName": "REPORTING",
+            "pctTime": 40,
+            "duties": [
+              "Drafts findings for investigators."
+            ]
+          }
+        ],
+        "requiredCertifications": [],
+        "education": [
+          "Bachelor's degree in a related area."
+        ],
+        "workExperience": [],
+        "minQualifications": [
+          "Working knowledge of statistical software.",
+          "Attention to detail."
+        ],
+        "prefQualifications": [],
+        "conditionsOfEmployment": [],
+        "workEnvironment": [],
+        "physicalRequirements": [],
+        "outOfEnvelope": [
+          "Supervising staff",
+          "Setting research direction"
+        ]
+      },
+      "envelopeSource": "claude",
+      "consolidated": null,
+      "coverage": null,
+      "sourceFiles": [],
+      "generatedNote": ""
+    },
+    "noEnvelope": {
+      "slug": "std-widget-analyst-1",
+      "ucJobCode": "",
+      "title": "Widget Analyst 1",
+      "ctJobFamily": "Research",
+      "ctJobFunction": "",
+      "personnelProgram": "",
+      "corpusSize": 0,
+      "salaryGrade": {
+        "values": [],
+        "consensus": null,
+        "agreement": 0
+      },
+      "flsaStatus": {
+        "values": [
+          {
+            "value": "Exempt",
+            "count": 1
+          }
+        ],
+        "consensus": "Exempt",
+        "agreement": 1
+      },
+      "unionCode": {
+        "values": [
+          {
+            "value": "RX-Research Professionals",
+            "count": 1
+          }
+        ],
+        "consensus": "RX-Research Professionals",
+        "agreement": 1
+      },
+      "supervises": {
+        "values": [
+          {
+            "value": null,
+            "count": 1
+          }
+        ],
+        "consensus": null,
+        "agreement": 1
+      },
+      "leads": {
+        "values": [
+          {
+            "value": null,
+            "count": 1
+          }
+        ],
+        "consensus": null,
+        "agreement": 1
+      },
+      "worksOutdoorsOver50pct": {
+        "values": [
+          {
+            "value": false,
+            "count": 1
+          }
+        ],
+        "consensus": false,
+        "agreement": 1
+      },
+      "functions": [],
+      "representativeSummary": "Applies professional research data concepts to collect, clean and analyse study data, and reports findings to investigators across a range of protocols and instruments.",
+      "licenses": [],
+      "education": [],
+      "minExperience": [],
+      "ksaMin": [],
+      "ksaPref": [],
+      "workEnvironment": [],
+      "envelope": null,
+      "envelopeSource": "standard",
+      "consolidated": null,
+      "coverage": null,
+      "sourceFiles": [],
+      "generatedNote": ""
+    },
+    "standard": {
+      "longTitle": "Research Data Analyst 2",
+      "code": "006256",
+      "persProg": "PSS",
+      "grade": "Grade 21",
+      "flsa": "Exempt",
+      "union": "RX",
+      "genericScope": "Applies professional concepts to conduct analyses of moderate scope and complexity, exercising judgement within defined procedures to determine appropriate action.",
+      "customScope": "Supports investigators across several concurrent studies.",
+      "keyResponsibilities": [
+        "Collects,   cleans and validates   study data.",
+        "Performs statistical analysis and interprets results.",
+        "Prepares reports and visualisations for investigators."
+      ],
+      "ksa": [
+        "Knowledge of statistical methods."
+      ],
+      "education": [
+        "Bachelor's degree."
+      ],
+      "licenses": [],
+      "specialConditions": []
+    },
+    "distilled": {
+      "workingTitle": "Evaluation Analyst",
+      "summary": "Designs survey instruments and analyses study data for college programmes.",
+      "functions": [
+        {
+          "name": "EVALUATION",
+          "pctTime": 85,
+          "duties": [
+            "Designs instruments.",
+            "Analyses results.",
+            "Writes reports."
+          ]
+        },
+        {
+          "name": "OTHER DUTIES AS ASSIGNED",
+          "pctTime": 15,
+          "duties": [
+            "Attends meetings."
+          ]
+        }
+      ],
+      "supervises": "no",
+      "education": [
+        "Bachelor's degree or equivalent experience."
+      ],
+      "experience": [
+        "Two years of relevant analytical experience."
+      ],
+      "ksas": [
+        "Survey design.",
+        "Statistical software."
+      ],
+      "source": "text"
+    },
+    "distilledNoPct": {
+      "workingTitle": "",
+      "summary": "Designs survey instruments and analyses study data for college programmes.",
+      "functions": [
+        {
+          "name": "PROGRAM SUPPORT",
+          "pctTime": 0,
+          "duties": [
+            "Coordinates activities."
+          ]
+        },
+        {
+          "name": "ANALYSIS",
+          "pctTime": 0,
+          "duties": [
+            "Runs reports."
+          ]
+        },
+        {
+          "name": "OUTREACH",
+          "pctTime": 0,
+          "duties": [
+            "Presents findings."
+          ]
+        }
+      ],
+      "supervises": "no",
+      "education": [],
+      "experience": [],
+      "ksas": [],
+      "source": "text"
+    }
+  },
+  "entries": {
+    "terse": [
+      {
+        "index": 0,
+        "profile": "withEnvelope",
+        "expected": "0: Rsch Data Anl 2 (Research Data Analysis) — DATA ANALYSIS; REPORTING"
+      },
+      {
+        "index": 1,
+        "profile": "noEnvelope",
+        "expected": "1: Widget Analyst 1 (—)"
+      }
+    ],
+    "detailed": [
+      {
+        "index": 0,
+        "profile": "withEnvelope",
+        "standard": true,
+        "expected": "0: Rsch Data Anl 2 (code 006256, Research Data Analysis)\n  summary: Analyses research data and reports findings under general supervision.\n  responsibilities: DATA ANALYSIS; REPORTING\n  official standard scope: Applies professional concepts to conduct analyses of moderate scope and complexity, exercising judgement within defined procedures to determine appropriate action.\n  official standard duties: Collects, cleans and validates study data.; Performs statistical analysis and interprets results.; Prepares reports and visualisations for investigators."
+      },
+      {
+        "index": 1,
+        "profile": "noEnvelope",
+        "standard": false,
+        "expected": "1: Widget Analyst 1 (code , )\n  summary: Applies professional research data concepts to collect, clean and analyse study data, and reports findings to investigators across a range of protocols and instruments.\n  responsibilities: "
+      },
+      {
+        "index": 7,
+        "profile": "noEnvelope",
+        "standard": true,
+        "expected": "7: Widget Analyst 1 (code , )\n  summary: Applies professional research data concepts to collect, clean and analyse study data, and reports findings to investigators across a range of protocols and instruments.\n  responsibilities: \n  official standard scope: Applies professional concepts to conduct analyses of moderate scope and complexity, exercising judgement within defined procedures to determine appropriate action.\n  official standard duties: Collects, cleans and validates study data.; Performs statistical analysis and interprets results.; Prepares reports and visualisations for investigators."
+      }
+    ],
+    "levelFacts": [
+      {
+        "profile": "withEnvelope",
+        "expected": "  typical: grade Grade 21, PSS, supervises: no (observed across 9 real JDs)"
+      },
+      {
+        "profile": "noEnvelope",
+        "expected": "  typical: grade —, —, supervises: mixed/unknown (from the official standard; no JD corpus yet)"
+      }
+    ]
+  },
+  "requests": {
+    "full": {
+      "distilled": "distilled",
+      "expected": "Working title: Evaluation Analyst\nSummary: Designs survey instruments and analyses study data for college programmes.\nSupervises others: no\nResponsibilities:\n- EVALUATION (85%): Designs instruments.; Analyses results.; Writes reports.\n- OTHER DUTIES AS ASSIGNED (15%): Attends meetings.\nEducation: Bachelor's degree or equivalent experience.\nExperience: Two years of relevant analytical experience.\nKSAs: Survey design.; Statistical software."
+    },
+    "terse": {
+      "distilled": "distilled",
+      "expected": "Working title: Evaluation Analyst\nSummary: Designs survey instruments and analyses study data for college programmes.\nSupervises others: no\nResponsibilities:\n- EVALUATION\n- OTHER DUTIES AS ASSIGNED"
+    },
+    "fullNoPct": {
+      "distilled": "distilledNoPct",
+      "expected": "Working title: (none given)\nSummary: Designs survey instruments and analyses study data for college programmes.\nSupervises others: no\nResponsibilities:\n- PROGRAM SUPPORT: Coordinates activities.\n- ANALYSIS: Runs reports.\n- OUTREACH: Presents findings."
+    },
+    "terseNoPct": {
+      "distilled": "distilledNoPct",
+      "expected": "Working title: (none given)\nSummary: Designs survey instruments and analyses study data for college programmes.\nSupervises others: no\nResponsibilities:\n- PROGRAM SUPPORT\n- ANALYSIS\n- OUTREACH"
+    }
+  },
+  "userPrompts": {
+    "shortlist": "KNOWN JOB CLASSES:\n0: Rsch Data Anl 2 (Research Data Analysis) — DATA ANALYSIS; REPORTING\n1: Widget Analyst 1 (—)\n\nHIRING MANAGER'S REQUEST:\nWorking title: Evaluation Analyst\nSummary: Designs survey instruments and analyses study data for college programmes.\nSupervises others: no\nResponsibilities:\n- EVALUATION\n- OTHER DUTIES AS ASSIGNED\n\nSelect the classes worth comparing in detail.",
+    "rank": "CANDIDATE JOB CLASSES:\n0: Rsch Data Anl 2 (code 006256, Research Data Analysis)\n  summary: Analyses research data and reports findings under general supervision.\n  responsibilities: DATA ANALYSIS; REPORTING\n  official standard scope: Applies professional concepts to conduct analyses of moderate scope and complexity, exercising judgement within defined procedures to determine appropriate action.\n  official standard duties: Collects, cleans and validates study data.; Performs statistical analysis and interprets results.; Prepares reports and visualisations for investigators.\n\n1: Widget Analyst 1 (code , )\n  summary: Applies professional research data concepts to collect, clean and analyse study data, and reports findings to investigators across a range of protocols and instruments.\n  responsibilities: \n\nHIRING MANAGER'S REQUEST:\nSomeone to run our survey programme\n\nReturn the best-matching classes, most confident first.",
+    "classifyRank": "CANDIDATE JOB CLASSES:\n0: Rsch Data Anl 2 (code 006256, Research Data Analysis)\n  summary: Analyses research data and reports findings under general supervision.\n  responsibilities: DATA ANALYSIS; REPORTING\n  official standard scope: Applies professional concepts to conduct analyses of moderate scope and complexity, exercising judgement within defined procedures to determine appropriate action.\n  official standard duties: Collects, cleans and validates study data.; Performs statistical analysis and interprets results.; Prepares reports and visualisations for investigators.\n  typical: grade Grade 21, PSS, supervises: no (observed across 9 real JDs)\n\n1: Widget Analyst 1 (code , )\n  summary: Applies professional research data concepts to collect, clean and analyse study data, and reports findings to investigators across a range of protocols and instruments.\n  responsibilities: \n  typical: grade —, —, supervises: mixed/unknown (from the official standard; no JD corpus yet)\n\nSUBMITTED DESCRIPTION:\nWorking title: Evaluation Analyst\nSummary: Designs survey instruments and analyses study data for college programmes.\nSupervises others: no\nResponsibilities:\n- EVALUATION (85%): Designs instruments.; Analyses results.; Writes reports.\n- OTHER DUTIES AS ASSIGNED (15%): Attends meetings.\nEducation: Bachelor's degree or equivalent experience.\nExperience: Two years of relevant analytical experience.\nKSAs: Survey design.; Statistical software.\n\nTHE DESCRIPTION'S NUMBERED FUNCTIONS:\n0: EVALUATION (85% time) — Designs instruments.; Analyses results.; Writes reports.\n1: OTHER DUTIES AS ASSIGNED (15% time) — Attends meetings.\n\nReturn the best-fitting classes, most confident first.",
+    "distill": "JOB DESCRIPTION:\nA short pasted description."
+  },
+  "computations": {
+    "coverage": [
+      {
+        "why": "weighted by stated % time",
+        "distilled": "withPct",
+        "matched": [
+          0
+        ],
+        "expected": 85
+      },
+      {
+        "why": "all functions matched",
+        "distilled": "withPct",
+        "matched": [
+          0,
+          1
+        ],
+        "expected": 100
+      },
+      {
+        "why": "none matched",
+        "distilled": "withPct",
+        "matched": [],
+        "expected": 0
+      },
+      {
+        "why": "out-of-range indices are ignored, not counted",
+        "distilled": "withPct",
+        "matched": [
+          0,
+          99,
+          -1
+        ],
+        "expected": 85
+      },
+      {
+        "why": "no % stated anywhere, so functions are counted instead",
+        "distilled": "noPct",
+        "matched": [
+          0,
+          1
+        ],
+        "expected": 67
+      },
+      {
+        "why": "no % stated, one of three",
+        "distilled": "noPct",
+        "matched": [
+          1
+        ],
+        "expected": 33
+      }
+    ],
+    "split": [
+      {
+        "why": "partition is derived from matched alone",
+        "distilled": "withPct",
+        "matched": [
+          0
+        ],
+        "expected": {
+          "inClass": [
+            "EVALUATION"
+          ],
+          "outOfClass": [
+            "OTHER DUTIES AS ASSIGNED"
+          ]
+        }
+      },
+      {
+        "why": "nothing matched",
+        "distilled": "withPct",
+        "matched": [],
+        "expected": {
+          "inClass": [],
+          "outOfClass": [
+            "EVALUATION",
+            "OTHER DUTIES AS ASSIGNED"
+          ]
+        }
+      },
+      {
+        "why": "invalid indices do not move a function into the covered list",
+        "distilled": "withPct",
+        "matched": [
+          5
+        ],
+        "expected": {
+          "inClass": [],
+          "outOfClass": [
+            "EVALUATION",
+            "OTHER DUTIES AS ASSIGNED"
+          ]
+        }
+      }
+    ],
+    "judge": [
+      {
+        "why": "no matches at all",
+        "matches": [],
+        "expected": {
+          "verdict": "weak",
+          "verdictNote": "No class fits this description well. It may span two classes, or belong to one not yet ingested — route it to a classification analyst."
+        }
+      },
+      {
+        "why": "top confidence below 45 is weak",
+        "matches": [
+          {
+            "slug": "s",
+            "title": "Rsch Data Anl 2",
+            "ucJobCode": "006256",
+            "confidence": 30,
+            "levelFit": "at",
+            "levelNote": "",
+            "rationale": "",
+            "coveredPct": 100,
+            "inClass": [],
+            "outOfClass": []
+          }
+        ],
+        "expected": {
+          "verdict": "weak",
+          "verdictNote": "No class fits this description well. It may span two classes, or belong to one not yet ingested — route it to a classification analyst."
+        }
+      },
+      {
+        "why": "a gap under 10 points is a close call, and names both classes",
+        "matches": [
+          {
+            "slug": "s",
+            "title": "Rsch Data Anl 2",
+            "ucJobCode": "006256",
+            "confidence": 80,
+            "levelFit": "at",
+            "levelNote": "",
+            "rationale": "",
+            "coveredPct": 100,
+            "inClass": [],
+            "outOfClass": []
+          },
+          {
+            "slug": "s",
+            "title": "Rsch Data Anl 3",
+            "ucJobCode": "006256",
+            "confidence": 74,
+            "levelFit": "at",
+            "levelNote": "",
+            "rationale": "",
+            "coveredPct": 100,
+            "inClass": [],
+            "outOfClass": []
+          }
+        ],
+        "expected": {
+          "verdict": "close-call",
+          "verdictNote": "This description sits between Rsch Data Anl 2 and Rsch Data Anl 3. The choice will turn on level and scope — compare both before deciding."
+        }
+      },
+      {
+        "why": "close call is checked BEFORE level mismatch",
+        "matches": [
+          {
+            "slug": "s",
+            "title": "Rsch Data Anl 2",
+            "ucJobCode": "006256",
+            "confidence": 80,
+            "levelFit": "above",
+            "levelNote": "",
+            "rationale": "",
+            "coveredPct": 100,
+            "inClass": [],
+            "outOfClass": []
+          },
+          {
+            "slug": "s",
+            "title": "Rsch Data Anl 3",
+            "ucJobCode": "006256",
+            "confidence": 74,
+            "levelFit": "at",
+            "levelNote": "",
+            "rationale": "",
+            "coveredPct": 100,
+            "inClass": [],
+            "outOfClass": []
+          }
+        ],
+        "expected": {
+          "verdict": "close-call",
+          "verdictNote": "This description sits between Rsch Data Anl 2 and Rsch Data Anl 3. The choice will turn on level and scope — compare both before deciding."
+        }
+      },
+      {
+        "why": "level above",
+        "matches": [
+          {
+            "slug": "s",
+            "title": "Rsch Data Anl 2",
+            "ucJobCode": "006256",
+            "confidence": 90,
+            "levelFit": "above",
+            "levelNote": "",
+            "rationale": "",
+            "coveredPct": 100,
+            "inClass": [],
+            "outOfClass": []
+          }
+        ],
+        "expected": {
+          "verdict": "level-mismatch",
+          "verdictNote": "The work looks like Rsch Data Anl 2, but the described scope reads above that class's level. Check the neighboring level before classifying."
+        }
+      },
+      {
+        "why": "level below",
+        "matches": [
+          {
+            "slug": "s",
+            "title": "Rsch Data Anl 2",
+            "ucJobCode": "006256",
+            "confidence": 90,
+            "levelFit": "below",
+            "levelNote": "",
+            "rationale": "",
+            "coveredPct": 100,
+            "inClass": [],
+            "outOfClass": []
+          }
+        ],
+        "expected": {
+          "verdict": "level-mismatch",
+          "verdictNote": "The work looks like Rsch Data Anl 2, but the described scope reads below that class's level. Check the neighboring level before classifying."
+        }
+      },
+      {
+        "why": "clear with full coverage",
+        "matches": [
+          {
+            "slug": "s",
+            "title": "Rsch Data Anl 2",
+            "ucJobCode": "006256",
+            "confidence": 90,
+            "levelFit": "at",
+            "levelNote": "",
+            "rationale": "",
+            "coveredPct": 100,
+            "inClass": [],
+            "outOfClass": []
+          }
+        ],
+        "expected": {
+          "verdict": "clear",
+          "verdictNote": "This description classifies as Rsch Data Anl 2."
+        }
+      },
+      {
+        "why": "clear with partial coverage reports the remainder",
+        "matches": [
+          {
+            "slug": "s",
+            "title": "Rsch Data Anl 2",
+            "ucJobCode": "006256",
+            "confidence": 90,
+            "levelFit": "at",
+            "levelNote": "",
+            "rationale": "",
+            "coveredPct": 72,
+            "inClass": [],
+            "outOfClass": []
+          }
+        ],
+        "expected": {
+          "verdict": "clear",
+          "verdictNote": "This description classifies as Rsch Data Anl 2, with 28% of its stated time outside the class envelope."
+        }
+      },
+      {
+        "why": "an unclear level fit is still clear if confident",
+        "matches": [
+          {
+            "slug": "s",
+            "title": "Rsch Data Anl 2",
+            "ucJobCode": "006256",
+            "confidence": 90,
+            "levelFit": "unclear",
+            "levelNote": "",
+            "rationale": "",
+            "coveredPct": 100,
+            "inClass": [],
+            "outOfClass": []
+          }
+        ],
+        "expected": {
+          "verdict": "clear",
+          "verdictNote": "This description classifies as Rsch Data Anl 2."
+        }
+      }
+    ]
+  }
+}

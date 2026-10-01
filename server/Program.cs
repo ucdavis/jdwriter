@@ -3,9 +3,15 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Server.Core.Ai;
 using Server.Core.Data;
+using Server.Core.Ingest;
+using Server.Core.Intake;
+using Server.Core.Jd;
+using Server.Core.Profiles;
+using Server.Core.Standards;
 using Server.Core.Notification;
-using Server.Examples.Notifications;
+using Server.Core.Titles;
 using Server.Helpers;
 using Server.Services;
 
@@ -36,9 +42,40 @@ try
     // Use Entra by default; the Docker sandbox explicitly enables local cookies.
     builder.Services.AddAuthenticationServices(builder.Configuration, builder.Environment);
 
-    builder.Services.AddControllersWithViews();
+    builder.Services.AddControllersWithViews()
+        .AddJsonOptions(options =>
+        {
+            // EF entities carry navigations in both directions, so a serialized profile walks
+            // Envelope -> ClassProfile -> Envelope until it hits the depth limit, throws, and
+            // leaves a TRUNCATED response on the wire. The client then fails to parse a reply the
+            // server considered successful, which is a miserable thing to debug from the outside.
+            //
+            // IgnoreCycles writes null where the back-reference would be. That is exactly right
+            // here: a child already sits inside its parent in the payload, so the return trip
+            // carries no information the caller does not already have.
+            options.JsonSerializerOptions.ReferenceHandler =
+                System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+
+            // Enums cross the wire as NAMES, not integers.
+            //
+            // The default is an integer, and the failure mode is nasty: 0 is a perfectly valid
+            // value meaning the first member, so a client renders "salaryGrade" for every
+            // distribution and "license" for every qualification instead of failing visibly.
+            // Nothing errors; the screen is just quietly wrong.
+            //
+            // Storage already does this — the EF model converts every enum to its name so analysts
+            // can query the database directly — and the wire should agree, for the same reason:
+            // adding a member must never silently re-map existing values. [JsonStringEnumMemberName]
+            // still wins where a specific spelling is required, such as "out_of_envelope".
+            options.JsonSerializerOptions.Converters.Add(
+                new System.Text.Json.Serialization.JsonStringEnumConverter(
+                    System.Text.Json.JsonNamingPolicy.CamelCase));
+
+            // Nulls stay on the wire. Several of them are MEANINGFUL — a class with no official
+            // standard, a bootstrapped class with no consensus salary grade — and the contract
+            // documents them as normal states rather than absences.
+        });
     builder.Services.AddNotificationServices(builder.Configuration);
-    builder.Services.AddNotificationExamples(builder.Configuration);
 
     // Add response caching for pages that opt-in
     // https://learn.microsoft.com/en-us/aspnet/core/performance/caching/middleware?view=aspnetcore-9.0
@@ -47,6 +84,42 @@ try
     // add scoped services here
     builder.Services.AddScoped<IDbInitializer, DbInitializer>();
     builder.Services.AddScoped<IUserService, UserService>();
+
+    // The title reference is read on nearly every corpus path and rebuilt only on import, so the
+    // built index is cached rather than reconstructed per request.
+    builder.Services.AddMemoryCache();
+    builder.Services.AddScoped<ITitleCodeService, TitleCodeService>();
+
+    // Every model call in the system goes through this one seam.
+    builder.Services.AddSingleton<IStructuredLlm, StructuredLlm>();
+
+    // ---- data access
+    builder.Services.AddScoped<IClassProfileRepository, ClassProfileRepository>();
+    builder.Services.AddScoped<IStandardsStore, StandardsStore>();
+    builder.Services.AddScoped<StandardsImporter>();
+
+    // Point envelope synthesis at the REAL standards store. Without this line the container
+    // resolves NoStandardLookup, which answers null to everything — a legitimate configuration
+    // (corpus-only synthesis) and therefore an easy accident. Every envelope would quietly lose
+    // its authoritative KSAs, education and scope, and nothing would fail.
+    builder.Services.AddScoped<IStandardLookup, StandardsStoreLookup>();
+
+    // ---- corpus building. Registered as concretes because they are composed by the pipeline
+    // rather than swapped; the seams worth abstracting are the LLM and the repository.
+    builder.Services.AddScoped<Consolidator>();
+    builder.Services.AddScoped<EnvelopeSynthesizer>();
+    builder.Services.AddScoped<EnvelopeCoverageChecker>();
+    builder.Services.AddScoped<IngestPipeline>();
+
+    // ---- runtime authoring path
+    builder.Services.AddScoped<IIntakeMatcher, IntakeMatcher>();
+    builder.Services.AddScoped<IDescriptionClassifier, DescriptionClassifier>();
+    builder.Services.AddScoped<IJdAssembler, JdAssembler>();
+    builder.Services.AddScoped<IFitService, FitService>();
+
+    // ---- standards and bootstrap
+    builder.Services.AddScoped<IStandardEnvelopeBuilder, SynthesizedEnvelopeBuilder>();
+    builder.Services.AddScoped<IBootstrapper, Bootstrapper>();
     // add auth policies here
 
     // add db context (check secrets first, then config, then default)
@@ -85,13 +158,34 @@ try
 
     app = builder.Build();
 
+    // Say at boot whether model-backed features will work. Without this, a missing key surfaces
+    // only as a 503 from whichever endpoint the user happened to try first, which looks like that
+    // feature is broken rather than like the deployment is unconfigured.
+    {
+        var llm = app.Services.GetRequiredService<IStructuredLlm>();
+        if (llm.HasApiKey)
+        {
+            app.Logger.LogInformation("Anthropic API key found — intake, classification and assembly are enabled.");
+        }
+        else
+        {
+            app.Logger.LogWarning(
+                "No Anthropic API key configured. Browsing and the corpus work; intake, "
+                + "classification and assembly will return 503. Set ANTHROPIC_API_KEY in server/.env.");
+        }
+    }
+
     app.Logger.LogInformation("Starting up {AppName} in {Environment} environment", app.Environment.ApplicationName, app.Environment.EnvironmentName);
 
     // do db migrations at startup
     using (var scope = app.Services.CreateScope())
     {
         var init = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-        var includeSampleData = builder.Configuration.GetValue<bool>("DevelopmentData:SeedOnStartup");
+        // Seed when the flag asks, and ALSO whenever local authentication is on: the sandbox
+        // personas only exist in that mode, and without their role grants a local sign-in lands on
+        // a 403 from every surface — which reads as a broken rule rather than a missing grant.
+        var includeSampleData = builder.Configuration.GetValue<bool>("DevelopmentData:SeedOnStartup")
+                                || LocalAuthentication.IsEnabled(builder.Configuration, builder.Environment);
         await init.InitializeAsync(includeSampleData);
     }
 

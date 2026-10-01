@@ -8,7 +8,7 @@ using Server.Core.Data;
 
 #nullable disable
 
-namespace Server.Core.Migrations
+namespace server.core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
@@ -17,12 +17,12 @@ namespace Server.Core.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.20")
+                .HasAnnotation("ProductVersion", "10.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("server.core.Domain.WeatherForecast", b =>
+            modelBuilder.Entity("Server.Core.Domain.AppUser", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -30,19 +30,1789 @@ namespace Server.Core.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("Summary")
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("IamId")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("TemperatureC")
+                    b.Property<DateTimeOffset?>("LastSeenAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NameIdentifier")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NameIdentifier")
+                        .IsUnique();
+
+                    b.ToTable("AppUsers");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AppUserRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AppUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("GrantedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId", "Role")
+                        .IsUnique();
+
+                    b.ToTable("AppUserRoles");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuthoredJd", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BargainingUnit")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int>("ClassProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("FlsaStatus")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("JobSummary")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SalaryGrade")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("UcJobCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("WorkingTitle")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassProfileId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.ToTable("AuthoredJds");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuthoredJdDuty", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthoredJdResponsibilityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthoredJdResponsibilityId", "Ordinal");
+
+                    b.ToTable("AuthoredJdDuties");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuthoredJdListItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthoredJdId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthoredJdId", "Ordinal");
+
+                    b.ToTable("AuthoredJdListItems");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuthoredJdResponsibility", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthoredJdId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FunctionName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PctTime")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.ToTable("WeatherForecasts");
+                    b.HasIndex("AuthoredJdId");
+
+                    b.ToTable("AuthoredJdResponsibilities");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ClassProfile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CorpusSize")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CtJobFamily")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("CtJobFunction")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("EnvelopeSource")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("GeneratedNote")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PersonnelProgram")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("RepresentativeSummary")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("UcJobCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("UcJobCode");
+
+                    b.ToTable("ClassProfiles");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ComplianceEdit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("After")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("AuthoredJdId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Before")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Section")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthoredJdId");
+
+                    b.ToTable("ComplianceEdits");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ComplianceRule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Pattern")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Replacement")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("ComplianceRules");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedFunction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("MaxPct")
+                        .HasColumnType("float");
+
+                    b.Property<double>("MeanPct")
+                        .HasColumnType("float");
+
+                    b.Property<double>("MinPct")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Prevalence")
+                        .HasColumnType("float");
+
+                    b.Property<double>("TemplatePct")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassProfileId");
+
+                    b.ToTable("ConsolidatedFunctions");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedFunctionMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ConsolidatedFunctionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConsolidatedFunctionId", "Ordinal");
+
+                    b.ToTable("ConsolidatedFunctionMembers");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedFunctionSampleDuty", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ConsolidatedFunctionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConsolidatedFunctionId", "Ordinal");
+
+                    b.ToTable("ConsolidatedFunctionSampleDuties");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedQual", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Freq")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassProfileId");
+
+                    b.ToTable("ConsolidatedQuals");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedQualMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ConsolidatedQualId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConsolidatedQualId", "Ordinal");
+
+                    b.ToTable("ConsolidatedQualMembers");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.CoverageReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("MeanCoverage")
+                        .HasColumnType("float");
+
+                    b.Property<int>("N")
+                        .HasColumnType("int");
+
+                    b.Property<double>("WellCoveredPct")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassProfileId")
+                        .IsUnique();
+
+                    b.ToTable("CoverageReports");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.EnvelopeDuty", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("EnvelopeResponsibilityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnvelopeResponsibilityId", "Ordinal");
+
+                    b.ToTable("EnvelopeDuties");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.EnvelopeListItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("JobEnvelopeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobEnvelopeId", "Ordinal");
+
+                    b.ToTable("EnvelopeListItems");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.EnvelopeResponsibility", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FunctionName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("JobEnvelopeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PctTime")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobEnvelopeId");
+
+                    b.ToTable("EnvelopeResponsibilities");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdCoverage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CoverageReportId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("CoveredPct")
+                        .HasColumnType("float");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceFile")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoverageReportId");
+
+                    b.ToTable("JdCoverages");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdCoverageUncovered", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("JdCoverageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Pct")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JdCoverageId");
+
+                    b.ToTable("JdCoverageUncovereds");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdDuty", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("JdResponsibilityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JdResponsibilityId", "Ordinal");
+
+                    b.ToTable("JdDuties");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdPemEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Axis")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("Band")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("JobDescriptionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RowName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobDescriptionId");
+
+                    b.ToTable("JdPemEntries");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdQualificationItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("JobDescriptionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobDescriptionId", "Ordinal");
+
+                    b.ToTable("JdQualificationItems");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdResponsibility", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FunctionName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("JobDescriptionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Pct")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobDescriptionId", "Ordinal");
+
+                    b.ToTable("JdResponsibilities");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JobDescription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BusinessUnit")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("CtJobFamily")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("CtJobFunction")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("DepartmentCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("DepartmentName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Division")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool?>("DriversLicenseRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FlsaStatus")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("JdNumber")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("JobSummary")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("Leads")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OriginalUcJobCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("PemPopulated")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PersonnelProgram")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("ReportsToPositionNumber")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("SalaryGrade")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SourceFile")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<bool?>("Supervises")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UcJobCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("UcJobTitle")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("UcPathPositionNumber")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("UnionCode")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("WorkingTitle")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool?>("WorksOutdoorsOver50pct")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceFile")
+                        .IsUnique();
+
+                    b.HasIndex("UcJobCode");
+
+                    b.ToTable("JobDescriptions");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JobEnvelope", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ScopeStatement")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassProfileId")
+                        .IsUnique();
+
+                    b.ToTable("JobEnvelopes");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JobStandard", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("CustomScope")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Flsa")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("GenericScope")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Grade")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("LongTitle")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("PersProg")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("TitleCodeKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("TitleKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("Union")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code");
+
+                    b.HasIndex("TitleCodeKey")
+                        .IsUnique();
+
+                    b.HasIndex("TitleKey");
+
+                    b.ToTable("JobStandards");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JobStandardItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("JobStandardId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobStandardId", "Ordinal");
+
+                    b.ToTable("JobStandardItems");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileDistribution", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("Agreement")
+                        .HasColumnType("float");
+
+                    b.Property<int>("ClassProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Consensus")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Field")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassProfileId", "Field")
+                        .IsUnique();
+
+                    b.ToTable("ProfileDistributions");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileDistributionValue", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProfileDistributionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Value")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileDistributionId");
+
+                    b.ToTable("ProfileDistributionValues");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileDroppedItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassProfileId", "Ordinal");
+
+                    b.ToTable("ProfileDroppedItems");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileFunction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<double>("PctMax")
+                        .HasColumnType("float");
+
+                    b.Property<double>("PctMean")
+                        .HasColumnType("float");
+
+                    b.Property<double>("PctMin")
+                        .HasColumnType("float");
+
+                    b.Property<int>("PctN")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Prevalence")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassProfileId");
+
+                    b.ToTable("ProfileFunctions");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileFunctionSampleDuty", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProfileFunctionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileFunctionId", "Ordinal");
+
+                    b.ToTable("ProfileFunctionSampleDuties");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileQualItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Freq")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassProfileId", "Ordinal");
+
+                    b.ToTable("ProfileQualItems");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileSourceFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceFile")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClassProfileId");
+
+                    b.ToTable("ProfileSourceFiles");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.Supersession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FromCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("FromTitle")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("ToCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ToTitle")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromCode")
+                        .IsUnique();
+
+                    b.ToTable("Supersessions");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.TitleCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Family")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Function")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Grade")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("TitleCodeKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("TitleKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code");
+
+                    b.HasIndex("TitleCodeKey");
+
+                    b.HasIndex("TitleKey");
+
+                    b.ToTable("TitleCodes");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AppUserRole", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AppUser", "AppUser")
+                        .WithMany("Roles")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuthoredJd", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ClassProfile", "ClassProfile")
+                        .WithMany()
+                        .HasForeignKey("ClassProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Server.Core.Domain.AppUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ClassProfile");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuthoredJdDuty", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AuthoredJdResponsibility", "AuthoredJdResponsibility")
+                        .WithMany("Duties")
+                        .HasForeignKey("AuthoredJdResponsibilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AuthoredJdResponsibility");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuthoredJdListItem", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AuthoredJd", "AuthoredJd")
+                        .WithMany("Items")
+                        .HasForeignKey("AuthoredJdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AuthoredJd");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuthoredJdResponsibility", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AuthoredJd", "AuthoredJd")
+                        .WithMany("KeyResponsibilities")
+                        .HasForeignKey("AuthoredJdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AuthoredJd");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ComplianceEdit", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AuthoredJd", "AuthoredJd")
+                        .WithMany("ComplianceEdits")
+                        .HasForeignKey("AuthoredJdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AuthoredJd");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedFunction", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ClassProfile", "ClassProfile")
+                        .WithMany("ConsolidatedFunctions")
+                        .HasForeignKey("ClassProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassProfile");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedFunctionMember", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ConsolidatedFunction", "ConsolidatedFunction")
+                        .WithMany("Members")
+                        .HasForeignKey("ConsolidatedFunctionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ConsolidatedFunction");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedFunctionSampleDuty", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ConsolidatedFunction", "ConsolidatedFunction")
+                        .WithMany("SampleDuties")
+                        .HasForeignKey("ConsolidatedFunctionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ConsolidatedFunction");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedQual", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ClassProfile", "ClassProfile")
+                        .WithMany("ConsolidatedQuals")
+                        .HasForeignKey("ClassProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassProfile");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedQualMember", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ConsolidatedQual", "ConsolidatedQual")
+                        .WithMany("Members")
+                        .HasForeignKey("ConsolidatedQualId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ConsolidatedQual");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.CoverageReport", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ClassProfile", "ClassProfile")
+                        .WithOne("Coverage")
+                        .HasForeignKey("Server.Core.Domain.CoverageReport", "ClassProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassProfile");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.EnvelopeDuty", b =>
+                {
+                    b.HasOne("Server.Core.Domain.EnvelopeResponsibility", "EnvelopeResponsibility")
+                        .WithMany("Duties")
+                        .HasForeignKey("EnvelopeResponsibilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EnvelopeResponsibility");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.EnvelopeListItem", b =>
+                {
+                    b.HasOne("Server.Core.Domain.JobEnvelope", "JobEnvelope")
+                        .WithMany("Items")
+                        .HasForeignKey("JobEnvelopeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobEnvelope");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.EnvelopeResponsibility", b =>
+                {
+                    b.HasOne("Server.Core.Domain.JobEnvelope", "JobEnvelope")
+                        .WithMany("KeyResponsibilities")
+                        .HasForeignKey("JobEnvelopeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobEnvelope");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdCoverage", b =>
+                {
+                    b.HasOne("Server.Core.Domain.CoverageReport", "CoverageReport")
+                        .WithMany("PerJd")
+                        .HasForeignKey("CoverageReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CoverageReport");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdCoverageUncovered", b =>
+                {
+                    b.HasOne("Server.Core.Domain.JdCoverage", "JdCoverage")
+                        .WithMany("Uncovered")
+                        .HasForeignKey("JdCoverageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JdCoverage");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdDuty", b =>
+                {
+                    b.HasOne("Server.Core.Domain.JdResponsibility", "JdResponsibility")
+                        .WithMany("Duties")
+                        .HasForeignKey("JdResponsibilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JdResponsibility");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdPemEntry", b =>
+                {
+                    b.HasOne("Server.Core.Domain.JobDescription", "JobDescription")
+                        .WithMany("PemEntries")
+                        .HasForeignKey("JobDescriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobDescription");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdQualificationItem", b =>
+                {
+                    b.HasOne("Server.Core.Domain.JobDescription", "JobDescription")
+                        .WithMany("Qualifications")
+                        .HasForeignKey("JobDescriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobDescription");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdResponsibility", b =>
+                {
+                    b.HasOne("Server.Core.Domain.JobDescription", "JobDescription")
+                        .WithMany("Responsibilities")
+                        .HasForeignKey("JobDescriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobDescription");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JobEnvelope", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ClassProfile", "ClassProfile")
+                        .WithOne("Envelope")
+                        .HasForeignKey("Server.Core.Domain.JobEnvelope", "ClassProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassProfile");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JobStandardItem", b =>
+                {
+                    b.HasOne("Server.Core.Domain.JobStandard", "JobStandard")
+                        .WithMany("Items")
+                        .HasForeignKey("JobStandardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobStandard");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileDistribution", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ClassProfile", "ClassProfile")
+                        .WithMany("Distributions")
+                        .HasForeignKey("ClassProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassProfile");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileDistributionValue", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ProfileDistribution", "ProfileDistribution")
+                        .WithMany("Values")
+                        .HasForeignKey("ProfileDistributionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProfileDistribution");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileDroppedItem", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ClassProfile", "ClassProfile")
+                        .WithMany("DroppedItems")
+                        .HasForeignKey("ClassProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassProfile");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileFunction", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ClassProfile", "ClassProfile")
+                        .WithMany("Functions")
+                        .HasForeignKey("ClassProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassProfile");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileFunctionSampleDuty", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ProfileFunction", "ProfileFunction")
+                        .WithMany("SampleDuties")
+                        .HasForeignKey("ProfileFunctionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProfileFunction");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileQualItem", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ClassProfile", "ClassProfile")
+                        .WithMany("Qualifications")
+                        .HasForeignKey("ClassProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassProfile");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileSourceFile", b =>
+                {
+                    b.HasOne("Server.Core.Domain.ClassProfile", "ClassProfile")
+                        .WithMany("SourceFiles")
+                        .HasForeignKey("ClassProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClassProfile");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AppUser", b =>
+                {
+                    b.Navigation("Roles");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuthoredJd", b =>
+                {
+                    b.Navigation("ComplianceEdits");
+
+                    b.Navigation("Items");
+
+                    b.Navigation("KeyResponsibilities");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuthoredJdResponsibility", b =>
+                {
+                    b.Navigation("Duties");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ClassProfile", b =>
+                {
+                    b.Navigation("ConsolidatedFunctions");
+
+                    b.Navigation("ConsolidatedQuals");
+
+                    b.Navigation("Coverage");
+
+                    b.Navigation("Distributions");
+
+                    b.Navigation("DroppedItems");
+
+                    b.Navigation("Envelope");
+
+                    b.Navigation("Functions");
+
+                    b.Navigation("Qualifications");
+
+                    b.Navigation("SourceFiles");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedFunction", b =>
+                {
+                    b.Navigation("Members");
+
+                    b.Navigation("SampleDuties");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ConsolidatedQual", b =>
+                {
+                    b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.CoverageReport", b =>
+                {
+                    b.Navigation("PerJd");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.EnvelopeResponsibility", b =>
+                {
+                    b.Navigation("Duties");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdCoverage", b =>
+                {
+                    b.Navigation("Uncovered");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdResponsibility", b =>
+                {
+                    b.Navigation("Duties");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JobDescription", b =>
+                {
+                    b.Navigation("PemEntries");
+
+                    b.Navigation("Qualifications");
+
+                    b.Navigation("Responsibilities");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JobEnvelope", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("KeyResponsibilities");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JobStandard", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileDistribution", b =>
+                {
+                    b.Navigation("Values");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ProfileFunction", b =>
+                {
+                    b.Navigation("SampleDuties");
                 });
 #pragma warning restore 612, 618
         }

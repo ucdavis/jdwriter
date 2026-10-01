@@ -35,32 +35,59 @@ public class DbInitializer : IDbInitializer
         }
     }
 
+    /// <summary>
+    /// Development seeding for JDWriter is a corpus load, not a handful of rows, so that belongs in
+    /// the migration CLI rather than in startup. What DOES belong here is giving the fictional
+    /// sandbox personas the roles needed to explore the app.
+    ///
+    /// Without it, local sign-in succeeds and then every surface returns 403 — which reads as a
+    /// broken authorization rule rather than a user who was never granted anything. The personas
+    /// only exist when local authentication is enabled, which startup already refuses outside
+    /// Development, so these grants cannot reach a real environment.
+    ///
+    /// "sample" gets everything, so one sign-in can reach every surface. "basic" deliberately gets
+    /// only Author, which is what makes it useful: it is how you check that the analyst and admin
+    /// gates actually hold.
+    /// </summary>
     private async Task SeedDevelopmentAsync(CancellationToken ct)
     {
-        if (!await _db.WeatherForecasts.AnyAsync(ct))
-        {
-            // Fixed dates make fresh sandboxes reproducible for screenshots and investigation.
-            var firstDate = new DateOnly(2025, 1, 1);
-            var forecasts = new[]
-            {
-                new WeatherForecast { Date = firstDate.AddDays(0), TemperatureC = 18, Summary = "Cool" },
-                new WeatherForecast { Date = firstDate.AddDays(1), TemperatureC = 22, Summary = "Mild" },
-                new WeatherForecast { Date = firstDate.AddDays(2), TemperatureC = 35, Summary = "Hot" },
-                new WeatherForecast { Date = firstDate.AddDays(3), TemperatureC = 15, Summary = "Chilly" },
-                new WeatherForecast { Date = firstDate.AddDays(4), TemperatureC = 8, Summary = "Freezing" },
-                new WeatherForecast { Date = firstDate.AddDays(5), TemperatureC = 25, Summary = "Warm" },
-                new WeatherForecast { Date = firstDate.AddDays(6), TemperatureC = 28, Summary = "Balmy" },
-                new WeatherForecast { Date = firstDate.AddDays(7), TemperatureC = 12, Summary = "Cold" },
-                new WeatherForecast { Date = firstDate.AddDays(8), TemperatureC = 32, Summary = "Scorching" },
-                new WeatherForecast { Date = firstDate.AddDays(9), TemperatureC = 20, Summary = "Pleasant" }
-            };
-
-            _db.WeatherForecasts.AddRange(forecasts);
-            await _db.SaveChangesAsync(ct);
-        }
+        await GrantAsync("sandbox-sample", "Sample User", "sample@example.test",
+            [AppRoles.Author, AppRoles.Analyst, AppRoles.Admin], ct);
+        await GrantAsync("sandbox-basic", "Basic User", "basic@example.test",
+            [AppRoles.Author], ct);
     }
 
-    // just a placeholder for any production-safe seeding
-    private Task SeedProductionSafeAsync(CancellationToken ct)
-        => Task.CompletedTask;
+    private async Task GrantAsync(
+        string nameIdentifier, string displayName, string email, string[] roles, CancellationToken ct)
+    {
+        var user = await _db.AppUsers
+            .Include(u => u.Roles)
+            .FirstOrDefaultAsync(u => u.NameIdentifier == nameIdentifier, ct);
+
+        if (user is null)
+        {
+            user = new AppUser
+            {
+                NameIdentifier = nameIdentifier,
+                DisplayName = displayName,
+                Email = email,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            _db.AppUsers.Add(user);
+        }
+
+        // Additive: a role granted by hand during a session is not revoked on the next restart.
+        foreach (var role in roles.Where(r => !user.Roles.Any(x => x.Role == r)))
+        {
+            user.Roles.Add(new AppUserRole { Role = role, GrantedAt = DateTimeOffset.UtcNow });
+        }
+
+        await _db.SaveChangesAsync(ct);
+        _logger.LogInformation("Sandbox persona {Name} has roles {Roles}.",
+            nameIdentifier, string.Join(", ", user.Roles.Select(r => r.Role)));
+    }
+
+    // Reference data that every environment needs (title codes, supersessions) will be
+    // seeded here once those entities exist.
+    private Task SeedProductionSafeAsync(CancellationToken ct) => Task.CompletedTask;
 }

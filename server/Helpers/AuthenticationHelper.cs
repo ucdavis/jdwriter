@@ -15,7 +15,7 @@ public static class AuthenticationHelper
     {
         if (LocalAuthentication.IsEnabled(configuration, environment))
         {
-            var cookieName = ".WebAppTemplate.LocalSandbox";
+            var cookieName = ".JDWriter.LocalSandbox";
             var cookieSuffix = configuration["Auth:LocalCookieSuffix"];
             if (!string.IsNullOrEmpty(cookieSuffix))
             {
@@ -45,6 +45,19 @@ public static class AuthenticationHelper
                         ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
                         return Task.CompletedTask;
                     };
+
+                    // Resolve APPLICATION roles for the sandbox personas too.
+                    //
+                    // The template wires this only into the Entra path, so local sign-in carried
+                    // whatever roles the persona was minted with and never consulted the database.
+                    // That makes local development useless the moment roles are real: every
+                    // endpoint returns 403 to a user the app considers signed in, which reads as a
+                    // broken authorization rule rather than a missing grant.
+                    //
+                    // Sharing the hook also means local and deployed behave the same way — a
+                    // sandbox persona is provisioned on first sign-in and picks up granted roles on
+                    // the next request, exactly as a real account does.
+                    options.Events.OnValidatePrincipal = OnValidatePrincipal;
                 });
             return services;
         }

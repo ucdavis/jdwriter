@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using FluentAssertions;
+using Server.Core.Domain;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -53,7 +54,7 @@ public class AuthenticationHelperTests : IDisposable
         var cookie = await ValidateCookie(signedIn);
 
         signedIn.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("User", "SampleRole");
+            .Should().BeEquivalentTo(AppRoles.Author);
         signedIn.Identity!.Name.Should().Be("Sample User");
         cookie.Principal.Should().BeSameAs(signedIn);
         cookie.ShouldRenew.Should().BeFalse();
@@ -72,7 +73,7 @@ public class AuthenticationHelperTests : IDisposable
         var cookie = await ValidateCookie(principal);
 
         cookie.Principal!.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("User", "SampleRole");
+            .Should().BeEquivalentTo(AppRoles.Author);
         cookie.Principal.Identity!.Name.Should().Be("Sample User");
         cookie.Principal.FindFirst("ucdPersonIAMID")!.Value.Should().Be("sandbox-10001");
         cookie.ShouldRenew.Should().BeTrue();
@@ -123,7 +124,7 @@ public class AuthenticationHelperTests : IDisposable
         updatedSecondary.FindFirst("department")!.Value.Should().Be("Example department");
         updatedSecondary.FindAll(ClaimTypes.Role).Should().BeEmpty();
         signedIn.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("User", "SampleRole");
+            .Should().BeEquivalentTo(AppRoles.Author);
         principal.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
             .Should().Equal("DirectoryRole", "OldRole");
     }
@@ -157,8 +158,10 @@ public class AuthenticationHelperTests : IDisposable
         }
 
         updated.IsInRole("StaleRole").Should().BeFalse();
-        updated.IsInRole("User").Should().BeTrue();
-        updated.IsInRole("SampleRole").Should().BeTrue();
+        updated.IsInRole(AppRoles.Author).Should().BeTrue();
+        // The seeded roles must be gone: application roles are authoritative, so a role removed in
+        // the database has to disappear from the principal on the next cookie validation.
+        updated.IsInRole("SampleRole").Should().BeFalse();
         updated.Identities.First().RoleClaimType.Should().Be(primaryRoleClaimType);
         updated.Identities.Last().RoleClaimType.Should().Be("secondary-role");
         updated.FindFirst("department")!.Value.Should().Be("Example department");

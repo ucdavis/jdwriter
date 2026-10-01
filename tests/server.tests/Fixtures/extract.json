@@ -1,0 +1,301 @@
+{
+  "manifest": {
+    "generatedFrom": "src/lib/intake/extract.ts (kindFor, tidy)",
+    "portable": [
+      "kindFor",
+      "tidy",
+      "thresholds"
+    ],
+    "notPortable": {
+      "docx": "mammoth vs DocumentFormat.OpenXml — whitespace and paragraph joins will differ",
+      "pdf": "unpdf vs PdfPig — whitespace and reading order will differ",
+      "xlsx": "delegates to parsePd; covered by fixtures/pd.json"
+    },
+    "dispatchCases": 31,
+    "dispatchErrors": 9,
+    "tidyCases": 12
+  },
+  "thresholds": {
+    "MAX_BYTES": 20971520,
+    "MAX_CHARS": 400000,
+    "MIN_USEFUL_CHARS": 120,
+    "note": "MIN_USEFUL_CHARS distinguishes a scanned/image-only PDF from a successful extraction; it must stay a distinct error from 'unsupported type', because the user's fix is different (OCR or paste, vs convert)."
+  },
+  "dispatch": [
+    {
+      "filename": "jd.docx",
+      "mime": "",
+      "kind": "docx",
+      "error": null
+    },
+    {
+      "filename": "jd.pdf",
+      "mime": "",
+      "kind": "pdf",
+      "error": null
+    },
+    {
+      "filename": "jd.xlsx",
+      "mime": "",
+      "kind": "xlsx",
+      "error": null
+    },
+    {
+      "filename": "jd.xlsm",
+      "mime": "",
+      "kind": "xlsx",
+      "error": null
+    },
+    {
+      "filename": "jd.html",
+      "mime": "",
+      "kind": "html",
+      "error": null
+    },
+    {
+      "filename": "jd.htm",
+      "mime": "",
+      "kind": "html",
+      "error": null
+    },
+    {
+      "filename": "jd.txt",
+      "mime": "",
+      "kind": "text",
+      "error": null
+    },
+    {
+      "filename": "jd.md",
+      "mime": "",
+      "kind": "text",
+      "error": null
+    },
+    {
+      "filename": "jd.rtf",
+      "mime": "",
+      "kind": "text",
+      "error": null
+    },
+    {
+      "filename": "upload",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "kind": "docx",
+      "error": null
+    },
+    {
+      "filename": "upload",
+      "mime": "application/pdf",
+      "kind": "pdf",
+      "error": null
+    },
+    {
+      "filename": "upload",
+      "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "kind": "xlsx",
+      "error": null
+    },
+    {
+      "filename": "upload",
+      "mime": "text/html",
+      "kind": "html",
+      "error": null
+    },
+    {
+      "filename": "upload",
+      "mime": "text/plain",
+      "kind": "text",
+      "error": null
+    },
+    {
+      "filename": "upload",
+      "mime": "text/markdown",
+      "kind": "text",
+      "error": null
+    },
+    {
+      "filename": "jd.pdf",
+      "mime": "text/plain",
+      "kind": "pdf",
+      "error": null
+    },
+    {
+      "filename": "jd.docx",
+      "mime": "application/pdf",
+      "kind": "docx",
+      "error": null
+    },
+    {
+      "filename": "FARM LABORER (40123456).HTML",
+      "mime": "",
+      "kind": "html",
+      "error": null
+    },
+    {
+      "filename": "JD.PDF",
+      "mime": "",
+      "kind": "pdf",
+      "error": null
+    },
+    {
+      "filename": "Position Description.XLSX",
+      "mime": "",
+      "kind": "xlsx",
+      "error": null
+    },
+    {
+      "filename": "old.doc",
+      "mime": "",
+      "kind": null,
+      "error": {
+        "type": "ExtractionError",
+        "message": "Legacy .doc files can't be read directly. Open it in Word and save as .docx, or paste the text below."
+      }
+    },
+    {
+      "filename": "upload",
+      "mime": "application/msword",
+      "kind": null,
+      "error": {
+        "type": "ExtractionError",
+        "message": "Legacy .doc files can't be read directly. Open it in Word and save as .docx, or paste the text below."
+      }
+    },
+    {
+      "filename": "old.xls",
+      "mime": "",
+      "kind": null,
+      "error": {
+        "type": "ExtractionError",
+        "message": "Legacy .xls files can't be read directly. Open it in Excel and save as .xlsx, or paste the text below."
+      }
+    },
+    {
+      "filename": "upload",
+      "mime": "application/vnd.ms-excel",
+      "kind": null,
+      "error": {
+        "type": "ExtractionError",
+        "message": "Legacy .xls files can't be read directly. Open it in Excel and save as .xlsx, or paste the text below."
+      }
+    },
+    {
+      "filename": "notes.pages",
+      "mime": "",
+      "kind": null,
+      "error": {
+        "type": "ExtractionError",
+        "message": "Pages documents can't be read directly. Export as Word or PDF, or paste the text below."
+      }
+    },
+    {
+      "filename": "photo.png",
+      "mime": "image/png",
+      "kind": null,
+      "error": {
+        "type": "ExtractionError",
+        "message": "Unsupported file type “.png”. Upload a Word (.docx), PDF, HTML, or text file — or paste the text below."
+      }
+    },
+    {
+      "filename": "archive.zip",
+      "mime": "application/zip",
+      "kind": null,
+      "error": {
+        "type": "ExtractionError",
+        "message": "Unsupported file type “.zip”. Upload a Word (.docx), PDF, HTML, or text file — or paste the text below."
+      }
+    },
+    {
+      "filename": "noextension",
+      "mime": "",
+      "kind": null,
+      "error": {
+        "type": "ExtractionError",
+        "message": "Unsupported file type “.unknown”. Upload a Word (.docx), PDF, HTML, or text file — or paste the text below."
+      }
+    },
+    {
+      "filename": "",
+      "mime": "",
+      "kind": null,
+      "error": {
+        "type": "ExtractionError",
+        "message": "Unsupported file type “.unknown”. Upload a Word (.docx), PDF, HTML, or text file — or paste the text below."
+      }
+    },
+    {
+      "filename": "my.jd.v2.final.docx",
+      "mime": "",
+      "kind": "docx",
+      "error": null
+    },
+    {
+      "filename": "report.pdf.txt",
+      "mime": "",
+      "kind": "text",
+      "error": null
+    }
+  ],
+  "tidy": [
+    {
+      "why": "CRLF becomes LF",
+      "input": "a\r\nb\r\nc",
+      "output": "a\nb\nc"
+    },
+    {
+      "why": "bare CR becomes LF",
+      "input": "a\rb",
+      "output": "a\nb"
+    },
+    {
+      "why": "trailing spaces before a newline are dropped",
+      "input": "a   \nb\t\nc",
+      "output": "a\nb\nc"
+    },
+    {
+      "why": "three or more newlines collapse to exactly two",
+      "input": "a\n\n\n\n\nb",
+      "output": "a\n\nb"
+    },
+    {
+      "why": "two newlines are preserved (paragraph break)",
+      "input": "a\n\nb",
+      "output": "a\n\nb"
+    },
+    {
+      "why": "single newline is preserved (line break)",
+      "input": "a\nb",
+      "output": "a\nb"
+    },
+    {
+      "why": "leading and trailing whitespace is trimmed",
+      "input": "\n\n  a\n\n  ",
+      "output": "a"
+    },
+    {
+      "why": "interior indentation is NOT stripped",
+      "input": "a\n    indented\nb",
+      "output": "a\n    indented\nb"
+    },
+    {
+      "why": "empty string stays empty",
+      "input": "",
+      "output": ""
+    },
+    {
+      "why": "whitespace-only becomes empty",
+      "input": "  \n\n\t  ",
+      "output": ""
+    },
+    {
+      "why": "mixed CRLF and blank runs",
+      "input": "a\r\n\r\n\r\n\r\nb   \r\nc",
+      "output": "a\n\nb\nc"
+    },
+    {
+      "why": "non-breaking space is left alone (not whitespace to the regex)",
+      "input": "a \nb",
+      "output": "a \nb"
+    }
+  ]
+}

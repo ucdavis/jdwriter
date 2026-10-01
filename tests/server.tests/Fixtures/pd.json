@@ -1,0 +1,491 @@
+{
+  "manifest": {
+    "generatedFrom": "src/lib/intake/parsePd.ts (parsePdWorkbook + renderPd)",
+    "syntheticCases": 15,
+    "syntheticInputs": "fixtures/inputs/pd/*.xlsx — invented content, safe to commit",
+    "realSample": true,
+    "parsedNull": 2,
+    "proposedCodeLeaks": 0
+  },
+  "real": {
+    "file": "Sample JDs/PD_Evaluation_Analyst_final.xlsx",
+    "note": "The acceptance-test input. Copy this workbook into the new repo's test fixtures — it carries no personal identifiers and without it the acceptance test cannot run.",
+    "inputSha256": "ea6ea3a75f7c86fbddf7a7230cc9791378374d293820ba79e4e74a08cf9ab358",
+    "parsed": {
+      "sheetName": "New Recruitment",
+      "otherFilledSheets": [],
+      "workingTitle": "Evaluation Analyst",
+      "summary": "Under general direction of the CalFresh E&T Program Director, provide a full range of advanced technical and programmatic leadership for the statewide evaluation program. This includes the services related to the planning, design, implementation, and evaluation of consumer, intermediary, and systems approaches. The evaluation analyst will oversee the statewide evaluation of CalFresh E&T, UC programming. Serve as one of the lead staff to design and provide recommendations for improvement of program planning, development and implementation on how the evaluation can provide findings for an integrated statewide approach. The evaluation design will conform to the USDA Evaluation Framework. Requires work with other CalFresh E&T, academics and staff to provide overall leadership for the training and technical assistance to build the capacity of staff to plan, implement, and evaluate state-of-the-art SNAP workforce development education programs and curriculum. Review current literature and journals to stay on top of emerging evaluation approaches and tools. Work with subcontractors to identify best approaches for measuring education at the community, county and state levels. Provide recommendations on the evaluation of conferences, workshops, and trainings.",
+      "functions": [
+        {
+          "name": "EVALUATION",
+          "pctTime": 85,
+          "duties": [
+            "Provide oversight and handle administration of Institutional Review Board (IRB) correspondence for CalFresh E&T, UC programming",
+            "and the local county projects including: Submission of new protocols, renewals or modifications, Ensuring appropriate staff are IRB certified and current, Handling all inquiries related to addition of new evaluation staff and ensuring oncoming evaluation procedures meet Human Subjects (IRB) approval",
+            "Provide oversight and all technical support for evaluation of CalFresh E&T, UC including: Developing & maintaining online data portals",
+            "Updating tools as needed (electronic, website & portals)",
+            "Responding to data requests and inquiries from counties",
+            "Downloading, cleaning & analyzing county data",
+            "Summarizing data for counties in easy-to-read templates for use in their final reports",
+            "Merging county datasets for statewide analyses -Summarizing statewide data for final report",
+            "Providing program recommendations based on findings",
+            "Provide leadership in coordinating with the other State Implementing Agencies: Development, analysis and preparation of data reports for the USDA and CDSS, Assessment of evaluation needs and capacity of all state implementing agencies based on USDA Evaluation Framework and CDSS reporting",
+            "Organization, prioritization and delegation of new evaluation priorities to best meet the needs of CalFresh E&T",
+            "Creation of appropriate web based portals to collect impact and outcome data for CalFresh E&T, UC",
+            "Creation of Excel based aggregating evaluation tools",
+            "Preparation of written evaluation reports for statewide impacts and outcomes",
+            "Preparation of oral and written evaluation reports, briefings and assist in developing papers for publications and presentations."
+          ]
+        },
+        {
+          "name": "TRAINING AND TECHNICAL ASSISTANCE",
+          "pctTime": 15,
+          "duties": [
+            "Direct training for CalFresh E&T, UC staff on program evaluation",
+            "Coordinate, provide training and technical assistance to assigned county program staff on USDA Evaluation Framework",
+            "program evaluation priorities and strategies and program reporting requirements. Participate in relevant state and/or federal workgroups or committees that involve and inform CalFresh E&T, UC program and evaluation efforts",
+            "Provide recommendations from other workforce developent program observations, evaluations and literature reviews for program development and improvement",
+            "Provide annual reviews & feedback for fiscal year reporting processes",
+            "Develop and deliver trainings, webinars and support materials to enhance program delivery based on evaluation and program reviews."
+          ]
+        }
+      ],
+      "pctSum": 100,
+      "supervises": "no",
+      "education": [
+        "Bachelor's degree in related area and / or equivalent experience / training.",
+        "Preferred: Master's degree in related field, or equivalent experience/training."
+      ],
+      "experience": [],
+      "ksas": [
+        "Experience as an evaluator with facilitation, collaboration, and community-relations skills. Experience working on community-based program evaluations, including community-based and public health or health service organizations. Organizational and time management skills to manage multiple projects and logistical details, develop evaluation plans and data collection instruments, and assume independent responsibility for work outcomes as well as work on a team. Qualitative and quantitative research skills including knowledge of evaluation design and methodology with a successful track record in high quality data collection and analysis, and dissemination of results. Skills to facilitate the planning and implementation process, provide timely and frequent progress and other findings that are used to improve the community intervention strategies. High level interpersonal, customer-focused and communication skills to build rapport and trust in an underserved, politically charged, and/or multi-disciplinary community leadership situation.. Computer skills including fluency with Microsoft Office Suite software (Word, Excel, PowerPoint, and Access) to produce well-crafted reports and clearly present complex information to various audiences.",
+        "Experience designing evaluation studies, methods, tools and instruments to measure workforce development training. Skills to conduct descriptive statistical analysis of data using computer software (i.e., SPSS). Experience providing training and technical assistance. Knowledge of adult education concepts. Broad knowledge of current scientific research-based principles, theories, and practices of community-based education. Knowledge of technology and other approaches for training such as webinars and distance learning."
+      ],
+      "proposedTitleCode": "7399"
+    },
+    "rendered": "Working Title: Evaluation Analyst\nSupervises other employees: no\n\nJob Summary:\nUnder general direction of the CalFresh E&T Program Director, provide a full range of advanced technical and programmatic leadership for the statewide evaluation program. This includes the services related to the planning, design, implementation, and evaluation of consumer, intermediary, and systems approaches. The evaluation analyst will oversee the statewide evaluation of CalFresh E&T, UC programming. Serve as one of the lead staff to design and provide recommendations for improvement of program planning, development and implementation on how the evaluation can provide findings for an integrated statewide approach. The evaluation design will conform to the USDA Evaluation Framework. Requires work with other CalFresh E&T, academics and staff to provide overall leadership for the training and technical assistance to build the capacity of staff to plan, implement, and evaluate state-of-the-art SNAP workforce development education programs and curriculum. Review current literature and journals to stay on top of emerging evaluation approaches and tools. Work with subcontractors to identify best approaches for measuring education at the community, county and state levels. Provide recommendations on the evaluation of conferences, workshops, and trainings.\n\nEssential Responsibilities:\n85% EVALUATION\n  - Provide oversight and handle administration of Institutional Review Board (IRB) correspondence for CalFresh E&T, UC programming\n  - and the local county projects including: Submission of new protocols, renewals or modifications, Ensuring appropriate staff are IRB certified and current, Handling all inquiries related to addition of new evaluation staff and ensuring oncoming evaluation procedures meet Human Subjects (IRB) approval\n  - Provide oversight and all technical support for evaluation of CalFresh E&T, UC including: Developing & maintaining online data portals\n  - Updating tools as needed (electronic, website & portals)\n  - Responding to data requests and inquiries from counties\n  - Downloading, cleaning & analyzing county data\n  - Summarizing data for counties in easy-to-read templates for use in their final reports\n  - Merging county datasets for statewide analyses -Summarizing statewide data for final report\n  - Providing program recommendations based on findings\n  - Provide leadership in coordinating with the other State Implementing Agencies: Development, analysis and preparation of data reports for the USDA and CDSS, Assessment of evaluation needs and capacity of all state implementing agencies based on USDA Evaluation Framework and CDSS reporting\n  - Organization, prioritization and delegation of new evaluation priorities to best meet the needs of CalFresh E&T\n  - Creation of appropriate web based portals to collect impact and outcome data for CalFresh E&T, UC\n  - Creation of Excel based aggregating evaluation tools\n  - Preparation of written evaluation reports for statewide impacts and outcomes\n  - Preparation of oral and written evaluation reports, briefings and assist in developing papers for publications and presentations.\n\n15% TRAINING AND TECHNICAL ASSISTANCE\n  - Direct training for CalFresh E&T, UC staff on program evaluation\n  - Coordinate, provide training and technical assistance to assigned county program staff on USDA Evaluation Framework\n  - program evaluation priorities and strategies and program reporting requirements. Participate in relevant state and/or federal workgroups or committees that involve and inform CalFresh E&T, UC program and evaluation efforts\n  - Provide recommendations from other workforce developent program observations, evaluations and literature reviews for program development and improvement\n  - Provide annual reviews & feedback for fiscal year reporting processes\n  - Develop and deliver trainings, webinars and support materials to enhance program delivery based on evaluation and program reviews.\n\nEducation:\n  - Bachelor's degree in related area and / or equivalent experience / training.\n  - Preferred: Master's degree in related field, or equivalent experience/training.\n\nKnowledge, Skills and Abilities:\n  - Experience as an evaluator with facilitation, collaboration, and community-relations skills. Experience working on community-based program evaluations, including community-based and public health or health service organizations. Organizational and time management skills to manage multiple projects and logistical details, develop evaluation plans and data collection instruments, and assume independent responsibility for work outcomes as well as work on a team. Qualitative and quantitative research skills including knowledge of evaluation design and methodology with a successful track record in high quality data collection and analysis, and dissemination of results. Skills to facilitate the planning and implementation process, provide timely and frequent progress and other findings that are used to improve the community intervention strategies. High level interpersonal, customer-focused and communication skills to build rapport and trust in an underserved, politically charged, and/or multi-disciplinary community leadership situation.. Computer skills including fluency with Microsoft Office Suite software (Word, Excel, PowerPoint, and Access) to produce well-crafted reports and clearly present complex information to various audiences.\n  - Experience designing evaluation studies, methods, tools and instruments to measure workforce development training. Skills to conduct descriptive statistical analysis of data using computer software (i.e., SPSS). Experience providing training and technical assistance. Knowledge of adult education concepts. Broad knowledge of current scientific research-based principles, theories, and practices of community-based education. Knowledge of technology and other approaches for training such as webinars and distance learning.",
+    "proposedCodeLeaksIntoPrompt": false
+  },
+  "synthetic": [
+    {
+      "file": "fixtures/inputs/pd/fractional-percents.xlsx",
+      "why": "Excel-percent cells hold 0.85, not 85 — the whole set is fractional, so it must be rescaled x100.",
+      "inputSha256": "ad7e2a4f5bcba4d403515bdb0145a79960d1a8537724114e65c1fc0c7bc08219",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "Analyzes things.",
+        "functions": [
+          {
+            "name": "ANALYSIS",
+            "pctTime": 85,
+            "duties": [
+              "Does analysis",
+              "Writes reports"
+            ]
+          },
+          {
+            "name": "OTHER DUTIES",
+            "pctTime": 15,
+            "duties": [
+              "Attends meetings"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nAnalyzes things.\n\nEssential Responsibilities:\n85% ANALYSIS\n  - Does analysis\n  - Writes reports\n\n15% OTHER DUTIES\n  - Attends meetings",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/whole-percents.xlsx",
+      "why": "A form filled in as whole numbers (85) must pass through UNTOUCHED — rescaling it would divide by 100.",
+      "inputSha256": "65695459d5794db547ab3d284366692afd39ed8cba38446b10d63cb775f15cc3",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "Analyzes things.",
+        "functions": [
+          {
+            "name": "ANALYSIS",
+            "pctTime": 85,
+            "duties": [
+              "Does analysis",
+              "Writes reports"
+            ]
+          },
+          {
+            "name": "OTHER DUTIES",
+            "pctTime": 15,
+            "duties": [
+              "Attends meetings"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nAnalyzes things.\n\nEssential Responsibilities:\n85% ANALYSIS\n  - Does analysis\n  - Writes reports\n\n15% OTHER DUTIES\n  - Attends meetings",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/mixed-percents.xlsx",
+      "why": "Not every value <=1, so the set is NOT fractional and nothing is rescaled — a 1% function stays 1%.",
+      "inputSha256": "39baaeac88433378c6fa29ec0fb950a5dae96e27737f5fa5e5da5ec6b48bc4b6",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "Mixed.",
+        "functions": [
+          {
+            "name": "HALF",
+            "pctTime": 0.5,
+            "duties": [
+              "Half the job"
+            ]
+          },
+          {
+            "name": "FIFTY",
+            "pctTime": 50,
+            "duties": [
+              "The other half"
+            ]
+          }
+        ],
+        "pctSum": 50.5,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nMixed.\n\nEssential Responsibilities:\n0.5% HALF\n  - Half the job\n\n50% FIFTY\n  - The other half",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/four-variants-one-filled.xlsx",
+      "why": "Four near-identical variants, only Replacement filled; the three blanks parse fine and must lose on weight.",
+      "inputSha256": "c566313b0f569a728c7b608b8c158ec85e10f516cbb1757457433c53f3f79a7f",
+      "parsed": {
+        "sheetName": "Replacement",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "The filled one.",
+        "functions": [
+          {
+            "name": "EVERYTHING",
+            "pctTime": 100,
+            "duties": [
+              "All of it",
+              "And more"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nThe filled one.\n\nEssential Responsibilities:\n100% EVERYTHING\n  - All of it\n  - And more",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/two-variants-filled.xlsx",
+      "why": "Two filled variants: the heavier wins and the other is reported in otherFilledSheets.",
+      "inputSha256": "4cf61ebee911e967b4aa5dbd9b744e9e09fa46453f1ae9d1540fc9027b3a1b30",
+      "parsed": {
+        "sheetName": "Equity",
+        "otherFilledSheets": [
+          "New Recruitment"
+        ],
+        "workingTitle": "Synthetic Role",
+        "summary": "A considerably longer summary that carries more content weight than the other sheet.",
+        "functions": [
+          {
+            "name": "LONGER FUNCTION NAME",
+            "pctTime": 100,
+            "duties": [
+              "Many things",
+              "Several things",
+              "Other things"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nA considerably longer summary that carries more content weight than the other sheet.\n\nEssential Responsibilities:\n100% LONGER FUNCTION NAME\n  - Many things\n  - Several things\n  - Other things",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/equal-weight-tie.xlsx",
+      "why": "Two filled variants of IDENTICAL weight: the first in workbook order must win, so the sort has to be stable. JS Array.sort has been stable since ES2019; .NET List.Sort is not.",
+      "inputSha256": "c73002e09c3d6f3cf2c348e45d952527efe5f157af8ccb017be0ff6d2a859373",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [
+          "Equity"
+        ],
+        "workingTitle": "Synthetic Role",
+        "summary": "Same size.",
+        "functions": [
+          {
+            "name": "AAAA",
+            "pctTime": 100,
+            "duties": [
+              "wxyz"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nSame size.\n\nEssential Responsibilities:\n100% AAAA\n  - wxyz",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/lookup-sheets-dominate.xlsx",
+      "why": "Lookup sheets are the largest in the book and must be rejected outright — they carry no SIGNATURE label.",
+      "inputSha256": "4055ad25b5c827d618a7dac17ea826a71011053ef519510b6a96188800726c43",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "Tiny but real.",
+        "functions": [
+          {
+            "name": "REAL WORK",
+            "pctTime": 100,
+            "duties": [
+              "Actual duties"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nTiny but real.\n\nEssential Responsibilities:\n100% REAL WORK\n  - Actual duties",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/blank-rows-between.xlsx",
+      "why": "Blank rows shift every index below them; label-keyed reads must be unaffected.",
+      "inputSha256": "68c466a0150cb311fd96aa986e5e7ae297635d51f6ecece1f1d2fe9c5be9c15a",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "Spaced out.",
+        "functions": [
+          {
+            "name": "FIRST",
+            "pctTime": 60,
+            "duties": [
+              "One",
+              "Two"
+            ]
+          },
+          {
+            "name": "SECOND",
+            "pctTime": 40,
+            "duties": [
+              "Three"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nSpaced out.\n\nEssential Responsibilities:\n60% FIRST\n  - One\n  - Two\n\n40% SECOND\n  - Three",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/supervises-variants.xlsx",
+      "why": "FTE supervised drives yes/no/unclear: a positive number is yes, 0 or none is no, anything else unclear.",
+      "inputSha256": "bc196cb1ad5ff7ba5c27ef906135148a440051199fa614b71612a9847e779ecd",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "Leads a team.",
+        "functions": [
+          {
+            "name": "LEAD",
+            "pctTime": 100,
+            "duties": [
+              "Leads"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "yes",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: yes\n\nJob Summary:\nLeads a team.\n\nEssential Responsibilities:\n100% LEAD\n  - Leads",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/supervises-none.xlsx",
+      "why": "Literal 'None' must read as no, not unclear.",
+      "inputSha256": "e4cd2f8c71fc7ee9f7adf3071dcf9e629974dd17902826dc3060671686f7920e",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "Solo.",
+        "functions": [
+          {
+            "name": "SOLO",
+            "pctTime": 100,
+            "duties": [
+              "Works alone"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "no",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: no\n\nJob Summary:\nSolo.\n\nEssential Responsibilities:\n100% SOLO\n  - Works alone",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/supervises-unclear.xlsx",
+      "why": "Free text that is neither a number nor a none-synonym must read as unclear.",
+      "inputSha256": "efde667b43c6ab7bfdac0782aa0bb08ea557a0363389fdadf6bb2519e376eef2",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "Maybe.",
+        "functions": [
+          {
+            "name": "X",
+            "pctTime": 100,
+            "duties": []
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nMaybe.\n\nEssential Responsibilities:\n100% X\n",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/proposed-code-unpadded.xlsx",
+      "why": "The form states the code without zero padding; the 4-6 digit regex must capture it as written.",
+      "inputSha256": "74b301f7dc5a9d0bcede1d260ac51c2ff6300417228ae237aed61c5b5ba920bf",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "Has a proposal.",
+        "functions": [
+          {
+            "name": "WORK",
+            "pctTime": 100,
+            "duties": [
+              "Things"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": "7399"
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nHas a proposal.\n\nEssential Responsibilities:\n100% WORK\n  - Things",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/duty-separators.xlsx",
+      "why": "Duty blobs split on semicolon, newline, or bullet, with leading dashes stripped and <=2-char fragments dropped.",
+      "inputSha256": "ed7b0705c9344a129e86db95b55e706fc581d8a88cf0ef66aa363ba3219727d5",
+      "parsed": {
+        "sheetName": "New Recruitment",
+        "otherFilledSheets": [],
+        "workingTitle": "Synthetic Role",
+        "summary": "Separators.",
+        "functions": [
+          {
+            "name": "SPLIT",
+            "pctTime": 100,
+            "duties": [
+              "First duty",
+              "Second duty",
+              "Third duty",
+              "Fourth duty"
+            ]
+          }
+        ],
+        "pctSum": 100,
+        "supervises": "unclear",
+        "education": [],
+        "experience": [],
+        "ksas": [],
+        "proposedTitleCode": ""
+      },
+      "rendered": "Working Title: Synthetic Role\nSupervises other employees: unclear\n\nJob Summary:\nSeparators.\n\nEssential Responsibilities:\n100% SPLIT\n  - First duty\n  - Second duty\n  - Third duty\n  - Fourth duty",
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/all-variants-blank.xlsx",
+      "why": "Every variant parses as a form but none is filled — weight 0 means the whole workbook returns null.",
+      "inputSha256": "d8314a1c80c9de6e12c79d935d4c7f05dc0401d66f5934285f028a5b45da830e",
+      "parsed": null,
+      "rendered": null,
+      "proposedCodeLeaksIntoPrompt": false
+    },
+    {
+      "file": "fixtures/inputs/pd/no-form-sheets.xlsx",
+      "why": "No SIGNATURE label anywhere means no PD form was found — null, not an empty result.",
+      "inputSha256": "07c226d6eeb0b70ee21f83b1c6e6f8c4f869b6e55451a45d06a84e865b054798",
+      "parsed": null,
+      "rendered": null,
+      "proposedCodeLeaksIntoPrompt": false
+    }
+  ]
+}

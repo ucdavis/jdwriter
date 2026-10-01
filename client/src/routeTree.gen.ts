@@ -9,21 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as authenticatedRouteRouteImport } from './routes/(authenticated)/route'
 import { Route as authenticatedIndexRouteImport } from './routes/(authenticated)/index'
-import { Route as authenticatedTableExportRouteImport } from './routes/(authenticated)/table-export'
-import { Route as authenticatedStylesRouteImport } from './routes/(authenticated)/styles'
-import { Route as authenticatedNotificationRouteImport } from './routes/(authenticated)/notification'
-import { Route as authenticatedMeRouteImport } from './routes/(authenticated)/me'
-import { Route as authenticatedFormRouteImport } from './routes/(authenticated)/form'
-import { Route as authenticatedFetchRouteImport } from './routes/(authenticated)/fetch'
+import { Route as authenticatedClassifyRouteImport } from './routes/(authenticated)/classify'
+import { Route as authenticatedBackendIndexRouteImport } from './routes/(authenticated)/backend/index'
+import { Route as authenticatedClassSlugRouteImport } from './routes/(authenticated)/class.$slug'
+import { Route as authenticatedBackendFitRouteImport } from './routes/(authenticated)/backend/fit'
+import { Route as authenticatedClassSlugBuildRouteImport } from './routes/(authenticated)/class.$slug.build'
+import { Route as authenticatedBackendStandardSlugRouteImport } from './routes/(authenticated)/backend/standard.$slug'
+import { Route as authenticatedBackendJdsSlugRouteImport } from './routes/(authenticated)/backend/jds.$slug'
+import { Route as authenticatedBackendEditSlugRouteImport } from './routes/(authenticated)/backend/edit.$slug'
+import { Route as authenticatedBackendJdSlugSplatRouteImport } from './routes/(authenticated)/backend/jd.$slug.$'
 
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const authenticatedRouteRoute = authenticatedRouteRouteImport.update({
   id: '/(authenticated)',
   getParentRoute: () => rootRouteImport,
@@ -33,119 +30,142 @@ const authenticatedIndexRoute = authenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
-const authenticatedTableExportRoute =
-  authenticatedTableExportRouteImport.update({
-    id: '/table-export',
-    path: '/table-export',
+const authenticatedClassifyRoute = authenticatedClassifyRouteImport.update({
+  id: '/classify',
+  path: '/classify',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any)
+const authenticatedBackendIndexRoute =
+  authenticatedBackendIndexRouteImport.update({
+    id: '/backend/',
+    path: '/backend/',
     getParentRoute: () => authenticatedRouteRoute,
   } as any)
-const authenticatedStylesRoute = authenticatedStylesRouteImport.update({
-  id: '/styles',
-  path: '/styles',
+const authenticatedClassSlugRoute = authenticatedClassSlugRouteImport.update({
+  id: '/class/$slug',
+  path: '/class/$slug',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
-const authenticatedNotificationRoute =
-  authenticatedNotificationRouteImport.update({
-    id: '/notification',
-    path: '/notification',
+const authenticatedBackendFitRoute = authenticatedBackendFitRouteImport.update({
+  id: '/backend/fit',
+  path: '/backend/fit',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any)
+const authenticatedClassSlugBuildRoute =
+  authenticatedClassSlugBuildRouteImport.update({
+    id: '/build',
+    path: '/build',
+    getParentRoute: () => authenticatedClassSlugRoute,
+  } as any)
+const authenticatedBackendStandardSlugRoute =
+  authenticatedBackendStandardSlugRouteImport.update({
+    id: '/backend/standard/$slug',
+    path: '/backend/standard/$slug',
     getParentRoute: () => authenticatedRouteRoute,
   } as any)
-const authenticatedMeRoute = authenticatedMeRouteImport.update({
-  id: '/me',
-  path: '/me',
-  getParentRoute: () => authenticatedRouteRoute,
-} as any)
-const authenticatedFormRoute = authenticatedFormRouteImport.update({
-  id: '/form',
-  path: '/form',
-  getParentRoute: () => authenticatedRouteRoute,
-} as any)
-const authenticatedFetchRoute = authenticatedFetchRouteImport.update({
-  id: '/fetch',
-  path: '/fetch',
-  getParentRoute: () => authenticatedRouteRoute,
-} as any)
+const authenticatedBackendJdsSlugRoute =
+  authenticatedBackendJdsSlugRouteImport.update({
+    id: '/backend/jds/$slug',
+    path: '/backend/jds/$slug',
+    getParentRoute: () => authenticatedRouteRoute,
+  } as any)
+const authenticatedBackendEditSlugRoute =
+  authenticatedBackendEditSlugRouteImport.update({
+    id: '/backend/edit/$slug',
+    path: '/backend/edit/$slug',
+    getParentRoute: () => authenticatedRouteRoute,
+  } as any)
+const authenticatedBackendJdSlugSplatRoute =
+  authenticatedBackendJdSlugSplatRouteImport.update({
+    id: '/backend/jd/$slug/$',
+    path: '/backend/jd/$slug/$',
+    getParentRoute: () => authenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/about': typeof AboutRoute
-  '/fetch': typeof authenticatedFetchRoute
-  '/form': typeof authenticatedFormRoute
-  '/me': typeof authenticatedMeRoute
-  '/notification': typeof authenticatedNotificationRoute
-  '/styles': typeof authenticatedStylesRoute
-  '/table-export': typeof authenticatedTableExportRoute
+  '/classify': typeof authenticatedClassifyRoute
   '/': typeof authenticatedIndexRoute
+  '/backend/fit': typeof authenticatedBackendFitRoute
+  '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
+  '/backend': typeof authenticatedBackendIndexRoute
+  '/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
+  '/backend/jds/$slug': typeof authenticatedBackendJdsSlugRoute
+  '/backend/standard/$slug': typeof authenticatedBackendStandardSlugRoute
+  '/class/$slug/build': typeof authenticatedClassSlugBuildRoute
+  '/backend/jd/$slug/$': typeof authenticatedBackendJdSlugSplatRoute
 }
 export interface FileRoutesByTo {
-  '/about': typeof AboutRoute
-  '/fetch': typeof authenticatedFetchRoute
-  '/form': typeof authenticatedFormRoute
-  '/me': typeof authenticatedMeRoute
-  '/notification': typeof authenticatedNotificationRoute
-  '/styles': typeof authenticatedStylesRoute
-  '/table-export': typeof authenticatedTableExportRoute
+  '/classify': typeof authenticatedClassifyRoute
   '/': typeof authenticatedIndexRoute
+  '/backend/fit': typeof authenticatedBackendFitRoute
+  '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
+  '/backend': typeof authenticatedBackendIndexRoute
+  '/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
+  '/backend/jds/$slug': typeof authenticatedBackendJdsSlugRoute
+  '/backend/standard/$slug': typeof authenticatedBackendStandardSlugRoute
+  '/class/$slug/build': typeof authenticatedClassSlugBuildRoute
+  '/backend/jd/$slug/$': typeof authenticatedBackendJdSlugSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(authenticated)': typeof authenticatedRouteRouteWithChildren
-  '/about': typeof AboutRoute
-  '/(authenticated)/fetch': typeof authenticatedFetchRoute
-  '/(authenticated)/form': typeof authenticatedFormRoute
-  '/(authenticated)/me': typeof authenticatedMeRoute
-  '/(authenticated)/notification': typeof authenticatedNotificationRoute
-  '/(authenticated)/styles': typeof authenticatedStylesRoute
-  '/(authenticated)/table-export': typeof authenticatedTableExportRoute
+  '/(authenticated)/classify': typeof authenticatedClassifyRoute
   '/(authenticated)/': typeof authenticatedIndexRoute
+  '/(authenticated)/backend/fit': typeof authenticatedBackendFitRoute
+  '/(authenticated)/class/$slug': typeof authenticatedClassSlugRouteWithChildren
+  '/(authenticated)/backend/': typeof authenticatedBackendIndexRoute
+  '/(authenticated)/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
+  '/(authenticated)/backend/jds/$slug': typeof authenticatedBackendJdsSlugRoute
+  '/(authenticated)/backend/standard/$slug': typeof authenticatedBackendStandardSlugRoute
+  '/(authenticated)/class/$slug/build': typeof authenticatedClassSlugBuildRoute
+  '/(authenticated)/backend/jd/$slug/$': typeof authenticatedBackendJdSlugSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/about'
-    | '/fetch'
-    | '/form'
-    | '/me'
-    | '/notification'
-    | '/styles'
-    | '/table-export'
+    | '/classify'
     | '/'
+    | '/backend/fit'
+    | '/class/$slug'
+    | '/backend'
+    | '/backend/edit/$slug'
+    | '/backend/jds/$slug'
+    | '/backend/standard/$slug'
+    | '/class/$slug/build'
+    | '/backend/jd/$slug/$'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/about'
-    | '/fetch'
-    | '/form'
-    | '/me'
-    | '/notification'
-    | '/styles'
-    | '/table-export'
+    | '/classify'
     | '/'
+    | '/backend/fit'
+    | '/class/$slug'
+    | '/backend'
+    | '/backend/edit/$slug'
+    | '/backend/jds/$slug'
+    | '/backend/standard/$slug'
+    | '/class/$slug/build'
+    | '/backend/jd/$slug/$'
   id:
     | '__root__'
     | '/(authenticated)'
-    | '/about'
-    | '/(authenticated)/fetch'
-    | '/(authenticated)/form'
-    | '/(authenticated)/me'
-    | '/(authenticated)/notification'
-    | '/(authenticated)/styles'
-    | '/(authenticated)/table-export'
+    | '/(authenticated)/classify'
     | '/(authenticated)/'
+    | '/(authenticated)/backend/fit'
+    | '/(authenticated)/class/$slug'
+    | '/(authenticated)/backend/'
+    | '/(authenticated)/backend/edit/$slug'
+    | '/(authenticated)/backend/jds/$slug'
+    | '/(authenticated)/backend/standard/$slug'
+    | '/(authenticated)/class/$slug/build'
+    | '/(authenticated)/backend/jd/$slug/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   authenticatedRouteRoute: typeof authenticatedRouteRouteWithChildren
-  AboutRoute: typeof AboutRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/(authenticated)': {
       id: '/(authenticated)'
       path: ''
@@ -160,69 +180,108 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedIndexRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
-    '/(authenticated)/table-export': {
-      id: '/(authenticated)/table-export'
-      path: '/table-export'
-      fullPath: '/table-export'
-      preLoaderRoute: typeof authenticatedTableExportRouteImport
+    '/(authenticated)/classify': {
+      id: '/(authenticated)/classify'
+      path: '/classify'
+      fullPath: '/classify'
+      preLoaderRoute: typeof authenticatedClassifyRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
-    '/(authenticated)/styles': {
-      id: '/(authenticated)/styles'
-      path: '/styles'
-      fullPath: '/styles'
-      preLoaderRoute: typeof authenticatedStylesRouteImport
+    '/(authenticated)/backend/': {
+      id: '/(authenticated)/backend/'
+      path: '/backend'
+      fullPath: '/backend'
+      preLoaderRoute: typeof authenticatedBackendIndexRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
-    '/(authenticated)/notification': {
-      id: '/(authenticated)/notification'
-      path: '/notification'
-      fullPath: '/notification'
-      preLoaderRoute: typeof authenticatedNotificationRouteImport
+    '/(authenticated)/class/$slug': {
+      id: '/(authenticated)/class/$slug'
+      path: '/class/$slug'
+      fullPath: '/class/$slug'
+      preLoaderRoute: typeof authenticatedClassSlugRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
-    '/(authenticated)/me': {
-      id: '/(authenticated)/me'
-      path: '/me'
-      fullPath: '/me'
-      preLoaderRoute: typeof authenticatedMeRouteImport
+    '/(authenticated)/backend/fit': {
+      id: '/(authenticated)/backend/fit'
+      path: '/backend/fit'
+      fullPath: '/backend/fit'
+      preLoaderRoute: typeof authenticatedBackendFitRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
-    '/(authenticated)/form': {
-      id: '/(authenticated)/form'
-      path: '/form'
-      fullPath: '/form'
-      preLoaderRoute: typeof authenticatedFormRouteImport
+    '/(authenticated)/class/$slug/build': {
+      id: '/(authenticated)/class/$slug/build'
+      path: '/build'
+      fullPath: '/class/$slug/build'
+      preLoaderRoute: typeof authenticatedClassSlugBuildRouteImport
+      parentRoute: typeof authenticatedClassSlugRoute
+    }
+    '/(authenticated)/backend/standard/$slug': {
+      id: '/(authenticated)/backend/standard/$slug'
+      path: '/backend/standard/$slug'
+      fullPath: '/backend/standard/$slug'
+      preLoaderRoute: typeof authenticatedBackendStandardSlugRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
-    '/(authenticated)/fetch': {
-      id: '/(authenticated)/fetch'
-      path: '/fetch'
-      fullPath: '/fetch'
-      preLoaderRoute: typeof authenticatedFetchRouteImport
+    '/(authenticated)/backend/jds/$slug': {
+      id: '/(authenticated)/backend/jds/$slug'
+      path: '/backend/jds/$slug'
+      fullPath: '/backend/jds/$slug'
+      preLoaderRoute: typeof authenticatedBackendJdsSlugRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/backend/edit/$slug': {
+      id: '/(authenticated)/backend/edit/$slug'
+      path: '/backend/edit/$slug'
+      fullPath: '/backend/edit/$slug'
+      preLoaderRoute: typeof authenticatedBackendEditSlugRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/backend/jd/$slug/$': {
+      id: '/(authenticated)/backend/jd/$slug/$'
+      path: '/backend/jd/$slug/$'
+      fullPath: '/backend/jd/$slug/$'
+      preLoaderRoute: typeof authenticatedBackendJdSlugSplatRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
   }
 }
 
+interface authenticatedClassSlugRouteChildren {
+  authenticatedClassSlugBuildRoute: typeof authenticatedClassSlugBuildRoute
+}
+
+const authenticatedClassSlugRouteChildren: authenticatedClassSlugRouteChildren =
+  {
+    authenticatedClassSlugBuildRoute: authenticatedClassSlugBuildRoute,
+  }
+
+const authenticatedClassSlugRouteWithChildren =
+  authenticatedClassSlugRoute._addFileChildren(
+    authenticatedClassSlugRouteChildren,
+  )
+
 interface authenticatedRouteRouteChildren {
-  authenticatedFetchRoute: typeof authenticatedFetchRoute
-  authenticatedFormRoute: typeof authenticatedFormRoute
-  authenticatedMeRoute: typeof authenticatedMeRoute
-  authenticatedNotificationRoute: typeof authenticatedNotificationRoute
-  authenticatedStylesRoute: typeof authenticatedStylesRoute
-  authenticatedTableExportRoute: typeof authenticatedTableExportRoute
+  authenticatedClassifyRoute: typeof authenticatedClassifyRoute
   authenticatedIndexRoute: typeof authenticatedIndexRoute
+  authenticatedBackendFitRoute: typeof authenticatedBackendFitRoute
+  authenticatedClassSlugRoute: typeof authenticatedClassSlugRouteWithChildren
+  authenticatedBackendIndexRoute: typeof authenticatedBackendIndexRoute
+  authenticatedBackendEditSlugRoute: typeof authenticatedBackendEditSlugRoute
+  authenticatedBackendJdsSlugRoute: typeof authenticatedBackendJdsSlugRoute
+  authenticatedBackendStandardSlugRoute: typeof authenticatedBackendStandardSlugRoute
+  authenticatedBackendJdSlugSplatRoute: typeof authenticatedBackendJdSlugSplatRoute
 }
 
 const authenticatedRouteRouteChildren: authenticatedRouteRouteChildren = {
-  authenticatedFetchRoute: authenticatedFetchRoute,
-  authenticatedFormRoute: authenticatedFormRoute,
-  authenticatedMeRoute: authenticatedMeRoute,
-  authenticatedNotificationRoute: authenticatedNotificationRoute,
-  authenticatedStylesRoute: authenticatedStylesRoute,
-  authenticatedTableExportRoute: authenticatedTableExportRoute,
+  authenticatedClassifyRoute: authenticatedClassifyRoute,
   authenticatedIndexRoute: authenticatedIndexRoute,
+  authenticatedBackendFitRoute: authenticatedBackendFitRoute,
+  authenticatedClassSlugRoute: authenticatedClassSlugRouteWithChildren,
+  authenticatedBackendIndexRoute: authenticatedBackendIndexRoute,
+  authenticatedBackendEditSlugRoute: authenticatedBackendEditSlugRoute,
+  authenticatedBackendJdsSlugRoute: authenticatedBackendJdsSlugRoute,
+  authenticatedBackendStandardSlugRoute: authenticatedBackendStandardSlugRoute,
+  authenticatedBackendJdSlugSplatRoute: authenticatedBackendJdSlugSplatRoute,
 }
 
 const authenticatedRouteRouteWithChildren =
@@ -230,7 +289,6 @@ const authenticatedRouteRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   authenticatedRouteRoute: authenticatedRouteRouteWithChildren,
-  AboutRoute: AboutRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

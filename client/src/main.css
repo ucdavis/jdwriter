@@ -1,3 +1,73 @@
 @import 'tailwindcss';
 @plugin "daisyui";
 @import '@ucdavis/gunrock-tailwind/imports.css';
+
+/*
+  The POC hand-rolled the "Walter" UC Davis palette as raw hex in a @theme block.
+  That is replaced here by gunrock, the official Aggie design system, which already
+  ships the same brand values as DaisyUI semantic roles. The mapping:
+
+    Walter            gunrock / DaisyUI
+    ------            -----------------
+    navy    #022851   ucd-blue          (brand bar)
+    gold    #FFBF00   ucd-gold          (brand mark)
+    canvas  #FAFBFC   base-200          (page ground)
+    card    #FFFFFF   base-100          (surfaces)
+    line    #E8ECF0   base-300          (hairlines)
+    ink     #1A2332   base-content      (body text)
+    muted   #6B7A8D   base-content/65
+    accent  #1B6B93   primary           (ucd-gunrock)
+    green   #0D9F6E   success           (ucd-quad)
+    yellow  #D97706   warning           (ucd-poppy)
+    red     #DC2626   error             (ucd-doubledecker)
+    teal    #0F766E   info              (ucd-tahoe)
+
+  Only two utilities are declared here, because everything else is a DaisyUI role:
+  tabular numerals and the eyebrow label, both Walter signatures with no DaisyUI
+  equivalent.
+*/
+
+@layer components {
+  /* Statistics must not jitter as digits change — corpus counts, percentages and
+     confidence scores all sit in columns people scan down. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The signature Walter label: small, uppercase, tracked, muted. */
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: color-mix(in oklch, var(--color-base-content) 65%, transparent);
+  }
+}
+
+/*
+  Save-as-PDF for the finished job description. The JD is the artifact a supervisor
+  hands to HR, so printing isolates it from the app chrome entirely rather than
+  producing a screenshot of a web page.
+*/
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #jd-print,
+  #jd-print * {
+    visibility: visible;
+  }
+
+  #jd-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  #jd-print .jd-surface {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
