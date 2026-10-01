@@ -415,5 +415,12 @@ export type BootstrapCandidate = {
 
 export type BootstrapResponse = { candidates: BootstrapCandidate[] };
 
+export type BootstrapCreateResponse = {
+  envelopeSource: EnvelopeSource;
+  slug: string;
+  title: string;
+  ucJobCode: string;
+};
+
 /** 4xx bodies. The message is written for the user and is rendered verbatim. */
 export type ApiError = { message: string };

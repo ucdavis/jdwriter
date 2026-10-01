@@ -2,6 +2,7 @@ import { Badge, Card, Eyebrow, Note } from '@/shared/ui/primitives.tsx';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import {
   useBootstrapCandidates,
+  useBootstrapClass,
   useIngestClass,
   useIngestScan,
   useIngestStandards,
@@ -183,7 +184,20 @@ export const StandardsPanel = () => {
 
 export const BootstrapPanel = () => {
   const bootstrap = useBootstrapCandidates();
+  const create = useBootstrapClass();
+  const [filter, setFilter] = useState('');
   const candidates = bootstrap.data?.candidates;
+  const shown = (candidates ?? []).filter((c) =>
+    filter ? c.title.toLowerCase().includes(filter.toLowerCase()) : true
+  );
+  const error = bootstrap.error ?? create.error;
+
+  const createFor = (title: string) =>
+    create.mutate(title, {
+      // The created class is no longer a candidate; re-ask rather than editing the list
+      // locally, so what is shown is always what the server would offer.
+      onSuccess: () => bootstrap.mutate(),
+    });
 
   return (
     <Card className="mb-5 p-5">
@@ -191,9 +205,11 @@ export const BootstrapPanel = () => {
         <div>
           <Eyebrow>Bootstrap from a standard</Eyebrow>
           <p className="mt-1 text-[13px] text-base-content/65">
-            Create an envelope for a class that has an official standard but no ingested
-            JDs yet. Superseded classes are never offered — authoring against one would
-            produce a JD under a dead classification.
+            Create a starter envelope for a class that has an official standard but{' '}
+            <span className="font-medium">no job descriptions yet</span>. It is marked
+            standard-derived (% time is estimated) and converges to a learned envelope once
+            JDs for that class are ingested. Superseded classes are never offered — authoring
+            against one would produce a JD under a dead classification.
           </p>
         </div>
         <button
@@ -202,12 +218,19 @@ export const BootstrapPanel = () => {
           onClick={() => bootstrap.mutate()}
           type="button"
         >
-          {bootstrap.isPending ? 'Looking…' : 'Find candidates'}
+          {bootstrap.isPending ? 'Looking…' : candidates ? 'Reload list' : 'Find candidates'}
         </button>
       </div>
-      {bootstrap.error ? (
+      {error ? (
         <div className="mt-3">
-          <Note tone="red">{messageOf(bootstrap.error)}</Note>
+          <Note tone="red">{messageOf(error)}</Note>
+        </div>
+      ) : null}
+      {create.data ? (
+        <div className="mt-3">
+          <Note tone="green">
+            Created {create.data.title} ({create.data.ucJobCode}) from its standard.
+          </Note>
         </div>
       ) : null}
       {candidates ? (
@@ -216,14 +239,44 @@ export const BootstrapPanel = () => {
             No candidates — every standard with a resolvable code already has a profile.
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-base-300 rounded-lg border border-base-300">
-            {candidates.map((c) => (
-              <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.code}>
-                <span className="text-[13px] font-medium">{c.title}</span>
-                <span className="text-[11.5px] text-base-content/65 tnum">Code {c.code}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-3">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <input
+                aria-label="Filter candidates by title"
+                className="input input-sm input-bordered flex-1"
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Filter by title…"
+                value={filter}
+              />
+              <span className="whitespace-nowrap text-[12px] text-base-content/50">
+                {shown.length} of {candidates.length}
+              </span>
+            </div>
+            <ul className="max-h-[360px] divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300">
+              {shown.map((c) => (
+                <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.title}>
+                  <div className="min-w-0">
+                    <div className="truncate text-[13px] font-medium">{c.title}</div>
+                    <div className="text-[11.5px] text-base-content/65 tnum">
+                      {c.code ? `Code ${c.code}` : 'no code match'}
+                      {c.family ? ` · ${c.family}` : ''}
+                      {c.grade ? ` · ${c.grade}` : ''}
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-primary btn-sm shrink-0"
+                    disabled={create.isPending}
+                    onClick={() => createFor(c.title)}
+                    type="button"
+                  >
+                    {create.isPending && create.variables === c.title
+                      ? 'Creating…'
+                      : 'Create envelope'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )
       ) : null}
     </Card>

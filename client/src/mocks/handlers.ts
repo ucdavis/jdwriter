@@ -2,6 +2,7 @@ import profilesFixture from './profiles.json' with { type: 'json' };
 import { delay, http, HttpResponse } from 'msw';
 import type {
   AssembledJd,
+  BootstrapCreateResponse,
   BootstrapResponse,
   BuildRequest,
   ClassifyRequest,
@@ -476,6 +477,17 @@ export const handlers = [
       sample: ['Laboratory Assistant 1', 'Laboratory Assistant 2'],
       totalClasses: 65,
       uncodedSample: ['Systemwide Academic Personnel Analyst 3'],
+    });
+  }),
+
+  http.post('/api/admin/bootstrap', async ({ request }) => {
+    const { title } = (await request.json()) as { title: string };
+    await delay(900);
+    return HttpResponse.json<BootstrapCreateResponse>({
+      envelopeSource: 'standard',
+      slug: `004501-${title.toLowerCase().replaceAll(/[^\da-z]+/g, '-')}`,
+      title,
+      ucJobCode: '004501',
     });
   }),
 
