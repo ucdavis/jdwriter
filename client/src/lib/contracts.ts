@@ -422,5 +422,19 @@ export type BootstrapCreateResponse = {
   ucJobCode: string;
 };
 
+// ---------------------------------------------------------------- settings
+
+export type AdminEntry = {
+  displayName: string | null;
+  /** Admins named in server configuration; they cannot be removed from the app. */
+  fromConfiguration: boolean;
+  grantedAt: string | null;
+  grantedBy: string | null;
+  lastSeenAt: string | null;
+  loginId: string;
+};
+
+export type AdminsResponse = { admins: AdminEntry[] };
+
 /** 4xx bodies. The message is written for the user and is rendered verbatim. */
 export type ApiError = { message: string };

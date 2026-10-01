@@ -17,17 +17,20 @@ export const meQueryOptions = () => ({
   staleTime: 5 * 60_000, // 5 minutes
 });
 
-/** HR classification analysts get the curation surfaces. Cosmetic — the server enforces it. */
-export const ANALYST_ROLE = 'Analyst';
+/**
+ * The back end — envelopes, review, ingest, standards, settings — is admin-only. Everyone
+ * else is an Author. Cosmetic: the server enforces it regardless.
+ */
+export const ADMIN_ROLE = 'Admin';
 
 /**
- * For route loaders that prefetch an Analyst-only endpoint. Prefetching it for anyone else
+ * For route loaders that prefetch an admin-only endpoint. Prefetching it for anyone else
  * throws a 403 out of the loader, which surfaces the app-wide "not authorized to use this
- * application" page instead of AnalystOnly's explanation — wrong for an Author who is
- * simply not an analyst.
+ * application" page instead of AdminOnly's explanation — wrong for an Author, who is
+ * fully authorized to use the app.
  */
-export const isAnalyst = async (queryClient: QueryClient) =>
-  (await queryClient.ensureQueryData(meQueryOptions())).roles.includes(ANALYST_ROLE);
+export const isAdmin = async (queryClient: QueryClient) =>
+  (await queryClient.ensureQueryData(meQueryOptions())).roles.includes(ADMIN_ROLE);
 
 export const useMeQuery = () => {
   return useQuery(meQueryOptions());

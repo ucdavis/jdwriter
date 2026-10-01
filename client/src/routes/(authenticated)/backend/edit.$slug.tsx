@@ -1,4 +1,4 @@
-import { AnalystOnly } from '@/shared/ui/AppShell.tsx';
+import { AdminOnly } from '@/shared/ui/AppShell.tsx';
 import { Card, PageHeader } from '@/shared/ui/primitives.tsx';
 import { classProfileQueryOptions, useClassProfile } from '@/queries/classes.ts';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -25,7 +25,7 @@ function EditEnvelopePage() {
   }
 
   return (
-    <AnalystOnly>
+    <AdminOnly>
       <PageHeader
         back={{ label: 'Back to envelopes', to: '/backend' }}
         eyebrow={`${profile.title} · code ${profile.ucJobCode}`}
@@ -51,6 +51,6 @@ function EditEnvelopePage() {
           </p>
         </Card>
       )}
-    </AnalystOnly>
+    </AdminOnly>
   );
 }

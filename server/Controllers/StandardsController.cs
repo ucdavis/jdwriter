@@ -9,7 +9,7 @@ namespace Server.Controllers;
 /// <summary>The official UC job standard behind a class, when one exists.</summary>
 [ApiController]
 [Route("api/standards")]
-[Authorize(Roles = AppRoles.Analyst)]
+[Authorize(Roles = AppRoles.Admin)]
 public class StandardsController : ApiControllerBase
 {
     private readonly IStandardsStore _standards;

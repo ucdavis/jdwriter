@@ -1,6 +1,7 @@
 import { fetchJson } from '../lib/api.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  AdminsResponse,
   BootstrapCreateResponse,
   BootstrapResponse,
   IngestScanResponse,
@@ -68,5 +69,35 @@ export const useBootstrapClass = () => {
       }),
     // A new class appears in the class list and the analyst index.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classes'] }),
+  });
+};
+
+export const adminsQueryOptions = () => ({
+  queryFn: () => fetchJson<AdminsResponse>('/api/admin/admins'),
+  queryKey: ['admin', 'admins'] as const,
+});
+
+export const useAdmins = () => useQuery(adminsQueryOptions());
+
+export const useGrantAdmin = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (loginId: string) =>
+      fetchJson<{ loginId: string }>('/api/admin/admins', {
+        body: JSON.stringify({ loginId }),
+        method: 'POST',
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'admins'] }),
+  });
+};
+
+export const useRevokeAdmin = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (loginId: string) =>
+      fetchJson<{ ok: true }>(`/api/admin/admins/${encodeURIComponent(loginId)}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'admins'] }),
   });
 };

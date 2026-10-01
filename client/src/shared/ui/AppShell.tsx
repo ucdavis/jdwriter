@@ -2,13 +2,13 @@ import { Link } from '@tanstack/react-router';
 import { useUser } from '@/shared/auth/UserContext.tsx';
 import type { ReactNode } from 'react';
 
-import { ANALYST_ROLE } from '@/queries/user.ts';
+import { ADMIN_ROLE } from '@/queries/user.ts';
 
-export { ANALYST_ROLE };
+export { ADMIN_ROLE };
 
-export const useIsAnalyst = () => {
+export const useIsAdmin = () => {
   const user = useUser();
-  return user.roles.includes(ANALYST_ROLE);
+  return user.roles.includes(ADMIN_ROLE);
 };
 
 /**
@@ -18,7 +18,7 @@ export const useIsAnalyst = () => {
  * through gunrock rather than through hand-written hex.
  */
 export const AppShell = ({ children }: { children: ReactNode }) => {
-  const isAnalyst = useIsAnalyst();
+  const isAdmin = useIsAdmin();
 
   return (
     <>
@@ -43,7 +43,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
           >
             Classify
           </Link>
-          {isAnalyst ? (
+          {isAdmin ? (
             <Link
               className="text-[12px] font-medium text-white/75 hover:text-ucd-gold"
               to="/backend"
@@ -64,16 +64,16 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
  * Wraps a curation surface. The server returns 403 regardless; this exists so an
  * author who follows a stale link gets an explanation instead of a failed request.
  */
-export const AnalystOnly = ({ children }: { children: ReactNode }) => {
-  const isAnalyst = useIsAnalyst();
+export const AdminOnly = ({ children }: { children: ReactNode }) => {
+  const isAdmin = useIsAdmin();
 
-  if (!isAnalyst) {
+  if (!isAdmin) {
     return (
       <div className="rounded-xl border border-base-300 bg-base-100 p-6">
-        <h2 className="text-[17px] font-bold">Analyst access required</h2>
+        <h2 className="text-[17px] font-bold">Admin access required</h2>
         <p className="mt-2 text-[13px] text-base-content/65">
-          These are the HR curation surfaces — envelopes, reclassification review, and
-          corpus ingest. Your account is not in the Analyst role.
+          This is the JDWriter back end — envelopes, reclassification review, ingest and
+          settings. It is open to JDWriter admins only; ask an admin if you need access.
         </p>
         <Link className="btn btn-primary btn-sm mt-4" to="/">
           Back to start

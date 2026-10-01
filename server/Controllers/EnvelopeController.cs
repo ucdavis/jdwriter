@@ -18,7 +18,7 @@ public sealed record EnvelopeCoverageRequest(string Slug, EnvelopeWire Envelope)
 /// </summary>
 [ApiController]
 [Route("api/envelope")]
-[Authorize(Roles = AppRoles.Analyst)]
+[Authorize(Roles = AppRoles.Admin)]
 public class EnvelopeController : ApiControllerBase
 {
     private readonly AppDbContext _db;

@@ -59,7 +59,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // ---- users
     public DbSet<AppUser> AppUsers => Set<AppUser>();
-    public DbSet<AppUserRole> AppUserRoles => Set<AppUserRole>();
+    public DbSet<AdminGrant> AdminGrants => Set<AdminGrant>();
 
     // Index-bearing string columns need an explicit length: SQL Server caps a key at 900 bytes,
     // and nvarchar(max) cannot be indexed at all. Free text is deliberately left unbounded.
@@ -341,15 +341,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Email).HasMaxLength(TitleLen);
             e.Property(x => x.DisplayName).HasMaxLength(TitleLen);
             e.HasIndex(x => x.NameIdentifier).IsUnique();
-
-            e.HasMany(x => x.Roles).WithOne(x => x.AppUser)
-                .HasForeignKey(x => x.AppUserId).OnDelete(DeleteBehavior.Cascade);
+            e.Property(x => x.LoginId).HasMaxLength(64);
+            e.HasIndex(x => x.LoginId);
         });
 
-        b.Entity<AppUserRole>(e =>
+        b.Entity<AdminGrant>(e =>
         {
-            e.Property(x => x.Role).HasMaxLength(50);
-            e.HasIndex(x => new { x.AppUserId, x.Role }).IsUnique();
+            e.Property(x => x.LoginId).HasMaxLength(64);
+            e.HasIndex(x => x.LoginId).IsUnique();
+            // Removing a user must not silently remove the admins they granted.
+            e.HasOne(x => x.GrantedBy).WithMany()
+                .HasForeignKey(x => x.GrantedByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         // The eight ITextItem tables share one configuration rather than eight near-identical

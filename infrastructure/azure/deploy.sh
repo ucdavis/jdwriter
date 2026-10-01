@@ -35,13 +35,13 @@ USAGE
   printf '%s\n' \
     'Deployment settings overlay: infrastructure/azure/deployment-settings.json' \
     'Template defaults: infrastructure/azure/deployment-settings-defaults.json' \
-    'AUTH_CALLBACK_PATH, AUTH_CLIENT_ID, AUTH_DOMAIN, AUTH_INSTANCE, AUTH_TENANT_ID' \
-    '  NOTIFICATION_BASE_URL, NOTIFICATION_DEFAULT_APP_NAME' \
-    '  NOTIFICATION_DEFAULT_BUTTON_TEXT, OTEL_EXPORTER_OTLP_ENDPOINT' \
-    '  OTEL_EXPORTER_OTLP_HEADERS, OTEL_EXPORTER_OTLP_PROTOCOL' \
-    '  OTEL_RESOURCE_ATTRIBUTES, OTEL_SERVICE_NAME, SMTP_BCC_EMAIL, SMTP_FROM_EMAIL' \
-    '  SMTP_FROM_NAME, SMTP_HOST, SMTP_PASSWORD, SMTP_PORT, SMTP_REPLY_TO_EMAIL' \
-    '  SMTP_TIMEOUT, SMTP_USE_SSL, SMTP_USERNAME'
+    'ADMIN_BOOTSTRAP_LOGIN_IDS, AUTH_CALLBACK_PATH, AUTH_CLIENT_ID, AUTH_DOMAIN' \
+    '  AUTH_INSTANCE, AUTH_TENANT_ID, NOTIFICATION_BASE_URL' \
+    '  NOTIFICATION_DEFAULT_APP_NAME, NOTIFICATION_DEFAULT_BUTTON_TEXT' \
+    '  OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS' \
+    '  OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_RESOURCE_ATTRIBUTES, OTEL_SERVICE_NAME' \
+    '  SMTP_BCC_EMAIL, SMTP_FROM_EMAIL, SMTP_FROM_NAME, SMTP_HOST, SMTP_PASSWORD' \
+    '  SMTP_PORT, SMTP_REPLY_TO_EMAIL, SMTP_TIMEOUT, SMTP_USE_SSL, SMTP_USERNAME'
   # </deployment-settings:deploy-sh-help>
 }
 
@@ -128,7 +128,9 @@ fi
 require_command az
 
 # <deployment-settings:deploy-sh-required-checks>
-# No generated required deployment setting checks.
+if is_true "$DEPLOY_INFRA"; then
+  [[ -n "${ADMIN_BOOTSTRAP_LOGIN_IDS:-}" ]] || die "ADMIN_BOOTSTRAP_LOGIN_IDS is required when DEPLOY_INFRA=true."
+fi
 # </deployment-settings:deploy-sh-required-checks>
 
 if is_true "$DEPLOY_INFRA"; then
@@ -264,6 +266,7 @@ if (( ${#disabled_settings[@]} > 0 )); then
     --output none
 fi
 
+add_setting "Admin__BootstrapLoginIds" "${ADMIN_BOOTSTRAP_LOGIN_IDS:-}"
 add_setting "Auth__CallbackPath" "${AUTH_CALLBACK_PATH:-/signin-oidc}"
 add_setting "Auth__ClientId" "${AUTH_CLIENT_ID:-}"
 add_setting "Auth__Domain" "${AUTH_DOMAIN:-}"

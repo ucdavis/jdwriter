@@ -37,54 +37,24 @@ public class DbInitializer : IDbInitializer
 
     /// <summary>
     /// Development seeding for JDWriter is a corpus load, not a handful of rows, so that belongs in
-    /// the migration CLI rather than in startup. What DOES belong here is giving the fictional
-    /// sandbox personas the roles needed to explore the app.
+    /// the migration CLI rather than in startup. What DOES belong here is making the fictional
+    /// "sample" persona an admin, so one local sign-in can reach every surface. "basic" is left an
+    /// Author, which is what makes it useful: it is how you check the admin gates actually hold.
     ///
-    /// Without it, local sign-in succeeds and then every surface returns 403 — which reads as a
-    /// broken authorization rule rather than a user who was never granted anything. The personas
-    /// only exist when local authentication is enabled, which startup already refuses outside
-    /// Development, so these grants cannot reach a real environment.
-    ///
-    /// "sample" gets everything, so one sign-in can reach every surface. "basic" deliberately gets
-    /// only Author, which is what makes it useful: it is how you check that the analyst and admin
-    /// gates actually hold.
+    /// The personas only exist when local authentication is enabled, which startup refuses outside
+    /// Development, and their sign-in domain is accepted only for that scheme — so this grant
+    /// cannot make anyone an admin in a real environment.
     /// </summary>
     private async Task SeedDevelopmentAsync(CancellationToken ct)
     {
-        await GrantAsync("sandbox-sample", "Sample User", "sample@example.test",
-            [AppRoles.Author, AppRoles.Analyst, AppRoles.Admin], ct);
-        await GrantAsync("sandbox-basic", "Basic User", "basic@example.test",
-            [AppRoles.Author], ct);
-    }
-
-    private async Task GrantAsync(
-        string nameIdentifier, string displayName, string email, string[] roles, CancellationToken ct)
-    {
-        var user = await _db.AppUsers
-            .Include(u => u.Roles)
-            .FirstOrDefaultAsync(u => u.NameIdentifier == nameIdentifier, ct);
-
-        if (user is null)
+        const string persona = "sample";
+        if (!await _db.AdminGrants.AnyAsync(g => g.LoginId == persona, ct))
         {
-            user = new AppUser
-            {
-                NameIdentifier = nameIdentifier,
-                DisplayName = displayName,
-                Email = email,
-                CreatedAt = DateTimeOffset.UtcNow,
-            };
-            _db.AppUsers.Add(user);
+            _db.AdminGrants.Add(new AdminGrant { LoginId = persona, GrantedAt = DateTimeOffset.UtcNow });
+            await _db.SaveChangesAsync(ct);
         }
 
-        // Additive: a role granted by hand during a session is not revoked on the next restart.
-        foreach (var role in roles.Where(r => !user.Roles.Any(x => x.Role == r)))
-        {
-            user.Roles.Add(new AppUserRole { Role = role, GrantedAt = DateTimeOffset.UtcNow });
-        }
-
-        await _db.SaveChangesAsync(ct);
-        _logger.LogInformation("Sandbox persona {Name} has roles {Roles}.",
-            nameIdentifier, string.Join(", ", user.Roles.Select(r => r.Role)));
+        _logger.LogInformation("Sandbox persona {Persona} is whitelisted as an admin.", persona);
     }
 
     // Reference data that every environment needs (title codes, supersessions) will be

@@ -33,6 +33,7 @@ public class AuthenticationHelperTests : IDisposable
         services.AddLogging();
         services.AddSingleton<IConfiguration>(configuration);
         services.AddScoped(_ => TestDbContextFactory.CreateInMemory());
+        services.AddScoped<Server.Core.Access.AdminAccess>();
         services.AddScoped<IUserService, UserService>();
         services.AddAuthenticationServices(configuration, new TestEnvironment());
         _provider = services.BuildServiceProvider();

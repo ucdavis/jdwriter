@@ -14,12 +14,14 @@ route below needs to handle unauthenticated itself.
 
 | Role | Who | Surfaces |
 |---|---|---|
-| `Author` | a supervisor or department user drafting a JD | browse, intake, classify, guided build |
-| `Analyst` | HR classification analyst | everything above plus `/backend` — envelopes, fit, review |
-| `Admin` | corpus and standards operations | ingest endpoints |
+| `Author` | everyone who signs in | browse, intake, classify, guided build |
+| `Admin` | campus logins on the admin whitelist | everything above plus the whole back end — envelopes, review, ingest, standards, settings |
 
-Roles are additive in practice: an `Analyst` can author. Enforced server-side with
-`[Authorize(Roles = …)]`; the client also hides what a role cannot use, but that is cosmetic.
+Roles are derived on every request, never stored: Author for everyone, Admin when the user's
+campus login id (from a `@ucdavis.edu` sign-in name) is whitelisted — either in configuration
+(`Admin:BootstrapLoginIds`, which cannot be removed from the app) or by an admin in Settings.
+Revoking an admin takes effect on their next request. Enforced server-side with
+`[Authorize(Roles = …)]`; the client also hides the back end from Authors, but that is cosmetic.
 
 ## Writes
 
@@ -180,7 +182,7 @@ type JobEnvelope = {
   workEnvironment: string[]; physicalRequirements: string[]; outOfEnvelope: string[] }
 ```
 
-### `POST /api/envelope/save` — Analyst
+### `POST /api/envelope/save` — Admin
 ```ts
 { slug: string; envelope: JobEnvelope }  →  { ok: true; slug: string }
 ```
@@ -189,7 +191,7 @@ envelope is the standard every author in the class starts from, so it is never v
 server refuses regardless of what the editor allowed. Replaces the envelope wholesale and marks the
 class `envelopeSource: "manual"`.
 
-### `POST /api/envelope/coverage` — Analyst
+### `POST /api/envelope/coverage` — Admin
 Re-run backwards coverage of a class's JDs against a **candidate** envelope — the unsaved one the
 analyst is editing. Checking the saved envelope would defeat the purpose: the question is whether
 an edit is safe to make, which can only be answered before it is saved.
@@ -199,7 +201,7 @@ an edit is safe to make, which can only be answered before it is saved.
                                       uncovered: Array<{ name: string; pct: number }> }> }
 ```
 
-### `GET /api/fit/misfits?threshold=90` — Analyst
+### `GET /api/fit/misfits?threshold=90` — Admin
 The cross-class review list: real JDs that fit their assigned class poorly. Reads the coverage
 already stored on each profile — nothing is recomputed, and no model is called.
 
@@ -210,7 +212,7 @@ already stored on each profile — nothing is recomputed, and no model is called
                    idiosyncratic: Array<{ name: string; pct: number }> }> }   // worst fit first
 ```
 
-### `POST /api/fit/suggest` — Analyst
+### `POST /api/fit/suggest` — Admin
 Which class best fits ONE specific JD? A suggestion is about a job description, not about a class,
 so it needs the JD.
 
@@ -245,6 +247,17 @@ different follow-up.
 `{ candidates: Array<{ title: string; code: string; family: string; function: string; grade: string }> }`
 — standards with a resolvable code and no profile. Superseded codes are never offered.
 
+### `GET /api/admin/admins` — Admin
+`{ admins: Array<{ loginId: string; fromConfiguration: boolean; grantedBy: string | null;
+grantedAt: string | null; displayName: string | null; lastSeenAt: string | null }> }`
+
+### `POST /api/admin/admins` — Admin
+`{ loginId: string }  →  { loginId }` (normalized). Accepts `ndlewis` or `ndlewis@ucdavis.edu`;
+`400` with a message for anything else. Idempotent; the person need not have signed in yet.
+
+### `DELETE /api/admin/admins/{loginId}` — Admin
+`400` for a configured admin (remove it from configuration instead) and for removing yourself.
+
 ### `POST /api/admin/bootstrap` — Admin
 `{ title: string }  →  { slug, title, ucJobCode, envelopeSource }`. `400` naming the successor when
 the code is superseded.
@@ -262,7 +275,7 @@ Ingested classes first (alphabetical), then in-use UC Davis titles with no profi
 (`ready: false`). **Superseded codes never appear** — authoring against one would produce a JD
 under a dead classification.
 
-### `GET /api/classes/summary` — Analyst
+### `GET /api/classes/summary` — Admin
 The analyst index: curation statistics for every **ingested** class, alphabetical. No seeds.
 ```ts
 { classes: Array<{
@@ -302,19 +315,19 @@ type Distribution = { consensus: string | null; agreement: number };  // absent 
   standard: ClassStandard | null }   // ClassStandard as GET /api/standards/{slug}
 ```
 
-### `GET /api/classes/{slug}/coverage` — Analyst
+### `GET /api/classes/{slug}/coverage` — Admin
 ```ts
 { n: number; meanCoverage: number; wellCoveredPct: number;
   perJd: Array<{ sourceFile: string; coveredPct: number; uncovered: Array<{ name: string; pct: number }> }> } | null
 ```
 `null` when the class has no stored report.
 
-### `GET /api/classes/{slug}/jds` — Analyst
+### `GET /api/classes/{slug}/jds` — Admin
 ```ts
 { jds: Array<{ sourceFile: string; workingTitle: string; departmentName: string; coveredPct: number | null }> }
 ```
 
-### `GET /api/classes/{slug}/jds/{sourceFile}` — Analyst
+### `GET /api/classes/{slug}/jds/{sourceFile}` — Admin
 One JD side by side with the envelope, each responsibility marked in-envelope or idiosyncratic.
 ```ts
 { profile: { slug: string; title: string; ucJobCode: string };
@@ -330,7 +343,7 @@ One JD side by side with the envelope, each responsibility marked in-envelope or
 ```
 `inEnvelope` is decided server-side against the CONSOLIDATED members, not the envelope's wording.
 
-### `GET /api/standards/{slug}` — Analyst
+### `GET /api/standards/{slug}` — Admin
 The linked official standard, or `null`. Roughly 19 of 65 classes have one — the gap is standards
 COVERAGE (the workbooks only cover 19 families), not a matching failure, so "no standard" is a
 normal state the UI must render calmly.

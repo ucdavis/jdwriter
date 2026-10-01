@@ -1,6 +1,7 @@
 import profilesFixture from './profiles.json' with { type: 'json' };
 import { delay, http, HttpResponse } from 'msw';
 import type {
+  AdminsResponse,
   AssembledJd,
   BootstrapCreateResponse,
   BootstrapResponse,
@@ -104,9 +105,9 @@ export const handlers = [
       email: 'ndlewis@ucdavis.edu',
       iamId: '10000000',
       id: 'mock-user',
-      name: 'Mock Analyst',
-      // Analyst so the curation surfaces are reachable in the mocked app.
-      roles: ['Author', 'Analyst', 'Admin'],
+      name: 'Mock Admin',
+      // Admin so the back end is reachable in the mocked app.
+      roles: ['Author', 'Admin'],
     })
   ),
 
@@ -479,6 +480,28 @@ export const handlers = [
       uncodedSample: ['Systemwide Academic Personnel Analyst 3'],
     });
   }),
+
+  http.get('/api/admin/admins', () =>
+    HttpResponse.json<AdminsResponse>({
+      admins: [
+        {
+          displayName: 'Mock Admin',
+          fromConfiguration: true,
+          grantedAt: null,
+          grantedBy: null,
+          lastSeenAt: new Date().toISOString(),
+          loginId: 'mockadmin',
+        },
+      ],
+    })
+  ),
+
+  http.post('/api/admin/admins', async ({ request }) => {
+    const { loginId } = (await request.json()) as { loginId: string };
+    return HttpResponse.json({ loginId: loginId.trim().toLowerCase() });
+  }),
+
+  http.delete('/api/admin/admins/:loginId', () => HttpResponse.json({ ok: true as const })),
 
   http.post('/api/admin/bootstrap', async ({ request }) => {
     const { title } = (await request.json()) as { title: string };

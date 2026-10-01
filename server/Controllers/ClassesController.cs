@@ -41,7 +41,7 @@ public class ClassesController : ApiControllerBase
     /// slugs are always "&lt;code&gt;-&lt;title&gt;".
     /// </summary>
     [HttpGet("summary")]
-    [Authorize(Roles = AppRoles.Analyst)]
+    [Authorize(Roles = AppRoles.Admin)]
     public async Task<IActionResult> Summary(CancellationToken ct)
     {
         var summaries = await _profiles.GetSummariesAsync(ct);
@@ -71,7 +71,7 @@ public class ClassesController : ApiControllerBase
     }
 
     [HttpGet("{slug}/coverage")]
-    [Authorize(Roles = AppRoles.Analyst)]
+    [Authorize(Roles = AppRoles.Admin)]
     public async Task<IActionResult> Coverage(string slug, CancellationToken ct)
     {
         var profile = await _profiles.GetBySlugAsync(slug, ct);
@@ -98,7 +98,7 @@ public class ClassesController : ApiControllerBase
     /// the standard or the class toward reality.
     /// </summary>
     [HttpGet("{slug}/jds/{**sourceFile}")]
-    [Authorize(Roles = AppRoles.Analyst)]
+    [Authorize(Roles = AppRoles.Admin)]
     public async Task<IActionResult> Jd(string slug, string sourceFile, CancellationToken ct)
     {
         var profile = await _profiles.GetBySlugAsync(slug, ct);
@@ -174,7 +174,7 @@ public class ClassesController : ApiControllerBase
     /// entry point to the review-and-nudge workflow.
     /// </summary>
     [HttpGet("{slug}/jds")]
-    [Authorize(Roles = AppRoles.Analyst)]
+    [Authorize(Roles = AppRoles.Admin)]
     public async Task<IActionResult> Jds(string slug, CancellationToken ct)
     {
         var profile = await _profiles.GetBySlugAsync(slug, ct);

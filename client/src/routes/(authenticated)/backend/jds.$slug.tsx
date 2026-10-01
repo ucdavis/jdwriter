@@ -1,5 +1,5 @@
-import { AnalystOnly } from '@/shared/ui/AppShell.tsx';
-import { isAnalyst } from '@/queries/user.ts';
+import { AdminOnly } from '@/shared/ui/AppShell.tsx';
+import { isAdmin } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { coverageQueryOptions } from '@/queries/classes.ts';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -15,7 +15,7 @@ export const Route = createFileRoute('/(authenticated)/backend/jds/$slug')({
     context: RouterContext;
     params: { slug: string };
   }) => {
-    if (await isAnalyst(context.queryClient)) {
+    if (await isAdmin(context.queryClient)) {
       await context.queryClient.ensureQueryData(coverageQueryOptions(params.slug));
     }
   },
@@ -28,13 +28,13 @@ export const Route = createFileRoute('/(authenticated)/backend/jds/$slug')({
  */
 function CoveragePage() {
   return (
-    <AnalystOnly>
+    <AdminOnly>
       <CoverageContent />
-    </AnalystOnly>
+    </AdminOnly>
   );
 }
 
-// Inside the gate so the Analyst-only query never fires for an Author.
+// Inside the gate so the admin-only query never fires for an Author.
 function CoverageContent() {
   const { slug } = Route.useParams();
   const { data: coverage } = useSuspenseQuery(coverageQueryOptions(slug));

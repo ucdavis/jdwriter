@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Server.Core.Domain;
+using Server.Core.Access;
 using Server.Core.Data;
+using Server.Helpers;
 
 namespace Server.Services;
 
@@ -11,64 +13,72 @@ public interface IUserService
 }
 
 /// <summary>
-/// Resolves an application user's roles from the database, replacing the template's stub, which
-/// handed every signed-in account the same two fake roles.
+/// Resolves an application user's roles: Author for everyone who signs in, Admin for a login on
+/// the admin whitelist. Derived on every request rather than stored, so revoking an admin takes
+/// effect immediately.
 /// </summary>
 public class UserService : IUserService
 {
+    /// <summary>
+    /// The campus login id of a signed-in user. The sandbox personas' domain counts only for
+    /// identities the local sandbox scheme created, which cannot exist outside Development.
+    /// </summary>
+    public static string? LoginIdOf(ClaimsPrincipal principal)
+    {
+        string[] domains = principal.Identity?.AuthenticationType == LocalAuthentication.Scheme
+            ? [CampusLogin.Domain, LocalAuthentication.PersonaDomain]
+            : [CampusLogin.Domain];
+        return CampusLogin.FromPrincipal(principal, domains);
+    }
+
     private readonly ILogger<UserService> _logger;
     private readonly AppDbContext _dbContext;
+    private readonly AdminAccess _admins;
 
-    public UserService(ILogger<UserService> logger, AppDbContext dbContext)
+    public UserService(ILogger<UserService> logger, AppDbContext dbContext, AdminAccess admins)
     {
         _logger = logger;
         _dbContext = dbContext;
+        _admins = admins;
     }
 
     /// <summary>
-    /// Look up a user's granted roles, creating the user row on first sign-in.
+    /// Record the user (creating the row on first sign-in) and work out their roles.
     ///
-    /// A first-time user gets <see cref="AppRoles.Author"/> and nothing else. Authoring is the
-    /// self-service half of the product, and gating it behind a provisioning request would defeat
-    /// the point. Analyst and Admin are granted deliberately, because they change what everyone
-    /// else sees: an analyst curates the envelopes every author writes against, so letting authors
-    /// hold that role would let one department quietly redefine a classification campus-wide.
+    /// Authoring is self-service, so everyone gets Author. Admin is granted only by the whitelist,
+    /// because an admin edits the envelopes every author writes against.
     /// </summary>
     private async Task<List<string>> GetRolesForUser(ClaimsPrincipal principal, string userId)
     {
-        var user = await _dbContext.AppUsers
-            .Include(u => u.Roles)
-            .FirstOrDefaultAsync(u => u.NameIdentifier == userId);
+        var loginId = LoginIdOf(principal);
 
+        var user = await _dbContext.AppUsers.FirstOrDefaultAsync(u => u.NameIdentifier == userId);
         if (user is null)
         {
             user = new AppUser
             {
                 NameIdentifier = userId,
-                Email = principal.FindFirst(ClaimTypes.Email)?.Value
-                        ?? principal.FindFirst("preferred_username")?.Value,
-                DisplayName = principal.Identity?.Name,
-                // The UC Davis IAM id arrives only when the app registration is configured to
-                // release that claim. Absent is normal, not an error.
-                IamId = principal.FindFirst("ucdPersonIAMID")?.Value,
                 CreatedAt = DateTimeOffset.UtcNow,
-                Roles = [new AppUserRole { Role = AppRoles.Author, GrantedAt = DateTimeOffset.UtcNow }],
             };
-
             _dbContext.AppUsers.Add(user);
-            await _dbContext.SaveChangesAsync();
-
-            _logger.LogInformation(
-                "Provisioned new user {UserId} with the {Role} role.", userId, AppRoles.Author);
-        }
-        else
-        {
-            // Cheap, and worth having on an HR system: who has actually used this, and when.
-            user.LastSeenAt = DateTimeOffset.UtcNow;
-            await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("Recorded new user {UserId} ({LoginId}).", userId, loginId);
         }
 
-        return user.Roles.Select(r => r.Role).ToList();
+        // Refreshed every time: cheap, and on an HR system it is worth knowing who has actually
+        // used this, and when.
+        user.LoginId = loginId;
+        user.Email = principal.FindFirst(ClaimTypes.Email)?.Value
+                     ?? principal.FindFirst("preferred_username")?.Value;
+        user.DisplayName = principal.Identity?.Name ?? user.DisplayName;
+        // The UC Davis IAM id arrives only when the app registration is configured to release
+        // that claim. Absent is normal, not an error.
+        user.IamId = principal.FindFirst("ucdPersonIAMID")?.Value ?? user.IamId;
+        user.LastSeenAt = DateTimeOffset.UtcNow;
+        await _dbContext.SaveChangesAsync();
+
+        return await _admins.IsAdminAsync(loginId)
+            ? [AppRoles.Author, AppRoles.Admin]
+            : [AppRoles.Author];
     }
 
     public async Task<ClaimsPrincipal?> UpdateUserPrincipalIfNeeded(ClaimsPrincipal principal)

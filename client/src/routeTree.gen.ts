@@ -14,6 +14,7 @@ import { Route as authenticatedIndexRouteImport } from './routes/(authenticated)
 import { Route as authenticatedClassifyRouteImport } from './routes/(authenticated)/classify'
 import { Route as authenticatedBackendIndexRouteImport } from './routes/(authenticated)/backend/index'
 import { Route as authenticatedClassSlugRouteImport } from './routes/(authenticated)/class.$slug'
+import { Route as authenticatedBackendSettingsRouteImport } from './routes/(authenticated)/backend/settings'
 import { Route as authenticatedBackendFitRouteImport } from './routes/(authenticated)/backend/fit'
 import { Route as authenticatedClassSlugBuildRouteImport } from './routes/(authenticated)/class.$slug.build'
 import { Route as authenticatedBackendStandardSlugRouteImport } from './routes/(authenticated)/backend/standard.$slug'
@@ -46,6 +47,12 @@ const authenticatedClassSlugRoute = authenticatedClassSlugRouteImport.update({
   path: '/class/$slug',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
+const authenticatedBackendSettingsRoute =
+  authenticatedBackendSettingsRouteImport.update({
+    id: '/backend/settings',
+    path: '/backend/settings',
+    getParentRoute: () => authenticatedRouteRoute,
+  } as any)
 const authenticatedBackendFitRoute = authenticatedBackendFitRouteImport.update({
   id: '/backend/fit',
   path: '/backend/fit',
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/classify': typeof authenticatedClassifyRoute
   '/': typeof authenticatedIndexRoute
   '/backend/fit': typeof authenticatedBackendFitRoute
+  '/backend/settings': typeof authenticatedBackendSettingsRoute
   '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
   '/backend': typeof authenticatedBackendIndexRoute
   '/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
@@ -98,6 +106,7 @@ export interface FileRoutesByTo {
   '/classify': typeof authenticatedClassifyRoute
   '/': typeof authenticatedIndexRoute
   '/backend/fit': typeof authenticatedBackendFitRoute
+  '/backend/settings': typeof authenticatedBackendSettingsRoute
   '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
   '/backend': typeof authenticatedBackendIndexRoute
   '/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
@@ -112,6 +121,7 @@ export interface FileRoutesById {
   '/(authenticated)/classify': typeof authenticatedClassifyRoute
   '/(authenticated)/': typeof authenticatedIndexRoute
   '/(authenticated)/backend/fit': typeof authenticatedBackendFitRoute
+  '/(authenticated)/backend/settings': typeof authenticatedBackendSettingsRoute
   '/(authenticated)/class/$slug': typeof authenticatedClassSlugRouteWithChildren
   '/(authenticated)/backend/': typeof authenticatedBackendIndexRoute
   '/(authenticated)/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/classify'
     | '/'
     | '/backend/fit'
+    | '/backend/settings'
     | '/class/$slug'
     | '/backend'
     | '/backend/edit/$slug'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/classify'
     | '/'
     | '/backend/fit'
+    | '/backend/settings'
     | '/class/$slug'
     | '/backend'
     | '/backend/edit/$slug'
@@ -151,6 +163,7 @@ export interface FileRouteTypes {
     | '/(authenticated)/classify'
     | '/(authenticated)/'
     | '/(authenticated)/backend/fit'
+    | '/(authenticated)/backend/settings'
     | '/(authenticated)/class/$slug'
     | '/(authenticated)/backend/'
     | '/(authenticated)/backend/edit/$slug'
@@ -199,6 +212,13 @@ declare module '@tanstack/react-router' {
       path: '/class/$slug'
       fullPath: '/class/$slug'
       preLoaderRoute: typeof authenticatedClassSlugRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/backend/settings': {
+      id: '/(authenticated)/backend/settings'
+      path: '/backend/settings'
+      fullPath: '/backend/settings'
+      preLoaderRoute: typeof authenticatedBackendSettingsRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
     '/(authenticated)/backend/fit': {
@@ -264,6 +284,7 @@ interface authenticatedRouteRouteChildren {
   authenticatedClassifyRoute: typeof authenticatedClassifyRoute
   authenticatedIndexRoute: typeof authenticatedIndexRoute
   authenticatedBackendFitRoute: typeof authenticatedBackendFitRoute
+  authenticatedBackendSettingsRoute: typeof authenticatedBackendSettingsRoute
   authenticatedClassSlugRoute: typeof authenticatedClassSlugRouteWithChildren
   authenticatedBackendIndexRoute: typeof authenticatedBackendIndexRoute
   authenticatedBackendEditSlugRoute: typeof authenticatedBackendEditSlugRoute
@@ -276,6 +297,7 @@ const authenticatedRouteRouteChildren: authenticatedRouteRouteChildren = {
   authenticatedClassifyRoute: authenticatedClassifyRoute,
   authenticatedIndexRoute: authenticatedIndexRoute,
   authenticatedBackendFitRoute: authenticatedBackendFitRoute,
+  authenticatedBackendSettingsRoute: authenticatedBackendSettingsRoute,
   authenticatedClassSlugRoute: authenticatedClassSlugRouteWithChildren,
   authenticatedBackendIndexRoute: authenticatedBackendIndexRoute,
   authenticatedBackendEditSlugRoute: authenticatedBackendEditSlugRoute,

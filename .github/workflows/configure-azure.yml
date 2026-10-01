@@ -28,6 +28,7 @@ jobs:
     env:
       APP_NAME: ${{ vars.APP_NAME || 'webapp' }}
       # <deployment-settings:workflow-env>
+      ADMIN_BOOTSTRAP_LOGIN_IDS: ${{ vars.ADMIN_BOOTSTRAP_LOGIN_IDS }}
       AUTH_CALLBACK_PATH: ${{ vars.AUTH_CALLBACK_PATH || '/signin-oidc' }}
       AUTH_CLIENT_ID: ${{ vars.AUTH_CLIENT_ID }}
       AUTH_DOMAIN: ${{ vars.AUTH_DOMAIN }}
@@ -96,7 +97,10 @@ jobs:
           fi
 
           # <deployment-settings:workflow-required-checks>
-          # No generated required deployment setting checks.
+          if [[ -z "$ADMIN_BOOTSTRAP_LOGIN_IDS" ]]; then
+            echo "ADMIN_BOOTSTRAP_LOGIN_IDS must be configured as a GitHub Environment variable when configuring Azure."
+            exit 1
+          fi
           # </deployment-settings:workflow-required-checks>
 
           if [[ -n "$WEB_PLAN_NAME" && -z "$WEB_PLAN_RESOURCE_GROUP" ]] ||
@@ -209,6 +213,7 @@ jobs:
               --output none
           fi
 
+          add_setting "Admin__BootstrapLoginIds" "$ADMIN_BOOTSTRAP_LOGIN_IDS"
           add_setting "Auth__CallbackPath" "$AUTH_CALLBACK_PATH"
           add_setting "Auth__ClientId" "$AUTH_CLIENT_ID"
           add_setting "Auth__Domain" "$AUTH_DOMAIN"

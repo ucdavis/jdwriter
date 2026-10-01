@@ -1,5 +1,5 @@
-import { AnalystOnly } from '@/shared/ui/AppShell.tsx';
-import { isAnalyst } from '@/queries/user.ts';
+import { AdminOnly } from '@/shared/ui/AppShell.tsx';
+import { isAdmin } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, Note, PageHeader } from '@/shared/ui/primitives.tsx';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
@@ -13,7 +13,7 @@ const CAP = 150;
 export const Route = createFileRoute('/(authenticated)/backend/fit')({
   component: FitPage,
   loader: async ({ context }: { context: RouterContext }) => {
-    if (await isAnalyst(context.queryClient)) {
+    if (await isAdmin(context.queryClient)) {
       await context.queryClient.ensureQueryData(misfitsQueryOptions(90));
     }
   },
@@ -28,13 +28,13 @@ export const Route = createFileRoute('/(authenticated)/backend/fit')({
  */
 function FitPage() {
   return (
-    <AnalystOnly>
+    <AdminOnly>
       <FitContent />
-    </AnalystOnly>
+    </AdminOnly>
   );
 }
 
-// Inside the gate so the Analyst-only query never fires for an Author.
+// Inside the gate so the admin-only query never fires for an Author.
 function FitContent() {
   const { data } = useMisfits(90);
   const misfits = data?.misfits ?? [];

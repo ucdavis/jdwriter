@@ -1,3 +1,6 @@
+using Server.Core.Data;
+using Server.Core.Access;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Server.Core.Domain;
@@ -10,6 +13,7 @@ namespace Server.Controllers;
 
 public sealed record IngestClassRequest(string Code, string? CorpusDir);
 public sealed record BootstrapRequest(string Title);
+public sealed record AdminGrantRequest(string LoginId);
 
 /// <summary>
 /// Corpus and standards operations.
@@ -31,6 +35,8 @@ public class AdminController : ApiControllerBase
     private readonly IClassProfileRepository _profiles;
     private readonly ITitleCodeService _titleCodes;
     private readonly IConfiguration _config;
+    private readonly AdminAccess _admins;
+    private readonly AppDbContext _db;
 
     public AdminController(
         IngestPipeline pipeline,
@@ -39,7 +45,9 @@ public class AdminController : ApiControllerBase
         StandardsImporter standardsImporter,
         IClassProfileRepository profiles,
         ITitleCodeService titleCodes,
-        IConfiguration config)
+        IConfiguration config,
+        AdminAccess admins,
+        AppDbContext db)
     {
         _pipeline = pipeline;
         _bootstrapper = bootstrapper;
@@ -48,6 +56,49 @@ public class AdminController : ApiControllerBase
         _profiles = profiles;
         _titleCodes = titleCodes;
         _config = config;
+        _admins = admins;
+        _db = db;
+    }
+
+    // ---------------------------------------------------------------- admin whitelist
+
+    [HttpGet("admins")]
+    public async Task<IActionResult> Admins(CancellationToken ct) =>
+        Ok(new { admins = await _admins.ListAsync(ct) });
+
+    /// <summary>
+    /// Whitelist a campus login. Takes effect on that person's next request — they need not have
+    /// signed in before, and need not sign out and back in after.
+    /// </summary>
+    [HttpPost("admins")]
+    public async Task<IActionResult> GrantAdmin(AdminGrantRequest body, CancellationToken ct)
+    {
+        var me = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var grantedBy = await _db.AppUsers.Where(u => u.NameIdentifier == me)
+            .Select(u => (int?)u.Id).FirstOrDefaultAsync(ct);
+        try
+        {
+            var login = await _admins.GrantAsync(body.LoginId, grantedBy, ct);
+            return Ok(new { loginId = login });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("admins/{loginId}")]
+    public async Task<IActionResult> RevokeAdmin(string loginId, CancellationToken ct)
+    {
+        try
+        {
+            await _admins.RevokeAsync(loginId, Server.Services.UserService.LoginIdOf(User), ct);
+            return Ok(new { ok = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     /// <summary>

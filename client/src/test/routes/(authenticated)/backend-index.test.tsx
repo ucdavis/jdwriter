@@ -100,7 +100,7 @@ describe('analyst index', () => {
     renderRoute({ initialPath: '/backend' });
 
     await waitFor(() => {
-      expect(screen.getByText('Analyst access required')).toBeInTheDocument();
+      expect(screen.getByText('Admin access required')).toBeInTheDocument();
     });
     expect(summaryRequested).toBe(false);
   });

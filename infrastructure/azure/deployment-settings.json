@@ -3,5 +3,14 @@
   "version": 1,
   "disabled": [],
   "overrides": {},
-  "additions": []
+  "additions": [
+    {
+      "githubName": "ADMIN_BOOTSTRAP_LOGIN_IDS",
+      "appServiceName": "Admin__BootstrapLoginIds",
+      "classification": "variable",
+      "valueType": "string",
+      "requiredWhen": "deploy_infra",
+      "description": "Comma-separated UC Davis login IDs that are always JDWriter admins. They cannot be removed from the app, so the back end can never be left without an admin. Further admins are added in the app's Settings page."
+    }
+  ]
 }

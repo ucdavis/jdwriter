@@ -1,4 +1,4 @@
-import { AnalystOnly } from '@/shared/ui/AppShell.tsx';
+import { AdminOnly } from '@/shared/ui/AppShell.tsx';
 import { Card, PageHeader } from '@/shared/ui/primitives.tsx';
 import { classProfileQueryOptions, useClassProfile } from '@/queries/classes.ts';
 import { createFileRoute } from '@tanstack/react-router';
@@ -25,7 +25,7 @@ function StandardPage() {
   }
 
   return (
-    <AnalystOnly>
+    <AdminOnly>
       <PageHeader
         back={{ label: `Back to ${profile.title}`, params: { slug }, to: '/class/$slug' }}
         eyebrow={`${profile.title} · code ${profile.ucJobCode}`}
@@ -46,6 +46,6 @@ function StandardPage() {
           </p>
         </Card>
       )}
-    </AnalystOnly>
+    </AdminOnly>
   );
 }

@@ -1,6 +1,7 @@
 import { Badge, Card, Eyebrow, Fact, PageHeader } from '@/shared/ui/primitives.tsx';
 import { BuildFlow } from '@/features/build/BuildFlow.tsx';
 import { classProfileQueryOptions, useClassProfile } from '@/queries/classes.ts';
+import { useIsAdmin } from '@/shared/ui/AppShell.tsx';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import type { Distribution, EnvelopeSource } from '@/lib/contracts.ts';
 import type { RouterContext } from '@/main.tsx';
@@ -38,6 +39,7 @@ const sourceBadge = (
 function ClassPage() {
   const { slug } = Route.useParams();
   const { data: profile } = useClassProfile(slug);
+  const isAdmin = useIsAdmin();
 
   if (!profile) {
     return null;
@@ -73,7 +75,8 @@ function ClassPage() {
           <p className="mt-2 text-[13px] leading-relaxed text-base-content/65">
             {envelope.scopeStatement}
           </p>
-          {profile.standard ? (
+          {/* The standard's detail page is part of the back end, so only admins get the link. */}
+          {profile.standard && isAdmin ? (
             <Link
               className="mt-3 inline-block text-[12.5px] font-medium text-info hover:underline"
               params={{ slug: profile.slug }}

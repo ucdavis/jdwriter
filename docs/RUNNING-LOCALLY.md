@@ -63,8 +63,11 @@ Sign in at <http://localhost:5173>. Local sign-in offers two fictional personas:
 
 | Persona | Roles | Use it to |
 |---|---|---|
-| **Sample User** | Author, Analyst, Admin | reach every surface |
-| **Basic User** | Author | check that the analyst and admin gates actually hold |
+| **Sample User** | Author, Admin | reach every surface, including the back end |
+| **Basic User** | Author | check that the back end is hidden and the admin gates hold |
+
+In development "sample" is whitelisted as an admin at startup. In a real environment admins come
+from `Admin__BootstrapLoginIds` (configuration) plus whoever is added on `/backend/settings`.
 
 `migrate-poc` is idempotent; without `--write` it is a dry run reporting what it would load.
 

@@ -5,14 +5,14 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 /**
- * An Author who opens an analyst page must see AnalystOnly's explanation, and the page
- * must not request the Analyst-only data at all.
+ * An Author who opens an admin page must see AdminOnly's explanation, and the page
+ * must not request the admin-only data at all.
  *
- * The failure this guards against: a loader that prefetches an Analyst-only endpoint for
+ * The failure this guards against: a loader that prefetches an admin-only endpoint for
  * everyone throws the 403 out of the loader, which surfaces the app-wide "not authorized
  * to use this application" page — telling an authorized Author they cannot use the app.
  */
-const ANALYST_ONLY = [
+const ADMIN_ONLY = [
   '/api/classes/summary',
   '/api/fit/misfits',
   '/api/classes/:slug/coverage',
@@ -26,7 +26,7 @@ const pages = [
   { name: 'JD review', path: '/backend/jd/009605-lab-ast-1/Sample%20Class/JD-001.HTML' },
 ];
 
-describe('analyst gates', () => {
+describe('admin gates', () => {
   setupRouteTest();
 
   it.each(pages)('$name: an Author sees the access message, and nothing is fetched', async ({ path }) => {
@@ -41,7 +41,7 @@ describe('analyst gates', () => {
           roles: ['Author'],
         })
       ),
-      ...ANALYST_ONLY.map((route) =>
+      ...ADMIN_ONLY.map((route) =>
         http.get(route, ({ request }) => {
           requested.push(new URL(request.url).pathname);
           return HttpResponse.json({ message: 'Forbidden' }, { status: 403 });
@@ -52,7 +52,7 @@ describe('analyst gates', () => {
     renderRoute({ initialPath: path });
 
     await waitFor(() => {
-      expect(screen.getByText('Analyst access required')).toBeInTheDocument();
+      expect(screen.getByText('Admin access required')).toBeInTheDocument();
     });
     expect(screen.queryByText('Access unavailable')).not.toBeInTheDocument();
     expect(requested).toEqual([]);

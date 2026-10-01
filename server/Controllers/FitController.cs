@@ -15,7 +15,7 @@ public sealed record FitSuggestRequest(string Slug, string SourceFile);
 /// </summary>
 [ApiController]
 [Route("api/fit")]
-[Authorize(Roles = AppRoles.Analyst)]
+[Authorize(Roles = AppRoles.Admin)]
 public class FitController : ApiControllerBase
 {
     private readonly IFitService _fit;

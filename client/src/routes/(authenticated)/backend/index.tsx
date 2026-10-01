@@ -3,11 +3,11 @@ import {
   IngestPanel,
   StandardsPanel,
 } from '@/features/backend/AdminPanels.tsx';
-import { AnalystOnly } from '@/shared/ui/AppShell.tsx';
+import { AdminOnly } from '@/shared/ui/AppShell.tsx';
 import { Badge, Card, PageHeader, Stat } from '@/shared/ui/primitives.tsx';
 import type { Tone } from '@/shared/ui/primitives.tsx';
 import { classSummaryQueryOptions, useClassSummary } from '@/queries/classes.ts';
-import { isAnalyst } from '@/queries/user.ts';
+import { isAdmin } from '@/queries/user.ts';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import type { ClassSummary, EnvelopeSource } from '@/lib/contracts.ts';
 import type { RouterContext } from '@/main.tsx';
@@ -15,7 +15,7 @@ import type { RouterContext } from '@/main.tsx';
 export const Route = createFileRoute('/(authenticated)/backend/')({
   component: BackendPage,
   loader: async ({ context }: { context: RouterContext }) => {
-    if (await isAnalyst(context.queryClient)) {
+    if (await isAdmin(context.queryClient)) {
       await context.queryClient.ensureQueryData(classSummaryQueryOptions());
     }
   },
@@ -32,13 +32,13 @@ const pct = (share: number) => `${Math.round(share * 100)}%`;
 
 function BackendPage() {
   return (
-    <AnalystOnly>
+    <AdminOnly>
       <EnvelopeIndex />
-    </AnalystOnly>
+    </AdminOnly>
   );
 }
 
-// Inside the gate so the Analyst-only query never fires for an Author.
+// Inside the gate so the admin-only query never fires for an Author.
 function EnvelopeIndex() {
   const { data } = useClassSummary();
   const classes = data?.classes ?? [];
@@ -58,6 +58,12 @@ function EnvelopeIndex() {
           to="/backend/fit"
         >
           → Reclassification review (goodness-of-fit)
+        </Link>
+        <Link
+          className="ml-5 text-[13px] font-medium text-primary hover:underline"
+          to="/backend/settings"
+        >
+          → Settings
         </Link>
       </div>
 
