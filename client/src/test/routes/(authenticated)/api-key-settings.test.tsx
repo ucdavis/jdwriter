@@ -1,7 +1,7 @@
 import { renderRoute, setupRouteTest } from '@/test/renderRoute.tsx';
 import { testServer } from '@/test/mswUtils.ts';
 import type { ApiKeyStatus } from '@/lib/contracts.ts';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -85,5 +85,22 @@ describe('settings: Anthropic API key', () => {
     renderRoute({ initialPath: '/backend/settings' });
 
     await screen.findByText(/can no longer be decrypted/);
+  });
+
+  it.each([
+    [true, 'encrypted', /Transparent Data Encryption on/],
+    [false, 'not encrypted', /Expected on a local development database/],
+    [null, 'unknown', /could not be determined/],
+  ] as const)('reports database encryption at rest: %s', async (value, badge, text) => {
+    testServer.use(
+      http.get('/api/admin/settings/security', () =>
+        HttpResponse.json({ databaseEncryptedAtRest: value })
+      )
+    );
+    renderRoute({ initialPath: '/backend/settings' });
+
+    const row = await screen.findByTestId('encryption-at-rest');
+    await waitFor(() => expect(row).toHaveTextContent(badge));
+    expect(row).toHaveTextContent(text);
   });
 });

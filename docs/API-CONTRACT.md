@@ -317,6 +317,11 @@ precedence over `ANTHROPIC_API_KEY` from configuration (the template's standard 
 Environment secret applied as an App Service setting). If the Data Protection key ring is lost, the
 stored key reads as `storedKeyUnreadable` and the configured key is used until an admin re-enters it.
 
+### `GET /api/admin/settings/security` — Admin
+`{ databaseEncryptedAtRest: boolean | null }` — from SQL Server's `sys.databases.is_encrypted`;
+`null` when it cannot be determined. Shown on the Settings page so encryption at rest is verified,
+not assumed. See `docs/DEPLOYMENT.md`.
+
 ### `POST /api/admin/bootstrap` — Admin
 `{ title: string }  →  { slug, title, ucJobCode, envelopeSource }`. `400` naming the successor when
 the code is superseded.

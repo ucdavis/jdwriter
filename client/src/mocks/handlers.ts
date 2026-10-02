@@ -1,6 +1,7 @@
 import profilesFixture from './profiles.json' with { type: 'json' };
 import { delay, http, HttpResponse } from 'msw';
 import type {
+  SecurityStatus,
   UploadedPendingResponse,
   UploadResponse,
   SavedJd,
@@ -538,6 +539,10 @@ export const handlers = [
     await delay(900);
     return HttpResponse.json({ ok: true });
   }),
+
+  http.get('/api/admin/settings/security', () =>
+    HttpResponse.json<SecurityStatus>({ databaseEncryptedAtRest: true })
+  ),
 
   http.get('/api/admin/settings/api-key', () =>
     HttpResponse.json<ApiKeyStatus>({

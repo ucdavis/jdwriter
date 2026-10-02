@@ -493,6 +493,9 @@ export type AdminEntry = {
 
 export type AdminsResponse = { admins: AdminEntry[] };
 
+/** As SQL Server reports it; null when it cannot be determined. */
+export type SecurityStatus = { databaseEncryptedAtRest: boolean | null };
+
 /** Where the Anthropic key in use came from. Never contains the key. */
 export type ApiKeyStatus = {
   configurationHasKey: boolean;

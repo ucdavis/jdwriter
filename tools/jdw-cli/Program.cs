@@ -1,6 +1,7 @@
 using Jdw.Cli.Migration;
 using Microsoft.EntityFrameworkCore;
 using Server.Core.Data;
+using Server.Core.Ingest;
 
 // JDWriter maintenance CLI.
 //
@@ -10,6 +11,7 @@ using Server.Core.Data;
 
 var command = args.FirstOrDefault() ?? "help";
 var write = args.Contains("--write");
+var scrub = args.Contains("--scrub");
 
 if (command is "help" or "--help" or "-h")
 {
@@ -40,6 +42,7 @@ var connection = ArgValue("--connection")
 
 Console.WriteLine($"POC root:   {pocRoot}");
 Console.WriteLine($"Mode:       {(write ? "WRITE" : "dry run")}");
+Console.WriteLine($"Scrub:      {(scrub ? "yes — identifying fields replaced (test environment)" : "no — real corpus (prod only)")}");
 Console.WriteLine();
 
 var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -74,7 +77,7 @@ catch (Exception ex)
     return 3;
 }
 
-var migrator = new CorpusMigrator(db, pocRoot, write, Console.WriteLine);
+var migrator = new CorpusMigrator(db, pocRoot, write, Console.WriteLine, scrub ? new TestDataScrubber() : null);
 var started = DateTimeOffset.UtcNow;
 var report = await migrator.RunAsync();
 var elapsed = DateTimeOffset.UtcNow - started;
@@ -116,13 +119,16 @@ static void PrintUsage()
         jdw-cli — JDWriter maintenance commands
 
         Usage:
-          jdw-cli migrate-poc [--write] [--poc <path>] [--connection <conn>]
+          jdw-cli migrate-poc [--write] [--scrub] [--poc <path>] [--connection <conn>]
 
         migrate-poc
           Loads the POC's title reference, job standards, JD corpus and class profiles into SQL.
           Dry-run by default: reports what it would load and writes nothing.
 
           --write        Commit the load. Without it, nothing is written.
+          --scrub        Replace position numbers, reports-to, JD numbers, departments and export
+                         file names with synthetic values. For the Azure TEST environment; the
+                         real corpus goes to prod only.
           --poc <path>   The JDWriter POC checkout. Defaults to a sibling 'JDWriter' directory.
           --connection   Override the connection string. Defaults to DB_CONNECTION, then to the
                          local SQL container on port 14333.

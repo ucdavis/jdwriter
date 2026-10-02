@@ -1,6 +1,7 @@
 import { fetchJson } from '../lib/api.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  SecurityStatus,
   UploadedPendingResponse,
   UploadResponse,
   ApiKeyStatus,
@@ -173,3 +174,10 @@ export const useIngestUploaded = () => {
     },
   });
 };
+
+export const securityQueryOptions = () => ({
+  queryFn: () => fetchJson<SecurityStatus>('/api/admin/settings/security'),
+  queryKey: ['admin', 'security'] as const,
+});
+
+export const useSecurityStatus = () => useQuery(securityQueryOptions());

@@ -33,13 +33,20 @@ public sealed class CorpusMigrator
     private readonly string _pocRoot;
     private readonly bool _write;
     private readonly Action<string> _log;
+    private readonly TestDataScrubber? _scrub;
 
-    public CorpusMigrator(AppDbContext db, string pocRoot, bool write, Action<string> log)
+    /// <param name="scrub">
+    /// Replace identifying fields as the data is loaded — for the Azure test environment, never
+    /// prod. Null loads the corpus exactly as exported.
+    /// </param>
+    public CorpusMigrator(
+        AppDbContext db, string pocRoot, bool write, Action<string> log, TestDataScrubber? scrub = null)
     {
         _db = db;
         _pocRoot = pocRoot;
         _write = write;
         _log = log;
+        _scrub = scrub;
     }
 
     private string DataPath(params string[] parts) =>
@@ -250,6 +257,7 @@ public sealed class CorpusMigrator
             }
 
             var jd = MapJobDescription(parsed, index, report);
+            _scrub?.Apply(jd);
             codes.Add(jd.UcJobCode);
 
             report.JobDescriptions++;
@@ -391,7 +399,7 @@ public sealed class CorpusMigrator
         }
     }
 
-    private static ClassProfile MapProfile(PocProfile src, MigrationReport report)
+    private ClassProfile MapProfile(PocProfile src, MigrationReport report)
     {
         var profile = new ClassProfile
         {
@@ -409,7 +417,11 @@ public sealed class CorpusMigrator
 
         for (var i = 0; i < src.SourceFiles.Count; i++)
         {
-            profile.SourceFiles.Add(new ProfileSourceFile { Ordinal = i, SourceFile = src.SourceFiles[i] });
+            profile.SourceFiles.Add(new ProfileSourceFile
+            {
+                Ordinal = i,
+                SourceFile = _scrub?.SourceFile(src.SourceFiles[i]) ?? src.SourceFiles[i],
+            });
         }
 
         AddDistribution(profile, DistributionField.SalaryGrade, src.SalaryGrade);
@@ -642,7 +654,7 @@ public sealed class CorpusMigrator
         }
     }
 
-    private static CoverageReport MapCoverage(PocCoverageReport src)
+    private CoverageReport MapCoverage(PocCoverageReport src)
     {
         var report = new CoverageReport
         {
@@ -657,7 +669,7 @@ public sealed class CorpusMigrator
             var cov = new JdCoverage
             {
                 Ordinal = i,
-                SourceFile = j.SourceFile,
+                SourceFile = _scrub?.SourceFile(j.SourceFile) ?? j.SourceFile,
                 CoveredPct = j.CoveredPct,
             };
 

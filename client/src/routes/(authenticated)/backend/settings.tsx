@@ -9,6 +9,7 @@ import {
   useClearApiKey,
   useGrantAdmin,
   useRevokeAdmin,
+  useSecurityStatus,
   useSetApiKey,
 } from '@/queries/admin.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
@@ -39,6 +40,7 @@ function SettingsPage() {
       />
       <AdminsPanel />
       <ApiKeyPanel />
+      <DataProtectionPanel />
     </AdminOnly>
   );
 }
@@ -217,6 +219,35 @@ function ApiKeyPanel() {
           <Note tone="red">{messageOf(error)}</Note>
         </div>
       ) : null}
+    </Card>
+  );
+}
+
+function DataProtectionPanel() {
+  const { data } = useSecurityStatus();
+  const encrypted = data?.databaseEncryptedAtRest;
+
+  return (
+    <Card className="mt-5 p-5">
+      <Eyebrow>Data protection</Eyebrow>
+      <div className="mt-2 flex items-center gap-2 text-[13px]" data-testid="encryption-at-rest">
+        <Badge tone={encrypted === true ? 'green' : encrypted === false ? 'yellow' : 'muted'}>
+          {encrypted === true ? 'encrypted' : encrypted === false ? 'not encrypted' : 'unknown'}
+        </Badge>
+        <span>
+          {encrypted === true
+            ? 'The database is encrypted at rest (SQL Server reports Transparent Data Encryption on).'
+            : encrypted === false
+              ? 'The database is not encrypted at rest. Expected on a local development database; Azure SQL turns encryption on by default.'
+              : 'Encryption at rest could not be determined.'}
+        </span>
+      </div>
+      <p className="mt-3 text-[12px] text-base-content/65">
+        Uploaded job description exports and the JD corpus carry position numbers and
+        reporting lines. They are kept only in the database — never on the server&apos;s disk —
+        so database encryption covers them. The API key entered above is additionally
+        encrypted by the application before it is stored.
+      </p>
     </Card>
   );
 }

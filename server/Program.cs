@@ -118,6 +118,7 @@ try
     builder.Services.AddScoped<EnvelopeCoverageChecker>();
     builder.Services.AddScoped<IngestPipeline>();
     builder.Services.AddScoped<CorpusUploads>();
+    builder.Services.AddScoped<DatabaseSecurity>();
 
     // ---- runtime authoring path
     builder.Services.AddScoped<IIntakeMatcher, IntakeMatcher>();

@@ -43,6 +43,7 @@ public class AdminController : ApiControllerBase
     private readonly AppDbContext _db;
     private readonly ApiKeySettings _apiKey;
     private readonly CorpusUploads _uploads;
+    private readonly DatabaseSecurity _security;
 
     public AdminController(
         IngestPipeline pipeline,
@@ -55,7 +56,8 @@ public class AdminController : ApiControllerBase
         AdminAccess admins,
         AppDbContext db,
         ApiKeySettings apiKey,
-        CorpusUploads uploads)
+        CorpusUploads uploads,
+        DatabaseSecurity security)
     {
         _pipeline = pipeline;
         _bootstrapper = bootstrapper;
@@ -68,7 +70,13 @@ public class AdminController : ApiControllerBase
         _db = db;
         _apiKey = apiKey;
         _uploads = uploads;
+        _security = security;
     }
+
+    /// <summary>Whether the database is encrypted at rest, as SQL Server reports it.</summary>
+    [HttpGet("settings/security")]
+    public async Task<IActionResult> Security(CancellationToken ct) =>
+        Ok(new { databaseEncryptedAtRest = await _security.EncryptedAtRestAsync(ct) });
 
     // ---------------------------------------------------------------- uploaded exports
 
