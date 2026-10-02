@@ -159,7 +159,7 @@ Useful companion commands:
 
 ### Auth Configuration
 
-By default, the app uses OIDC with Microsoft Entra ID (Azure AD). In this mode, set `Auth__ClientId` in `server/.env` to your app registration's client ID before starting the backend. Startup rejects the template's placeholder so copied projects cannot accidentally authenticate as the template app.
+By default, the app uses OIDC with Microsoft Entra ID (Azure AD). Copy `server/.env.example` to `server/.env`; the example includes JDWriter's public client ID. Set `Auth__ClientSecret` in the ignored `server/.env` before using campus sign-in. If using a different app registration, replace `Auth__ClientId` too.
 
 The Docker sandbox enables fictional local users with `Auth__UseLocal=true`, bypassing Entra configuration. To use these users in ordinary development, set the same flag in `server/.env`. The flag defaults to false, and startup rejects it outside the `Development` environment.
 
