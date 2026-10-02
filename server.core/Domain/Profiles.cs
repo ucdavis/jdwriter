@@ -40,6 +40,9 @@ public class ClassProfile
 
     public string GeneratedNote { get; set; } = "";
 
+    /// <summary>When the class was last built or rebuilt from its corpus. Null for the CLI load.</summary>
+    public DateTimeOffset? LastIngestedAt { get; set; }
+
     public JobEnvelope? Envelope { get; set; }
     public CoverageReport? Coverage { get; set; }
 

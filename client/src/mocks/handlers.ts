@@ -442,8 +442,10 @@ export const handlers = [
           source: 'rule',
         },
       ],
+      corpusNote: 'Added to this class’s corpus. It counts the next time the class is rebuilt.',
       department: body.department,
       flsaStatus: profile?.flsaStatus.consensus ?? null,
+      inCorpus: true,
       jd: {
         conditionsOfEmployment: envelope?.conditionsOfEmployment ?? [],
         education: body.keptEducation,

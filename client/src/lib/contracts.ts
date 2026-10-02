@@ -281,6 +281,8 @@ export type BuildRequest = {
   /** The saved JD this build session already wrote; re-assembling updates it. */
   authoredJdId?: number | null;
   department: string;
+  /** The envelope check's verdict from the step this assembly followed. */
+  envelopeVerdict?: EnvelopeCheckResponse['verdict'] | null;
   keptCerts: string[];
   keptEducation: string[];
   keptMinKSA: string[];
@@ -319,8 +321,12 @@ export type AssembledJd = {
   /** True exactly when `unallocatedPct` is 0 — the only way a saved JD can be Ready. */
   canPublish: boolean;
   complianceEdits: ComplianceEdit[];
+  /** Why the JD was or was not added to its class's corpus. */
+  corpusNote: string;
   department: string;
   flsaStatus: string | null;
+  /** Whether a copy went into the class's corpus at this final stage. */
+  inCorpus: boolean;
   jd: {
     conditionsOfEmployment: string[];
     education: string[];
@@ -418,6 +424,12 @@ export type UploadedClass = {
   corpusJds: number;
   /** Set when the class exists; ingesting refreshes it. */
   existingSlug: string | null;
+  /** Rebuilding replaces hand edits to this class's envelope. */
+  hasManualEnvelope: boolean;
+  /** JDs written in the app and added since the last rebuild. */
+  newAuthored: number;
+  /** Descriptions filed from Classify since the last rebuild. */
+  newClassified: number;
   newFiles: number;
   title: string;
 };

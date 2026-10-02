@@ -169,6 +169,11 @@ public sealed class AssembledJd
     /// <summary>The saved record this assembly was written to; send it back to update it.</summary>
     public int? AuthoredJdId { get; set; }
 
+    /// <summary>Whether a copy went into the class's corpus, and why or why not.</summary>
+    public bool InCorpus { get; set; }
+
+    public string CorpusNote { get; set; } = "";
+
     public List<ComplianceEditRecord> ComplianceEdits { get; set; } = [];
 
     /// <summary>

@@ -42,6 +42,8 @@ public sealed class SavedJd
     public List<ComplianceEditRecord> ComplianceEdits { get; set; } = [];
     public List<string> AuthorAdditions { get; set; } = [];
     public string Notes { get; set; } = "";
+    public bool InCorpus { get; set; }
+    public string CorpusNote { get; set; } = "";
     public string? CreatedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -118,6 +120,38 @@ public sealed class AuthoredJdStore
     }
 
     /// <summary>
+    /// Bring the JD's corpus copy in line with its latest assembly: add or replace it when the JD
+    /// qualifies (see <see cref="CorpusContribution"/>), remove it when a revision no longer does.
+    /// Records the outcome on the JD and on <paramref name="assembled"/> for the author to see.
+    /// </summary>
+    public async Task SyncCorpusAsync(
+        int authoredJdId,
+        AssembledJd assembled,
+        BuildInputs inputs,
+        ClassProfile profile,
+        EnvelopeVerdict? verdict,
+        CancellationToken ct = default)
+    {
+        var jd = await _db.AuthoredJds.FirstAsync(a => a.Id == authoredJdId, ct);
+        var exclusion = CorpusContribution.Exclusion(assembled, inputs, profile.Envelope, verdict);
+
+        var previous = await _db.JobDescriptions.Where(j => j.AuthoredJdId == authoredJdId).ToListAsync(ct);
+        _db.JobDescriptions.RemoveRange(previous);
+        if (exclusion == null)
+        {
+            _db.JobDescriptions.Add(CorpusContribution.ToCorpusRecord(assembled, authoredJdId));
+        }
+
+        jd.EnvelopeVerdict = verdict;
+        jd.InCorpus = exclusion == null;
+        jd.CorpusNote = exclusion ?? CorpusContribution.Added;
+        await _db.SaveChangesAsync(ct);
+
+        assembled.InCorpus = jd.InCorpus;
+        assembled.CorpusNote = jd.CorpusNote;
+    }
+
+    /// <summary>
     /// Delete a saved JD. Only its author may — or an admin. Returns false when there is no such
     /// JD visible to the caller, so someone else's id reads the same as a missing one.
     /// </summary>
@@ -129,6 +163,9 @@ public sealed class AuthoredJdStore
             return false;
         }
 
+        // Its corpus copy goes too: the author no longer stands behind it. The database cascades
+        // this as well; removing it here keeps the rule visible and provider-independent.
+        _db.JobDescriptions.RemoveRange(await _db.JobDescriptions.Where(j => j.AuthoredJdId == id).ToListAsync(ct));
         _db.AuthoredJds.Remove(jd);
         await _db.SaveChangesAsync(ct);
         return true;
@@ -228,6 +265,8 @@ public sealed class AuthoredJdStore
             ],
             AuthorAdditions = Items(AuthoredJdListKind.AuthorAddition),
             Notes = a.Notes,
+            InCorpus = a.InCorpus,
+            CorpusNote = a.CorpusNote,
             CreatedBy = a.CreatedBy?.DisplayName ?? a.CreatedBy?.LoginId,
             CreatedAt = a.CreatedAt,
             UpdatedAt = a.UpdatedAt,

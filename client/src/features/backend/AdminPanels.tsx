@@ -245,7 +245,7 @@ export const UploadPanel = () => {
         <>
           <div className="mt-4 flex items-center justify-between gap-3">
             <span className="text-[12.5px] font-medium">
-              {classes.length} class{classes.length === 1 ? '' : 'es'} ready to ingest
+              {classes.length} class{classes.length === 1 ? '' : 'es'} with new JDs to build in
             </span>
             <button
               className="btn btn-primary btn-sm"
@@ -262,11 +262,23 @@ export const UploadPanel = () => {
                 <span className="flex flex-col">
                   <span className="text-[13.5px] font-medium">{c.title}</span>
                   <span className="text-[11.5px] text-base-content/65 tnum">
-                    Code {c.code} · {c.newFiles} new
+                    Code {c.code} ·{' '}
+                    {[
+                      c.newFiles > 0 ? `${c.newFiles} uploaded` : null,
+                      c.newAuthored > 0 ? `${c.newAuthored} written in the app` : null,
+                      c.newClassified > 0 ? `${c.newClassified} from Classify` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                     {c.existingSlug
                       ? ` · refreshes a class with ${c.corpusJds} JDs`
                       : ' · new class'}
                   </span>
+                  {c.hasManualEnvelope ? (
+                    <span className="text-[11.5px] text-warning">
+                      This class&apos;s envelope was edited by hand — rebuilding replaces those edits.
+                    </span>
+                  ) : null}
                 </span>
                 {statusBadge(status[c.code])}
               </li>

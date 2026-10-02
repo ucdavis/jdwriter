@@ -27,10 +27,12 @@ const saved = (over: Partial<SavedJd> = {}): SavedJd => ({
   bargainingUnit: 'TX',
   canPublish: true,
   complianceEdits: [],
+  corpusNote: 'Added to this class’s corpus. It counts the next time the class is rebuilt.',
   createdAt: '2026-10-01T00:00:00Z',
   createdBy: 'Sample User',
   department: 'Plant Sciences',
   flsaStatus: 'Non-Exempt',
+  inCorpus: true,
   jd: {
     conditionsOfEmployment: [],
     education: ['High school diploma'],
@@ -108,10 +110,12 @@ describe('saved JDs', () => {
   it('assembling saves the JD, and assembling again revises the same one', async () => {
     const user = userEvent.setup();
     const sent: Array<number | null | undefined> = [];
+    const verdicts: Array<string | null | undefined> = [];
     testServer.use(
       http.post('/api/build/assemble', async ({ request }) => {
         const body = (await request.json()) as BuildRequest;
         sent.push(body.authoredJdId);
+        verdicts.push(body.envelopeVerdict);
         return HttpResponse.json(saved({ authoredJdId: 42 }));
       })
     );
@@ -120,6 +124,8 @@ describe('saved JDs', () => {
     await user.click(await screen.findByRole('button', { name: /Review & continue/ }));
     await user.click(await screen.findByRole('button', { name: /Assemble the JD/ }));
     expect(await screen.findByTestId('saved-status')).toHaveTextContent('Saved as Ready');
+    expect(screen.getByTestId('corpus-note')).toHaveTextContent(/Added to this class’s corpus/);
+    expect(verdicts[0]).toBe('in_envelope');
 
     // Back to tailoring and assemble again: the second request names the saved record.
     await user.click(screen.getByRole('button', { name: /Back to tailoring/ }));

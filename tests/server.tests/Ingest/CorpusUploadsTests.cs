@@ -192,6 +192,6 @@ public class CorpusUploadsTests
 
         var ingest = () => uploads.IngestAsync("004724");
 
-        await ingest.Should().ThrowAsync<InvalidOperationException>().WithMessage("*No uploaded JDs*");
+        await ingest.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Nothing in the corpus*");
     }
 }
