@@ -224,6 +224,13 @@ export const DescriptionClassifier = () => {
               ) : null}
             </div>
             <p className="mt-2.5 text-[13.5px]">{result.verdictNote}</p>
+            {result.filedUnder ? (
+              <p className="mt-2 text-[11.5px] text-base-content/55" data-testid="filed-under">
+                This description has been saved to the corpus for job code{' '}
+                <span className="tnum">{result.filedUnder}</span>, where it will inform that
+                class&apos;s envelope.
+              </p>
+            ) : null}
             <p className="mt-1.5 text-[12px] text-base-content/50">
               Read as {result.distilled.functions.length} responsibility function
               {result.distilled.functions.length === 1 ? '' : 's'}

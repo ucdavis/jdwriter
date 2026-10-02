@@ -118,6 +118,7 @@ try
     builder.Services.AddScoped<EnvelopeCoverageChecker>();
     builder.Services.AddScoped<IngestPipeline>();
     builder.Services.AddScoped<CorpusUploads>();
+    builder.Services.AddScoped<ClassifySubmissions>();
     builder.Services.AddScoped<DatabaseSecurity>();
 
     // ---- runtime authoring path

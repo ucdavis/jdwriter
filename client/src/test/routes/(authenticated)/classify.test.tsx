@@ -25,6 +25,8 @@ describe('classify', () => {
       screen.getAllByText('Description covered by this class').length
     ).toBeGreaterThan(1);
     expect(screen.getByText('Other classes considered')).toBeInTheDocument();
+    // The person is told their submission was kept, and where.
+    expect(screen.getByTestId('filed-under')).toHaveTextContent(/saved to the corpus for job code 006256/);
   });
 
   it('reads a dropped file into the box WITHOUT classifying it', async () => {

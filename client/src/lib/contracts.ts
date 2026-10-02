@@ -260,6 +260,8 @@ export type ClassifyResponse = {
     source: 'hrtms' | 'text';
     workingTitle: string;
   };
+  /** Job code the submission was saved to the corpus under; null when not filed. */
+  filedUnder?: string | null;
   matches: ClassifyMatch[];
   proposed?: ProposedAssessment;
   verdict: ClassifyVerdict;

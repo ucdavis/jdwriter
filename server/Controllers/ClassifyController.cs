@@ -1,3 +1,5 @@
+using Server.Helpers;
+using Server.Core.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Server.Core.Ai;
@@ -29,17 +31,26 @@ public class ClassifyController : ApiControllerBase
     private readonly IClassProfileRepository _profiles;
     private readonly ITitleCodeService _titleCodes;
     private readonly IStructuredLlm _llm;
+    private readonly ClassifySubmissions _submissions;
+    private readonly AppDbContext _db;
+    private readonly ILogger<ClassifyController> _logger;
 
     public ClassifyController(
         IDescriptionClassifier classifier,
         IClassProfileRepository profiles,
         ITitleCodeService titleCodes,
-        IStructuredLlm llm)
+        IStructuredLlm llm,
+        ClassifySubmissions submissions,
+        AppDbContext db,
+        ILogger<ClassifyController> logger)
     {
         _classifier = classifier;
         _profiles = profiles;
         _titleCodes = titleCodes;
         _llm = llm;
+        _submissions = submissions;
+        _db = db;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -57,6 +68,18 @@ public class ClassifyController : ApiControllerBase
 
         var profiles = await _profiles.GetAllAsync(ct);
         var result = await _classifier.ClassifyAsync(body.Description, profiles, body.ProposedCode, ct);
+
+        // Every submission is filed into the corpus. Filing is bookkeeping, so it must never cost
+        // the person their classification: a failure is logged and the result returned regardless.
+        try
+        {
+            result.FiledUnder = await _submissions.FileAsync(body.Description, result, await User.IdAsync(_db, ct), ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Could not file a classify submission into the corpus.");
+        }
+
         return Ok(result);
     }
 
