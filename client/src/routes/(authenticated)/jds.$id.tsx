@@ -1,7 +1,7 @@
 import { Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { FinalJd } from '@/features/build/FinalJd.tsx';
-import { savedJdQueryOptions } from '@/queries/jds.ts';
-import { createFileRoute } from '@tanstack/react-router';
+import { savedJdQueryOptions, useDeleteJd } from '@/queries/jds.ts';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import type { RouterContext } from '@/main.tsx';
 
@@ -14,14 +14,32 @@ export const Route = createFileRoute('/(authenticated)/jds/$id')({
 function SavedJdPage() {
   const { id } = Route.useParams();
   const { data: jd } = useSuspenseQuery(savedJdQueryOptions(Number(id)));
+  const remove = useDeleteJd();
+  const navigate = useNavigate();
+  const name = jd.workingTitle || jd.title;
 
   return (
     <>
       <PageHeader
         back={{ label: 'Back to saved JDs', to: '/jds' }}
         eyebrow={`Saved ${new Date(jd.updatedAt).toLocaleString()}${jd.createdBy ? ` · ${jd.createdBy}` : ''}`}
-        title={jd.workingTitle || jd.title}
+        title={name}
       />
+
+      <div className="mb-4 flex justify-end">
+        <button
+          className="btn btn-ghost btn-sm text-error"
+          disabled={remove.isPending}
+          onClick={() => {
+            if (window.confirm(`Delete “${name}”? This can’t be undone.`)) {
+              remove.mutate(Number(id), { onSuccess: () => void navigate({ to: '/jds' }) });
+            }
+          }}
+          type="button"
+        >
+          Delete this JD
+        </button>
+      </div>
 
       {jd.authorAdditions.length > 0 || jd.notes ? (
         <Card className="mb-5 p-5">

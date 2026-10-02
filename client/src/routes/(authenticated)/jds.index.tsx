@@ -1,6 +1,6 @@
 import { Badge, Card, PageHeader } from '@/shared/ui/primitives.tsx';
 import { useIsAdmin } from '@/shared/ui/AppShell.tsx';
-import { type JdScope, savedJdsQueryOptions, useSavedJds } from '@/queries/jds.ts';
+import { type JdScope, savedJdsQueryOptions, useDeleteJd, useSavedJds } from '@/queries/jds.ts';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import type { RouterContext } from '@/main.tsx';
@@ -16,8 +16,20 @@ const when = (iso: string) => new Date(iso).toLocaleDateString();
 function SavedJdsPage() {
   const isAdmin = useIsAdmin();
   const [scope, setScope] = useState<JdScope>('mine');
+  const [order, setOrder] = useState<'newest' | 'oldest'>('newest');
   const { data, isPending } = useSavedJds(scope);
-  const jds = data?.jds ?? [];
+  const remove = useDeleteJd();
+  const jds = [...(data?.jds ?? [])].sort((a, b) =>
+    order === 'newest'
+      ? b.createdAt.localeCompare(a.createdAt)
+      : a.createdAt.localeCompare(b.createdAt)
+  );
+
+  const confirmDelete = (id: number, name: string) => {
+    if (window.confirm(`Delete “${name}”? This can’t be undone.`)) {
+      remove.mutate(id);
+    }
+  };
 
   return (
     <>
@@ -28,19 +40,39 @@ function SavedJdsPage() {
         title={scope === 'all' ? 'All JDs' : 'My JDs'}
       />
 
-      {isAdmin ? (
-        <div aria-label="Whose JDs" className="mb-4 flex gap-2" role="group">
-          {(['mine', 'all'] as const).map((s) => (
-            <button
-              className={`btn btn-sm ${scope === s ? 'btn-primary' : 'btn-ghost'}`}
-              key={s}
-              onClick={() => setScope(s)}
-              type="button"
-            >
-              {s === 'mine' ? 'Mine' : 'Everyone’s'}
-            </button>
-          ))}
-        </div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {isAdmin ? (
+          <div aria-label="Whose JDs" className="flex gap-2" role="group">
+            {(['mine', 'all'] as const).map((s) => (
+              <button
+                className={`btn btn-sm ${scope === s ? 'btn-primary' : 'btn-ghost'}`}
+                key={s}
+                onClick={() => setScope(s)}
+                type="button"
+              >
+                {s === 'mine' ? 'Mine' : 'Everyone’s'}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <span />
+        )}
+        <label className="flex items-center gap-2 text-[12.5px]">
+          Created
+          <select
+            aria-label="Sort by date created"
+            className="select select-bordered select-sm"
+            onChange={(e) => setOrder(e.target.value === 'oldest' ? 'oldest' : 'newest')}
+            value={order}
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </select>
+        </label>
+      </div>
+
+      {remove.error ? (
+        <p className="mb-3 text-[12.5px] text-error">{remove.error.message}</p>
       ) : null}
 
       {!isPending && jds.length === 0 ? (
@@ -52,31 +84,44 @@ function SavedJdsPage() {
         </Card>
       ) : (
         <Card className="divide-y divide-base-300">
-          {jds.map((j) => (
-            <Link
-              className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-base-200"
-              key={j.id}
-              params={{ id: String(j.id) }}
-              to="/jds/$id"
-            >
-              <div className="min-w-0">
-                <div className="truncate text-[14px] font-semibold">
-                  {j.workingTitle || j.title}
-                </div>
-                <div className="text-[12px] text-base-content/65">
-                  {j.title} · code <span className="tnum">{j.ucJobCode}</span>
-                  {j.department ? ` · ${j.department}` : ''}
-                  {scope === 'all' && j.createdBy ? ` · by ${j.createdBy}` : ''}
-                </div>
+          {jds.map((j) => {
+            const name = j.workingTitle || j.title;
+            return (
+              <div className="flex items-center gap-2 pr-3 hover:bg-base-200" key={j.id}>
+                <Link
+                  className="flex min-w-0 flex-1 items-center justify-between gap-4 px-5 py-3"
+                  params={{ id: String(j.id) }}
+                  to="/jds/$id"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-[14px] font-semibold">{name}</div>
+                    <div className="text-[12px] text-base-content/65">
+                      {j.title} · code <span className="tnum">{j.ucJobCode}</span>
+                      {j.department ? ` · ${j.department}` : ''}
+                      {scope === 'all' && j.createdBy ? ` · by ${j.createdBy}` : ''}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="text-[12px] text-base-content/50">
+                      Created {when(j.createdAt)}
+                    </span>
+                    <Badge tone={j.status === 'ready' ? 'green' : 'yellow'}>
+                      {j.status === 'ready' ? 'Ready' : `Draft · ${j.unallocatedPct}% unallocated`}
+                    </Badge>
+                  </div>
+                </Link>
+                <button
+                  aria-label={`Delete ${name}`}
+                  className="btn btn-ghost btn-xs text-error"
+                  disabled={remove.isPending}
+                  onClick={() => confirmDelete(j.id, name)}
+                  type="button"
+                >
+                  Delete
+                </button>
               </div>
-              <div className="flex shrink-0 items-center gap-3">
-                <span className="text-[12px] text-base-content/50">{when(j.updatedAt)}</span>
-                <Badge tone={j.status === 'ready' ? 'green' : 'yellow'}>
-                  {j.status === 'ready' ? 'Ready' : `Draft · ${j.unallocatedPct}% unallocated`}
-                </Badge>
-              </div>
-            </Link>
-          ))}
+            );
+          })}
         </Card>
       )}
     </>

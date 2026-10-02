@@ -1,5 +1,5 @@
 import { fetchJson } from '../lib/api.ts';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SavedJd, SavedJdListResponse } from '../lib/contracts.ts';
 
 export type JdScope = 'all' | 'mine';
@@ -16,3 +16,12 @@ export const savedJdQueryOptions = (id: number) => ({
   queryFn: () => fetchJson<SavedJd>(`/api/jds/${id}`),
   queryKey: ['jds', 'one', id] as const,
 });
+
+/** Delete a saved JD. Its corpus copy, if it has one, goes with it. */
+export const useDeleteJd = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => fetchJson<{ ok: true }>(`/api/jds/${id}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jds'] }),
+  });
+};

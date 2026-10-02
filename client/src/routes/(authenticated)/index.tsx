@@ -1,5 +1,6 @@
 import { ClassPicker } from '@/features/browse/ClassPicker.tsx';
 import { NlIntake } from '@/features/browse/NlIntake.tsx';
+import { RecentJds } from '@/features/browse/RecentJds.tsx';
 import { Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { classListQueryOptions, useClassList } from '@/queries/classes.ts';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -25,13 +26,16 @@ function Home() {
       />
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <Card className="p-5">
-          <Eyebrow>AI-powered request</Eyebrow>
-          <p className="mb-3 mt-1 text-[13px] text-base-content/65">
-            Describe what you need in plain language.
-          </p>
-          <NlIntake />
-        </Card>
+        <div className="flex flex-col gap-5">
+          <Card className="p-5">
+            <Eyebrow>AI-powered request</Eyebrow>
+            <p className="mb-3 mt-1 text-[13px] text-base-content/65">
+              Describe what you need in plain language.
+            </p>
+            <NlIntake />
+          </Card>
+          <RecentJds />
+        </div>
 
         <Card className="p-5">
           <Eyebrow>Browse job classes</Eyebrow>

@@ -127,6 +127,11 @@ export const handlers = [
     })
   ),
 
+  http.delete('/api/jds/:id', ({ params }) => {
+    savedJds = savedJds.filter((j) => j.authoredJdId !== Number(params.id));
+    return HttpResponse.json({ ok: true as const });
+  }),
+
   http.get('/api/jds/:id', ({ params }) => {
     const jd = savedJds.find((j) => j.authoredJdId === Number(params.id));
     return jd

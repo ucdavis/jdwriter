@@ -117,6 +117,23 @@ public sealed class AuthoredJdStore
         return existing.Id;
     }
 
+    /// <summary>
+    /// Delete a saved JD. Only its author may — or an admin. Returns false when there is no such
+    /// JD visible to the caller, so someone else's id reads the same as a missing one.
+    /// </summary>
+    public async Task<bool> DeleteAsync(int id, int? userId, bool isAdmin, CancellationToken ct = default)
+    {
+        var jd = await _db.AuthoredJds.FirstOrDefaultAsync(a => a.Id == id, ct);
+        if (jd == null || (!isAdmin && (userId == null || jd.CreatedByUserId != userId)))
+        {
+            return false;
+        }
+
+        _db.AuthoredJds.Remove(jd);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
     /// <summary>Newest first. <paramref name="userId"/> null lists everyone's (admins only).</summary>
     public async Task<List<SavedJdSummary>> ListAsync(int? userId, CancellationToken ct = default)
     {

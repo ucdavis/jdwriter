@@ -58,4 +58,14 @@ public class JdsController : ApiControllerBase
 
         return Ok(found.Value.Jd);
     }
+
+    /// <summary>Delete one of your saved JDs (an admin may delete any). 404 for anyone else's.</summary>
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
+    {
+        var deleted = await _store.DeleteAsync(id, await User.IdAsync(_db, ct), User.IsInRole(AppRoles.Admin), ct);
+        return deleted
+            ? Ok(new { ok = true })
+            : NotFound(new { message = "That job description was not found." });
+    }
 }
