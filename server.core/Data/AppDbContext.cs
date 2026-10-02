@@ -61,6 +61,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<AdminGrant> AdminGrants => Set<AdminGrant>();
     public DbSet<AppSecret> AppSecrets => Set<AppSecret>();
+    public DbSet<CorpusUpload> CorpusUploads => Set<CorpusUpload>();
 
     // Index-bearing string columns need an explicit length: SQL Server caps a key at 900 bytes,
     // and nvarchar(max) cannot be indexed at all. Free text is deliberately left unbounded.
@@ -344,6 +345,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(x => x.NameIdentifier).IsUnique();
             e.Property(x => x.LoginId).HasMaxLength(64);
             e.HasIndex(x => x.LoginId);
+        });
+
+        b.Entity<CorpusUpload>(e =>
+        {
+            e.Property(x => x.FileName).HasMaxLength(TitleLen);
+            e.Property(x => x.Sha256).HasMaxLength(64);
+            e.HasIndex(x => x.Sha256).IsUnique();
+            e.Property(x => x.UcJobCode).HasMaxLength(20);
+            e.Property(x => x.OriginalUcJobCode).HasMaxLength(20);
+            e.Property(x => x.UcJobTitle).HasMaxLength(TitleLen);
+            e.HasIndex(x => new { x.Status, x.UcJobCode });
+            e.HasOne(x => x.UploadedBy).WithMany()
+                .HasForeignKey(x => x.UploadedByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<AppSecret>(e =>

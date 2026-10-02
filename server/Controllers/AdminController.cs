@@ -17,6 +17,7 @@ public sealed record IngestClassRequest(string Code, string? CorpusDir);
 public sealed record BootstrapRequest(string Title);
 public sealed record AdminGrantRequest(string LoginId);
 public sealed record ApiKeyRequest(string Key);
+public sealed record UploadIngestRequest(string Code);
 
 /// <summary>
 /// Corpus and standards operations.
@@ -41,6 +42,7 @@ public class AdminController : ApiControllerBase
     private readonly AdminAccess _admins;
     private readonly AppDbContext _db;
     private readonly ApiKeySettings _apiKey;
+    private readonly CorpusUploads _uploads;
 
     public AdminController(
         IngestPipeline pipeline,
@@ -52,7 +54,8 @@ public class AdminController : ApiControllerBase
         IConfiguration config,
         AdminAccess admins,
         AppDbContext db,
-        ApiKeySettings apiKey)
+        ApiKeySettings apiKey,
+        CorpusUploads uploads)
     {
         _pipeline = pipeline;
         _bootstrapper = bootstrapper;
@@ -64,6 +67,60 @@ public class AdminController : ApiControllerBase
         _admins = admins;
         _db = db;
         _apiKey = apiKey;
+        _uploads = uploads;
+    }
+
+    // ---------------------------------------------------------------- uploaded exports
+
+    /// <summary>Upload ceiling for one request: a large class's exports, with headroom.</summary>
+    private const long MaxUploadBytes = 200L * 1024 * 1024;
+
+    /// <summary>
+    /// Store and parse HRTMS exports. The response reports every file — added, duplicate, or
+    /// failed with a reason — so one bad file never hides what happened to the rest.
+    /// </summary>
+    [HttpPost("uploads")]
+    [RequestSizeLimit(MaxUploadBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxUploadBytes, ValueCountLimit = 10_000)]
+    public async Task<IActionResult> Upload([FromForm] List<IFormFile> files, CancellationToken ct)
+    {
+        if (files.Count == 0)
+        {
+            return BadRequest(new { message = "Choose one or more HRTMS export files (.html) to upload." });
+        }
+
+        var read = new List<(string Name, byte[] Bytes)>(files.Count);
+        foreach (var file in files)
+        {
+            using var buffer = new MemoryStream();
+            await file.CopyToAsync(buffer, ct);
+            read.Add((file.FileName, buffer.ToArray()));
+        }
+
+        var outcomes = await _uploads.UploadAsync(read, await User.IdAsync(_db, ct), ct);
+        return Ok(new { files = outcomes });
+    }
+
+    [HttpGet("uploads/pending")]
+    public async Task<IActionResult> UploadedPending(CancellationToken ct) =>
+        Ok(new { classes = await _uploads.PendingAsync(ct) });
+
+    /// <summary>
+    /// Add one class's uploaded exports to the corpus and rebuild its envelope. Several model
+    /// calls; the client runs classes one at a time.
+    /// </summary>
+    [HttpPost("uploads/ingest")]
+    public async Task<IActionResult> IngestUploaded(UploadIngestRequest body, CancellationToken ct)
+    {
+        try
+        {
+            var profile = await _uploads.IngestAsync(body.Code, ct);
+            return Ok(new { profile.Slug, profile.Title, profile.UcJobCode, profile.CorpusSize, profile.EnvelopeSource });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     // ---------------------------------------------------------------- Anthropic API key
@@ -150,14 +207,12 @@ public class AdminController : ApiControllerBase
         var dir = ResolveCorpusDir(corpusDir);
         if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir))
         {
-            return BadRequest(new
-            {
-                message = "No corpus directory is configured. Set Corpus:Directory, or pass one on "
-                          + "the request — this environment may simply not have the HRTMS exports.",
-            });
+            // Normal in a deployed environment, which has no export directory: uploads are the
+            // path there. Reported as a flag, not an error, so the panel can simply step aside.
+            return Ok(new { configured = false, pending = Array.Empty<PendingClass>() });
         }
 
-        return Ok(new { pending = await _pipeline.PendingClassesAsync(dir, ct) });
+        return Ok(new { configured = true, pending = await _pipeline.PendingClassesAsync(dir, ct) });
     }
 
     /// <summary>

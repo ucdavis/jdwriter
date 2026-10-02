@@ -400,7 +400,29 @@ export type PendingClass = {
   title: string;
 };
 
-export type IngestScanResponse = { pending: PendingClass[] };
+/** `configured: false` — no export directory on this server (normal when deployed). */
+export type IngestScanResponse = { configured: boolean; pending: PendingClass[] };
+
+export type UploadOutcome = {
+  error: string | null;
+  fileName: string;
+  result: 'added' | 'duplicate' | 'failed';
+  title: string | null;
+  ucJobCode: string | null;
+};
+
+export type UploadResponse = { files: UploadOutcome[] };
+
+export type UploadedClass = {
+  code: string;
+  corpusJds: number;
+  /** Set when the class exists; ingesting refreshes it. */
+  existingSlug: string | null;
+  newFiles: number;
+  title: string;
+};
+
+export type UploadedPendingResponse = { classes: UploadedClass[] };
 
 export type StandardsIngestResponse = {
   ambiguousCount: number;

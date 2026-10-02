@@ -151,3 +151,55 @@ public class JdPemEntry
     public string RowName { get; set; } = "";
     public PemBand Band { get; set; }
 }
+
+/// <summary>
+/// One HRTMS export an admin uploaded, kept as the original bytes. HRTMS exports carry UCPath
+/// position numbers and reporting lines, so these live only in the database — which Azure SQL
+/// encrypts at rest — and never on a server's file system.
+/// </summary>
+public class CorpusUpload
+{
+    public int Id { get; set; }
+
+    /// <summary>
+    /// The uploaded name, including any folder the browser supplied. HRTMS names embed the
+    /// position number, so this is an identifier too and is never logged.
+    /// </summary>
+    public string FileName { get; set; } = "";
+
+    /// <summary>SHA-256 of the bytes. Unique: uploading the same file twice stores it once.</summary>
+    public string Sha256 { get; set; } = "";
+
+    public byte[] Content { get; set; } = [];
+    public int SizeBytes { get; set; }
+
+    public CorpusUploadStatus Status { get; set; }
+
+    /// <summary>Why the file could not be used, when <see cref="Status"/> is Failed.</summary>
+    public string? Error { get; set; }
+
+    /// <summary>The live class it belongs to, after supersession.</summary>
+    public string? UcJobCode { get; set; }
+
+    /// <summary>The code the export itself stated, when supersession remapped it.</summary>
+    public string? OriginalUcJobCode { get; set; }
+
+    public string? UcJobTitle { get; set; }
+
+    public int? UploadedByUserId { get; set; }
+    public AppUser? UploadedBy { get; set; }
+    public DateTimeOffset UploadedAt { get; set; }
+    public DateTimeOffset? IngestedAt { get; set; }
+}
+
+public enum CorpusUploadStatus
+{
+    /// <summary>Parsed and waiting to be ingested into its class.</summary>
+    Pending,
+
+    /// <summary>Added to the corpus and its class re-ingested.</summary>
+    Ingested,
+
+    /// <summary>Not a usable HRTMS export; see <see cref="CorpusUpload.Error"/>.</summary>
+    Failed,
+}

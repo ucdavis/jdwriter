@@ -81,4 +81,108 @@ public static class JobDescriptionMapper
             .OrderBy(q => q.Ordinal)
             .Select(q => q.Text)
             .ToList();
+
+    /// <summary>
+    /// A parsed export as an entity, filed under <paramref name="resolvedCode"/> — the live class
+    /// after supersession. What the export itself said is kept in <c>OriginalUcJobCode</c>, so the
+    /// remap is auditable rather than invisible. Shared by the CLI's corpus load and admin upload.
+    /// </summary>
+    public static JobDescription ToEntity(this HrtmsRecord r, string resolvedCode)
+    {
+        var jd = new JobDescription
+        {
+            SourceFile = r.SourceFile,
+            BusinessUnit = r.BusinessUnit,
+            Division = r.Division,
+            DepartmentName = r.DepartmentName,
+            DepartmentCode = r.DepartmentCode,
+            JdNumber = r.JdNumber,
+            UcPathPositionNumber = r.UcPathPositionNumber,
+            UcJobTitle = r.UcJobTitle,
+            UcJobCode = resolvedCode,
+            OriginalUcJobCode = string.Equals(r.UcJobCode, resolvedCode, StringComparison.Ordinal) ? null : r.UcJobCode,
+            WorkingTitle = r.WorkingTitle,
+            CtJobFamily = r.CtJobFamily,
+            CtJobFunction = r.CtJobFunction,
+            PersonnelProgram = r.PersonnelProgram,
+            SalaryGrade = r.SalaryGrade,
+            FlsaStatus = r.FlsaStatus,
+            UnionCode = r.UnionCode,
+            Supervises = r.Supervises,
+            Leads = r.Leads,
+            ReportsToPositionNumber = r.ReportsToPositionNumber,
+            WorksOutdoorsOver50pct = r.WorksOutdoorsOver50pct,
+            JobSummary = r.JobSummary,
+            PemPopulated = r.Pem.Populated,
+            DriversLicenseRequired = r.Qualifications.DriversLicenseRequired,
+        };
+
+        for (var i = 0; i < r.Responsibilities.Count; i++)
+        {
+            var src = r.Responsibilities[i];
+            var resp = new JdResponsibility
+            {
+                Ordinal = i,
+                Pct = src.Pct,
+                FunctionName = src.FunctionName,
+            };
+
+            for (var d = 0; d < src.Duties.Count; d++)
+            {
+                resp.Duties.Add(new JdDuty { Ordinal = d, Text = src.Duties[d] });
+            }
+
+            jd.Responsibilities.Add(resp);
+        }
+
+        AddQuals(jd, JdQualificationKind.License, r.Qualifications.Licenses);
+        if (!string.IsNullOrWhiteSpace(r.Qualifications.Education))
+        {
+            // Education is a single free-text field in this format, not a list.
+            jd.Qualifications.Add(new JdQualificationItem
+            {
+                Kind = JdQualificationKind.Education,
+                Ordinal = 0,
+                Text = r.Qualifications.Education,
+            });
+        }
+
+        AddQuals(jd, JdQualificationKind.MinExperience, r.Qualifications.MinExperience);
+        AddQuals(jd, JdQualificationKind.KsaMin, r.Qualifications.KsaMin);
+        AddQuals(jd, JdQualificationKind.KsaPref, r.Qualifications.KsaPref);
+        AddQuals(jd, JdQualificationKind.ConditionOfEmployment, r.ConditionsOfEmployment);
+        AddQuals(jd, JdQualificationKind.WorkEnvironment, r.WorkEnvironment);
+
+        // Only MARKED cells become rows. Every export in the current corpus ships the grid blank,
+        // so this produces nothing today — an unmarked row is the absence of a claim, not a null.
+        AddPem(jd, PemAxis.Physical, r.Pem.Physical);
+        AddPem(jd, PemAxis.Environmental, r.Pem.Environmental);
+        AddPem(jd, PemAxis.Mental, r.Pem.Mental);
+
+        return jd;
+    }
+
+    private static void AddQuals(JobDescription jd, JdQualificationKind kind, List<string> texts)
+    {
+        for (var i = 0; i < texts.Count; i++)
+        {
+            jd.Qualifications.Add(new JdQualificationItem { Kind = kind, Ordinal = i, Text = texts[i] });
+        }
+    }
+
+    private static void AddPem(JobDescription jd, PemAxis axis, List<(string Row, string? Band)> rows)
+    {
+        foreach (var (row, band) in rows)
+        {
+            if (string.IsNullOrWhiteSpace(band))
+            {
+                continue;
+            }
+
+            if (Enum.TryParse<PemBand>(band, ignoreCase: true, out var parsed))
+            {
+                jd.PemEntries.Add(new JdPemEntry { Axis = axis, RowName = row, Band = parsed });
+            }
+        }
+    }
 }

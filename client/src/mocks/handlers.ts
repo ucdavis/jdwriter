@@ -1,6 +1,8 @@
 import profilesFixture from './profiles.json' with { type: 'json' };
 import { delay, http, HttpResponse } from 'msw';
 import type {
+  UploadedPendingResponse,
+  UploadResponse,
   SavedJd,
   SavedJdListResponse,
   ApiKeyStatus,
@@ -500,6 +502,7 @@ export const handlers = [
 
   http.get('/api/admin/ingest/pending', () =>
     HttpResponse.json({
+      configured: true,
       pending: [
         { code: '006256', fileCount: 9, slug: '006256-rsch-data-anl-2', title: 'Rsch Data Anl 2' },
       ],
@@ -523,6 +526,17 @@ export const handlers = [
       totalClasses: 65,
       uncodedSample: ['Systemwide Academic Personnel Analyst 3'],
     });
+  }),
+
+  http.get('/api/admin/uploads/pending', () =>
+    HttpResponse.json<UploadedPendingResponse>({ classes: [] })
+  ),
+
+  http.post('/api/admin/uploads', () => HttpResponse.json<UploadResponse>({ files: [] })),
+
+  http.post('/api/admin/uploads/ingest', async () => {
+    await delay(900);
+    return HttpResponse.json({ ok: true });
   }),
 
   http.get('/api/admin/settings/api-key', () =>

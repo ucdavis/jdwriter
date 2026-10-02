@@ -240,12 +240,37 @@ so it needs the JD.
   →  { matches: ClassMatch[]; currentSlug: string }
 ```
 
+### `POST /api/admin/uploads` — Admin
+`multipart/form-data`, one or more `files` (HRTMS `.html` exports; a folder upload keeps the
+relative path in each file name). Up to 200 MB per request.
+```ts
+{ files: Array<{ fileName: string; result: "added" | "duplicate" | "failed";
+                 ucJobCode: string | null; title: string | null; error: string | null }> }
+```
+Every file gets its own verdict; one bad file never rejects the batch. Files are stored as the
+original bytes **in the database only** (Azure SQL encrypts at rest) — never on a server's disk —
+because HRTMS exports carry position numbers and reporting lines. Identical bytes are stored once
+(`duplicate`). Superseded job codes are remapped to the live class, as the corpus loader does.
+
+### `GET /api/admin/uploads/pending` — Admin
+`{ classes: Array<{ code; title; existingSlug: string | null; newFiles: number; corpusJds: number }> }`
+— classes with uploads waiting. `existingSlug` set means ingesting refreshes that class.
+
+### `POST /api/admin/uploads/ingest` — Admin
+`{ code }  →  { slug, title, ucJobCode, corpusSize, envelopeSource }`. Adds the class's uploads to
+the corpus and rebuilds its envelope from **all** of its JDs. A newer export of a position replaces
+the old one (matched by UCPath position number, else file name). The class profile is updated in
+place — saved JDs reference it — and a hand-edited envelope is kept. JDs are written before the model
+work, so a failed ingest leaves the corpus right and the uploads pending for a retry.
+
 ### `GET /api/admin/ingest/pending` — Admin
 ```ts
-{ pending: Array<{ code: string; slug: string; title: string; fileCount: number }> }
+{ configured: boolean;
+  pending: Array<{ code: string; slug: string; title: string; fileCount: number }> }
 ```
-Classes present in the corpus directory (`Corpus:Directory`) with no profile yet. `400` with a
-message when no corpus directory is configured — a deployed environment may simply not have one.
+Classes present in the export directory (`Corpus:Directory`) with no profile yet — the local
+developer path. `configured: false` when the server has no such directory, which is normal when
+deployed; uploads are the path there.
 
 ### `POST /api/admin/ingest/class` — Admin
 `{ code: string }  →  { slug, title, ucJobCode, corpusSize }`. One class per request: parse,

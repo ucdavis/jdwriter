@@ -4,6 +4,9 @@ import {
   useBootstrapCandidates,
   useBootstrapClass,
   useIngestClass,
+  useIngestUploaded,
+  useUploadedPending,
+  useUploadExports,
   useIngestScan,
   useIngestStandards,
 } from '@/queries/admin.ts';
@@ -56,11 +59,17 @@ export const IngestPanel = () => {
     setRunning(false);
   };
 
+  // No export directory on this server — the normal case when deployed. Uploads are the
+  // path there, so this panel steps aside rather than showing an error.
+  if (scan.data && !scan.data.configured) {
+    return null;
+  }
+
   return (
     <Card className="mb-5 p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <Eyebrow>New JDs</Eyebrow>
+          <Eyebrow>New JDs from the corpus folder</Eyebrow>
           <p className="mt-1 text-[13px] text-base-content/65">
             {scan.isFetching
               ? 'Scanning the corpus for new classes…'
@@ -116,6 +125,165 @@ export const IngestPanel = () => {
         <p className="mt-2 text-[11.5px] text-base-content/50">
           Each class is parsed, consolidated and synthesized — a large class can take a
           minute or two.
+        </p>
+      ) : null}
+    </Card>
+  );
+};
+
+/**
+ * Upload HRTMS exports and ingest them, for servers with no export directory — every
+ * deployed one. Uploaded files are stored in the database (encrypted at rest), never on
+ * disk, because the exports carry position numbers and reporting lines.
+ *
+ * Like the folder panel, classes are ingested ONE PER REQUEST, in sequence.
+ */
+export const UploadPanel = () => {
+  const upload = useUploadExports();
+  const pending = useUploadedPending();
+  const ingest = useIngestUploaded();
+  const [status, setStatus] = useState<Record<string, RowStatus>>({});
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const classes = pending.data?.classes ?? [];
+  const outcomes = upload.data?.files ?? [];
+  const count = (r: string) => outcomes.filter((o) => o.result === r).length;
+  const failed = outcomes.filter((o) => o.result === 'failed');
+
+  const send = (list: FileList | null) => {
+    if (list && list.length > 0) {
+      setStatus({});
+      upload.mutate([...list]);
+    }
+  };
+
+  const ingestAll = async () => {
+    setRunning(true);
+    setError(null);
+    for (const c of classes) {
+      setStatus((s) => ({ ...s, [c.code]: 'running' }));
+      try {
+        await ingest.mutateAsync(c.code);
+        setStatus((s) => ({ ...s, [c.code]: 'done' }));
+      } catch (error_) {
+        setStatus((s) => ({ ...s, [c.code]: 'error' }));
+        setError(`${c.title}: ${messageOf(error_)}`);
+      }
+    }
+    setRunning(false);
+  };
+
+  return (
+    <Card className="mb-5 p-5">
+      <Eyebrow>Upload JDs</Eyebrow>
+      <p className="mt-1 text-[13px] text-base-content/65">
+        Add HRTMS job description exports (.html) — individual files or a whole folder. New
+        classes get an envelope; existing classes are refreshed with the added JDs, and a newer
+        export of the same position replaces the old one. Hand-edited envelopes are kept.
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <label className="btn btn-outline btn-sm">
+          Choose files
+          <input
+            accept=".html,.htm"
+            aria-label="Upload HRTMS export files"
+            className="hidden"
+            disabled={upload.isPending}
+            multiple
+            onChange={(e) => {
+              send(e.target.files);
+              e.target.value = '';
+            }}
+            type="file"
+          />
+        </label>
+        <label className="btn btn-outline btn-sm">
+          Choose a folder
+          <input
+            aria-label="Upload a folder of HRTMS exports"
+            className="hidden"
+            disabled={upload.isPending}
+            multiple
+            onChange={(e) => {
+              send(e.target.files);
+              e.target.value = '';
+            }}
+            type="file"
+            {...{ webkitdirectory: '' }}
+          />
+        </label>
+        {upload.isPending ? (
+          <span className="text-[12px] text-base-content/65">Uploading…</span>
+        ) : null}
+      </div>
+
+      {upload.error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(upload.error)}</Note>
+        </div>
+      ) : null}
+
+      {outcomes.length > 0 ? (
+        <div className="mt-3 text-[12.5px]" data-testid="upload-summary">
+          {count('added')} added · {count('duplicate')} already uploaded · {failed.length} not
+          usable
+          {failed.length > 0 ? (
+            <ul className="mt-1 list-disc pl-5 text-error">
+              {failed.map((f) => (
+                <li key={f.fileName}>
+                  {f.fileName}: {f.error}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+
+      {classes.length > 0 ? (
+        <>
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <span className="text-[12.5px] font-medium">
+              {classes.length} class{classes.length === 1 ? '' : 'es'} ready to ingest
+            </span>
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={running}
+              onClick={() => void ingestAll()}
+              type="button"
+            >
+              {running ? 'Ingesting…' : `Ingest ${classes.length}`}
+            </button>
+          </div>
+          <ul className="mt-2 divide-y divide-base-300 rounded-lg border border-base-300">
+            {classes.map((c) => (
+              <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.code}>
+                <span className="flex flex-col">
+                  <span className="text-[13.5px] font-medium">{c.title}</span>
+                  <span className="text-[11.5px] text-base-content/65 tnum">
+                    Code {c.code} · {c.newFiles} new
+                    {c.existingSlug
+                      ? ` · refreshes a class with ${c.corpusJds} JDs`
+                      : ' · new class'}
+                  </span>
+                </span>
+                {statusBadge(status[c.code])}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+
+      {error ? (
+        <div className="mt-3">
+          <Note tone="red">{error}</Note>
+        </div>
+      ) : null}
+      {running ? (
+        <p className="mt-2 text-[11.5px] text-base-content/50">
+          Each class is consolidated and its envelope rebuilt — a large class can take a minute
+          or two.
         </p>
       ) : null}
     </Card>

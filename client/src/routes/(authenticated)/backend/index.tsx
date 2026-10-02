@@ -2,6 +2,7 @@ import {
   BootstrapPanel,
   IngestPanel,
   StandardsPanel,
+  UploadPanel,
 } from '@/features/backend/AdminPanels.tsx';
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
 import { Badge, Card, PageHeader, Stat } from '@/shared/ui/primitives.tsx';
@@ -67,6 +68,7 @@ function EnvelopeIndex() {
         </Link>
       </div>
 
+      <UploadPanel />
       <IngestPanel />
       <StandardsPanel />
       <BootstrapPanel />

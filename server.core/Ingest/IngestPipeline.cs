@@ -145,12 +145,16 @@ public sealed partial class IngestPipeline
     /// wording survives re-ingest and only the statistics are refreshed. Overwriting it would
     /// silently discard curation work.
     /// </summary>
+    /// <param name="slug">
+    /// The class to write to. Defaults to one derived from the first record; pass an existing
+    /// class's slug to refresh it even when export titles vary.
+    /// </param>
     public async Task<ClassProfile> IngestRecordsAsync(
-        IReadOnlyList<HrtmsRecord> records, CancellationToken ct = default)
+        IReadOnlyList<HrtmsRecord> records, string? slug = null, CancellationToken ct = default)
     {
         ArgumentOutOfRangeException.ThrowIfZero(records.Count);
 
-        var slug = SlugForClass(records[0].UcJobCode, records[0].UcJobTitle);
+        slug ??= SlugForClass(records[0].UcJobCode, records[0].UcJobTitle);
         var profile = ProfileAggregator.Aggregate(records, slug);
 
         var existing = await _db.ClassProfiles
@@ -204,18 +208,15 @@ public sealed partial class IngestPipeline
         // Backwards coverage needs the consolidated groups set above, so it runs last.
         profile.Coverage = CoverageCalculator.ComputeCoverage(profile, records);
 
-        if (existing is not null)
+        if (existing is null)
         {
-            // Replace rather than merge: every child is derived from the records, so a partial
-            // update would leave stale rows from the previous corpus behind. Cascades handle the
-            // children.
-            _db.ClassProfiles.Remove(existing);
+            _db.ClassProfiles.Add(profile);
             await _db.SaveChangesAsync(ct);
+            return profile;
         }
 
-        _db.ClassProfiles.Add(profile);
-        await _db.SaveChangesAsync(ct);
-        return profile;
+        await ReplaceContentsAsync(existing.Id, profile, ct);
+        return existing;
     }
 
     /// <summary>Scan and ingest a single class by code.</summary>
@@ -228,7 +229,7 @@ public sealed partial class IngestPipeline
             throw new InvalidOperationException($"No JDs found for code {code}");
         }
 
-        return await IngestRecordsAsync(recs, ct);
+        return await IngestRecordsAsync(recs, ct: ct);
     }
 
     /// <summary>One parsed JD by class code and source file, for the review viewer.</summary>
@@ -253,6 +254,80 @@ public sealed partial class IngestPipeline
     /// Copy an envelope free of its database identity, so a preserved manual envelope can be
     /// re-attached to a freshly built profile instead of being re-parented in place.
     /// </summary>
+    /// <summary>
+    /// Re-ingest replaces everything derived from the records, but keeps the profile row itself.
+    ///
+    /// The row must survive: saved JDs reference it, and that reference deliberately restricts
+    /// deletion — a JD someone wrote against a class must not vanish, or be orphaned, because the
+    /// class was refreshed with new exports. Deleting and re-adding the profile (as the port first
+    /// did) therefore fails as soon as one JD has been saved against the class.
+    ///
+    /// Children are replaced rather than merged: every one is derived from the records, so a
+    /// partial update would leave stale rows from the previous corpus behind. Removal and
+    /// insertion are separate saves inside one transaction, so the one-to-one envelope and
+    /// coverage rows never collide on their unique profile key.
+    /// </summary>
+    private async Task ReplaceContentsAsync(int profileId, ClassProfile fresh, CancellationToken ct)
+    {
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        var p = await _db.ClassProfiles
+            .Include(x => x.Envelope!).ThenInclude(e => e.KeyResponsibilities).ThenInclude(r => r.Duties)
+            .Include(x => x.Envelope!).ThenInclude(e => e.Items)
+            .Include(x => x.Coverage!).ThenInclude(c => c.PerJd).ThenInclude(j => j.Uncovered)
+            .Include(x => x.Distributions).ThenInclude(d => d.Values)
+            .Include(x => x.Functions).ThenInclude(f => f.SampleDuties)
+            .Include(x => x.Qualifications)
+            .Include(x => x.ConsolidatedFunctions).ThenInclude(f => f.Members)
+            .Include(x => x.ConsolidatedFunctions).ThenInclude(f => f.SampleDuties)
+            .Include(x => x.ConsolidatedQuals).ThenInclude(q => q.Members)
+            .Include(x => x.DroppedItems)
+            .Include(x => x.SourceFiles)
+            .AsSplitQuery()
+            .SingleAsync(x => x.Id == profileId, ct);
+
+        if (p.Envelope != null)
+        {
+            _db.Remove(p.Envelope);
+        }
+
+        if (p.Coverage != null)
+        {
+            _db.Remove(p.Coverage);
+        }
+
+        _db.RemoveRange(p.Distributions);
+        _db.RemoveRange(p.Functions);
+        _db.RemoveRange(p.Qualifications);
+        _db.RemoveRange(p.ConsolidatedFunctions);
+        _db.RemoveRange(p.ConsolidatedQuals);
+        _db.RemoveRange(p.DroppedItems);
+        _db.RemoveRange(p.SourceFiles);
+        await _db.SaveChangesAsync(ct);
+
+        p.UcJobCode = fresh.UcJobCode;
+        p.Title = fresh.Title;
+        p.CtJobFamily = fresh.CtJobFamily;
+        p.CtJobFunction = fresh.CtJobFunction;
+        p.PersonnelProgram = fresh.PersonnelProgram;
+        p.CorpusSize = fresh.CorpusSize;
+        p.RepresentativeSummary = fresh.RepresentativeSummary;
+        p.EnvelopeSource = fresh.EnvelopeSource;
+        p.GeneratedNote = fresh.GeneratedNote;
+        p.Envelope = fresh.Envelope;
+        p.Coverage = fresh.Coverage;
+        p.Distributions = fresh.Distributions;
+        p.Functions = fresh.Functions;
+        p.Qualifications = fresh.Qualifications;
+        p.ConsolidatedFunctions = fresh.ConsolidatedFunctions;
+        p.ConsolidatedQuals = fresh.ConsolidatedQuals;
+        p.DroppedItems = fresh.DroppedItems;
+        p.SourceFiles = fresh.SourceFiles;
+        await _db.SaveChangesAsync(ct);
+
+        await tx.CommitAsync(ct);
+    }
+
     private static JobEnvelope Detach(JobEnvelope e)
     {
         var copy = new JobEnvelope { Summary = e.Summary, ScopeStatement = e.ScopeStatement };

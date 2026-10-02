@@ -1,6 +1,8 @@
 import { fetchJson } from '../lib/api.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  UploadedPendingResponse,
+  UploadResponse,
   ApiKeyStatus,
   AdminsResponse,
   BootstrapCreateResponse,
@@ -132,3 +134,42 @@ export const useClearApiKey = () =>
   useApiKeyMutation(() =>
     fetchJson<ApiKeyStatus>('/api/admin/settings/api-key', { method: 'DELETE' })
   );
+
+export const uploadedPendingQueryOptions = () => ({
+  queryFn: () => fetchJson<UploadedPendingResponse>('/api/admin/uploads/pending'),
+  queryKey: ['admin', 'uploads', 'pending'] as const,
+});
+
+export const useUploadedPending = () => useQuery(uploadedPendingQueryOptions());
+
+/** Upload HRTMS exports. Each file comes back with its own verdict. */
+export const useUploadExports = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (files: File[]) => {
+      const body = new FormData();
+      for (const file of files) {
+        // A folder pick supplies the relative path, which keeps the class folder in the name.
+        body.append('files', file, file.webkitRelativePath || file.name);
+      }
+      return fetchJson<UploadResponse>('/api/admin/uploads', { body, method: 'POST' });
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] }),
+  });
+};
+
+export const useIngestUploaded = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (code: string) =>
+      fetchJson<unknown>('/api/admin/uploads/ingest', {
+        body: JSON.stringify({ code }),
+        method: 'POST',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['classes'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] });
+    },
+  });
+};
