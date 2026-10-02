@@ -101,4 +101,20 @@ public class AuthoredJdStoreTests
         (await store.ListAsync(alice)).Select(j => j.WorkingTitle).Should().Equal("Alice 1");
         (await store.ListAsync(null)).Should().HaveCount(2);
     }
+
+    [Fact]
+    public async Task An_author_deletes_their_own_jd_but_not_someone_elses_and_an_admin_can_delete_any()
+    {
+        var (db, profile, alice, bob) = await Seed();
+        var store = new AuthoredJdStore(db);
+        var alicesId = await store.SaveAsync(Assembled("Alice 1", ("A", 100)), new BuildInputs(), profile, alice, null);
+        var bobsId = await store.SaveAsync(Assembled("Bob 1", ("B", 100)), new BuildInputs(), profile, bob, null);
+
+        (await store.DeleteAsync(alicesId, bob, isAdmin: false)).Should().BeFalse();
+        (await store.DeleteAsync(alicesId, alice, isAdmin: false)).Should().BeTrue();
+        (await store.DeleteAsync(bobsId, alice, isAdmin: true)).Should().BeTrue();
+
+        (await db.AuthoredJds.CountAsync()).Should().Be(0);
+        (await db.AuthoredJdResponsibilities.CountAsync()).Should().Be(0, "its content goes with it");
+    }
 }

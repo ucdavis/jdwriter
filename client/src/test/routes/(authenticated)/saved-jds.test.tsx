@@ -4,7 +4,7 @@ import type { BuildRequest, SavedJd, SavedJdSummary } from '@/lib/contracts.ts';
 import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 const summary = (over: Partial<SavedJdSummary>): SavedJdSummary => ({
   createdAt: '2026-10-01T00:00:00Z',
@@ -126,5 +126,72 @@ describe('saved JDs', () => {
     await user.click(await screen.findByRole('button', { name: /Review & continue/ }));
     await user.click(await screen.findByRole('button', { name: /Assemble the JD/ }));
     await waitFor(() => expect(sent).toEqual([null, 42]));
+  });
+
+  it('sorts by date created, newest or oldest first', async () => {
+    const user = userEvent.setup();
+    testServer.use(
+      http.get('/api/jds', () =>
+        HttpResponse.json({
+          jds: [
+            summary({ createdAt: '2026-09-01T00:00:00Z', id: 1, workingTitle: 'September JD' }),
+            summary({ createdAt: '2026-10-01T00:00:00Z', id: 2, workingTitle: 'October JD' }),
+          ],
+        })
+      )
+    );
+    renderRoute({ initialPath: '/jds' });
+
+    await screen.findByText('October JD');
+    const order = () =>
+      screen.getAllByText(/(September|October) JD/).map((el) => el.textContent);
+    expect(order()).toEqual(['October JD', 'September JD']);
+
+    await user.selectOptions(screen.getByLabelText('Sort by date created'), 'oldest');
+    expect(order()).toEqual(['September JD', 'October JD']);
+  });
+
+  it('deletes a JD after confirming, and not without', async () => {
+    const user = userEvent.setup();
+    const deleted: string[] = [];
+    let jds = [summary({ id: 5, workingTitle: 'To Delete' })];
+    testServer.use(
+      http.get('/api/jds', () => HttpResponse.json({ jds })),
+      http.delete('/api/jds/:id', ({ params }) => {
+        deleted.push(String(params.id));
+        jds = [];
+        return HttpResponse.json({ ok: true });
+      })
+    );
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+    renderRoute({ initialPath: '/jds' });
+
+    const button = await screen.findByRole('button', { name: 'Delete To Delete' });
+    await user.click(button);
+    expect(deleted).toEqual([]);
+
+    await user.click(button);
+    await screen.findByText(/Nothing saved yet/);
+    expect(deleted).toEqual(['5']);
+    confirm.mockRestore();
+  });
+
+  it('shows my three most recently created JDs on the home page', async () => {
+    testServer.use(
+      http.get('/api/jds', () =>
+        HttpResponse.json({
+          jds: [1, 2, 3, 4].map((n) =>
+            summary({ createdAt: `2026-09-0${n}T00:00:00Z`, id: n, workingTitle: `JD number ${n}` })
+          ),
+        })
+      )
+    );
+    renderRoute({ initialPath: '/' });
+
+    await screen.findByText('Your recent JDs');
+    await screen.findByText('JD number 4');
+    expect(screen.getByText('JD number 3')).toBeInTheDocument();
+    expect(screen.getByText('JD number 2')).toBeInTheDocument();
+    expect(screen.queryByText('JD number 1')).not.toBeInTheDocument();
   });
 });
