@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Local sign-in | JDWriter</title>
+    <title>Sign in | JDWriter</title>
     <style>
         body { margin: 0; background: #f2f5f8; color: #172b40; font-family: system-ui, sans-serif; }
         main { max-width: 560px; margin: 10vh auto; padding: 32px; background: white; border-top: 6px solid #ffbf00; border-radius: 8px; }
@@ -19,19 +19,26 @@
 </head>
 <body>
 <main>
-    <p>JDWriter · Docker sandbox</p>
-    <h1>Choose a local user</h1>
-    <p>These fictional accounts work without Entra or a password. Sample User can open every example. Basic User lets you check access denied responses.</p>
+    <p>JDWriter · Development</p>
+    <h1>Sign in to JDWriter</h1>
+    @if (ViewData["EntraConfigured"] is true)
+    {
+        <form action="/login/ucdavis" method="get">
+            <input type="hidden" name="returnUrl" value="@Model" />
+            <button type="submit"><strong>Sign in to UC Davis</strong></button>
+        </form>
+    }
+    <p>Or use a fictional account for local development.</p>
     <form action="/login/local" method="post">
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@Model" />
         <button name="persona" value="sample" type="submit">
             <strong>Sign in as Sample User</strong>
-            <span>sample@example.test · User and SampleRole</span>
+            <span>sample@example.test · Author and Admin</span>
         </button>
         <button name="persona" value="basic" type="submit">
             <strong>Sign in as Basic User</strong>
-            <span>basic@example.test · User only</span>
+            <span>basic@example.test · Author</span>
         </button>
     </form>
     @if (User.Identity?.IsAuthenticated == true)

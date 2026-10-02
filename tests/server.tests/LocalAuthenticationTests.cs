@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Server.Controllers;
 using Server.Helpers;
 
@@ -69,6 +70,55 @@ public class LocalAuthenticationTests
     }
 
     [Fact]
+    public async Task Configured_Entra_and_local_login_share_the_development_cookie()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Auth:UseLocal"] = "true",
+            ["Auth:ClientId"] = "11111111-1111-1111-1111-111111111111",
+            ["Auth:TenantId"] = "22222222-2222-2222-2222-222222222222",
+            ["Auth:Instance"] = "https://login.microsoftonline.com/",
+        }).Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddAuthenticationServices(configuration, new TestEnvironment("Development"));
+        await using var provider = services.BuildServiceProvider();
+        var schemes = provider.GetRequiredService<IAuthenticationSchemeProvider>();
+
+        (await schemes.GetDefaultAuthenticateSchemeAsync())!.Name.Should().Be(LocalAuthentication.Scheme);
+        (await schemes.GetDefaultChallengeSchemeAsync())!.Name.Should().Be(LocalAuthentication.Scheme);
+        (await schemes.GetSchemeAsync(OpenIdConnectDefaults.AuthenticationScheme)).Should().NotBeNull();
+        var oidc = provider.GetRequiredService<IOptionsMonitor<OpenIdConnectOptions>>()
+            .Get(OpenIdConnectDefaults.AuthenticationScheme);
+        oidc.SignInScheme.Should().Be(LocalAuthentication.Scheme);
+        oidc.ResponseType.Should().Be("code");
+        oidc.UsePkce.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("/jds", "/jds")]
+    [InlineData("https://example.test", "/")]
+    [InlineData("//example.test", "/")]
+    [InlineData(null, "/")]
+    public void Campus_login_challenges_Entra_even_with_a_local_session(string? returnUrl, string expected)
+    {
+        var controller = Controller("true", "11111111-1111-1111-1111-111111111111");
+        controller.HttpContext.User = LocalAuthentication.CreatePrincipal("sample")!;
+
+        var result = controller.UcDavisLogin(returnUrl).Should().BeOfType<ChallengeResult>().Subject;
+
+        result.AuthenticationSchemes.Should().ContainSingle().Which.Should().Be(OpenIdConnectDefaults.AuthenticationScheme);
+        result.Properties!.RedirectUri.Should().Be(expected);
+    }
+
+    [Fact]
+    public void Campus_login_is_unavailable_without_Entra_configuration()
+    {
+        Controller("true").UcDavisLogin("/").Should().BeOfType<NotFoundResult>();
+    }
+
+    [Fact]
     public void Personas_exercise_the_existing_role_boundary()
     {
         var sample = LocalAuthentication.CreatePrincipal("sample")!;
@@ -123,9 +173,9 @@ public class LocalAuthenticationTests
         (await controller.LocalLogout()).Should().BeOfType<NotFoundResult>();
     }
 
-    private static AccountController Controller(string? local = null)
+    private static AccountController Controller(string? local = null, string clientId = "<client-guid>")
     {
-        var controller = new AccountController(Configuration(local), new TestEnvironment("Development"))
+        var controller = new AccountController(Configuration(local, clientId), new TestEnvironment("Development"))
         {
             ControllerContext = new ControllerContext
             {

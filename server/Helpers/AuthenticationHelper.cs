@@ -2,18 +2,23 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Server.Services;
 
 namespace Server.Helpers;
 
 public static class AuthenticationHelper
 {
+    public static bool IsEntraConfigured(IConfiguration configuration) =>
+        Guid.TryParse(configuration["Auth:ClientId"], out var clientId) && clientId != Guid.Empty;
+
     /// <summary>
     /// Keeps Entra as the default; local sign-in must be explicitly enabled in Development.
     /// </summary>
     public static IServiceCollection AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
-        if (LocalAuthentication.IsEnabled(configuration, environment))
+        var useLocal = LocalAuthentication.IsEnabled(configuration, environment);
+        if (useLocal)
         {
             var cookieName = ".JDWriter.LocalSandbox";
             var cookieSuffix = configuration["Auth:LocalCookieSuffix"];
@@ -59,7 +64,10 @@ public static class AuthenticationHelper
                     // the next request, exactly as a real account does.
                     options.Events.OnValidatePrincipal = OnValidatePrincipal;
                 });
-            return services;
+            if (!IsEntraConfigured(configuration))
+            {
+                return services;
+            }
         }
 
         var clientId = configuration["Auth:ClientId"]?.Trim();
@@ -73,12 +81,17 @@ public static class AuthenticationHelper
         services
             .AddAuthentication(options =>
             {
-                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+                options.DefaultScheme = useLocal ? LocalAuthentication.Scheme : CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = useLocal ? LocalAuthentication.Scheme : OpenIdConnectDefaults.AuthenticationScheme;
             })
             .AddMicrosoftIdentityWebApp(options =>
             {
                 configuration.Bind("Auth", options);
+                options.ResponseType = OpenIdConnectResponseType.Code;
+                options.UsePkce = true;
+                // Both sign-in choices use one session cookie in Development. The principal keeps
+                // its authentication type, so only fictional identities accept example.test.
+                options.SignInScheme = useLocal ? LocalAuthentication.Scheme : CookieAuthenticationDefaults.AuthenticationScheme;
 
                 options.TokenValidationParameters = new()
                 {
@@ -89,7 +102,7 @@ public static class AuthenticationHelper
                 options.Events ??= new OpenIdConnectEvents();
                 options.Events.OnRedirectToIdentityProvider = OnRedirectToIdentityProvider;
                 options.Events.OnTokenValidated = OnTokenValidated;
-            });
+            }, cookieScheme: useLocal ? null : CookieAuthenticationDefaults.AuthenticationScheme);
 
         services.PostConfigure<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
