@@ -52,13 +52,105 @@ public static class StructuredSchema
     public static JsonNode For(Type type) =>
         // Deep-cloned on the way out: callers hand this to the SDK, which may mutate or take
         // ownership, and a shared mutated schema would corrupt every later call for that type.
-        Cache.GetOrAdd(type, static t => Options.GetJsonSchemaAsNode(t, new JsonSchemaExporterOptions
+        Cache.GetOrAdd(type, static t =>
         {
-            // A non-nullable reference type means required. Without this every property is treated
-            // as nullable and nothing lands in `required`.
-            TreatNullObliviousAsNonNullable = true,
-            TransformSchemaNode = Transform,
-        })).DeepClone();
+            var exported = Options.GetJsonSchemaAsNode(t, new JsonSchemaExporterOptions
+            {
+                // A non-nullable reference type means required. Without this every property is
+                // treated as nullable and nothing lands in `required`.
+                TreatNullObliviousAsNonNullable = true,
+                TransformSchemaNode = Transform,
+            });
+            return InlineRefs(exported, exported, 0)!;
+        }).DeepClone();
+
+    /// <summary>
+    /// Replace every local <c>$ref</c> with a copy of the schema it points at.
+    ///
+    /// The exporter writes the second use of a type as a pointer to its first occurrence —
+    /// <c>{"$ref": "#/properties/functionGroups/items"}</c> — and the API rejects any reference
+    /// that is not under <c>$defs</c>. That rejection was caught by ingest's deterministic
+    /// fallback, so consolidation and envelope synthesis silently never ran: every ingested class
+    /// got a deterministic envelope, with only a log warning to say so. Inlining gives the API a
+    /// self-contained schema it accepts, and leaves the exporter's output otherwise untouched.
+    /// </summary>
+    private static JsonNode? InlineRefs(JsonNode? node, JsonNode root, int refDepth)
+    {
+        if (node is JsonObject obj)
+        {
+            if (obj["$ref"] is JsonValue refValue
+                && refValue.TryGetValue<string>(out var pointer)
+                && pointer.StartsWith("#", StringComparison.Ordinal))
+            {
+                // A structured-output type that contains itself has no finite inline form.
+                if (refDepth >= 32)
+                {
+                    throw new InvalidOperationException(
+                        $"Schema reference {pointer} is recursive; structured output types must not contain themselves.");
+                }
+
+                var target = Resolve(root, pointer)
+                             ?? throw new InvalidOperationException($"Schema reference {pointer} does not resolve.");
+                var inlined = InlineRefs(target, root, refDepth + 1);
+                if (inlined is JsonObject inlinedObj)
+                {
+                    // Keywords beside the $ref (a description, say) still apply.
+                    foreach (var (key, value) in obj)
+                    {
+                        if (key != "$ref")
+                        {
+                            inlinedObj[key] = InlineRefs(value, root, refDepth);
+                        }
+                    }
+                }
+
+                return inlined;
+            }
+
+            var copy = new JsonObject();
+            foreach (var (key, value) in obj)
+            {
+                copy[key] = InlineRefs(value, root, refDepth);
+            }
+
+            return copy;
+        }
+
+        if (node is JsonArray array)
+        {
+            var copy = new JsonArray();
+            foreach (var item in array)
+            {
+                copy.Add(InlineRefs(item, root, refDepth));
+            }
+
+            return copy;
+        }
+
+        return node?.DeepClone();
+    }
+
+    /// <summary>A JSON Pointer ("#/a/b/0") resolved against the schema root.</summary>
+    private static JsonNode? Resolve(JsonNode root, string pointer)
+    {
+        JsonNode? current = root;
+        foreach (var raw in pointer.TrimStart('#').Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var segment = raw.Replace("~1", "/").Replace("~0", "~");
+            current = current switch
+            {
+                JsonObject o => o[segment],
+                JsonArray a when int.TryParse(segment, out var i) && i < a.Count => a[i],
+                _ => null,
+            };
+            if (current == null)
+            {
+                return null;
+            }
+        }
+
+        return current;
+    }
 
     private static JsonNode Transform(JsonSchemaExporterContext context, JsonNode schema)
     {

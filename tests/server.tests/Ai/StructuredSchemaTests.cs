@@ -49,6 +49,66 @@ public class StructuredSchemaTests
 
     private static JsonObject Schema<T>() => (JsonObject)StructuredSchema.For<T>();
 
+    private sealed class Part
+    {
+        [System.ComponentModel.Description("A name.")]
+        public string Name { get; set; } = "";
+    }
+
+    private sealed class TwoUsesOfOneType
+    {
+        public List<Part> First { get; set; } = [];
+        public List<Part> Second { get; set; } = [];
+        public Part Single { get; set; } = new();
+    }
+
+    [Fact]
+    public void A_type_used_twice_is_inlined_not_referenced()
+    {
+        // The exporter writes the second use as {"$ref": "#/properties/first/items"}, which the
+        // API rejects outright. That rejection once disabled consolidation silently.
+        var schema = StructuredSchema.For<TwoUsesOfOneType>();
+        var json = schema.ToJsonString();
+
+        json.Should().NotContain("$ref");
+        foreach (var path in new[] { "first", "second" })
+        {
+            var items = schema["properties"]![path]!["items"]!;
+            items["properties"]!["name"]!["description"]!.GetValue<string>().Should().Be("A name.");
+            items["additionalProperties"]!.GetValue<bool>().Should().BeFalse();
+        }
+
+        schema["properties"]!["single"]!["required"]!.AsArray().Select(n => n!.GetValue<string>())
+            .Should().Contain("name");
+    }
+
+    [Fact]
+    public void No_structured_output_type_in_the_app_produces_a_reference()
+    {
+        // Exactly the types the app asks the model for: every StructuredAsync<T> in server.core,
+        // read from source. An attribute heuristic is not enough — the type that broke
+        // consolidation carried no [Description] at all.
+        var root = AppContext.BaseDirectory;
+        while (!File.Exists(Path.Combine(root, "app.sln")))
+        {
+            root = Path.GetDirectoryName(root) ?? throw new InvalidOperationException("app.sln not found above the test binaries.");
+        }
+
+        var names = Directory.EnumerateFiles(Path.Combine(root, "server.core"), "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
+            .SelectMany(f => System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(f), @"StructuredAsync<(\w+)>"))
+            .Select(m => m.Groups[1].Value)
+            .Where(n => n != "T")
+            .ToHashSet();
+
+        var types = typeof(StructuredSchema).Assembly.GetTypes().Where(t => names.Contains(t.Name)).ToList();
+        types.Select(t => t.Name).Should().Contain(["Pass1Result", "EnvelopeShape"], "the scan must find the real call sites");
+        names.Should().BeSubsetOf(types.Select(t => t.Name), "every requested type must resolve");
+
+        var offenders = types.Where(t => StructuredSchema.For(t).ToJsonString().Contains("$ref")).Select(t => t.FullName).ToList();
+        offenders.Should().BeEmpty();
+    }
+
     [Fact]
     public void Objects_are_closed()
     {
