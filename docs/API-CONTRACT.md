@@ -82,6 +82,12 @@ An existing written description → an independent classification verdict.
 }
 ```
 
+**Every submission is filed into the corpus** (`filedUnder: string | null` on the response). An HRTMS
+export goes under the job code it states; anything else under the top-ranked class, as the
+classifier distilled it. The original is kept (database only) for future reparsing; the same text is
+filed once. Filing never fails the classification. It counts at the class's next rebuild, where the
+admin queue lists it.
+
 **`proposedCode` is sent separately from `description` and never reaches the ranking
 prompt.** Anti-anchoring, not confidentiality: a model shown the classification the unit wants
 ratifies it, which makes the confidence number meaningless. It is argued afterwards by a second

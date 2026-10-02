@@ -188,6 +188,9 @@ public class CorpusUpload
 
     public CorpusUploadStatus Status { get; set; }
 
+    /// <summary>How it arrived: an admin upload, or a description submitted on the Classify page.</summary>
+    public CorpusUploadSource Source { get; set; }
+
     /// <summary>Why the file could not be used, when <see cref="Status"/> is Failed.</summary>
     public string? Error { get; set; }
 
@@ -215,6 +218,18 @@ public enum CorpusUploadStatus
 
     /// <summary>Not a usable HRTMS export; see <see cref="CorpusUpload.Error"/>.</summary>
     Failed,
+
+    /// <summary>
+    /// Filed straight into a class's corpus (Classify submissions). Counts at the class's next
+    /// rebuild; the admin queue shows it as new evidence.
+    /// </summary>
+    Filed,
+}
+
+public enum CorpusUploadSource
+{
+    Upload,
+    Classify,
 }
 
 public enum CorpusOrigin

@@ -178,6 +178,12 @@ public sealed class Classification
     public string Verdict { get; set; } = "weak";
     public string VerdictNote { get; set; } = "";
     public ProposedAssessment? Proposed { get; set; }
+
+    /// <summary>
+    /// The class code this submission was filed under in the corpus, or null when it was not filed
+    /// (already submitted, or no class to file it under). Set by the endpoint after filing.
+    /// </summary>
+    public string? FiledUnder { get; set; }
 }
 
 /// <summary>The class the unit proposed, rendered for comparison, plus what it was built from.</summary>
