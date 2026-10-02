@@ -29,6 +29,23 @@ describe('fetchJson', () => {
     }
   );
 
+  it('leaves a FormData body for the browser to label as multipart', async () => {
+    // Forcing application/json onto a file upload strips the multipart boundary, and the
+    // server then cannot read the file at all.
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response('{}', { headers: { 'Content-Type': 'application/json' } })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const body = new FormData();
+    body.append('file', new Blob(['x']), 'a.html');
+
+    await fetchJson('/api/upload', { body, method: 'POST' });
+
+    const request = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(new Headers(request.headers).has('Content-Type')).toBe(false);
+    expect(request.body).toBe(body);
+  });
+
   it('honors explicit header overrides and preserves cancellation', async () => {
     const fetchMock = vi
       .fn()

@@ -22,7 +22,11 @@ export async function fetchJson<T>(
   if (!headers.has('Accept')) {
     headers.set('Accept', 'application/json');
   }
-  if (requestInit.body && !headers.has('Content-Type')) {
+  // Only a string body is labelled JSON (every JSON caller passes JSON.stringify). Anything
+  // else — FormData above all — is left for the browser, which writes the multipart
+  // Content-Type itself, boundary included. Forcing application/json onto a FormData body
+  // made every file upload unreadable to the server.
+  if (typeof requestInit.body === 'string' && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
