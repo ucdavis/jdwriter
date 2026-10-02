@@ -17,6 +17,7 @@ public class AccountController(IConfiguration configuration, IHostEnvironment en
         var safeReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl! : "/";
         if (LocalAuthentication.IsEnabled(configuration, environment))
         {
+            ViewData["EntraConfigured"] = AuthenticationHelper.IsEntraConfigured(configuration);
             return View("LocalLogin", safeReturnUrl);
         }
 
@@ -27,6 +28,20 @@ public class AccountController(IConfiguration configuration, IHostEnvironment en
 
         return Challenge(new AuthenticationProperties { RedirectUri = safeReturnUrl },
             OpenIdConnectDefaults.AuthenticationScheme);
+    }
+
+    [HttpGet("login/ucdavis")]
+    public IActionResult UcDavisLogin(string? returnUrl)
+    {
+        if (!AuthenticationHelper.IsEntraConfigured(configuration))
+        {
+            return NotFound();
+        }
+
+        return Challenge(new AuthenticationProperties
+        {
+            RedirectUri = Url.IsLocalUrl(returnUrl) ? returnUrl! : "/",
+        }, OpenIdConnectDefaults.AuthenticationScheme);
     }
 
     [HttpPost("login/local")]

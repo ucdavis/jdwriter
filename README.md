@@ -163,6 +163,10 @@ By default, the app uses OIDC with Microsoft Entra ID (Azure AD). In this mode, 
 
 The Docker sandbox enables fictional local users with `Auth__UseLocal=true`, bypassing Entra configuration. To use these users in ordinary development, set the same flag in `server/.env`. The flag defaults to false, and startup rejects it outside the `Development` environment.
 
+When `Auth__UseLocal=true` and a real `Auth__ClientId` is configured, `/login` also offers **Sign in to UC Davis**. Both choices use the development session cookie; a campus sign-in replaces the fictional user. Local users remain unavailable outside Development. Set `Auth__ClientSecret` only in ignored `server/.env` or deployment secrets. Register `http://localhost:5173/signin-oidc` and `http://127.0.0.1:5173/signin-oidc` as web redirect URIs for local development.
+
+JDWriter uses app registration `cc6df836-b89f-4838-a045-60fc98e42703`. Its IAM ID claim is `ucdPersonIAMID`, mapped from `user.extensionattribute7` with `api.acceptMappedClaims=true`, following the [campus authentication guide](https://app.notion.com/p/2eae70f674118020ba74e953828d2591). The server stores it on the user record and exposes it as `iamId` from `/api/user/me`. Entra user assignment requirements still apply.
+
 For a new application registration, redirect URIs, and app-specific auth settings, follow [the customization guide](README.customization.md#3-microsoft-entra-id-azure-ad-app-sign-in-setup).
 
 To include the `ucdPersonIAMID` claim shown on the main page, follow [Authentication](https://app.notion.com/p/caes-cru/Authentication-2eae70f674118020ba74e953828d2591?source=copy_link).
