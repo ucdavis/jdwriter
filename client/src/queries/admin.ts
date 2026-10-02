@@ -1,6 +1,7 @@
 import { fetchJson } from '../lib/api.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  StandardsUploadResponse,
   SecurityStatus,
   UploadedPendingResponse,
   UploadResponse,
@@ -181,3 +182,22 @@ export const securityQueryOptions = () => ({
 });
 
 export const useSecurityStatus = () => useQuery(securityQueryOptions());
+
+/** Upload standards workbooks; they MERGE into the store rather than replacing it. */
+export const useUploadStandards = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (files: File[]) => {
+      const body = new FormData();
+      for (const file of files) {
+        body.append('files', file, file.name);
+      }
+      return fetchJson<StandardsUploadResponse>('/api/admin/standards/upload', {
+        body,
+        method: 'POST',
+      });
+    },
+    // Standard-linked badges across the class list may change.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classes'] }),
+  });
+};

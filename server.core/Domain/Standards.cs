@@ -60,3 +60,26 @@ public class JobStandardItem : ITextItem
     public int Ordinal { get; set; }
     public string Text { get; set; } = "";
 }
+
+/// <summary>
+/// A Job Builder standards workbook an admin uploaded, kept as the original bytes so the store can
+/// be rebuilt or reparsed later. Standards are public UC classification documents.
+/// </summary>
+public class StandardsWorkbook
+{
+    public int Id { get; set; }
+    public string FileName { get; set; } = "";
+
+    /// <summary>SHA-256 of the bytes. Unique: the same workbook is stored once.</summary>
+    public string Sha256 { get; set; } = "";
+
+    public byte[] Content { get; set; } = [];
+    public int SizeBytes { get; set; }
+
+    /// <summary>How many standards it contained when parsed.</summary>
+    public int StandardsFound { get; set; }
+
+    public int? UploadedByUserId { get; set; }
+    public AppUser? UploadedBy { get; set; }
+    public DateTimeOffset UploadedAt { get; set; }
+}

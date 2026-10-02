@@ -309,6 +309,17 @@ wholesale inside one transaction.
 `uncodedSample` names titles rather than counting them: "not a UC Davis title" and "ambiguous" need
 different follow-up.
 
+### `POST /api/admin/standards/upload` — Admin
+`multipart/form-data`, one or more `files` (Job Builder `.xlsx` exports).
+```ts
+{ files: Array<{ fileName; result: "added" | "duplicate" | "failed"; standards: number; error: string | null }>;
+  added: number; updated: number; total: number; uncodedSample: string[];
+  linkedCount: number; totalClasses: number }
+```
+**Merges** into the store: each standard is added, or replaces the stored one with the same exact
+(strict-key) title; every other standard is untouched, so uploading one family never wipes the rest.
+Workbooks are kept as the original bytes, once each.
+
 ### `GET /api/admin/bootstrap/candidates` — Admin
 `{ candidates: Array<{ title: string; code: string; family: string; function: string; grade: string }> }`
 — standards with a resolvable code and no profile. Superseded codes are never offered.
