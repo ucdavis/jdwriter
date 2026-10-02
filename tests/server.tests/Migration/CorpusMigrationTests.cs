@@ -41,6 +41,13 @@ public class CorpusMigrationTests : IDisposable
 
     private readonly AppDbContext _db;
 
+    /// <summary>
+    /// The JDs the CLI loaded. The corpus also grows in use — Classify submissions, JDs written in
+    /// the app, admin uploads — and those carry an AddedAt the CLI never sets, so they are excluded
+    /// here: this suite checks the migration, not the corpus's later growth.
+    /// </summary>
+    private IQueryable<JobDescription> Migrated => _db.JobDescriptions.Where(j => j.AddedAt == null);
+
     public CorpusMigrationTests()
     {
         var conn = Environment.GetEnvironmentVariable("DB_CONNECTION")
@@ -105,14 +112,14 @@ public class CorpusMigrationTests : IDisposable
     [Fact]
     public void The_whole_JD_corpus_loaded_with_its_children()
     {
-        _db.JobDescriptions.Count().Should().Be(ExpectedJobDescriptions);
-        _db.JdResponsibilities.Count().Should().Be(ExpectedResponsibilities);
-        _db.JdDuties.Count().Should().Be(ExpectedDuties);
+        Migrated.Count().Should().Be(ExpectedJobDescriptions);
+        _db.JdResponsibilities.Count(r => r.JobDescription!.AddedAt == null).Should().Be(ExpectedResponsibilities);
+        _db.JdDuties.Count(d => d.JdResponsibility!.JobDescription!.AddedAt == null).Should().Be(ExpectedDuties);
 
         // Every export is distinct; SourceFile is the identity of a JD.
-        _db.JobDescriptions.Select(j => j.SourceFile).Distinct().Count().Should().Be(ExpectedJobDescriptions);
+        Migrated.Select(j => j.SourceFile).Distinct().Count().Should().Be(ExpectedJobDescriptions);
 
-        _db.JobDescriptions.Select(j => j.UcJobCode).Distinct().Count().Should().Be(ExpectedDistinctCodes);
+        Migrated.Select(j => j.UcJobCode).Distinct().Count().Should().Be(ExpectedDistinctCodes);
     }
 
     [Fact]
@@ -123,7 +130,7 @@ public class CorpusMigrationTests : IDisposable
         var retired = _db.Supersessions.Select(s => s.FromCode).ToHashSet(StringComparer.Ordinal);
         retired.Should().NotBeEmpty();
 
-        var survivors = _db.JobDescriptions
+        var survivors = Migrated
             .Select(j => j.UcJobCode)
             .Distinct()
             .ToList()
@@ -133,10 +140,10 @@ public class CorpusMigrationTests : IDisposable
         survivors.Should().BeEmpty("every JD must be filed under a live classification");
 
         // And the rewrite is auditable rather than invisible.
-        var remapped = _db.JobDescriptions.Count(j => j.OriginalUcJobCode != null);
+        var remapped = Migrated.Count(j => j.OriginalUcJobCode != null);
         remapped.Should().Be(97, "97 exports are filed under one of 8 superseded codes");
 
-        _db.JobDescriptions
+        Migrated
             .Where(j => j.OriginalUcJobCode != null)
             .Select(j => j.OriginalUcJobCode!)
             .Distinct()
@@ -149,7 +156,7 @@ public class CorpusMigrationTests : IDisposable
     {
         // Six real exports range from 0 to 200. The schema carries no constraint for exactly this
         // reason, and the loader reports rather than refuses.
-        var sums = _db.JobDescriptions
+        var sums = Migrated
             .Select(j => new
             {
                 j.Id,
@@ -169,13 +176,13 @@ public class CorpusMigrationTests : IDisposable
     {
         // Facts the schema was designed around. If any changed, Phase 2's decisions need revisiting.
         _db.JdPemEntries.Count().Should().Be(0, "no export in this corpus marks the PEM grid");
-        _db.JobDescriptions.Count(j => j.PemPopulated).Should().Be(0);
+        Migrated.Count(j => j.PemPopulated).Should().Be(0);
 
         _db.JdQualificationItems.Count(q => q.Kind == JdQualificationKind.ConditionOfEmployment)
             .Should().Be(0, "this export template never populates conditions of employment");
 
         // Tri-state scope fields keep null as a distinct value from an explicit no.
-        _db.JobDescriptions.Count(j => j.Supervises == null).Should().Be(1027);
+        Migrated.Count(j => j.Supervises == null).Should().Be(1027);
     }
 
     [Fact]
