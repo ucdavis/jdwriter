@@ -83,7 +83,23 @@ they are products of the system, so they live in the database and nowhere in the
 MSW fixture keeps the shape of three real profiles with every piece of envelope text synthetic.
 Position Descriptions are cleared for commit; the one real PD in `pd.json` has no position numbers.
 
-Seed the real corpus into `prod` only. `test` gets a scrubbed subset.
+Seed the real corpus into `prod` only. `test` gets a scrubbed subset (`jdw-cli migrate-poc --scrub`).
+
+### The corpus grows in use
+
+The 1,367-JD CLI load is only the start. Corpus records (`JobDescription`) carry an `Origin` —
+`Export` (CLI load or admin upload), `Authored` (a finished JD that changed its envelope and passed
+the envelope check), `Classify` (a Classify-page submission, filed under a class) — and an
+`AddedAt` the CLI never sets. Rebuilding a class reads all of them. Uploaded and submitted
+originals are kept as bytes in the **database only** (Azure SQL encrypts at rest), never written to
+disk, never logged — HRTMS file names embed position numbers.
+
+Rebuilding a class regenerates its envelope **even if an admin edited it by hand** — a product
+decision (2026-10-02): edits are superseded as JDs written against them flow back in. The admin
+queue warns first. Do not "fix" this back to preserving manual envelopes.
+
+Tests that read the local database must not assume the corpus is exactly what the CLI loaded;
+scope to `AddedAt == null` when that is what they mean.
 
 ### Local environment
 
@@ -100,6 +116,11 @@ logins — wait for `ready for client connections` in `docker logs`, not just an
 This is a full-stack web application template using modern React and .NET technologies. Please follow these guidelines when generating code suggestions.
 
 ## Pull requests
+
+`main` on `ucdavis/jdwriter` is branch-protected: changes go through a pull request, and the
+**Validate** check must pass with the branch up to date (no approvals are required). Work on a
+branch, rebase onto `origin/main` before opening the PR — other people push here too — and merge
+with `--rebase` to keep the commit messages.
 
 Follow `.github/pull_request_template.md` when creating or updating pull requests, including through the CLI. Use a concise, descriptive title and describe the final change. Remove optional sections that do not apply, and never claim validation that was not performed.
 

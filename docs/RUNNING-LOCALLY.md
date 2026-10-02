@@ -69,6 +69,22 @@ Sign in at <http://localhost:5173>. Local sign-in offers two fictional personas:
 In development "sample" is whitelisted as an admin at startup. In a real environment admins come
 from `Admin__BootstrapLoginIds` (configuration) plus whoever is added on `/backend/settings`.
 
+### Signing in as yourself
+
+With `Auth__ClientSecret` set in `server/.env`, `/login` also offers **Sign in to UC Davis** (see
+the README's Auth Configuration). A campus sign-in is an **Author** unless your login ID is
+whitelisted. To be an admin locally, add your campus login ID (the part before `@ucdavis.edu`):
+
+```
+Admin__BootstrapLoginIds=yourloginid
+```
+
+### Local data accumulates
+
+Building JDs, classifying descriptions and uploading files all add to your local database. Once any
+JD has been saved, `migrate-poc --write` refuses to replace the class profiles — deliberately, so
+saved work cannot be wiped by a reload.
+
 `migrate-poc` is idempotent; without `--write` it is a dry run reporting what it would load.
 
 ### The admin panels need two directories
