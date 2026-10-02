@@ -120,6 +120,7 @@ try
     builder.Services.AddScoped<CorpusUploads>();
     builder.Services.AddScoped<ClassifySubmissions>();
     builder.Services.AddScoped<DatabaseSecurity>();
+    builder.Services.AddScoped<Server.Core.Analytics.AdminAnalytics>();
 
     // ---- runtime authoring path
     builder.Services.AddScoped<IIntakeMatcher, IntakeMatcher>();

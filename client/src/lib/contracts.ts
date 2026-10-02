@@ -511,6 +511,37 @@ export type SavedJd = AssembledJd & {
   updatedAt: string;
 };
 
+// ---------------------------------------------------------------- analytics
+
+export type ClassCount = { count: number; slug: string; title: string; ucJobCode: string };
+
+export type AnalyticsReport = {
+  classes: {
+    envelopeMatch: Array<{ classes: number; label: string }>;
+    lowestMatch: Array<{
+      jds: number;
+      meanCoverage: number;
+      slug: string;
+      title: string;
+      wellCoveredPct: number;
+    }>;
+    mostAuthored: ClassCount[];
+    /** `count` is the class's corpus size here. */
+    neverUsed: ClassCount[];
+    totalClasses: number;
+  };
+  usage: {
+    active30Days: number;
+    active7Days: number;
+    draft: number;
+    jdsSaved: number;
+    /** Oldest first; `weekOf` is the Monday (UTC), as YYYY-MM-DD. */
+    perWeek: Array<{ count: number; weekOf: string }>;
+    ready: number;
+    users: number;
+  };
+};
+
 // ---------------------------------------------------------------- settings
 
 export type AdminEntry = {

@@ -66,6 +66,12 @@ function EnvelopeIndex() {
         >
           → Settings
         </Link>
+        <Link
+          className="ml-5 text-[13px] font-medium text-primary hover:underline"
+          to="/backend/analytics"
+        >
+          → Analytics
+        </Link>
       </div>
 
       <UploadPanel />

@@ -44,6 +44,7 @@ public class AdminController : ApiControllerBase
     private readonly ApiKeySettings _apiKey;
     private readonly CorpusUploads _uploads;
     private readonly DatabaseSecurity _security;
+    private readonly Server.Core.Analytics.AdminAnalytics _analytics;
 
     public AdminController(
         IngestPipeline pipeline,
@@ -57,7 +58,8 @@ public class AdminController : ApiControllerBase
         AppDbContext db,
         ApiKeySettings apiKey,
         CorpusUploads uploads,
-        DatabaseSecurity security)
+        DatabaseSecurity security,
+        Server.Core.Analytics.AdminAnalytics analytics)
     {
         _pipeline = pipeline;
         _bootstrapper = bootstrapper;
@@ -71,7 +73,13 @@ public class AdminController : ApiControllerBase
         _apiKey = apiKey;
         _uploads = uploads;
         _security = security;
+        _analytics = analytics;
     }
+
+    /// <summary>Usage and class analytics for the admin dashboard.</summary>
+    [HttpGet("analytics")]
+    public async Task<IActionResult> Analytics(CancellationToken ct) =>
+        Ok(await _analytics.BuildAsync(DateTimeOffset.UtcNow, ct));
 
     /// <summary>Whether the database is encrypted at rest, as SQL Server reports it.</summary>
     [HttpGet("settings/security")]

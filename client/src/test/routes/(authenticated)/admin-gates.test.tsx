@@ -17,6 +17,8 @@ const ADMIN_ONLY = [
   '/api/fit/misfits',
   '/api/classes/:slug/coverage',
   '/api/classes/:slug/jds/*',
+  '/api/admin/analytics',
+  '/api/admin/admins',
 ];
 
 const pages = [
@@ -24,6 +26,8 @@ const pages = [
   { name: 'reclassification review', path: '/backend/fit' },
   { name: 'backwards coverage', path: '/backend/jds/009605-lab-ast-1' },
   { name: 'JD review', path: '/backend/jd/009605-lab-ast-1/Sample%20Class/JD-001.HTML' },
+  { name: 'analytics', path: '/backend/analytics' },
+  { name: 'settings', path: '/backend/settings' },
 ];
 
 describe('admin gates', () => {

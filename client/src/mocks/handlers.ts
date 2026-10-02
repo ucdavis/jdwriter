@@ -1,6 +1,7 @@
 import profilesFixture from './profiles.json' with { type: 'json' };
 import { delay, http, HttpResponse } from 'msw';
 import type {
+  AnalyticsReport,
   StandardsUploadResponse,
   SecurityStatus,
   UploadedPendingResponse,
@@ -561,6 +562,42 @@ export const handlers = [
     await delay(900);
     return HttpResponse.json({ ok: true });
   }),
+
+  http.get('/api/admin/analytics', () =>
+    HttpResponse.json<AnalyticsReport>({
+      classes: {
+        envelopeMatch: [
+          { classes: 40, label: '90–100% of JDs well covered' },
+          { classes: 12, label: '70–89%' },
+          { classes: 5, label: '50–69%' },
+          { classes: 3, label: 'Under 50%' },
+          { classes: 5, label: 'No coverage data' },
+        ],
+        lowestMatch: profiles.slice(0, 2).map((p) => ({
+          jds: p.corpusSize,
+          meanCoverage: p.__coverage?.meanCoverage ?? 0,
+          slug: p.slug,
+          title: p.title,
+          wellCoveredPct: p.__coverage?.wellCoveredPct ?? 0,
+        })),
+        mostAuthored: [{ count: 3, slug: profiles[0].slug, title: profiles[0].title, ucJobCode: profiles[0].ucJobCode }],
+        neverUsed: profiles.slice(1).map((p) => ({ count: p.corpusSize, slug: p.slug, title: p.title, ucJobCode: p.ucJobCode })),
+        totalClasses: profiles.length,
+      },
+      usage: {
+        active30Days: 4,
+        active7Days: 2,
+        draft: 1,
+        jdsSaved: 5,
+        perWeek: Array.from({ length: 12 }, (_, i) => ({
+          count: [0, 1, 0, 2, 1, 0, 0, 3, 1, 2, 0, 1][i],
+          weekOf: new Date(Date.UTC(2026, 6, 13 + 7 * i)).toISOString().slice(0, 10),
+        })),
+        ready: 4,
+        users: 6,
+      },
+    })
+  ),
 
   http.get('/api/admin/settings/security', () =>
     HttpResponse.json<SecurityStatus>({ databaseEncryptedAtRest: true })
