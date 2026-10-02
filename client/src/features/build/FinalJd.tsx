@@ -28,6 +28,18 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
         </Note>
       )}
 
+      {result.authoredJdId && result.corpusNote ? (
+        result.inCorpus ? (
+          <Note tone="green">
+            <span data-testid="corpus-note">{result.corpusNote}</span>
+          </Note>
+        ) : (
+          <p className="text-[12.5px] text-base-content/65" data-testid="corpus-note">
+            {result.corpusNote}
+          </p>
+        )
+      ) : null}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Eyebrow>Finished job description</Eyebrow>

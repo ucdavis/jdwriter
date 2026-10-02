@@ -30,10 +30,20 @@ public sealed class UploadedClass
     /// <summary>Set when the class already exists; ingesting refreshes it rather than creating it.</summary>
     public string? ExistingSlug { get; set; }
 
+    /// <summary>Uploaded exports waiting to be added.</summary>
     public int NewFiles { get; set; }
+
+    /// <summary>JDs written in the app and added to the corpus since the class was last rebuilt.</summary>
+    public int NewAuthored { get; set; }
+
+    /// <summary>Descriptions filed from the Classify page since the class was last rebuilt.</summary>
+    public int NewClassified { get; set; }
 
     /// <summary>JDs already in the corpus for this class.</summary>
     public int CorpusJds { get; set; }
+
+    /// <summary>The class's envelope was edited by hand — rebuilding replaces those edits.</summary>
+    public bool HasManualEnvelope { get; set; }
 }
 
 /// <summary>
@@ -112,36 +122,57 @@ public sealed class CorpusUploads
         return outcomes;
     }
 
-    /// <summary>Classes with pending uploads, alphabetically.</summary>
+    /// <summary>
+    /// Classes with new evidence waiting to be rebuilt into their envelope, alphabetically: pending
+    /// uploads, plus JDs added from the app (authored or classified) since the class's last ingest.
+    /// </summary>
     public async Task<List<UploadedClass>> PendingAsync(CancellationToken ct = default)
     {
-        var groups = await _db.CorpusUploads.AsNoTracking()
+        var uploads = await _db.CorpusUploads.AsNoTracking()
             .Where(u => u.Status == CorpusUploadStatus.Pending && u.UcJobCode != null)
             .GroupBy(u => u.UcJobCode!)
             .Select(g => new { Code = g.Key, Title = g.Max(u => u.UcJobTitle), Count = g.Count() })
             .ToListAsync(ct);
 
-        var codes = groups.Select(g => g.Code).ToList();
+        var profiles = await _db.ClassProfiles.AsNoTracking()
+            .Select(p => new { p.UcJobCode, p.Slug, p.Title, p.LastIngestedAt, p.EnvelopeSource })
+            .ToListAsync(ct);
+
+        var added = await _db.JobDescriptions.AsNoTracking()
+            .Where(j => j.AddedAt != null && j.Origin != CorpusOrigin.Export)
+            .Select(j => new { j.UcJobCode, j.Origin, j.AddedAt, j.UcJobTitle })
+            .ToListAsync(ct);
+        var waiting = added
+            .Where(j =>
+            {
+                var p = profiles.FirstOrDefault(x => TitleCodeIndex.Pad(x.UcJobCode) == TitleCodeIndex.Pad(j.UcJobCode));
+                return p?.LastIngestedAt == null || j.AddedAt > p.LastIngestedAt;
+            })
+            .ToList();
+
+        var codes = uploads.Select(u => u.Code).Concat(waiting.Select(w => w.UcJobCode)).Distinct().ToList();
         var corpus = await _db.JobDescriptions.AsNoTracking()
             .Where(j => codes.Contains(j.UcJobCode))
             .GroupBy(j => j.UcJobCode)
             .Select(g => new { Code = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Code, x => x.Count, ct);
-        var profiles = await _db.ClassProfiles.AsNoTracking()
-            .Select(p => new { p.UcJobCode, p.Slug, p.Title })
-            .ToListAsync(ct);
 
-        return groups
-            .Select(g =>
+        return codes
+            .Select(code =>
             {
-                var profile = profiles.FirstOrDefault(p => TitleCodeIndex.Pad(p.UcJobCode) == TitleCodeIndex.Pad(g.Code));
+                var profile = profiles.FirstOrDefault(p => TitleCodeIndex.Pad(p.UcJobCode) == TitleCodeIndex.Pad(code));
+                var upload = uploads.FirstOrDefault(u => u.Code == code);
+                var title = upload?.Title ?? waiting.FirstOrDefault(w => w.UcJobCode == code)?.UcJobTitle ?? code;
                 return new UploadedClass
                 {
-                    Code = g.Code,
-                    Title = profile?.Title ?? ProfileAggregator.Titleize(g.Title ?? g.Code),
+                    Code = code,
+                    Title = profile?.Title ?? ProfileAggregator.Titleize(title),
                     ExistingSlug = profile?.Slug,
-                    NewFiles = g.Count,
-                    CorpusJds = corpus.GetValueOrDefault(g.Code),
+                    NewFiles = upload?.Count ?? 0,
+                    NewAuthored = waiting.Count(w => w.UcJobCode == code && w.Origin == CorpusOrigin.Authored),
+                    NewClassified = waiting.Count(w => w.UcJobCode == code && w.Origin == CorpusOrigin.Classify),
+                    CorpusJds = corpus.GetValueOrDefault(code),
+                    HasManualEnvelope = profile?.EnvelopeSource == EnvelopeSource.Manual,
                 };
             })
             .OrderBy(c => c.Title, StringComparer.Ordinal)
@@ -149,7 +180,8 @@ public sealed class CorpusUploads
     }
 
     /// <summary>
-    /// Add a class's pending uploads to the corpus and re-ingest the class from all of its JDs.
+    /// Rebuild a class from its corpus: add any pending uploads first, then re-ingest from all of
+    /// its JDs — exports, authored and classified alike.
     ///
     /// A new export of a position replaces the previous one, matched by UCPath position number
     /// (falling back to the file name when an export states none), so re-exporting a JD revises it
@@ -164,9 +196,9 @@ public sealed class CorpusUploads
             .Where(u => u.Status == CorpusUploadStatus.Pending && u.UcJobCode == code)
             .OrderBy(u => u.UploadedAt).ThenBy(u => u.Id)
             .ToListAsync(ct);
-        if (uploads.Count == 0)
+        if (uploads.Count == 0 && !await _db.JobDescriptions.AnyAsync(j => j.UcJobCode == code, ct))
         {
-            throw new InvalidOperationException($"No uploaded JDs are waiting for class {code}.");
+            throw new InvalidOperationException($"Nothing in the corpus for class {code} to build from.");
         }
 
         foreach (var upload in uploads)
@@ -182,7 +214,9 @@ public sealed class CorpusUploads
                             && (position != "" ? j.UcPathPositionNumber == position : j.SourceFile == record.SourceFile))
                 .ToListAsync(ct);
             _db.JobDescriptions.RemoveRange(replaced);
-            _db.JobDescriptions.Add(record.ToEntity(record.UcJobCode));
+            var entity = record.ToEntity(record.UcJobCode);
+            entity.AddedAt = DateTimeOffset.UtcNow;
+            _db.JobDescriptions.Add(entity);
         }
 
         await _db.SaveChangesAsync(ct);

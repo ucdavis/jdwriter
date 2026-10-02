@@ -50,6 +50,15 @@ public class AuthoredJd
     /// </summary>
     public EnvelopeSource? EnvelopeSource { get; set; }
 
+    /// <summary>The envelope check's verdict on the author's additions, as the build reached it.</summary>
+    public Server.Core.Jd.EnvelopeVerdict? EnvelopeVerdict { get; set; }
+
+    /// <summary>Whether a copy of this JD is in the class's corpus.</summary>
+    public bool InCorpus { get; set; }
+
+    /// <summary>Why it is or is not in the corpus, for the author and for admins.</summary>
+    public string CorpusNote { get; set; } = "";
+
     public List<AuthoredJdResponsibility> KeyResponsibilities { get; set; } = [];
     public List<AuthoredJdListItem> Items { get; set; } = [];
     public List<ComplianceEdit> ComplianceEdits { get; set; } = [];

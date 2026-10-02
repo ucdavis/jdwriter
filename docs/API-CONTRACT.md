@@ -141,7 +141,8 @@ could not express any of that.
   addedItems: string[];   // every user-added item across all sections — this is what the
                           // envelope check polices, and an empty list skips the call entirely
   notes: string;
-  authoredJdId?: number | null }  // from a previous assemble in this session: revise that saved JD
+  authoredJdId?: number | null;   // from a previous assemble in this session: revise that saved JD
+  envelopeVerdict?: "in_envelope" | "borderline" | "out_of_envelope" | null }  // from the check step
 // response
 { jd: { jobSummary: string;
         keyResponsibilities: Array<{ functionName: string; pctTime: number; duties: string[] }>;
@@ -155,7 +156,9 @@ could not express any of that.
   unallocatedPct: number;   // 0 when the kept set already sums to 100
   canPublish: boolean;      // exactly unallocatedPct === 0
   status: "draft" | "ready";
-  authoredJdId: number }    // every assembly is saved; this is the record
+  authoredJdId: number;     // every assembly is saved; this is the record
+  inCorpus: boolean;        // a copy joined the class's corpus at this final stage
+  corpusNote: string }      // why it did or did not
 ```
 
 **`pctTime` is carried through verbatim from the envelope, NOT rescaled**, and the endpoint refuses
@@ -177,6 +180,15 @@ notes, and how the envelope had been produced — the material for feeding JDs b
 `status` is derived from the allocation at save time and nowhere else: a JD whose time is not
 exactly 100% is saved, but only ever as `draft`. Sending back `authoredJdId` revises the caller's
 own saved JD in place; anyone else's id is ignored and a new record is created.
+
+**Corpus contribution, at this final stage.** A copy of the finished JD joins its class's corpus
+only when it is Ready, differs from the envelope in any way (added item, dropped or reworded
+responsibility or duty, moved %, dropped qualification), and the envelope check did not return
+`out_of_envelope` — the goodness-of-fit gate. A revision re-decides and replaces or withdraws the
+copy. It counts the next time the class is rebuilt.
+
+### `DELETE /api/jds/{id}` — Author
+Your own saved JD (an admin may delete any); `404` otherwise. Its corpus copy is deleted too.
 
 ### `GET /api/jds` — Author
 `{ jds: Array<{ id; slug; title; workingTitle; department; ucJobCode; status; unallocatedPct;
@@ -253,14 +265,18 @@ because HRTMS exports carry position numbers and reporting lines. Identical byte
 (`duplicate`). Superseded job codes are remapped to the live class, as the corpus loader does.
 
 ### `GET /api/admin/uploads/pending` — Admin
-`{ classes: Array<{ code; title; existingSlug: string | null; newFiles: number; corpusJds: number }> }`
-— classes with uploads waiting. `existingSlug` set means ingesting refreshes that class.
+`{ classes: Array<{ code; title; existingSlug: string | null; newFiles: number; newAuthored: number;
+newClassified: number; corpusJds: number; hasManualEnvelope: boolean }> }` — classes with new
+evidence waiting: pending uploads, and JDs added from the app since the class was last rebuilt.
+`existingSlug` set means ingesting refreshes that class.
 
 ### `POST /api/admin/uploads/ingest` — Admin
 `{ code }  →  { slug, title, ucJobCode, corpusSize, envelopeSource }`. Adds the class's uploads to
 the corpus and rebuilds its envelope from **all** of its JDs. A newer export of a position replaces
 the old one (matched by UCPath position number, else file name). The class profile is updated in
-place — saved JDs reference it — and a hand-edited envelope is kept. JDs are written before the model
+place — saved JDs reference it. **The envelope is always rebuilt, including a hand-edited one**
+(a product decision: edits are superseded as JDs written against them flow back into the corpus);
+`hasManualEnvelope` lets the UI warn first. JDs are written before the model
 work, so a failed ingest leaves the corpus right and the uploads pending for a retry.
 
 ### `GET /api/admin/ingest/pending` — Admin

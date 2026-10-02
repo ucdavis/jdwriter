@@ -10,6 +10,9 @@ const pendingClass = (over: Partial<UploadedClass>): UploadedClass => ({
   code: '004724',
   corpusJds: 0,
   existingSlug: null,
+  hasManualEnvelope: false,
+  newAuthored: 0,
+  newClassified: 0,
   newFiles: 2,
   title: 'Farm Laborer',
   ...over,
@@ -73,12 +76,37 @@ describe('upload JDs', () => {
     renderRoute({ initialPath: '/backend' });
 
     // Wait for the upload list itself — the folder panel also says "new class".
-    await screen.findByText(/3 new · refreshes a class with 154 JDs/);
-    expect(screen.getByText(/2 new · new class/)).toBeInTheDocument();
+    await screen.findByText(/3 uploaded · refreshes a class with 154 JDs/);
+    expect(screen.getByText(/2 uploaded · new class/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Ingest 2' }));
 
     await waitFor(() => expect(ingested).toEqual(['004724', '009605']));
+  });
+
+  it('lists classes with JDs added in the app, and warns before replacing a hand-edited envelope', async () => {
+    testServer.use(
+      http.get('/api/admin/uploads/pending', () =>
+        HttpResponse.json({
+          classes: [
+            pendingClass({
+              code: '009605',
+              corpusJds: 154,
+              existingSlug: '009605-lab-ast-1',
+              hasManualEnvelope: true,
+              newAuthored: 2,
+              newClassified: 1,
+              newFiles: 0,
+              title: 'Lab Ast 1',
+            }),
+          ],
+        })
+      )
+    );
+    renderRoute({ initialPath: '/backend' });
+
+    await screen.findByText(/2 written in the app · 1 from Classify · refreshes a class with 154 JDs/);
+    expect(screen.getByText(/edited by hand — rebuilding replaces those edits/)).toBeInTheDocument();
   });
 
   it('hides the folder panel on a server with no export folder', async () => {

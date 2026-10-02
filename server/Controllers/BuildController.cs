@@ -39,6 +39,12 @@ public sealed class BuildRequest
     /// </summary>
     public int? AuthoredJdId { get; set; }
 
+    /// <summary>
+    /// The envelope check's verdict from the check step this assembly followed. Decides, with the
+    /// allocation and whether anything changed, whether the JD joins the class's corpus.
+    /// </summary>
+    public EnvelopeVerdict? EnvelopeVerdict { get; set; }
+
     public BuildInputs ToInputs() => new()
     {
         WorkingTitle = WorkingTitle,
@@ -142,6 +148,12 @@ public class BuildController : ApiControllerBase
         // decide where the unallocated time should go.
         assembled.AuthoredJdId = await _saved.SaveAsync(
             assembled, inputs, profile, await User.IdAsync(_db, ct), body.AuthoredJdId, ct);
+
+        // An unchanged build never reached the model check, and the server skips it outright, so it
+        // counts as in-envelope.
+        var verdict = body.EnvelopeVerdict
+                      ?? (inputs.AddedItems.Count == 0 ? Server.Core.Jd.EnvelopeVerdict.InEnvelope : null);
+        await _saved.SyncCorpusAsync(assembled.AuthoredJdId.Value, assembled, inputs, profile, verdict, ct);
         return Ok(assembled);
     }
 }

@@ -147,6 +147,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<JobDescription>(e =>
         {
             e.Property(x => x.SourceFile).HasMaxLength(PathLen);
+            e.HasIndex(x => new { x.UcJobCode, x.AddedAt });
+            // Deleting a saved JD removes its corpus copy: the author no longer stands behind it.
+            e.HasOne(x => x.AuthoredJd).WithMany()
+                .HasForeignKey(x => x.AuthoredJdId).OnDelete(DeleteBehavior.Cascade);
             e.Property(x => x.UcJobCode).HasMaxLength(CodeLen);
             e.Property(x => x.OriginalUcJobCode).HasMaxLength(CodeLen);
             e.Property(x => x.UcJobTitle).HasMaxLength(TitleLen);

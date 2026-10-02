@@ -78,6 +78,19 @@ public class JobDescription
     /// <summary>Drivers-licence requirement, a scalar on the qualifications block.</summary>
     public bool? DriversLicenseRequired { get; set; }
 
+    /// <summary>Where this JD came from. Everything loaded or uploaded from HRTMS is Export.</summary>
+    public CorpusOrigin Origin { get; set; }
+
+    /// <summary>For an Authored JD: the saved JD it copies. Deleting that JD deletes this.</summary>
+    public int? AuthoredJdId { get; set; }
+    public AuthoredJd? AuthoredJd { get; set; }
+
+    /// <summary>
+    /// When it joined the corpus through the app; null for the initial CLI load. Compared with the
+    /// class's last ingest to find classes with new evidence waiting.
+    /// </summary>
+    public DateTimeOffset? AddedAt { get; set; }
+
     public List<JdResponsibility> Responsibilities { get; set; } = [];
     public List<JdQualificationItem> Qualifications { get; set; } = [];
     public List<JdPemEntry> PemEntries { get; set; } = [];
@@ -202,4 +215,16 @@ public enum CorpusUploadStatus
 
     /// <summary>Not a usable HRTMS export; see <see cref="CorpusUpload.Error"/>.</summary>
     Failed,
+}
+
+public enum CorpusOrigin
+{
+    /// <summary>An HRTMS export — loaded by the CLI or uploaded by an admin.</summary>
+    Export,
+
+    /// <summary>A JD written in this app that changed its envelope and passed the envelope check.</summary>
+    Authored,
+
+    /// <summary>A description submitted on the Classify page, filed under a class.</summary>
+    Classify,
 }

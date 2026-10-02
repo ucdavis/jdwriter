@@ -141,9 +141,10 @@ public sealed partial class IngestPipeline
     /// <summary>
     /// Ingest one class from its parsed records.
     ///
-    /// A partner-edited envelope is PRESERVED: if the stored profile was marked manual, the human's
-    /// wording survives re-ingest and only the statistics are refreshed. Overwriting it would
-    /// silently discard curation work.
+    /// The envelope is always rebuilt from the corpus — including one an admin edited by hand. That
+    /// is a deliberate product decision (2026-10-02): edits are not lost so much as superseded, because
+    /// the JDs written against an edited envelope flow back into the corpus, and the envelope and the
+    /// corpus converge over time. The admin screens warn before a hand-edited envelope is rebuilt.
     /// </summary>
     /// <param name="slug">
     /// The class to write to. Defaults to one derived from the first record; pass an existing
@@ -157,10 +158,7 @@ public sealed partial class IngestPipeline
         slug ??= SlugForClass(records[0].UcJobCode, records[0].UcJobTitle);
         var profile = ProfileAggregator.Aggregate(records, slug);
 
-        var existing = await _db.ClassProfiles
-            .Include(p => p.Envelope!).ThenInclude(e => e.KeyResponsibilities).ThenInclude(r => r.Duties)
-            .Include(p => p.Envelope!).ThenInclude(e => e.Items)
-            .AsSplitQuery()
+        var existing = await _db.ClassProfiles.AsNoTracking()
             .FirstOrDefaultAsync(p => p.Slug == slug, ct);
 
         if (_llm.HasApiKey)
@@ -178,16 +176,8 @@ public sealed partial class IngestPipeline
                         new ProfileDroppedItem { Kind = DroppedItemKind.Qualification, Ordinal = i, Text = t }),
                 ];
 
-                if (existing?.EnvelopeSource == Domain.EnvelopeSource.Manual && existing.Envelope is not null)
-                {
-                    profile.Envelope = Detach(existing.Envelope);
-                    profile.EnvelopeSource = Domain.EnvelopeSource.Manual;
-                }
-                else
-                {
-                    profile.Envelope = await _envelopes.SynthesizeAsync(profile, ct);
-                    profile.EnvelopeSource = Domain.EnvelopeSource.Claude;
-                }
+                profile.Envelope = await _envelopes.SynthesizeAsync(profile, ct);
+                profile.EnvelopeSource = Domain.EnvelopeSource.Claude;
             }
             catch (Exception ex)
             {
@@ -207,6 +197,7 @@ public sealed partial class IngestPipeline
 
         // Backwards coverage needs the consolidated groups set above, so it runs last.
         profile.Coverage = CoverageCalculator.ComputeCoverage(profile, records);
+        profile.LastIngestedAt = DateTimeOffset.UtcNow;
 
         if (existing is null)
         {
@@ -215,8 +206,7 @@ public sealed partial class IngestPipeline
             return profile;
         }
 
-        await ReplaceContentsAsync(existing.Id, profile, ct);
-        return existing;
+        return await ReplaceContentsAsync(existing.Id, profile, ct);
     }
 
     /// <summary>Scan and ingest a single class by code.</summary>
@@ -224,7 +214,20 @@ public sealed partial class IngestPipeline
         string corpusDir, string code, CancellationToken ct = default)
     {
         var corpus = await ScanCorpusAsync(corpusDir, ct);
-        if (!corpus.TryGetValue(code, out var recs) || recs.Count == 0)
+        corpus.TryGetValue(code, out var recs);
+        recs ??= [];
+
+        // The export folder holds only HRTMS exports. JDs the app added — authored and classified —
+        // live in the database, and count toward the class the same way.
+        var added = await _db.JobDescriptions.AsNoTracking()
+            .Where(j => j.UcJobCode == code && j.Origin != CorpusOrigin.Export)
+            .Include(j => j.Responsibilities).ThenInclude(r => r.Duties)
+            .Include(j => j.Qualifications)
+            .AsSplitQuery()
+            .ToListAsync(ct);
+        recs.AddRange(added.Select(j => j.ToHrtmsRecord()));
+
+        if (recs.Count == 0)
         {
             throw new InvalidOperationException($"No JDs found for code {code}");
         }
@@ -267,7 +270,7 @@ public sealed partial class IngestPipeline
     /// insertion are separate saves inside one transaction, so the one-to-one envelope and
     /// coverage rows never collide on their unique profile key.
     /// </summary>
-    private async Task ReplaceContentsAsync(int profileId, ClassProfile fresh, CancellationToken ct)
+    private async Task<ClassProfile> ReplaceContentsAsync(int profileId, ClassProfile fresh, CancellationToken ct)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
 
@@ -314,6 +317,7 @@ public sealed partial class IngestPipeline
         p.RepresentativeSummary = fresh.RepresentativeSummary;
         p.EnvelopeSource = fresh.EnvelopeSource;
         p.GeneratedNote = fresh.GeneratedNote;
+        p.LastIngestedAt = fresh.LastIngestedAt;
         p.Envelope = fresh.Envelope;
         p.Coverage = fresh.Coverage;
         p.Distributions = fresh.Distributions;
@@ -326,34 +330,6 @@ public sealed partial class IngestPipeline
         await _db.SaveChangesAsync(ct);
 
         await tx.CommitAsync(ct);
-    }
-
-    private static JobEnvelope Detach(JobEnvelope e)
-    {
-        var copy = new JobEnvelope { Summary = e.Summary, ScopeStatement = e.ScopeStatement };
-
-        foreach (var r in e.KeyResponsibilities.OrderBy(x => x.Ordinal))
-        {
-            var resp = new EnvelopeResponsibility
-            {
-                Ordinal = r.Ordinal,
-                FunctionName = r.FunctionName,
-                PctTime = r.PctTime,
-            };
-
-            foreach (var d in r.Duties.OrderBy(x => x.Ordinal))
-            {
-                resp.Duties.Add(new EnvelopeDuty { Ordinal = d.Ordinal, Text = d.Text });
-            }
-
-            copy.KeyResponsibilities.Add(resp);
-        }
-
-        foreach (var item in e.Items.OrderBy(x => x.Kind).ThenBy(x => x.Ordinal))
-        {
-            copy.Items.Add(new EnvelopeListItem { Kind = item.Kind, Ordinal = item.Ordinal, Text = item.Text });
-        }
-
-        return copy;
+        return p;
     }
 }
