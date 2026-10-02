@@ -62,6 +62,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AdminGrant> AdminGrants => Set<AdminGrant>();
     public DbSet<AppSecret> AppSecrets => Set<AppSecret>();
     public DbSet<CorpusUpload> CorpusUploads => Set<CorpusUpload>();
+    public DbSet<StandardsWorkbook> StandardsWorkbooks => Set<StandardsWorkbook>();
 
     // Index-bearing string columns need an explicit length: SQL Server caps a key at 900 bytes,
     // and nvarchar(max) cannot be indexed at all. Free text is deliberately left unbounded.
@@ -349,6 +350,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(x => x.NameIdentifier).IsUnique();
             e.Property(x => x.LoginId).HasMaxLength(64);
             e.HasIndex(x => x.LoginId);
+        });
+
+        b.Entity<StandardsWorkbook>(e =>
+        {
+            e.Property(x => x.FileName).HasMaxLength(TitleLen);
+            e.Property(x => x.Sha256).HasMaxLength(64);
+            e.HasIndex(x => x.Sha256).IsUnique();
+            e.HasOne(x => x.UploadedBy).WithMany()
+                .HasForeignKey(x => x.UploadedByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<CorpusUpload>(e =>

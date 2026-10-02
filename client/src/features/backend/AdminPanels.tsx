@@ -5,6 +5,7 @@ import {
   useBootstrapClass,
   useIngestClass,
   useIngestUploaded,
+  useUploadStandards,
   useUploadedPending,
   useUploadExports,
   useIngestScan,
@@ -304,7 +305,10 @@ export const UploadPanel = () => {
 
 export const StandardsPanel = () => {
   const ingest = useIngestStandards();
+  const upload = useUploadStandards();
   const result = ingest.data;
+  const uploaded = upload.data;
+  const failed = uploaded?.files.filter((f) => f.result === 'failed') ?? [];
 
   return (
     <Card className="mb-5 p-5">
@@ -312,20 +316,73 @@ export const StandardsPanel = () => {
         <div>
           <Eyebrow>Official job standards</Eyebrow>
           <p className="mt-1 text-[13px] text-base-content/65">
-            Parse UC job-standard workbooks. They augment envelopes with authoritative
-            KSAs, education, certifications and scope — the corpus still drives the % time
-            responsibilities, which is the actual-JD advantage.
+            Upload UC job-standard workbooks (Job Builder .xlsx exports). They augment envelopes
+            with authoritative KSAs, education, certifications and scope — the corpus still
+            drives the % time responsibilities, which is the actual-JD advantage. Uploads add
+            to the existing standards; a standard with the same title is replaced.
           </p>
         </div>
-        <button
-          className="btn btn-primary btn-sm whitespace-nowrap"
-          disabled={ingest.isPending}
-          onClick={() => ingest.mutate()}
-          type="button"
-        >
-          {ingest.isPending ? 'Parsing…' : 'Ingest standards'}
-        </button>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <label className="btn btn-primary btn-sm whitespace-nowrap">
+            {upload.isPending ? 'Uploading…' : 'Upload workbooks'}
+            <input
+              accept=".xlsx"
+              aria-label="Upload job standards workbooks"
+              className="hidden"
+              disabled={upload.isPending}
+              multiple
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  upload.mutate([...e.target.files]);
+                }
+                e.target.value = '';
+              }}
+              type="file"
+            />
+          </label>
+          <button
+            className="btn btn-ghost btn-xs whitespace-nowrap"
+            disabled={ingest.isPending}
+            onClick={() => ingest.mutate()}
+            title="Rebuild every standard from the workbook folder configured on the server"
+            type="button"
+          >
+            {ingest.isPending ? 'Parsing…' : 'Rebuild from server folder'}
+          </button>
+        </div>
       </div>
+      {upload.error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(upload.error)}</Note>
+        </div>
+      ) : null}
+      {uploaded ? (
+        <div className="mt-3 flex flex-col gap-2" data-testid="standards-upload-summary">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="green">{uploaded.added} added</Badge>
+            <Badge tone="accent">{uploaded.updated} updated</Badge>
+            <Badge tone="muted">{uploaded.total} standards in total</Badge>
+            <Badge tone={uploaded.linkedCount ? 'teal' : 'yellow'}>
+              {uploaded.linkedCount} of {uploaded.totalClasses} classes linked
+            </Badge>
+          </div>
+          {failed.length > 0 ? (
+            <ul className="list-disc pl-5 text-[12px] text-error">
+              {failed.map((f) => (
+                <li key={f.fileName}>
+                  {f.fileName}: {f.error}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {uploaded.files.some((f) => f.result === 'duplicate') ? (
+            <span className="text-[12px] text-base-content/50">
+              {uploaded.files.filter((f) => f.result === 'duplicate').length} workbook(s) had
+              already been uploaded.
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {ingest.error ? (
         <div className="mt-3">
           <Note tone="red">{messageOf(ingest.error)}</Note>

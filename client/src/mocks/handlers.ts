@@ -1,6 +1,7 @@
 import profilesFixture from './profiles.json' with { type: 'json' };
 import { delay, http, HttpResponse } from 'msw';
 import type {
+  StandardsUploadResponse,
   SecurityStatus,
   UploadedPendingResponse,
   UploadResponse,
@@ -521,6 +522,19 @@ export const handlers = [
   http.post('/api/admin/ingest/class', async () => {
     await delay(1200);
     return HttpResponse.json({ ok: true });
+  }),
+
+  http.post('/api/admin/standards/upload', async () => {
+    await delay(700);
+    return HttpResponse.json<StandardsUploadResponse>({
+      added: 3,
+      files: [{ error: null, fileName: 'Job Standard_SideBySide.xlsx', result: 'added', standards: 3 }],
+      linkedCount: 19,
+      total: 217,
+      totalClasses: 65,
+      uncodedSample: [],
+      updated: 0,
+    });
   }),
 
   http.post('/api/admin/standards/ingest', async () => {

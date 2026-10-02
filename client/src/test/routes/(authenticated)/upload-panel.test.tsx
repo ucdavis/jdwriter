@@ -120,4 +120,35 @@ describe('upload JDs', () => {
       expect(screen.queryByText('New JDs from the corpus folder')).not.toBeInTheDocument()
     );
   });
+
+  it('uploads standards workbooks and reports what merged', async () => {
+    const user = userEvent.setup();
+    testServer.use(
+      http.post('/api/admin/standards/upload', () =>
+        HttpResponse.json({
+          added: 2,
+          files: [
+            { error: null, fileName: 'a.xlsx', result: 'added', standards: 3 },
+            { error: 'Not a Job Builder export — expected an .xlsx workbook.', fileName: 'b.txt', result: 'failed', standards: 0 },
+          ],
+          linkedCount: 19,
+          total: 216,
+          totalClasses: 65,
+          uncodedSample: [],
+          updated: 1,
+        })
+      )
+    );
+    renderRoute({ initialPath: '/backend' });
+
+    await user.upload(await screen.findByLabelText('Upload job standards workbooks'), [
+      new File(['x'], 'a.xlsx'),
+    ]);
+
+    const summary = await screen.findByTestId('standards-upload-summary');
+    expect(summary).toHaveTextContent('2 added');
+    expect(summary).toHaveTextContent('1 updated');
+    expect(summary).toHaveTextContent('216 standards in total');
+    expect(screen.getByText(/b\.txt: Not a Job Builder export/)).toBeInTheDocument();
+  });
 });

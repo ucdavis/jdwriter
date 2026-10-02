@@ -421,6 +421,24 @@ export type UploadOutcome = {
 
 export type UploadResponse = { files: UploadOutcome[] };
 
+export type StandardsUploadResponse = {
+  /** New to the store. */
+  added: number;
+  files: Array<{
+    error: string | null;
+    fileName: string;
+    result: 'added' | 'duplicate' | 'failed';
+    standards: number;
+  }>;
+  linkedCount: number;
+  /** Standards in the store after the merge. */
+  total: number;
+  totalClasses: number;
+  uncodedSample: string[];
+  /** Replaced a standard with the same exact title. */
+  updated: number;
+};
+
 export type UploadedClass = {
   code: string;
   corpusJds: number;

@@ -246,6 +246,43 @@ public class AdminController : ApiControllerBase
     }
 
     /// <summary>
+    /// Upload Job Builder standards workbooks and merge them into the store: each standard is added
+    /// or replaces the one with the same exact title; nothing else is touched.
+    /// </summary>
+    [HttpPost("standards/upload")]
+    [RequestSizeLimit(MaxUploadBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxUploadBytes, ValueCountLimit = 10_000)]
+    public async Task<IActionResult> UploadStandards([FromForm] List<IFormFile> files, CancellationToken ct)
+    {
+        if (files.Count == 0)
+        {
+            return BadRequest(new { message = "Choose one or more Job Builder standards workbooks (.xlsx) to upload." });
+        }
+
+        var read = new List<(string Name, byte[] Bytes)>(files.Count);
+        foreach (var file in files)
+        {
+            using var buffer = new MemoryStream();
+            await file.CopyToAsync(buffer, ct);
+            read.Add((file.FileName, buffer.ToArray()));
+        }
+
+        var report = await _standardsImporter.MergeAsync(read, await User.IdAsync(_db, ct), ct);
+        var index = await _standards.GetIndexAsync(ct);
+        var classes = await _profiles.GetDescriptorsAsync(ct: ct);
+        return Ok(new
+        {
+            report.Files,
+            report.Added,
+            report.Updated,
+            report.Total,
+            UncodedSample = report.Uncoded.Take(8),
+            LinkedCount = classes.Count(c => index.ForTitle(c.Title) != null),
+            TotalClasses = classes.Count,
+        });
+    }
+
+    /// <summary>
     /// Rebuild the standards table from the Job Builder workbooks in <c>Standards:Directory</c>,
     /// then report how many ingested classes now link to a standard — so the analyst can see the
     /// match worked without reloading every page.
