@@ -350,6 +350,18 @@ precedence over `ANTHROPIC_API_KEY` from configuration (the template's standard 
 Environment secret applied as an App Service setting). If the Data Protection key ring is lost, the
 stored key reads as `storedKeyUnreadable` and the configured key is used until an admin re-enters it.
 
+### `GET /api/admin/analytics` — Admin
+```ts
+{ usage: { users; active7Days; active30Days; jdsSaved; ready; draft;
+           perWeek: Array<{ weekOf: "YYYY-MM-DD" /* Monday, UTC */; count }> /* last 12 weeks */ };
+  classes: { totalClasses;
+             mostAuthored: Array<{ slug; title; ucJobCode; count }>;        // top 10
+             neverUsed: Array<{ slug; title; ucJobCode; count /* corpus size */ }>;
+             envelopeMatch: Array<{ label; classes }>;                       // by share of JDs ≥90% covered
+             lowestMatch: Array<{ slug; title; wellCoveredPct; meanCoverage; jds }> } }   // bottom 10
+```
+Counts over stored rows; nothing is computed by a model.
+
 ### `GET /api/admin/settings/security` — Admin
 `{ databaseEncryptedAtRest: boolean | null }` — from SQL Server's `sys.databases.is_encrypted`;
 `null` when it cannot be determined. Shown on the Settings page so encryption at rest is verified,

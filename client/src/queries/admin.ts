@@ -1,6 +1,7 @@
 import { fetchJson } from '../lib/api.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  AnalyticsReport,
   StandardsUploadResponse,
   SecurityStatus,
   UploadedPendingResponse,
@@ -201,3 +202,8 @@ export const useUploadStandards = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classes'] }),
   });
 };
+
+export const analyticsQueryOptions = () => ({
+  queryFn: () => fetchJson<AnalyticsReport>('/api/admin/analytics'),
+  queryKey: ['admin', 'analytics'] as const,
+});
