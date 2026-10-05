@@ -32,6 +32,7 @@ const saved = (over: Partial<SavedJd> = {}): SavedJd => ({
   createdBy: 'Sample User',
   department: 'Plant Sciences',
   flsaStatus: 'Non-Exempt',
+  fromEnvelope: false,
   inCorpus: true,
   jd: {
     conditionsOfEmployment: [],
@@ -110,12 +111,10 @@ describe('saved JDs', () => {
   it('assembling saves the JD, and assembling again revises the same one', async () => {
     const user = userEvent.setup();
     const sent: Array<number | null | undefined> = [];
-    const verdicts: Array<string | null | undefined> = [];
     testServer.use(
       http.post('/api/build/assemble', async ({ request }) => {
         const body = (await request.json()) as BuildRequest;
         sent.push(body.authoredJdId);
-        verdicts.push(body.envelopeVerdict);
         return HttpResponse.json(saved({ authoredJdId: 42 }));
       })
     );
@@ -125,7 +124,6 @@ describe('saved JDs', () => {
     await user.click(await screen.findByRole('button', { name: /Assemble the JD/ }));
     expect(await screen.findByTestId('saved-status')).toHaveTextContent('Saved as Ready');
     expect(screen.getByTestId('corpus-note')).toHaveTextContent(/Added to this class’s corpus/);
-    expect(verdicts[0]).toBe('in_envelope');
 
     // Back to tailoring and assemble again: the second request names the saved record.
     await user.click(screen.getByRole('button', { name: /Back to tailoring/ }));
@@ -199,5 +197,20 @@ describe('saved JDs', () => {
     expect(screen.getByText('JD number 3')).toBeInTheDocument();
     expect(screen.getByText('JD number 2')).toBeInTheDocument();
     expect(screen.queryByText('JD number 1')).not.toBeInTheDocument();
+  });
+
+  it('says when a JD was assembled straight from the envelope', async () => {
+    const user = userEvent.setup();
+    testServer.use(
+      http.post('/api/build/assemble', () =>
+        HttpResponse.json(saved({ authoredJdId: 9, fromEnvelope: true, inCorpus: false }))
+      )
+    );
+    renderRoute({ initialPath: '/class/009605-lab-ast-1' });
+
+    await user.click(await screen.findByRole('button', { name: /Review & continue/ }));
+    await user.click(await screen.findByRole('button', { name: /Assemble the JD/ }));
+
+    expect(await screen.findByTestId('from-envelope')).toHaveTextContent(/no AI review was needed/);
   });
 });

@@ -28,6 +28,13 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
         </Note>
       )}
 
+      {result.fromEnvelope ? (
+        <p className="text-[12.5px] text-base-content/65" data-testid="from-envelope">
+          Assembled straight from the class envelope — nothing was changed, so no AI review was
+          needed.
+        </p>
+      ) : null}
+
       {result.authoredJdId && result.corpusNote ? (
         result.inCorpus ? (
           <Note tone="green">

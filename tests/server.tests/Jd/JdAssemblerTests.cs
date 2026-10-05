@@ -173,6 +173,84 @@ public class JdAssemblerTests
         RemoveDuplicates = [],
     };
 
+    // ------------------------------------------------------------------ no changes, no model
+
+    /// <summary>Exactly what the test envelope offers — nothing added, dropped, moved or noted.</summary>
+    private static BuildInputs Unchanged()
+    {
+        var e = EnvelopeWire.From(JdTestData.Profile().Envelope!);
+        return new BuildInputs
+        {
+            WorkingTitle = "Evaluation Analyst",
+            Department = "Office of Evaluation",
+            KeptResponsibilities = [.. e.KeyResponsibilities],
+            KeptCerts = e.RequiredCertifications,
+            KeptEducation = e.Education,
+            KeptWorkExperience = e.WorkExperience,
+            KeptMinKSA = e.MinQualifications,
+            KeptPrefKSA = e.PrefQualifications,
+            KeptWorkEnvironment = e.WorkEnvironment,
+        };
+    }
+
+    [Fact]
+    public async Task An_unchanged_build_is_assembled_from_the_envelope_with_no_model_call()
+    {
+        var (assembler, llm) = Build(CleanGeneration());
+
+        var result = await assembler.AssembleAsync(JdTestData.Profile(), Unchanged(), JdTestData.Rules());
+
+        llm.Requests.Should().BeEmpty("nothing changed, so there is nothing to generate or review");
+        result.FromEnvelope.Should().BeTrue();
+        result.Jd.JobSummary.Should().Be(JdTestData.Profile().Envelope!.Summary);
+        result.Jd.KeyResponsibilities.Select(r => (r.FunctionName, r.PctTime))
+            .Should().Equal(("DATA ANALYSIS", 60), ("REPORTING", 40));
+        result.Jd.ConditionsOfEmployment.Should().Equal("Background check required.");
+        result.CanPublish.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task The_deterministic_compliance_rules_still_apply_to_an_unchanged_build()
+    {
+        // Rules are HR policy, applied to every JD; only the MODEL review is skipped.
+        var profile = JdTestData.Profile();
+        profile.Envelope!.KeyResponsibilities[0].Duties[0].Text = "Must be able to lift 25 pounds.";
+        var inputs = Unchanged();
+        inputs.KeptResponsibilities = [.. EnvelopeWire.From(profile.Envelope).KeyResponsibilities];
+        var rules = new List<ComplianceRule>
+        {
+            new() { Pattern = "Must be able to", Replacement = "Is able to", Reason = "Ability, not requirement, phrasing." },
+        };
+        var (assembler, llm) = Build(CleanGeneration());
+
+        var result = await assembler.AssembleAsync(profile, inputs, rules);
+
+        llm.Requests.Should().BeEmpty();
+        result.ComplianceEdits.Should().ContainSingle(e => e.Source == ComplianceEditSource.Rule);
+    }
+
+    [Theory]
+    [InlineData("notes")]
+    [InlineData("dropped duty")]
+    [InlineData("added item")]
+    public async Task Any_change_or_note_takes_the_model_path(string change)
+    {
+        var inputs = Unchanged();
+        switch (change)
+        {
+            case "notes": inputs.Notes = "Emphasise survey design."; break;
+            case "dropped duty": inputs.KeptResponsibilities[0].Duties = ["Runs statistical analyses."]; break;
+            case "added item": inputs.AddedItems = ["Coordinates the annual evaluation symposium."]; break;
+        }
+
+        var (assembler, llm) = Build(CleanGeneration());
+
+        var result = await assembler.AssembleAsync(JdTestData.Profile(), inputs, JdTestData.Rules());
+
+        result.FromEnvelope.Should().BeFalse();
+        llm.Requests.Select(r => r.Label).Should().Contain("build.generateJd");
+    }
+
     // ------------------------------------------------------------------ percentages
 
     [Fact]
