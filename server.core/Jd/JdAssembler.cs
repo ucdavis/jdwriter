@@ -555,12 +555,32 @@ public sealed class JdAssembler : IJdAssembler
 
     // ---------------------------------------------------------------- orchestration
 
+    /// <summary>
+    /// True when the author kept the envelope exactly as offered and wrote no notes — nothing for
+    /// a model to tailor, review, or learn from.
+    /// </summary>
+    public static bool IsUnchanged(ClassProfile profile, BuildInputs inputs) =>
+        inputs.Notes.Trim().Length == 0 && !CorpusContribution.Differs(inputs, profile.Envelope);
+
     public async Task<AssembledJd> AssembleAsync(
         ClassProfile profile,
         BuildInputs inputs,
         IReadOnlyList<ComplianceRule> rules,
         CancellationToken ct = default)
     {
+        // Unchanged: the envelope IS the JD. Its text was already written and polished when the
+        // class was built, so there is nothing for generation or the model compliance review to
+        // do — assemble it directly, with the deterministic rule pass only. No model call, so it
+        // is instant, works with no provider configured, and costs nothing (product decision,
+        // 2026-10-05).
+        if (IsUnchanged(profile, inputs))
+        {
+            var fromEnvelope = ComplianceEngine.ApplyRulePass(FromEnvelope(profile, inputs), rules, _logger);
+            var assembled = Assembled(profile, inputs, fromEnvelope.Jd, fromEnvelope.Edits);
+            assembled.FromEnvelope = true;
+            return assembled;
+        }
+
         var draft = await GenerateAsync(profile, inputs, ct);
 
         // Deterministic rules first: cheap, auditable, reproducible, and they keep the model from
@@ -568,7 +588,32 @@ public sealed class JdAssembler : IJdAssembler
         var ruled = ComplianceEngine.ApplyRulePass(draft, rules, _logger);
         var reviewed = await LlmCompliancePassAsync(ruled.Jd, ct);
 
-        return new AssembledJd
+        return Assembled(profile, inputs, reviewed.Jd, [.. ruled.Edits, .. reviewed.Edits]);
+    }
+
+    /// <summary>The envelope, as kept, laid out as a JD — what generation would start from.</summary>
+    private static Jd FromEnvelope(ClassProfile p, BuildInputs inputs) => new()
+    {
+        JobSummary = p.Envelope?.Summary ?? "",
+        KeyResponsibilities =
+        [
+            .. inputs.KeptResponsibilities
+                .Select(r => r.Clone())
+                .OrderByDescending(r => r.PctTime),
+        ],
+        LicensesCertifications = [.. inputs.KeptCerts],
+        Education = [.. inputs.KeptEducation],
+        WorkExperience = [.. inputs.KeptWorkExperience],
+        MinKSA = [.. inputs.KeptMinKSA],
+        PrefKSA = [.. inputs.KeptPrefKSA],
+        ConditionsOfEmployment = EnvelopeItems(p, EnvelopeListKind.ConditionOfEmployment),
+        WorkEnvironment = [.. inputs.KeptWorkEnvironment],
+        PhysicalRequirements = EnvelopeItems(p, EnvelopeListKind.PhysicalRequirement),
+    };
+
+    private static AssembledJd Assembled(
+        ClassProfile profile, BuildInputs inputs, Jd jd, List<ComplianceEditRecord> edits) =>
+        new()
         {
             Slug = profile.Slug,
             Title = profile.Title,
@@ -578,9 +623,8 @@ public sealed class JdAssembler : IJdAssembler
             SalaryGrade = Consensus(profile, DistributionField.SalaryGrade),
             FlsaStatus = Consensus(profile, DistributionField.FlsaStatus),
             BargainingUnit = Consensus(profile, DistributionField.UnionCode),
-            Jd = reviewed.Jd,
-            UnallocatedPct = UnallocatedPct(reviewed.Jd.KeyResponsibilities),
-            ComplianceEdits = [.. ruled.Edits, .. reviewed.Edits],
+            Jd = jd,
+            UnallocatedPct = UnallocatedPct(jd.KeyResponsibilities),
+            ComplianceEdits = edits,
         };
-    }
 }

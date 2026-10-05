@@ -39,12 +39,6 @@ public sealed class BuildRequest
     /// </summary>
     public int? AuthoredJdId { get; set; }
 
-    /// <summary>
-    /// The envelope check's verdict from the check step this assembly followed. Decides, with the
-    /// allocation and whether anything changed, whether the JD joins the class's corpus.
-    /// </summary>
-    public EnvelopeVerdict? EnvelopeVerdict { get; set; }
-
     public BuildInputs ToInputs() => new()
     {
         WorkingTitle = WorkingTitle,
@@ -72,19 +66,22 @@ public class BuildController : ApiControllerBase
     private readonly AppDbContext _db;
     private readonly IStructuredLlm _llm;
     private readonly AuthoredJdStore _saved;
+    private readonly EnvelopeCheckCache _checks;
 
     public BuildController(
         IJdAssembler assembler,
         IClassProfileRepository profiles,
         AppDbContext db,
         IStructuredLlm llm,
-        AuthoredJdStore saved)
+        AuthoredJdStore saved,
+        EnvelopeCheckCache checks)
     {
         _assembler = assembler;
         _profiles = profiles;
         _db = db;
         _llm = llm;
         _saved = saved;
+        _checks = checks;
     }
 
     /// <summary>
@@ -120,7 +117,10 @@ public class BuildController : ApiControllerBase
         // Peer classes are supplied so an out-of-envelope verdict can route to a REAL neighbouring
         // class by index, rather than naming one the catalogue may not contain.
         var others = await _profiles.GetDescriptorsAsync(body.Slug, ct);
-        return Ok(await _assembler.CheckEnvelopeAsync(profile, body.ToInputs(), others, ct));
+        var inputs = body.ToInputs();
+        var check = await _assembler.CheckEnvelopeAsync(profile, inputs, others, ct);
+        _checks.Remember(profile.Slug, inputs, check.Verdict);
+        return Ok(check);
     }
 
     [HttpPost("assemble")]
@@ -132,15 +132,17 @@ public class BuildController : ApiControllerBase
             return NotFound(new { message = $"No class found for “{body.Slug}”." });
         }
 
-        if (!_llm.HasApiKey)
+        var inputs = body.ToInputs();
+
+        // An unchanged build needs no model at all, so only a changed one needs a provider.
+        if (!JdAssembler.IsUnchanged(profile, inputs) && !_llm.HasApiKey)
         {
-            return StatusCode(503, new { message = "Assembly is unavailable — no API key is configured." });
+            return StatusCode(503, new { message = "Assembly is unavailable — no AI provider is configured." });
         }
 
         // Rules live in the database so HR can change policy language without a deployment.
         var rules = await _db.ComplianceRules.AsNoTracking().ToListAsync(ct);
 
-        var inputs = body.ToInputs();
         var assembled = await _assembler.AssembleAsync(profile, inputs, rules, ct);
 
         // Every assembly is saved — as a Draft until the time totals exactly 100%. It is also
@@ -149,10 +151,20 @@ public class BuildController : ApiControllerBase
         assembled.AuthoredJdId = await _saved.SaveAsync(
             assembled, inputs, profile, await User.IdAsync(_db, ct), body.AuthoredJdId, ct);
 
-        // An unchanged build never reached the model check, and the server skips it outright, so it
-        // counts as in-envelope.
-        var verdict = body.EnvelopeVerdict
-                      ?? (inputs.AddedItems.Count == 0 ? Server.Core.Jd.EnvelopeVerdict.InEnvelope : null);
+        // The verdict is the server's own. Nothing added: nothing for the check to judge. Otherwise
+        // reuse the check step's verdict, or run the check if it is not to hand.
+        EnvelopeVerdict verdict;
+        if (!_assembler.HasAdditions(inputs))
+        {
+            verdict = Server.Core.Jd.EnvelopeVerdict.InEnvelope;
+        }
+        else
+        {
+            verdict = _checks.Recall(profile.Slug, inputs)
+                      ?? (await _assembler.CheckEnvelopeAsync(
+                          profile, inputs, await _profiles.GetDescriptorsAsync(profile.Slug, ct), ct)).Verdict;
+        }
+
         await _saved.SyncCorpusAsync(assembled.AuthoredJdId.Value, assembled, inputs, profile, verdict, ct);
         return Ok(assembled);
     }

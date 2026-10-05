@@ -283,8 +283,6 @@ export type BuildRequest = {
   /** The saved JD this build session already wrote; re-assembling updates it. */
   authoredJdId?: number | null;
   department: string;
-  /** The envelope check's verdict from the step this assembly followed. */
-  envelopeVerdict?: EnvelopeCheckResponse['verdict'] | null;
   keptCerts: string[];
   keptEducation: string[];
   keptMinKSA: string[];
@@ -327,6 +325,8 @@ export type AssembledJd = {
   corpusNote: string;
   department: string;
   flsaStatus: string | null;
+  /** Assembled straight from the envelope because nothing changed — no model call. */
+  fromEnvelope: boolean;
   /** Whether a copy went into the class's corpus at this final stage. */
   inCorpus: boolean;
   jd: {

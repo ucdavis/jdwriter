@@ -169,6 +169,12 @@ public sealed class AssembledJd
     /// <summary>The saved record this assembly was written to; send it back to update it.</summary>
     public int? AuthoredJdId { get; set; }
 
+    /// <summary>
+    /// Assembled straight from the envelope because nothing was changed — no model call. The JD is
+    /// the class standard, with the deterministic compliance rules applied.
+    /// </summary>
+    public bool FromEnvelope { get; set; }
+
     /// <summary>Whether a copy went into the class's corpus, and why or why not.</summary>
     public bool InCorpus { get; set; }
 

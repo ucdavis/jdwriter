@@ -147,8 +147,7 @@ could not express any of that.
   addedItems: string[];   // every user-added item across all sections — this is what the
                           // envelope check polices, and an empty list skips the call entirely
   notes: string;
-  authoredJdId?: number | null;   // from a previous assemble in this session: revise that saved JD
-  envelopeVerdict?: "in_envelope" | "borderline" | "out_of_envelope" | null }  // from the check step
+  authoredJdId?: number | null }  // from a previous assemble in this session: revise that saved JD
 // response
 { jd: { jobSummary: string;
         keyResponsibilities: Array<{ functionName: string; pctTime: number; duties: string[] }>;
@@ -163,6 +162,7 @@ could not express any of that.
   canPublish: boolean;      // exactly unallocatedPct === 0
   status: "draft" | "ready";
   authoredJdId: number;     // every assembly is saved; this is the record
+  fromEnvelope: boolean;    // nothing changed: assembled from the envelope, no model call
   inCorpus: boolean;        // a copy joined the class's corpus at this final stage
   corpusNote: string }      // why it did or did not
 ```
@@ -186,6 +186,14 @@ notes, and how the envelope had been produced — the material for feeding JDs b
 `status` is derived from the allocation at save time and nowhere else: a JD whose time is not
 exactly 100% is saved, but only ever as `draft`. Sending back `authoredJdId` revises the caller's
 own saved JD in place; anyone else's id is ignored and a new record is created.
+
+**No changes, no model.** When the author keeps the envelope exactly and writes no notes, the JD is
+assembled straight from the envelope with only the deterministic compliance rules — no generation,
+no model review, no provider needed — and it is not added to the corpus. Instant.
+
+**The envelope verdict is the server's.** No additions: nothing to judge. Otherwise the check step's
+verdict is reused (remembered server-side per class and additions) or, if it is not to hand, the
+check runs during assembly. The browser's view is never trusted for corpus inclusion.
 
 **Corpus contribution, at this final stage.** A copy of the finished JD joins its class's corpus
 only when it is Ready, differs from the envelope in any way (added item, dropped or reworded

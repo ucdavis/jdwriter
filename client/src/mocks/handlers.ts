@@ -448,6 +448,7 @@ export const handlers = [
       corpusNote: 'Added to this class’s corpus. It counts the next time the class is rebuilt.',
       department: body.department,
       flsaStatus: profile?.flsaStatus.consensus ?? null,
+      fromEnvelope: body.addedItems.length === 0,
       inCorpus: true,
       jd: {
         conditionsOfEmployment: envelope?.conditionsOfEmployment ?? [],

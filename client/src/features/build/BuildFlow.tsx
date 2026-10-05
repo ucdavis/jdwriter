@@ -82,11 +82,7 @@ export const BuildFlow = ({
     check.mutate(state.buildRequest(slug), { onSuccess: () => setStep('check') });
   const runAssemble = () =>
     assemble.mutate(
-      {
-        ...state.buildRequest(slug),
-        authoredJdId: savedId,
-        envelopeVerdict: check.data?.verdict ?? null,
-      },
+      { ...state.buildRequest(slug), authoredJdId: savedId },
       {
         onSuccess: (result) => {
           setSavedId(result.authoredJdId);
