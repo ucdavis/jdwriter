@@ -23,29 +23,40 @@ why: npm spawns scripts through `sh`, which inherits PATH from the terminal that
 
 To undo: delete those lines from `~/.zshrc` and `rm -rf ~/.dotnet`.
 
-## 2. SQL Server cannot run on Apple Silicon — use the arm64 override
+## 2. On Apple Silicon, emulate amd64 with Rosetta
 
-`mcr.microsoft.com/mssql/server:2022-latest`, pinned by both of the template's compose files, is
-amd64-only. Under QEMU on arm64 it does not run slowly, it fails to start:
+`mcr.microsoft.com/mssql/server:2022-latest` is amd64-only, so an Apple Silicon Mac runs it under
+emulation. **Which emulator matters.** Under QEMU it does not run slowly, it fails to start:
 
 ```
 /opt/mssql/bin/sqlservr: Invalid mapping of address 0x... in reserved address space
 ```
 
-Docker Desktop's Rosetta option papers over this; a plain aarch64 Linux VM (Colima, Lima, Rancher)
-has no such option. Use the additive override, which swaps in `azure-sql-edge`:
+Under Rosetta it is ready in seconds and runs the migrations and the full corpus load normally
+(verified 2026-10-06). Turn Rosetta on once:
+
+- **Docker Desktop:** Settings → General → *Use Rosetta for x86_64/amd64 emulation on Apple Silicon*.
+- **Colima:** `colima start --vm-type vz --vz-rosetta`, or set `vmType: vz` and `rosetta: true` in
+  `~/.colima/default/colima.yaml` and `colima restart`. (Restarting stops running containers;
+  `npm run db:up` brings the database back.)
+
+Check which emulator is active — this should print `rosetta`:
 
 ```bash
-npm run db:up:arm64      # NOT npm run db:up
-npm run db:down:arm64
+docker run --rm --platform linux/amd64 alpine sh -c 'grep -m1 -o rosetta /proc/self/maps || echo qemu'
 ```
 
-Two things that image imposes:
+Then use the same commands as everyone else:
 
-- **No `sqlcmd` inside it** — use an external client for ad-hoc queries.
-- **Its TCP port opens several seconds before it accepts logins**, so anything waiting on the socket
-  alone connects and then fails to authenticate. Wait for `ready for client connections` in
-  `docker logs jdwriter_devcontainer-sql-1`.
+```bash
+npm run db:up
+npm run db:down
+```
+
+**Fallback** where Rosetta is unavailable: `npm run db:up:arm64` overlays
+`.devcontainer/docker-compose.arm64.yml`, which swaps in `azure-sql-edge` (native arm64). Microsoft
+has retired that image, it has no `sqlcmd`, and its port opens several seconds before it accepts
+logins (wait for `ready for client connections` in `docker logs jdwriter_devcontainer-sql-1`).
 
 `port is already allocated` means another SQL container holds 14333; `docker ps --filter name=sql`
 shows which.
@@ -53,7 +64,7 @@ shows which.
 ## Start to finish
 
 ```bash
-npm run db:up:arm64                                         # database
+npm run db:up                                               # database (Rosetta on Apple Silicon)
 dotnet ef database update -p server.core -s server          # schema, first time only
 dotnet run --project tools/jdw-cli -- migrate-poc --write   # load the corpus, ~15s
 npm start                                                   # backend :5165 + client :5173

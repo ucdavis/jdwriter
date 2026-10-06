@@ -18,13 +18,18 @@ services:
 
   sql:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    # amd64-only. Apple Silicon runs it under emulation, which must be Rosetta — under
+    # QEMU it aborts at startup. See docs/RUNNING-LOCALLY.md.
+    platform: linux/amd64
     user: root
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "LocalDev123!"
       MSSQL_PID: "Developer" # can also use "Express" but Developer has more features
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "LocalDev123!", "-Q", "SELECT 1"]
+      # The image ships mssql-tools18 (ODBC 18 encrypts by default, hence -C to trust the
+      # self-signed certificate); the old /opt/mssql-tools path no longer exists.
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "LocalDev123!", "-Q", "SELECT 1"]
       interval: 6s
       timeout: 4s
       retries: 30
