@@ -16,6 +16,7 @@ import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import type { RouterContext } from '@/main.tsx';
+import type { LlmProvider } from '@/lib/contracts.ts';
 
 export const Route = createFileRoute('/(authenticated)/backend/settings')({
   component: SettingsPage,
@@ -129,12 +130,19 @@ function AdminsPanel() {
   );
 }
 
+const providerName: Record<LlmProvider, string> = {
+  anthropic: 'Anthropic (Claude)',
+  azureOpenAi: 'Azure OpenAI',
+  openAiCompatible: 'OpenAI-compatible server',
+};
+
 function ApiKeyPanel() {
   const { data: status } = useApiKeyStatus();
   const save = useSetApiKey();
   const clear = useClearApiKey();
   const [key, setKey] = useState('');
   const error = save.error ?? clear.error;
+  const provider = status ? providerName[status.provider] : 'the AI provider';
 
   const inUse =
     status?.source === 'app'
@@ -143,22 +151,36 @@ function ApiKeyPanel() {
         }${status.updatedAt ? ` on ${when(status.updatedAt)}` : ''}.`
       : status?.source === 'configuration'
         ? `Key from server configuration, ending …${status.lastFour}.`
-        : 'No key — intake, classification and building a JD are unavailable.';
+        : status?.keyRequired === false
+          ? 'No key — this server does not need one.'
+          : 'No key — intake, classification and tailoring a JD are unavailable.';
 
   return (
     <Card className="mt-5 p-5">
-      <Eyebrow>Anthropic API key</Eyebrow>
-      <p className="mt-1 text-[13px] text-base-content/65">
-        A key entered here is checked with Anthropic, stored encrypted, and used in place of
-        the one in server configuration until it is removed. It can&apos;t be viewed again —
-        only its last four characters are shown.
+      <Eyebrow>AI provider</Eyebrow>
+      <div className="mt-2 text-[13px]" data-testid="ai-provider">
+        <span className="font-semibold">{status ? provider : 'Loading…'}</span>
+        {status?.model ? <span className="text-base-content/65"> · {status.model}</span> : null}
+        {status?.endpoint ? (
+          <span className="text-base-content/50"> · {status.endpoint}</span>
+        ) : null}
+      </div>
+      <p className="mt-1 text-[12px] text-base-content/55">
+        Which provider receives JD text is set per environment in server configuration
+        (<code>Llm:Provider</code>), not here.
       </p>
 
-      <div className="mt-3 flex items-center gap-2 text-[13px]">
+      <div className="mt-4 flex items-center gap-2 text-[13px]">
         <Badge
-          tone={status?.source === 'none' ? 'red' : status?.source === 'app' ? 'green' : 'accent'}
+          tone={
+            status?.source === 'none' && status.keyRequired
+              ? 'red'
+              : status?.source === 'app'
+                ? 'green'
+                : 'accent'
+          }
         >
-          {status?.source === 'app' ? 'in app' : status?.source ?? '…'}
+          {status?.source === 'app' ? 'in app' : (status?.source ?? '…')}
         </Badge>
         <span data-testid="api-key-in-use">{status ? inUse : 'Loading…'}</span>
       </div>
@@ -172,51 +194,85 @@ function ApiKeyPanel() {
         </div>
       ) : null}
 
-      <form
-        className="mt-4 flex items-center gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          save.mutate(key, { onSuccess: () => setKey('') });
-        }}
-      >
-        <input
-          aria-label="New Anthropic API key"
-          autoComplete="off"
-          className="input input-sm input-bordered w-96"
-          onChange={(e) => setKey(e.target.value)}
-          placeholder="sk-ant-…"
-          type="password"
-          value={key}
-        />
-        <button
-          className="btn btn-primary btn-sm"
-          disabled={!key.trim() || save.isPending}
-          type="submit"
-        >
-          {save.isPending ? 'Checking…' : status?.source === 'app' ? 'Replace key' : 'Save key'}
-        </button>
-        {status?.source === 'app' ? (
-          <button
-            className="btn btn-ghost btn-sm text-error"
-            disabled={clear.isPending}
-            onClick={() => clear.mutate(undefined)}
-            type="button"
-          >
-            Remove
-          </button>
-        ) : null}
-      </form>
-      {status?.source === 'app' ? (
-        <p className="mt-2 text-[11.5px] text-base-content/50">
-          {status.configurationHasKey
-            ? 'Removing it switches back to the key in server configuration.'
-            : 'There is no key in server configuration, so removing this one turns model features off.'}
+      {status?.keyEntryAllowed === false ? (
+        <p className="mt-3 text-[12.5px] text-base-content/65" data-testid="key-vault-only">
+          Keys for this environment are managed in Azure Key Vault and can&apos;t be entered or
+          changed here.
         </p>
-      ) : null}
+      ) : (
+        <>
+          <p className="mt-3 text-[12.5px] text-base-content/65">
+            A key entered here is checked with {provider}, stored encrypted, and used in place
+            of the one in server configuration until it is removed. It can&apos;t be viewed again
+            — only its last four characters are shown. Every change is logged.
+          </p>
+          <form
+            className="mt-3 flex flex-wrap items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              save.mutate(key, { onSuccess: () => setKey('') });
+            }}
+          >
+            <input
+              aria-label="New API key"
+              autoComplete="off"
+              className="input input-sm input-bordered w-full max-w-96"
+              onChange={(e) => setKey(e.target.value)}
+              placeholder={status?.provider === 'anthropic' ? 'sk-ant-…' : 'API key'}
+              type="password"
+              value={key}
+            />
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={!key.trim() || save.isPending}
+              type="submit"
+            >
+              {save.isPending
+                ? 'Checking…'
+                : status?.source === 'app'
+                  ? 'Replace key'
+                  : 'Save key'}
+            </button>
+            {status?.source === 'app' ? (
+              <button
+                className="btn btn-ghost btn-sm text-error"
+                disabled={clear.isPending}
+                onClick={() => clear.mutate(undefined)}
+                type="button"
+              >
+                Remove
+              </button>
+            ) : null}
+          </form>
+          {status?.source === 'app' ? (
+            <p className="mt-2 text-[11.5px] text-base-content/50">
+              {status.configurationHasKey
+                ? 'Removing it switches back to the key in server configuration.'
+                : 'There is no key in server configuration, so removing this one turns model features off.'}
+            </p>
+          ) : null}
+        </>
+      )}
 
       {error ? (
         <div className="mt-3">
           <Note tone="red">{messageOf(error)}</Note>
+        </div>
+      ) : null}
+
+      {status && status.audit.length > 0 ? (
+        <div className="mt-4">
+          <div className="text-[11.5px] font-semibold uppercase tracking-wide text-base-content/50">
+            Key changes
+          </div>
+          <ul className="mt-1 space-y-0.5 text-[12.5px]" data-testid="key-audit">
+            {status.audit.map((a) => (
+              <li key={`${a.at}-${a.action}`}>
+                {a.action === 'set' ? `Set key ending …${a.lastFour}` : 'Removed the key'} —{' '}
+                {a.by ?? 'unknown'}, {when(a.at)}
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
     </Card>

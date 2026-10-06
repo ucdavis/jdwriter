@@ -17,7 +17,71 @@
       "appServiceName": "ANTHROPIC_API_KEY",
       "classification": "secret",
       "valueType": "string",
-      "description": "Anthropic API key for intake, classification and assembly. An admin can also enter or rotate a key in the app's Settings page; that one, stored encrypted, takes precedence while it is set."
+      "description": "Anthropic API key, used when LLM_PROVIDER is anthropic (the default). Store a Key Vault reference here (@Microsoft.KeyVault(SecretUri=...)) rather than the key itself; App Service resolves it. Where LLM_ALLOW_KEY_ENTRY_IN_APP is true, an admin may also enter a key in Settings, which is stored encrypted, audited, and takes precedence while set."
+    },
+    {
+      "githubName": "LLM_PROVIDER",
+      "appServiceName": "Llm__Provider",
+      "classification": "variable",
+      "valueType": "string",
+      "requiredWhen": "never",
+      "description": "Which AI provider receives JD text: anthropic (default), azure-openai, or openai-compatible. An institutional choice made per environment; the app only reports it."
+    },
+    {
+      "githubName": "LLM_MODEL",
+      "appServiceName": "Llm__Model",
+      "classification": "variable",
+      "valueType": "string",
+      "requiredWhen": "never",
+      "description": "Model id (anthropic, openai-compatible) or Azure OpenAI deployment name. Optional for anthropic, which defaults to the model the prompts were tuned on."
+    },
+    {
+      "githubName": "LLM_ENDPOINT",
+      "appServiceName": "Llm__Endpoint",
+      "classification": "variable",
+      "valueType": "string",
+      "requiredWhen": "never",
+      "description": "Azure OpenAI resource endpoint (https://NAME.openai.azure.com) or an OpenAI-compatible base URL ending in /v1. Unused for anthropic."
+    },
+    {
+      "githubName": "LLM_API_VERSION",
+      "appServiceName": "Llm__ApiVersion",
+      "classification": "variable",
+      "valueType": "string",
+      "requiredWhen": "never",
+      "description": "Azure OpenAI REST API version. Defaults to 2024-10-21."
+    },
+    {
+      "githubName": "LLM_SEND_REASONING_EFFORT",
+      "appServiceName": "Llm__SendReasoningEffort",
+      "classification": "variable",
+      "valueType": "bool",
+      "requiredWhen": "never",
+      "description": "true only for reasoning-model deployments (o-series, GPT-5), which accept reasoning_effort; other models reject it."
+    },
+    {
+      "githubName": "LLM_ALLOW_KEY_ENTRY_IN_APP",
+      "appServiceName": "Llm__AllowKeyEntryInApp",
+      "classification": "variable",
+      "valueType": "bool",
+      "requiredWhen": "never",
+      "description": "false to manage provider keys in Key Vault only: Settings then shows the key's source but accepts no key. Defaults to true."
+    },
+    {
+      "githubName": "AZURE_OPENAI_API_KEY",
+      "appServiceName": "AZURE_OPENAI_API_KEY",
+      "classification": "secret",
+      "valueType": "string",
+      "requiredWhen": "never",
+      "description": "Azure OpenAI key, used when LLM_PROVIDER is azure-openai. Store a Key Vault reference (@Microsoft.KeyVault(SecretUri=...)) rather than the key itself."
+    },
+    {
+      "githubName": "OPENAI_API_KEY",
+      "appServiceName": "OPENAI_API_KEY",
+      "classification": "secret",
+      "valueType": "string",
+      "requiredWhen": "never",
+      "description": "Key for an OpenAI-compatible endpoint, when LLM_PROVIDER is openai-compatible and the endpoint needs one (a local model server usually does not)."
     }
   ]
 }

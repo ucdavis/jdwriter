@@ -129,6 +129,24 @@ cd client && npm test -- --run
 Corpus tests **fail rather than skip** when the corpus is absent. That is deliberate: a parity suite
 that quietly skips goes green while nobody learns the parser was never checked.
 
+## Choosing a model provider
+
+The provider is configuration, never an in-app choice. Anthropic is the default. To run on a local
+model instead — nothing leaves the machine — add to `server/.env`:
+
+```bash
+Llm__Provider=openai-compatible
+Llm__Endpoint=http://localhost:11434/v1   # Ollama; LM Studio is http://localhost:1234/v1
+Llm__Model=qwen3.8:latest                 # whatever `ollama list` shows
+```
+
+Azure OpenAI uses `Llm__Provider=azure-openai`, `Llm__Endpoint=https://NAME.openai.azure.com`,
+`Llm__Model=<deployment name>` and `AZURE_OPENAI_API_KEY`. Settings shows which provider is active.
+
+The prompts were written for Claude and are sent unchanged to every provider. Expect a local model
+to be slower (a tailored assembly took about 2.5 minutes on Qwen locally, against seconds on the
+API) and its judgment to differ; check results before relying on one.
+
 ## The API key
 
 `ANTHROPIC_API_KEY` lives in `server/.env`, which is gitignored. The app loads it; the test host does

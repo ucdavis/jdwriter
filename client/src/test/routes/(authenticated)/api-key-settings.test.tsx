@@ -7,8 +7,14 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 const status = (over: Partial<ApiKeyStatus>): ApiKeyStatus => ({
+  audit: [],
   configurationHasKey: true,
+  endpoint: '',
+  keyEntryAllowed: true,
+  keyRequired: true,
   lastFour: 'cfg1',
+  model: 'claude-opus-5',
+  provider: 'anthropic',
   source: 'configuration',
   storedKeyUnreadable: false,
   updatedAt: null,
@@ -16,7 +22,7 @@ const status = (over: Partial<ApiKeyStatus>): ApiKeyStatus => ({
   ...over,
 });
 
-describe('settings: Anthropic API key', () => {
+describe('settings: AI provider and key', () => {
   setupRouteTest();
 
   it('says which key is in use without ever showing it', async () => {
@@ -45,7 +51,7 @@ describe('settings: Anthropic API key', () => {
     );
     renderRoute({ initialPath: '/backend/settings' });
 
-    const input = await screen.findByLabelText('New Anthropic API key');
+    const input = await screen.findByLabelText('New API key');
     expect(input).toHaveAttribute('type', 'password');
     await user.type(input, 'sk-ant-api03-secret-value-wxyz');
     await user.click(screen.getByRole('button', { name: 'Save key' }));
@@ -70,7 +76,7 @@ describe('settings: Anthropic API key', () => {
     );
     renderRoute({ initialPath: '/backend/settings' });
 
-    await user.type(await screen.findByLabelText('New Anthropic API key'), 'sk-ant-api03-bad-key-0000');
+    await user.type(await screen.findByLabelText('New API key'), 'sk-ant-api03-bad-key-0000');
     await user.click(screen.getByRole('button', { name: 'Save key' }));
 
     await screen.findByText(/Anthropic rejected this key/);
@@ -85,6 +91,67 @@ describe('settings: Anthropic API key', () => {
     renderRoute({ initialPath: '/backend/settings' });
 
     await screen.findByText(/can no longer be decrypted/);
+  });
+
+  it('names the configured provider and model, which the app cannot change', async () => {
+    testServer.use(
+      http.get('/api/admin/settings/api-key', () =>
+        HttpResponse.json(
+          status({ endpoint: 'https://campus.openai.azure.com', model: 'gpt-4o-jd', provider: 'azureOpenAi' })
+        )
+      )
+    );
+    renderRoute({ initialPath: '/backend/settings' });
+
+    expect(await screen.findByTestId('ai-provider')).toHaveTextContent(
+      'Azure OpenAI · gpt-4o-jd · https://campus.openai.azure.com'
+    );
+    expect(screen.getByText(/checked with Azure OpenAI/)).toBeInTheDocument();
+  });
+
+  it('offers no key entry where keys live only in Key Vault', async () => {
+    testServer.use(
+      http.get('/api/admin/settings/api-key', () => HttpResponse.json(status({ keyEntryAllowed: false })))
+    );
+    renderRoute({ initialPath: '/backend/settings' });
+
+    expect(await screen.findByTestId('key-vault-only')).toHaveTextContent(/managed in Azure Key Vault/);
+    expect(screen.queryByLabelText('New API key')).not.toBeInTheDocument();
+  });
+
+  it('lists who changed the key and when, never the key', async () => {
+    testServer.use(
+      http.get('/api/admin/settings/api-key', () =>
+        HttpResponse.json(
+          status({
+            audit: [
+              { action: 'cleared', at: '2026-10-05T00:00:00Z', by: 'Mock Admin', lastFour: null },
+              { action: 'set', at: '2026-10-01T00:00:00Z', by: 'Mock Admin', lastFour: 'wxyz' },
+            ],
+          })
+        )
+      )
+    );
+    renderRoute({ initialPath: '/backend/settings' });
+
+    const items = (await screen.findByTestId('key-audit')).querySelectorAll('li');
+    expect([...items].map((li) => li.textContent)).toEqual([
+      expect.stringMatching(/^Removed the key — Mock Admin/),
+      expect.stringMatching(/^Set key ending …wxyz — Mock Admin/),
+    ]);
+  });
+
+  it('does not alarm about a missing key on a local server that needs none', async () => {
+    testServer.use(
+      http.get('/api/admin/settings/api-key', () =>
+        HttpResponse.json(
+          status({ configurationHasKey: false, keyRequired: false, lastFour: null, provider: 'openAiCompatible', source: 'none' })
+        )
+      )
+    );
+    renderRoute({ initialPath: '/backend/settings' });
+
+    expect(await screen.findByTestId('api-key-in-use')).toHaveTextContent('this server does not need one');
   });
 
   it.each([

@@ -24,4 +24,27 @@ public class AppSecret
 public static class AppSecretNames
 {
     public const string AnthropicApiKey = "AnthropicApiKey";
+
+    /// <summary>One stored key per provider, so switching providers never reuses the wrong key.</summary>
+    public static string ApiKeyFor(Server.Core.Ai.LlmProvider provider) => $"{provider}ApiKey";
+}
+
+/// <summary>
+/// One change to a stored secret: who, when, what — never the value. Kept for compliance review of
+/// who has handled the AI provider keys.
+/// </summary>
+public class AppSecretAudit
+{
+    public int Id { get; set; }
+    public string SecretName { get; set; } = "";
+
+    /// <summary>"set" or "cleared".</summary>
+    public string Action { get; set; } = "";
+
+    /// <summary>The last four characters of the key set, to tell rotations apart. Null when cleared.</summary>
+    public string? LastFour { get; set; }
+
+    public int? UserId { get; set; }
+    public AppUser? User { get; set; }
+    public DateTimeOffset At { get; set; }
 }

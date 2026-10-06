@@ -147,7 +147,7 @@ public class AdminController : ApiControllerBase
         Ok(await _apiKey.GetStatusAsync(ct));
 
     /// <summary>
-    /// Store a key entered by an admin, encrypted, after checking it with Anthropic. Write-only:
+    /// Store a key entered by an admin, encrypted and audited, after checking it with the active provider. Write-only:
     /// the response is the status (last four characters), never the key.
     /// </summary>
     [HttpPut("settings/api-key")]
@@ -162,13 +162,18 @@ public class AdminController : ApiControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+        catch (InvalidOperationException ex)
+        {
+            // This environment manages keys in Key Vault only.
+            return StatusCode(403, new { message = ex.Message });
+        }
     }
 
     /// <summary>Remove the app-entered key; the configured key, if any, takes over.</summary>
     [HttpDelete("settings/api-key")]
     public async Task<IActionResult> ClearApiKey(CancellationToken ct)
     {
-        await _apiKey.ClearAsync(ct);
+        await _apiKey.ClearAsync(await User.IdAsync(_db, ct), ct);
         return Ok(await _apiKey.GetStatusAsync(ct));
     }
 

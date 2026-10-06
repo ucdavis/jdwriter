@@ -76,12 +76,15 @@ public sealed class StructuredLlm : IStructuredLlm
 
     private readonly ILogger<StructuredLlm> _logger;
     private readonly IApiKeySource _keys;
+    private readonly string _model;
     private readonly bool _tokenDebug;
     private readonly object _clientLock = new();
     private (string Key, AnthropicClient Client)? _client;
 
-    public StructuredLlm(ILogger<StructuredLlm> logger, IApiKeySource keys)
+    public StructuredLlm(ILogger<StructuredLlm> logger, IApiKeySource keys, LlmOptions? options = null)
     {
+        // The configured model, or the one the prompts were tuned on.
+        _model = options?.EffectiveModel is { Length: > 0 } m ? m : Model;
         _logger = logger;
 
         // The key is resolved per call, not captured here: an admin can rotate it in Settings and
@@ -121,7 +124,7 @@ public sealed class StructuredLlm : IStructuredLlm
 
         var parameters = new MessageCreateParams
         {
-            Model = Model,
+            Model = _model,
             MaxTokens = request.MaxTokens,
             Thinking = new ThinkingConfigAdaptive(),
             OutputConfig = new OutputConfig

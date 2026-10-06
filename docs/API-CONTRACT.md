@@ -353,18 +353,32 @@ grantedAt: string | null; displayName: string | null; lastSeenAt: string | null 
 
 ### `GET | PUT | DELETE /api/admin/settings/api-key` — Admin
 ```ts
-type ApiKeyStatus = { source: "app" | "configuration" | "none"; lastFour: string | null;
+type ApiKeyStatus = {
+  provider: "anthropic" | "azureOpenAi" | "openAiCompatible"; model: string; endpoint: string;
+  source: "app" | "configuration" | "none"; lastFour: string | null;
   updatedBy: string | null; updatedAt: string | null;
-  storedKeyUnreadable: boolean; configurationHasKey: boolean }
+  storedKeyUnreadable: boolean; configurationHasKey: boolean;
+  keyRequired: boolean;      // false for a local OpenAI-compatible server
+  keyEntryAllowed: boolean;  // Llm:AllowKeyEntryInApp
+  audit: Array<{ action: "set" | "cleared"; lastFour: string | null; by: string | null; at: string }>; // newest 10
+}
 ```
-`GET` → status. `PUT { key }` → status, after checking the key with Anthropic's free token-counting
-endpoint; `400` with a message if it is malformed or rejected, and nothing is stored. `DELETE` →
-status, falling back to the configured key. **Write-only: no endpoint ever returns the key.**
+The provider, model and endpoint are **configuration only** (`Llm:*`); the app reports them and
+cannot change them. Everything here concerns the active provider's key.
 
-A key entered here is encrypted with ASP.NET Core Data Protection before it is stored and takes
-precedence over `ANTHROPIC_API_KEY` from configuration (the template's standard path: a GitHub
-Environment secret applied as an App Service setting). If the Data Protection key ring is lost, the
-stored key reads as `storedKeyUnreadable` and the configured key is used until an admin re-enters it.
+`GET` → status. `PUT { key }` → status, after checking the key with the provider at no cost
+(Anthropic: token counting; Azure OpenAI / OpenAI-compatible: listing models); `400` with a message
+if it is malformed or rejected, and nothing is stored; `403` where `keyEntryAllowed` is false.
+`DELETE` → status, falling back to the configured key. **Write-only: no endpoint ever returns the
+key.** Every `PUT` and `DELETE` that changes the key writes an audit row (who, when, last four;
+never the value).
+
+A key entered here is encrypted with ASP.NET Core Data Protection before it is stored, is stored per
+provider (switching providers never sends one provider's key to another), and takes precedence over
+the configured key (`ANTHROPIC_API_KEY`, `AZURE_OPENAI_API_KEY` or `OPENAI_API_KEY` — in Azure, an
+App Service setting holding a Key Vault reference). With `keyEntryAllowed` false, a stored key is
+ignored entirely. If the Data Protection key ring is lost, the stored key reads as
+`storedKeyUnreadable` and the configured key is used until an admin re-enters it.
 
 ### `GET /api/admin/analytics` — Admin
 ```ts

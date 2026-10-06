@@ -96,10 +96,24 @@ try
 
     // Every model call in the system goes through this one seam.
     builder.Services.AddMemoryCache();
+
+    // The AI provider is an institutional choice, made per environment in configuration (Llm:*).
+    // Every model call goes through IStructuredLlm, so swapping providers changes nothing else.
+    var llmOptions = LlmOptions.From(builder.Configuration);
+    builder.Services.AddSingleton(llmOptions);
     builder.Services.AddSingleton<IApiKeySource, ApiKeySource>();
-    builder.Services.AddSingleton<IApiKeyVerifier, AnthropicKeyVerifier>();
     builder.Services.AddScoped<ApiKeySettings>();
-    builder.Services.AddSingleton<IStructuredLlm, StructuredLlm>();
+    builder.Services.AddHttpClient(OpenAiStructuredLlm.HttpClientName, c => c.Timeout = TimeSpan.FromMinutes(5));
+    if (llmOptions.Provider == LlmProvider.Anthropic)
+    {
+        builder.Services.AddSingleton<IApiKeyVerifier, AnthropicKeyVerifier>();
+        builder.Services.AddSingleton<IStructuredLlm, StructuredLlm>();
+    }
+    else
+    {
+        builder.Services.AddSingleton<IApiKeyVerifier, OpenAiKeyVerifier>();
+        builder.Services.AddSingleton<IStructuredLlm, OpenAiStructuredLlm>();
+    }
 
     // ---- data access
     builder.Services.AddScoped<IClassProfileRepository, ClassProfileRepository>();
@@ -175,16 +189,20 @@ try
     // feature is broken rather than like the deployment is unconfigured.
     {
         var llm = app.Services.GetRequiredService<IStructuredLlm>();
+        var options = app.Services.GetRequiredService<LlmOptions>();
+        // Names the provider and model, never the key.
         if (llm.HasApiKey)
         {
-            app.Logger.LogInformation("Anthropic API key found — intake, classification and assembly are enabled.");
+            app.Logger.LogInformation(
+                "AI provider {Provider} ({Model}) is configured — intake, classification and assembly are enabled.",
+                options.Provider, options.EffectiveModel);
         }
         else
         {
             app.Logger.LogWarning(
-                "No Anthropic API key configured. Browsing and the corpus work; intake, "
-                + "classification and assembly will return 503. An admin can enter a key in "
-                + "Settings, or set ANTHROPIC_API_KEY (server/.env locally; an App Service setting in Azure).");
+                "AI provider {Provider} is not fully configured (model, endpoint, or {KeySetting}). Browsing, "
+                + "the corpus and unchanged JDs work; intake, classification and tailored assembly return 503.",
+                options.Provider, options.KeySetting);
         }
     }
 
