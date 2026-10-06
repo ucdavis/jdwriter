@@ -11,7 +11,7 @@ Besides the template's `AZURE_*` variables and `SQL_ADMIN_PASSWORD`:
 
 | Name | Kind | Value |
 |---|---|---|
-| `ADMIN_BOOTSTRAP_LOGIN_IDS` | variable | Comma-separated UC Davis login IDs that are always admins, e.g. `ndlewis`. **Required** — Configure Azure refuses to run without it, because an app with no admin cannot be administered. These admins cannot be removed from the app; further admins are added on `/backend/settings`. |
+| `ADMIN_BOOTSTRAP_LOGIN_IDS` | variable | Comma-separated UC Davis login IDs that are always admins, e.g. `rsmith`. **Required** — Configure Azure refuses to run without it, because an app with no admin cannot be administered. These admins cannot be removed from the app; further admins are added on `/backend/settings`. |
 | `LLM_PROVIDER` | variable | `anthropic` (default), `azure-openai`, or `openai-compatible`. Which provider receives JD text is decided here, per environment — never in the app. |
 | `LLM_MODEL` | variable | Azure OpenAI **deployment name**, or model id. Optional for Anthropic. |
 | `LLM_ENDPOINT` | variable | `https://NAME.openai.azure.com` for Azure OpenAI; a base URL ending in `/v1` for an OpenAI-compatible server. |

@@ -41,10 +41,10 @@ public class AdminAccessTests
     // ------------------------------------------------------------------ login ids
 
     [Theory]
-    [InlineData("ndlewis", "ndlewis")]
-    [InlineData("  NDLewis ", "ndlewis")]
-    [InlineData("ndlewis@ucdavis.edu", "ndlewis")]
-    [InlineData("NDLEWIS@UCDAVIS.EDU", "ndlewis")]
+    [InlineData("rsmith", "rsmith")]
+    [InlineData("  RSmith ", "rsmith")]
+    [InlineData("rsmith@ucdavis.edu", "rsmith")]
+    [InlineData("RSMITH@UCDAVIS.EDU", "rsmith")]
     [InlineData("j.doe-2", "j.doe-2")]
     public void A_login_id_is_normalized(string input, string expected) =>
         CampusLogin.Normalize(input).Should().Be(expected);
@@ -52,19 +52,19 @@ public class AdminAccessTests
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    [InlineData("ndlewis@gmail.com")]
-    [InlineData("nd lewis")]
+    [InlineData("rsmith@gmail.com")]
+    [InlineData("r smith")]
     [InlineData("-leading")]
-    [InlineData("ndlewis@ucdavis.edu.evil.com")]
+    [InlineData("rsmith@ucdavis.edu.evil.com")]
     public void Anything_else_is_refused(string input) =>
         CampusLogin.Normalize(input).Should().BeNull();
 
     [Fact]
     public void The_login_id_comes_only_from_a_name_on_an_allowed_domain()
     {
-        CampusLogin.FromPrincipal(Principal("1", "ndlewis@ucdavis.edu"), [CampusLogin.Domain])
-            .Should().Be("ndlewis");
-        CampusLogin.FromPrincipal(Principal("1", "ndlewis@elsewhere.edu"), [CampusLogin.Domain])
+        CampusLogin.FromPrincipal(Principal("1", "rsmith@ucdavis.edu"), [CampusLogin.Domain])
+            .Should().Be("rsmith");
+        CampusLogin.FromPrincipal(Principal("1", "rsmith@elsewhere.edu"), [CampusLogin.Domain])
             .Should().BeNull("only the campus domain makes the local part a campus login");
     }
 
@@ -75,9 +75,9 @@ public class AdminAccessTests
     {
         using var db = TestDbContextFactory.CreateInMemory();
         var config = Config();
-        await new AdminAccess(db, config).GrantAsync("ndlewis", null);
+        await new AdminAccess(db, config).GrantAsync("rsmith", null);
 
-        (await RolesFor(db, config, Principal("a", "ndlewis@ucdavis.edu")))
+        (await RolesFor(db, config, Principal("a", "rsmith@ucdavis.edu")))
             .Should().Equal(AppRoles.Admin, AppRoles.Author);
         (await RolesFor(db, config, Principal("b", "someone@ucdavis.edu")))
             .Should().Equal(AppRoles.Author);
@@ -87,9 +87,9 @@ public class AdminAccessTests
     public async Task A_matching_name_on_another_domain_is_not_an_admin()
     {
         using var db = TestDbContextFactory.CreateInMemory();
-        var config = Config("ndlewis");
+        var config = Config("rsmith");
 
-        (await RolesFor(db, config, Principal("x", "ndlewis@elsewhere.edu")))
+        (await RolesFor(db, config, Principal("x", "rsmith@elsewhere.edu")))
             .Should().Equal(AppRoles.Author);
     }
 
@@ -135,14 +135,14 @@ public class AdminAccessTests
     public async Task A_configured_admin_is_listed_and_cannot_be_removed_in_the_app()
     {
         using var db = TestDbContextFactory.CreateInMemory();
-        var access = new AdminAccess(db, Config("ndlewis, jdoe"));
+        var access = new AdminAccess(db, Config("rsmith, jdoe"));
 
         var list = await access.ListAsync();
-        list.Select(e => (e.LoginId, e.FromConfiguration)).Should().Equal(("jdoe", true), ("ndlewis", true));
+        list.Select(e => (e.LoginId, e.FromConfiguration)).Should().Equal(("jdoe", true), ("rsmith", true));
 
-        var revoke = () => access.RevokeAsync("ndlewis");
+        var revoke = () => access.RevokeAsync("rsmith");
         await revoke.Should().ThrowAsync<InvalidOperationException>().WithMessage("*configuration*");
-        (await access.IsAdminAsync("ndlewis")).Should().BeTrue();
+        (await access.IsAdminAsync("rsmith")).Should().BeTrue();
     }
 
     [Fact]

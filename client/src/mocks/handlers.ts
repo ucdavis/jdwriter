@@ -158,7 +158,7 @@ export const handlers = [
 
   http.get('/api/user/me', () =>
     HttpResponse.json({
-      email: 'ndlewis@ucdavis.edu',
+      email: 'rsmith@ucdavis.edu',
       iamId: '10000000',
       id: 'mock-user',
       name: 'Mock Admin',
