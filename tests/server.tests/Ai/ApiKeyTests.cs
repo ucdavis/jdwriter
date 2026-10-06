@@ -41,6 +41,7 @@ public class ApiKeyTests
         {
             Options = options ?? new LlmOptions();
             dbName ??= $"keys_{Guid.NewGuid():N}";
+            DbName = dbName;
             Config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ANTHROPIC_API_KEY"] = configuredKey,
@@ -59,6 +60,7 @@ public class ApiKeyTests
             Settings = new ApiKeySettings(Db, Config, Options, Protection, Source, Verifier);
         }
 
+        public string DbName { get; }
         public LlmOptions Options { get; }
         public IConfiguration Config { get; }
         public IDataProtectionProvider Protection { get; }
@@ -190,7 +192,7 @@ public class ApiKeyTests
 
         vaultOnly.Source.Current.Should().Be(ConfigKey, "a key stored earlier is ignored once entry is switched off");
         var set = () => vaultOnly.Settings.SetAsync(GoodKey, null);
-        await set.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Key Vault*");
+        await set.Should().ThrowAsync<KeyEntryDisabledException>().WithMessage("*Key Vault*");
         var status = await vaultOnly.Settings.GetStatusAsync();
         status.KeyEntryAllowed.Should().BeFalse();
         status.Source.Should().Be("configuration");
@@ -212,5 +214,31 @@ public class ApiKeyTests
 
         azure.Source.Current.Should().BeNull("the Anthropic key must never be sent to another provider");
         (await azure.Settings.GetStatusAsync()).Provider.Should().Be(LlmProvider.AzureOpenAi);
+    }
+
+    /// <summary>A database that is down until told otherwise.</summary>
+    private sealed class FlakyScopes(IServiceScopeFactory real) : IServiceScopeFactory
+    {
+        public bool Down { get; set; } = true;
+
+        public IServiceScope CreateScope() =>
+            Down ? throw new InvalidOperationException("database unavailable") : real.CreateScope();
+    }
+
+    [Fact]
+    public async Task A_failed_database_read_falls_back_without_pinning_the_fallback()
+    {
+        using var h = new Harness(ConfigKey);
+        await h.Settings.SetAsync(GoodKey, null);
+        var services = new ServiceCollection();
+        services.AddDbContext<AppDbContext>(o => o.UseInMemoryDatabase(h.DbName));
+        var flaky = new FlakyScopes(services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>());
+        var source = new ApiKeySource(flaky, h.Config, h.Options, h.Protection,
+            new MemoryCache(new MemoryCacheOptions()), NullLogger<ApiKeySource>.Instance);
+
+        source.Current.Should().Be(ConfigKey, "the configured key keeps the app working while the database is down");
+
+        flaky.Down = false;
+        source.Current.Should().Be(GoodKey, "the stored key is used as soon as the database answers");
     }
 }

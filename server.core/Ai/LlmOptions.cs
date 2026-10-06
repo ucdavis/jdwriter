@@ -65,6 +65,44 @@ public sealed class LlmOptions
     /// <summary>A local OpenAI-compatible server usually needs no key; every hosted provider does.</summary>
     public bool KeyRequired => Provider != LlmProvider.OpenAiCompatible;
 
+    /// <summary>
+    /// Why this configuration cannot make calls with <paramref name="key"/>, or null when it can.
+    /// Never fails startup: browsing and the corpus work without a model, and the AI endpoints
+    /// return 503 with this logged at boot.
+    /// </summary>
+    public string? ConfigurationProblem(string? key)
+    {
+        var hasKey = !string.IsNullOrEmpty(key);
+        if (Provider == LlmProvider.Anthropic)
+        {
+            return hasKey ? null : $"no key ({KeySetting})";
+        }
+
+        if (!Uri.TryCreate(Endpoint, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+        {
+            return Endpoint.Length == 0 ? "no endpoint (Llm:Endpoint)" : "Llm:Endpoint is not an http(s) URL";
+        }
+
+        if (EffectiveModel.Length == 0)
+        {
+            return "no model or deployment (Llm:Model)";
+        }
+
+        if (KeyRequired && !hasKey)
+        {
+            return $"no key ({KeySetting})";
+        }
+
+        // A key over plain HTTP is readable in transit. Loopback (a model server on this machine)
+        // is the one place HTTP is fine.
+        if (hasKey && uri.Scheme == Uri.UriSchemeHttp && !uri.IsLoopback)
+        {
+            return "Llm:Endpoint uses plain http to a remote host; a key is never sent over it — use https";
+        }
+
+        return null;
+    }
+
     public string EffectiveModel => Model.Length > 0
         ? Model
         : Provider == LlmProvider.Anthropic ? StructuredLlm.Model : "";

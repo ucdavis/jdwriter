@@ -36,21 +36,27 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
         _tokenDebug = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("JDW_TOKEN_DEBUG"));
     }
 
-    /// <summary>Configured enough to call: an endpoint and model, plus a key where one is required.</summary>
-    public bool HasApiKey =>
-        _options.Endpoint.Length > 0
-        && _options.EffectiveModel.Length > 0
-        && (!_options.KeyRequired || !string.IsNullOrEmpty(_keys.Current));
+    /// <summary>
+    /// Configured enough to call: a valid endpoint and a model, plus a key where one is required,
+    /// and never a key bound for plain HTTP off this machine.
+    /// </summary>
+    public bool HasApiKey => _options.ConfigurationProblem(_keys.Current) == null;
 
     public async Task<T> StructuredAsync<T>(StructuredRequest request, CancellationToken ct = default)
     {
         var label = request.Label ?? "call";
+        var key = _keys.Current;
+        var problem = _options.ConfigurationProblem(key);
+        if (problem != null)
+        {
+            throw new StructuredLlmException($"{label}: the AI provider is not usable — {problem}.");
+        }
+
         using var message = new HttpRequestMessage(HttpMethod.Post, Url())
         {
             Content = new StringContent(Body(typeof(T), request).ToJsonString(), Encoding.UTF8, "application/json"),
         };
 
-        var key = _keys.Current;
         if (!string.IsNullOrEmpty(key))
         {
             if (_options.Provider == LlmProvider.AzureOpenAi)
@@ -79,11 +85,22 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
                 $"{label}: the AI provider returned {(int)response.StatusCode} — {ProviderError(text)}");
         }
 
-        var root = JsonNode.Parse(text)!;
-        var choice = root["choices"]?[0];
-        var finish = choice?["finish_reason"]?.GetValue<string>();
-        var refusal = choice?["message"]?["refusal"]?.GetValue<string>();
-        var content = choice?["message"]?["content"]?.GetValue<string>();
+        JsonNode root;
+        string? finish, refusal, content;
+        try
+        {
+            root = JsonNode.Parse(text) ?? throw new JsonException("empty body");
+            var choice = root["choices"]?[0];
+            finish = choice?["finish_reason"]?.GetValue<string>();
+            refusal = choice?["message"]?["refusal"]?.GetValue<string>();
+            content = choice?["message"]?["content"]?.GetValue<string>();
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+        {
+            // A 2xx that is not a chat completion: a proxy page, or a server that is not
+            // OpenAI-compatible after all.
+            throw new StructuredLlmException($"{label}: the AI provider's response was not a chat completion.");
+        }
 
         if (_tokenDebug)
         {

@@ -199,10 +199,11 @@ try
         }
         else
         {
+            var keys = app.Services.GetRequiredService<IApiKeySource>();
             app.Logger.LogWarning(
-                "AI provider {Provider} is not fully configured (model, endpoint, or {KeySetting}). Browsing, "
-                + "the corpus and unchanged JDs work; intake, classification and tailored assembly return 503.",
-                options.Provider, options.KeySetting);
+                "AI provider {Provider} is not usable: {Problem}. Browsing, the corpus and unchanged JDs "
+                + "work; intake, classification and tailored assembly return 503.",
+                options.Provider, options.ConfigurationProblem(keys.Current));
         }
     }
 
