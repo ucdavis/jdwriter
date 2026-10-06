@@ -117,4 +117,74 @@ public class AuthoredJdStoreTests
         (await db.AuthoredJds.CountAsync()).Should().Be(0);
         (await db.AuthoredJdResponsibilities.CountAsync()).Should().Be(0, "its content goes with it");
     }
+
+    private static BuildInputs Kept(params (string Name, int Pct)[] fns) => new()
+    {
+        WorkingTitle = "Greenhouse Tech",
+        KeptResponsibilities = [.. fns.Select(f => new JdKeyResponsibility { FunctionName = f.Name, PctTime = f.Pct, Duties = ["d1"] })],
+        KeptEducation = ["High school"],
+    };
+
+    private const string State = """{"version":1,"workingTitle":"Greenhouse Tech","resps":[{"functionName":"A","pctTime":100}]}""";
+
+    [Fact]
+    public async Task A_draft_is_always_a_draft_and_never_in_the_corpus()
+    {
+        var (db, profile, alice, _) = await Seed();
+        var store = new AuthoredJdStore(db);
+
+        var id = await store.SaveDraftAsync(Kept(("A", 100)), profile, alice, null, State);
+
+        var saved = (await store.GetAsync(id))!.Value.Jd;
+        saved.Status.Should().Be(AuthoredJdStatus.Draft, "a draft at 100% is still unfinished work");
+        saved.Assembled.Should().BeFalse();
+        saved.InCorpus.Should().BeFalse();
+        saved.DraftState!.Value.GetProperty("workingTitle").GetString().Should().Be("Greenhouse Tech");
+        (await db.JobDescriptions.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Assembling_a_draft_finishes_the_same_record_and_keeps_its_state()
+    {
+        var (db, profile, alice, _) = await Seed();
+        var store = new AuthoredJdStore(db);
+        var id = await store.SaveDraftAsync(Kept(("A", 100)), profile, alice, null, State);
+
+        var again = await store.SaveAsync(Assembled("Greenhouse Tech", ("A", 100)), Kept(("A", 100)), profile, alice, id);
+
+        again.Should().Be(id);
+        var saved = (await store.GetAsync(id))!.Value.Jd;
+        saved.Assembled.Should().BeTrue();
+        saved.Status.Should().Be(AuthoredJdStatus.Ready);
+        saved.DraftState.Should().NotBeNull("an assembly without a new snapshot keeps the last one");
+    }
+
+    [Fact]
+    public async Task Saving_a_draft_over_a_finished_jd_withdraws_its_corpus_copy()
+    {
+        var (db, profile, alice, _) = await Seed();
+        var store = new AuthoredJdStore(db);
+        var assembled = Assembled("Greenhouse Tech", ("A", 100));
+        var id = await store.SaveAsync(assembled, Kept(("A", 100)), profile, alice, null);
+        db.JobDescriptions.Add(CorpusContribution.ToCorpusRecord(assembled, id));
+        await db.SaveChangesAsync();
+
+        await store.SaveDraftAsync(Kept(("A", 60)), profile, alice, id, State);
+
+        (await db.JobDescriptions.CountAsync()).Should().Be(0, "only finished JDs are evidence");
+        (await store.GetAsync(id))!.Value.Jd.Status.Should().Be(AuthoredJdStatus.Draft);
+    }
+
+    [Fact]
+    public async Task Nobody_can_save_a_draft_over_someone_elses_jd()
+    {
+        var (db, profile, alice, bob) = await Seed();
+        var store = new AuthoredJdStore(db);
+        var alicesId = await store.SaveDraftAsync(Kept(("A", 100)), profile, alice, null, State);
+
+        var bobsId = await store.SaveDraftAsync(Kept(("B", 100)), profile, bob, alicesId, State);
+
+        bobsId.Should().NotBe(alicesId);
+        (await store.GetAsync(alicesId))!.Value.Jd.Jd.KeyResponsibilities.Single().FunctionName.Should().Be("A");
+    }
 }

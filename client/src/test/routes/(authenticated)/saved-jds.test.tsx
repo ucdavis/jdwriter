@@ -7,6 +7,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
 const summary = (over: Partial<SavedJdSummary>): SavedJdSummary => ({
+  assembled: true,
   createdAt: '2026-10-01T00:00:00Z',
   createdBy: 'Sample User',
   department: 'Plant Sciences',
@@ -22,6 +23,7 @@ const summary = (over: Partial<SavedJdSummary>): SavedJdSummary => ({
 });
 
 const saved = (over: Partial<SavedJd> = {}): SavedJd => ({
+  assembled: true,
   authorAdditions: ['Coordinates the annual plant sale'],
   authoredJdId: 7,
   bargainingUnit: 'TX',
@@ -31,6 +33,7 @@ const saved = (over: Partial<SavedJd> = {}): SavedJd => ({
   createdAt: '2026-10-01T00:00:00Z',
   createdBy: 'Sample User',
   department: 'Plant Sciences',
+  draftState: null,
   flsaStatus: 'Non-Exempt',
   fromEnvelope: false,
   inCorpus: true,

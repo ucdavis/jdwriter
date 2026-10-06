@@ -53,6 +53,16 @@ public class AuthoredJd
     /// <summary>The envelope check's verdict on the author's additions, as the build reached it.</summary>
     public Server.Core.Jd.EnvelopeVerdict? EnvelopeVerdict { get; set; }
 
+    /// <summary>
+    /// The build screen exactly as the author left it — every kept, dropped and added item — as
+    /// the client's own JSON, so a draft (or a finished JD) can be reopened and continued. Opaque
+    /// to the server, which only checks that it is JSON and not oversized.
+    /// </summary>
+    public string? DraftState { get; set; }
+
+    /// <summary>When it was last assembled into a finished JD; null for a draft saved before that.</summary>
+    public DateTimeOffset? AssembledAt { get; set; }
+
     /// <summary>Whether a copy of this JD is in the class's corpus.</summary>
     public bool InCorpus { get; set; }
 

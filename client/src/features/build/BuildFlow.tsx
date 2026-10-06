@@ -4,8 +4,8 @@ import { FinalJd } from './FinalJd.tsx';
 import { Link } from '@tanstack/react-router';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { SectionEditor } from './SectionEditor.tsx';
-import { useAssembleJd, useEnvelopeCheck } from '@/queries/authoring.ts';
-import { useBuildState, type EnvelopeSections } from './useBuildState.ts';
+import { useAssembleJd, useEnvelopeCheck, useSaveDraft } from '@/queries/authoring.ts';
+import { type DraftState, type EnvelopeSections, useBuildState } from './useBuildState.ts';
 import { useState } from 'react';
 
 type Step = 'check' | 'final' | 'tailor';
@@ -59,20 +59,24 @@ const StepBar = ({ step }: { step: Step }) => {
  * time.
  */
 export const BuildFlow = ({
+  draft,
   envelope,
   slug,
   title,
 }: {
+  /** A saved JD to continue: its id and the build screen as it was left. */
+  draft?: { id: number; state: DraftState | null } | null;
   envelope: EnvelopeSections;
   slug: string;
   title: string;
 }) => {
   const [step, setStep] = useState<Step>('tailor');
-  const state = useBuildState(envelope);
+  const state = useBuildState(envelope, draft?.state);
+  const saveDraft = useSaveDraft();
   const check = useEnvelopeCheck();
   const assemble = useAssembleJd();
   // Set by the first assemble; sent back on later ones so they revise the same saved JD.
-  const [savedId, setSavedId] = useState<number | null>(null);
+  const [savedId, setSavedId] = useState<number | null>(draft?.id ?? null);
 
   const error = check.error ?? assemble.error;
   const busy = check.isPending || assemble.isPending;
@@ -82,7 +86,7 @@ export const BuildFlow = ({
     check.mutate(state.buildRequest(slug), { onSuccess: () => setStep('check') });
   const runAssemble = () =>
     assemble.mutate(
-      { ...state.buildRequest(slug), authoredJdId: savedId },
+      { ...state.buildRequest(slug), authoredJdId: savedId, draftState: state.snapshot() },
       {
         onSuccess: (result) => {
           setSavedId(result.authoredJdId);
@@ -327,6 +331,30 @@ export const BuildFlow = ({
             >
               {busy ? 'Checking…' : 'Review & continue →'}
             </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              disabled={saveDraft.isPending}
+              onClick={() =>
+                saveDraft.mutate(
+                  { ...state.buildRequest(slug), authoredJdId: savedId, draftState: state.snapshot() },
+                  { onSuccess: (r) => setSavedId(r.authoredJdId) }
+                )
+              }
+              type="button"
+            >
+              {saveDraft.isPending ? 'Saving…' : 'Save draft'}
+            </button>
+            {saveDraft.isSuccess && !saveDraft.isPending ? (
+              <span className="text-[12px] text-success" data-testid="draft-saved">
+                Draft saved ·{' '}
+                <Link className="underline" to="/jds">
+                  My JDs
+                </Link>
+              </span>
+            ) : null}
+            {saveDraft.error ? (
+              <span className="text-[12px] text-error">{messageOf(saveDraft.error)}</span>
+            ) : null}
             {!balanced ? (
               <span className="text-[12px] text-warning" data-testid="build-gate-reason">
                 {state.totalPct < 100

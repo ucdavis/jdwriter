@@ -1,7 +1,7 @@
 import { Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { FinalJd } from '@/features/build/FinalJd.tsx';
 import { savedJdQueryOptions, useDeleteJd } from '@/queries/jds.ts';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import type { RouterContext } from '@/main.tsx';
 
@@ -26,7 +26,23 @@ function SavedJdPage() {
         title={name}
       />
 
-      <div className="mb-4 flex justify-end">
+      {jd.assembled ? null : (
+        <p className="mb-3 text-[13px] text-warning" data-testid="not-assembled">
+          Draft — saved before it was assembled. Continue editing to finish it.
+        </p>
+      )}
+
+      <div className="mb-4 flex justify-end gap-2">
+        {jd.draftState ? (
+          <Link
+            className="btn btn-primary btn-sm"
+            params={{ slug: jd.slug }}
+            search={{ draft: jd.authoredJdId ?? Number(id) }}
+            to="/class/$slug"
+          >
+            Continue editing
+          </Link>
+        ) : null}
         <button
           className="btn btn-ghost btn-sm text-error"
           disabled={remove.isPending}

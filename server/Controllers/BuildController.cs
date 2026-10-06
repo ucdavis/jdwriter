@@ -39,6 +39,26 @@ public sealed class BuildRequest
     /// </summary>
     public int? AuthoredJdId { get; set; }
 
+    /// <summary>
+    /// The build screen as the author left it (the client's own JSON), saved so the JD can be
+    /// reopened and continued. Opaque to the server.
+    /// </summary>
+    public System.Text.Json.JsonElement? DraftState { get; set; }
+
+    /// <summary>The draft state as text, or null when absent; throws when it is oversized.</summary>
+    public string? DraftStateText()
+    {
+        if (DraftState is not { } state || state.ValueKind is System.Text.Json.JsonValueKind.Undefined or System.Text.Json.JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        var text = state.GetRawText();
+        return text.Length <= AuthoredJdStore.MaxDraftStateChars
+            ? text
+            : throw new ArgumentException("This draft is too large to save.");
+    }
+
     public BuildInputs ToInputs() => new()
     {
         WorkingTitle = WorkingTitle,
@@ -123,6 +143,31 @@ public class BuildController : ApiControllerBase
         return Ok(check);
     }
 
+    /// <summary>
+    /// Save the build as a draft without assembling it: instant, no model, no provider needed,
+    /// always a Draft and never in the corpus. Reopen it later with "Continue editing".
+    /// </summary>
+    [HttpPost("draft")]
+    public async Task<IActionResult> SaveDraft(BuildRequest body, CancellationToken ct)
+    {
+        var profile = await _profiles.GetBySlugAsync(body.Slug, ct);
+        if (profile is null)
+        {
+            return NotFound(new { message = $"No class found for “{body.Slug}”." });
+        }
+
+        try
+        {
+            var id = await _saved.SaveDraftAsync(
+                body.ToInputs(), profile, await User.IdAsync(_db, ct), body.AuthoredJdId, body.DraftStateText(), ct);
+            return Ok(new { authoredJdId = id });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPost("assemble")]
     public async Task<IActionResult> Assemble(BuildRequest body, CancellationToken ct)
     {
@@ -148,8 +193,18 @@ public class BuildController : ApiControllerBase
         // Every assembly is saved — as a Draft until the time totals exactly 100%. It is also
         // returned even when it cannot be published: the author has to SEE the draft in order to
         // decide where the unallocated time should go.
+        string? draftState;
+        try
+        {
+            draftState = body.DraftStateText();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+
         assembled.AuthoredJdId = await _saved.SaveAsync(
-            assembled, inputs, profile, await User.IdAsync(_db, ct), body.AuthoredJdId, ct);
+            assembled, inputs, profile, await User.IdAsync(_db, ct), body.AuthoredJdId, ct, draftState);
 
         // The verdict is the server's own. Nothing added: nothing for the check to judge. Otherwise
         // reuse the check step's verdict, or run the check if it is not to hand.
