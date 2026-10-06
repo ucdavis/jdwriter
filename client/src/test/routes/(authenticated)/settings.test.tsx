@@ -32,7 +32,7 @@ describe('settings: admin whitelist', () => {
 
   it('adds an admin by login ID and lists them', async () => {
     const user = userEvent.setup();
-    let admins: AdminEntry[] = [entry('ndlewis', { fromConfiguration: true, grantedAt: null })];
+    let admins: AdminEntry[] = [entry('rsmith', { fromConfiguration: true, grantedAt: null })];
     const posted: string[] = [];
     testServer.use(
       http.get('/api/admin/admins', () => HttpResponse.json({ admins })),
@@ -57,13 +57,13 @@ describe('settings: admin whitelist', () => {
     testServer.use(
       http.get('/api/admin/admins', () =>
         HttpResponse.json({
-          admins: [entry('ndlewis', { fromConfiguration: true }), entry('jdoe')],
+          admins: [entry('rsmith', { fromConfiguration: true }), entry('jdoe')],
         })
       )
     );
     renderRoute({ initialPath: '/backend/settings' });
 
-    const configured = (await screen.findByText('ndlewis')).closest('li')!;
+    const configured = (await screen.findByText('rsmith')).closest('li')!;
     expect(within(configured).getByText('set in server configuration')).toBeInTheDocument();
     expect(within(configured).queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
 
@@ -76,7 +76,7 @@ describe('settings: admin whitelist', () => {
     testServer.use(
       http.post('/api/admin/admins', () =>
         HttpResponse.json(
-          { message: '“jdoe@gmail.com” is not a UC Davis login ID. Use the campus login, e.g. “ndlewis”.' },
+          { message: '“jdoe@gmail.com” is not a UC Davis login ID. Use the campus login, e.g. “rsmith”.' },
           { status: 400 }
         )
       )

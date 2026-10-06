@@ -345,7 +345,7 @@ Workbooks are kept as the original bytes, once each.
 grantedAt: string | null; displayName: string | null; lastSeenAt: string | null }> }`
 
 ### `POST /api/admin/admins` — Admin
-`{ loginId: string }  →  { loginId }` (normalized). Accepts `ndlewis` or `ndlewis@ucdavis.edu`;
+`{ loginId: string }  →  { loginId }` (normalized). Accepts `rsmith` or `rsmith@ucdavis.edu`;
 `400` with a message for anything else. Idempotent; the person need not have signed in yet.
 
 ### `DELETE /api/admin/admins/{loginId}` — Admin

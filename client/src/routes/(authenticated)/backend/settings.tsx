@@ -76,7 +76,7 @@ function AdminsPanel() {
           aria-label="UC Davis login ID"
           className="input input-sm input-bordered w-64"
           onChange={(e) => setLoginId(e.target.value)}
-          placeholder="e.g. ndlewis"
+          placeholder="e.g. rsmith"
           value={loginId}
         />
         <button

@@ -105,7 +105,7 @@ public sealed class AdminAccess
     {
         var login = CampusLogin.Normalize(input)
                     ?? throw new ArgumentException(
-                        $"“{input}” is not a UC Davis login ID. Use the campus login, e.g. “ndlewis”.");
+                        $"“{input}” is not a UC Davis login ID. Use the campus login, e.g. “rsmith”.");
 
         if (!await _db.AdminGrants.AnyAsync(g => g.LoginId == login, ct))
         {

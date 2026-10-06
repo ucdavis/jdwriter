@@ -19,7 +19,7 @@ public class AppUser
     public string NameIdentifier { get; set; } = "";
 
     /// <summary>
-    /// Campus login id ("ndlewis"), derived from a @ucdavis.edu sign-in name. Null for an account
+    /// Campus login id ("rsmith"), derived from a @ucdavis.edu sign-in name. Null for an account
     /// whose sign-in name is not on a campus domain — such an account can never be an admin.
     /// </summary>
     public string? LoginId { get; set; }
@@ -80,7 +80,7 @@ public static partial class CampusLogin
     private static partial Regex Shape();
 
     /// <summary>
-    /// "ndlewis", " NDLewis ", or "ndlewis@ucdavis.edu" → "ndlewis". Null when the input is not a
+    /// "rsmith", " RSmith ", or "rsmith@ucdavis.edu" → "rsmith". Null when the input is not a
     /// plausible login id, or names a domain other than the campus one.
     /// </summary>
     public static string? Normalize(string? input)
@@ -106,7 +106,7 @@ public static partial class CampusLogin
     /// Campus SSO only authenticates UC Davis accounts, so a non-campus name should never arrive.
     /// The domain is still checked rather than assumed: it is what makes "the part before the @" a
     /// campus login id at all, and a misconfigured tenant or app registration would otherwise let
-    /// "ndlewis@elsewhere" match the whitelisted "ndlewis" silently.
+    /// "rsmith@elsewhere" match the whitelisted "rsmith" silently.
     /// </summary>
     public static string? FromPrincipal(ClaimsPrincipal principal, IReadOnlyCollection<string> allowedDomains)
     {
