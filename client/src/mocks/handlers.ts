@@ -114,6 +114,7 @@ export const handlers = [
   http.get('/api/jds', () =>
     HttpResponse.json<SavedJdListResponse>({
       jds: [...savedJds].reverse().map((j) => ({
+        assembled: j.assembled,
         createdAt: j.createdAt,
         createdBy: j.createdBy,
         department: j.department,
@@ -128,6 +129,11 @@ export const handlers = [
       })),
     })
   ),
+
+  http.post('/api/build/draft', async ({ request }) => {
+    const body = (await request.json()) as BuildRequest;
+    return HttpResponse.json({ authoredJdId: body.authoredJdId ?? savedJds.length + 1 });
+  }),
 
   http.delete('/api/jds/:id', ({ params }) => {
     savedJds = savedJds.filter((j) => j.authoredJdId !== Number(params.id));
@@ -474,9 +480,11 @@ export const handlers = [
     };
     const saved: SavedJd = {
       ...assembled,
+      assembled: true,
       authorAdditions: body.addedItems,
       createdAt: new Date().toISOString(),
       createdBy: 'Mock Admin',
+      draftState: body.draftState ?? null,
       notes: body.notes,
       updatedAt: new Date().toISOString(),
     };

@@ -62,6 +62,15 @@ export const useAssembleJd = () => {
   });
 };
 
+/** Save the build as a draft: no model, never in the corpus, reopened with Continue editing. */
+export const useSaveDraft = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: post<BuildRequest, { authoredJdId: number }>('/api/build/draft'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jds'] }),
+  });
+};
+
 export const useSaveEnvelope = () => {
   const queryClient = useQueryClient();
   return useMutation({

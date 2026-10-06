@@ -201,6 +201,14 @@ responsibility or duty, moved %, dropped qualification), and the envelope check 
 `out_of_envelope` — the goodness-of-fit gate. A revision re-decides and replaces or withdraws the
 copy. It counts the next time the class is rebuilt.
 
+### `POST /api/build/draft` — Author
+The same body as assemble, plus `draftState` (the build screen as the client's own JSON, max
+512 KB) → `{ authoredJdId }`. Saves work in progress **without assembling**: instant, no model, no
+provider needed, always `draft` whatever the allocation, and never in the corpus (saving a draft
+over a finished JD withdraws its corpus copy). Assemble also accepts `draftState`, so any saved JD
+can be reopened. Saved JDs return `draftState` and `assembled: boolean` (false for a draft saved
+before it was ever assembled); the client resumes one at `/class/{slug}?draft={id}`.
+
 ### `DELETE /api/jds/{id}` — Author
 Your own saved JD (an admin may delete any); `404` otherwise. Its corpus copy is deleted too.
 

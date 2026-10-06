@@ -33,28 +33,60 @@ export type EnvelopeSections = {
   workExperience: string[];
 };
 
-export const useBuildState = (envelope: EnvelopeSections) => {
-  const [workingTitle, setWorkingTitle] = useState('');
-  const [department, setDepartment] = useState('');
-  const [notes, setNotes] = useState('');
+/**
+ * The whole build screen as plain data: what "Save draft" stores and "Continue editing"
+ * restores. Versioned so a future change to the screen can recognise older drafts.
+ */
+export type DraftState = {
+  certs: Item[];
+  department: string;
+  education: Item[];
+  minKSA: Item[];
+  notes: string;
+  prefKSA: Item[];
+  resps: RespState[];
+  version: 1;
+  workEnv: Item[];
+  workExp: Item[];
+  workingTitle: string;
+};
+
+/** A saved draft this hook can resume from; anything else starts from the envelope. */
+export const asDraftState = (value: unknown): DraftState | null =>
+  value && typeof value === 'object' && (value as { version?: unknown }).version === 1
+    ? (value as DraftState)
+    : null;
+
+export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState | null) => {
+  const [workingTitle, setWorkingTitle] = useState(initial?.workingTitle ?? '');
+  const [department, setDepartment] = useState(initial?.department ?? '');
+  const [notes, setNotes] = useState(initial?.notes ?? '');
   const [dupNote, setDupNote] = useState<string | null>(null);
 
-  const [resps, setResps] = useState<RespState[]>(() =>
-    envelope.responsibilities.map((r) => ({
-      draft: '',
-      duties: toItems(r.duties),
-      functionKept: true,
-      functionName: r.functionName,
-      pctTime: r.pctTime,
-    }))
+  const [resps, setResps] = useState<RespState[]>(
+    () =>
+      initial?.resps ??
+      envelope.responsibilities.map((r) => ({
+        draft: '',
+        duties: toItems(r.duties),
+        functionKept: true,
+        functionName: r.functionName,
+        pctTime: r.pctTime,
+      }))
   );
-  const [certs, setCerts] = useState<Item[]>(() => toItems(envelope.certs));
-  const [education, setEducation] = useState<Item[]>(() => toItems(envelope.education));
-  const [workExp, setWorkExp] = useState<Item[]>(() => toItems(envelope.workExperience));
-  const [minKSA, setMinKSA] = useState<Item[]>(() => toItems(envelope.minKSA));
-  const [prefKSA, setPrefKSA] = useState<Item[]>(() => toItems(envelope.prefKSA));
-  const [workEnv, setWorkEnv] = useState<Item[]>(() =>
-    toItems(envelope.workEnvironment)
+  const [certs, setCerts] = useState<Item[]>(() => initial?.certs ?? toItems(envelope.certs));
+  const [education, setEducation] = useState<Item[]>(
+    () => initial?.education ?? toItems(envelope.education)
+  );
+  const [workExp, setWorkExp] = useState<Item[]>(
+    () => initial?.workExp ?? toItems(envelope.workExperience)
+  );
+  const [minKSA, setMinKSA] = useState<Item[]>(() => initial?.minKSA ?? toItems(envelope.minKSA));
+  const [prefKSA, setPrefKSA] = useState<Item[]>(
+    () => initial?.prefKSA ?? toItems(envelope.prefKSA)
+  );
+  const [workEnv, setWorkEnv] = useState<Item[]>(
+    () => initial?.workEnv ?? toItems(envelope.workEnvironment)
   );
 
   const sections = [certs, education, workExp, minKSA, prefKSA, workEnv];
@@ -157,6 +189,20 @@ export const useBuildState = (envelope: EnvelopeSections) => {
     workingTitle,
   });
 
+  const snapshot = (): DraftState => ({
+    certs,
+    department,
+    education,
+    minKSA,
+    notes,
+    prefKSA,
+    resps,
+    version: 1,
+    workEnv,
+    workExp,
+    workingTitle,
+  });
+
   return {
     addedCount: addedItems.length,
     buildRequest,
@@ -181,6 +227,7 @@ export const useBuildState = (envelope: EnvelopeSections) => {
     setWorkEnv,
     setWorkExp,
     setWorkingTitle,
+    snapshot,
     totalPct,
     workEnv,
     workExp,
