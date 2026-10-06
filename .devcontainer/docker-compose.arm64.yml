@@ -1,26 +1,22 @@
-# Apple Silicon override for the local SQL service.
+# FALLBACK Apple Silicon override for the local SQL service. Prefer Rosetta.
 #
-# Why this exists: mcr.microsoft.com/mssql/server:2022-latest is amd64-only. Under
-# QEMU on arm64 it does not merely run slowly, it fails to start at all —
+# mcr.microsoft.com/mssql/server:2022-latest is amd64-only. Under QEMU on arm64 it
+# fails to start at all —
 #
 #   /opt/mssql/bin/sqlservr: Invalid mapping of address 0x... in reserved address
 #   space below 0x400000000000
 #
-# Docker Desktop's Rosetta option papers over this; a plain aarch64 Linux VM
-# (Colima, Lima, Rancher) has no such option, so the service is simply unusable.
+# Under Rosetta it runs normally, so the preferred setup is to turn Rosetta on
+# (Docker Desktop setting, or Colima vz + rosetta: true) and use `npm run db:up`.
+# See docs/RUNNING-LOCALLY.md. Reported upstream: ucdavis/web-app-template#44.
 #
-# azure-sql-edge ships a native arm64 build and runs the app's EF migrations
-# correctly. Two things to know about it: Microsoft has it on a retirement track,
-# and the image does not bundle sqlcmd, so ad-hoc queries need an external client.
+# This file is for machines where Rosetta is unavailable. azure-sql-edge ships a
+# native arm64 build and runs the app's EF migrations, but Microsoft has retired it
+# and the image does not bundle sqlcmd.
 #
-# This file is ADDITIVE — apply it as a second -f after the base compose file, so
-# amd64 machines and CI are completely unaffected:
+# It is ADDITIVE — applied as a second -f after the base compose file:
 #
 #   npm run db:up:arm64
-#
-# If this ever needs to become the default, the fix belongs upstream in
-# ucdavis/web-app-template rather than here: every Apple Silicon developer in the
-# college hits it on their first day.
 services:
   sql:
     image: mcr.microsoft.com/azure-sql-edge:latest

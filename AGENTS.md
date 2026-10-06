@@ -108,13 +108,13 @@ scope to `AddedAt == null` when that is what they mean.
 
 ### Local environment
 
-SQL Server 2022 is amd64-only and **cannot run on Apple Silicon** — it aborts at startup under
-QEMU. Use `npm run db:up:arm64`, which overlays `.devcontainer/docker-compose.arm64.yml` to swap
-in `azure-sql-edge`. The override is additive; amd64 machines and CI use `npm run db:up`
-unchanged. Azure deployments are unaffected.
+SQL Server 2022 is amd64-only. On Apple Silicon it runs only under **Rosetta** emulation — under
+QEMU it aborts at startup. With Rosetta on (Docker Desktop setting, or Colima `vz` + `rosetta: true`),
+use `npm run db:up` like every other machine; `docs/RUNNING-LOCALLY.md` has the setup and a check.
+`npm run db:up:arm64` (an `azure-sql-edge` overlay) remains as a fallback only: that image is retired,
+has no `sqlcmd`, and opens its port several seconds before it accepts logins.
 
-That image has no bundled `sqlcmd`, and its TCP port opens several seconds before it accepts
-logins — wait for `ready for client connections` in `docker logs`, not just an open socket.
+The image's `sqlcmd` is `/opt/mssql-tools18/bin/sqlcmd` and needs `-C` (self-signed certificate).
 
 ---
 

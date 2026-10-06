@@ -72,8 +72,8 @@ catch (Exception ex)
 {
     Console.Error.WriteLine($"Could not reach the database: {ex.Message}");
     Console.Error.WriteLine(
-        "Start it with `npm run db:up:arm64` on Apple Silicon (SQL Server 2022 has no arm64 image) " +
-        "and wait for 'ready for client connections' in `docker logs jdw-sql`.");
+        "Start it with `npm run db:up` (on Apple Silicon, with Docker's Rosetta emulation on; see " +
+        "docs/RUNNING-LOCALLY.md) and wait for it to report healthy.");
     return 3;
 }
 
