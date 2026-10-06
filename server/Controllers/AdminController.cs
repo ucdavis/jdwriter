@@ -162,7 +162,7 @@ public class AdminController : ApiControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (InvalidOperationException ex)
+        catch (KeyEntryDisabledException ex)
         {
             // This environment manages keys in Key Vault only.
             return StatusCode(403, new { message = ex.Message });

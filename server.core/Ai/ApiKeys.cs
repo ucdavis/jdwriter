@@ -63,6 +63,15 @@ public sealed class KeyAuditEntry
     public DateTimeOffset At { get; set; }
 }
 
+/// <summary>This environment manages keys in Key Vault only (Llm:AllowKeyEntryInApp is false).</summary>
+public sealed class KeyEntryDisabledException : Exception
+{
+    public KeyEntryDisabledException()
+        : base("Keys cannot be entered in the app in this environment; they are managed in Key Vault.")
+    {
+    }
+}
+
 /// <summary>The key the model client should use right now, for the active provider.</summary>
 public interface IApiKeySource
 {
@@ -83,6 +92,11 @@ internal static class ApiKeyProtection
 {
     /// <summary>Data Protection purpose. Versioned so a future format change cannot misread old values.</summary>
     public const string Purpose = "JDWriter.AppSecrets.v1";
+
+    /// <summary>A key check is a cheap read; an admin should not wait on a provider longer than this.</summary>
+    public static readonly TimeSpan VerifyTimeout = TimeSpan.FromSeconds(20);
+
+    public const string VerifyTimedOut = "The AI provider did not answer in time to check the key. Nothing was saved; try again.";
 
     /// <summary>
     /// The configured key for the active provider. In Azure this setting is meant to be a Key Vault
@@ -134,17 +148,33 @@ public sealed class ApiKeySource : IApiKeySource
         _logger = logger;
     }
 
-    public string? Current => _cache.GetOrCreate(CacheKey, entry =>
+    public string? Current
     {
-        // A backstop for a change made by another instance; this instance's own changes
-        // invalidate explicitly.
-        entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
-        return Load();
-    });
+        get
+        {
+            if (_cache.TryGetValue(CacheKey, out string? cached))
+            {
+                return cached;
+            }
+
+            var (key, readStore) = Load();
+            if (readStore)
+            {
+                // A backstop for a change made by another instance; this instance's own changes
+                // invalidate explicitly.
+                _cache.Set(CacheKey, key, TimeSpan.FromMinutes(5));
+            }
+
+            // A fallback after a failed database read is not cached, so a stored key is picked up
+            // as soon as the database answers again.
+            return key;
+        }
+    }
 
     public void Invalidate() => _cache.Remove(CacheKey);
 
-    private string? Load()
+    /// <summary>The key, and whether the app-entered store was actually consulted.</summary>
+    private (string? Key, bool ReadStore) Load()
     {
         if (_options.AllowKeyEntryInApp)
         {
@@ -158,7 +188,7 @@ public sealed class ApiKeySource : IApiKeySource
                 {
                     try
                     {
-                        return _protector.Unprotect(stored.ProtectedValue);
+                        return (_protector.Unprotect(stored.ProtectedValue), true);
                     }
                     catch (CryptographicException)
                     {
@@ -174,10 +204,11 @@ public sealed class ApiKeySource : IApiKeySource
                 // No database yet (first boot, migrations pending) must not take model features down
                 // when a key is configured.
                 _logger.LogWarning(ex, "Could not read the app-entered AI key; using configuration.");
+                return (ApiKeyProtection.Configured(_config, _options), false);
             }
         }
 
-        return ApiKeyProtection.Configured(_config, _options);
+        return (ApiKeyProtection.Configured(_config, _options), true);
     }
 }
 
@@ -194,14 +225,20 @@ public sealed class AnthropicKeyVerifier : IApiKeyVerifier
     public async Task<string?> VerifyAsync(string key, CancellationToken ct = default)
     {
         var client = new AnthropicClient { ApiKey = key };
+        using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        bounded.CancelAfter(ApiKeyProtection.VerifyTimeout);
         try
         {
             await client.Messages.CountTokens(new MessageCountTokensParams
             {
                 Model = _options?.EffectiveModel is { Length: > 0 } m ? m : StructuredLlm.Model,
                 Messages = [new() { Role = Role.User, Content = "ping" }],
-            }, cancellationToken: ct);
+            }, cancellationToken: bounded.Token);
             return null;
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return ApiKeyProtection.VerifyTimedOut;
         }
         catch (AnthropicUnauthorizedException)
         {
@@ -222,18 +259,21 @@ public sealed class OpenAiKeyVerifier : IApiKeyVerifier
 {
     private readonly IHttpClientFactory _http;
     private readonly LlmOptions _options;
+    private readonly TimeSpan _timeout;
 
-    public OpenAiKeyVerifier(IHttpClientFactory http, LlmOptions options)
+    public OpenAiKeyVerifier(IHttpClientFactory http, LlmOptions options, TimeSpan? timeout = null)
     {
         _http = http;
         _options = options;
+        _timeout = timeout ?? ApiKeyProtection.VerifyTimeout;
     }
 
     public async Task<string?> VerifyAsync(string key, CancellationToken ct = default)
     {
-        if (_options.Endpoint.Length == 0)
+        var problem = _options.ConfigurationProblem(key);
+        if (problem != null)
         {
-            return "No endpoint is configured for this provider (Llm:Endpoint).";
+            return $"This key can't be used yet: {problem}.";
         }
 
         var url = _options.Provider == LlmProvider.AzureOpenAi
@@ -249,10 +289,16 @@ public sealed class OpenAiKeyVerifier : IApiKeyVerifier
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
         }
 
+        using var bounded = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        bounded.CancelAfter(_timeout);
         HttpResponseMessage response;
         try
         {
-            response = await _http.CreateClient(OpenAiStructuredLlm.HttpClientName).SendAsync(request, ct);
+            response = await _http.CreateClient(OpenAiStructuredLlm.HttpClientName).SendAsync(request, bounded.Token);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return ApiKeyProtection.VerifyTimedOut;
         }
         catch (HttpRequestException)
         {
@@ -364,14 +410,13 @@ public sealed class ApiKeySettings
     /// <summary>
     /// Verify, encrypt, store and audit a key. Throws <see cref="ArgumentException"/> with a
     /// user-facing message when the key is malformed or rejected — nothing is stored — and
-    /// <see cref="InvalidOperationException"/> when this environment does not allow in-app entry.
+    /// <see cref="KeyEntryDisabledException"/> when this environment does not allow in-app entry.
     /// </summary>
     public async Task SetAsync(string key, int? updatedByUserId, CancellationToken ct = default)
     {
         if (!_options.AllowKeyEntryInApp)
         {
-            throw new InvalidOperationException(
-                "Keys cannot be entered in the app in this environment; they are managed in Key Vault.");
+            throw new KeyEntryDisabledException();
         }
 
         key = (key ?? "").Trim();

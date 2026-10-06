@@ -191,4 +191,51 @@ public class OpenAiStructuredLlmTests
 
         ((Action)(() => LlmOptions.From(config))).Should().Throw<InvalidOperationException>().WithMessage("*anthropic, azure-openai or openai-compatible*");
     }
+
+    [Theory]
+    [InlineData("http://models.example.edu/v1", "a-real-key-0000000000000", false)]
+    [InlineData("http://localhost:11434/v1", "a-real-key-0000000000000", true)]
+    [InlineData("http://models.example.edu/v1", null, true)]
+    [InlineData("not a url", null, false)]
+    public async Task A_key_is_never_sent_over_plain_http_off_this_machine(string endpoint, string? key, bool usable)
+    {
+        var options = new LlmOptions { Provider = LlmProvider.OpenAiCompatible, Endpoint = endpoint, Model = "m" };
+        var (llm, h) = Make(options, key, HttpStatusCode.OK, Completion("""{"category":"x","confidence":1,"parts":[]}"""));
+
+        llm.HasApiKey.Should().Be(usable);
+        if (!usable)
+        {
+            await ((Func<Task>)(() => llm.StructuredAsync<Answer>(Request))).Should().ThrowAsync<StructuredLlmException>();
+            h.Request.Should().BeNull("nothing — least of all the key — leaves the process");
+        }
+    }
+
+    [Theory]
+    [InlineData("<html>gateway error</html>")]
+    [InlineData("")]
+    [InlineData("""{"choices":[{"finish_reason":1,"message":{"content":2}}]}""")]
+    public async Task A_success_status_that_is_not_a_chat_completion_is_a_structured_failure(string body)
+    {
+        var (llm, _) = Make(Local, null, HttpStatusCode.OK, body);
+
+        await ((Func<Task>)(() => llm.StructuredAsync<Answer>(Request))).Should()
+            .ThrowAsync<StructuredLlmException>().WithMessage("*not a chat completion*");
+    }
+
+    private sealed class HangingHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            await Task.Delay(Timeout.Infinite, ct);
+            throw new InvalidOperationException("unreachable");
+        }
+    }
+
+    [Fact]
+    public async Task A_provider_that_never_answers_a_key_check_gets_a_message_not_a_hung_request()
+    {
+        var verifier = new OpenAiKeyVerifier(new Factory(new HangingHandler()), Azure, TimeSpan.FromMilliseconds(50));
+
+        (await verifier.VerifyAsync("azure-key-0000000000000000")).Should().Contain("did not answer in time");
+    }
 }
