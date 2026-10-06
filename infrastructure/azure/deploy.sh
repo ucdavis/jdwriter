@@ -36,8 +36,10 @@ USAGE
     'Deployment settings overlay: infrastructure/azure/deployment-settings.json' \
     'Template defaults: infrastructure/azure/deployment-settings-defaults.json' \
     'ADMIN_BOOTSTRAP_LOGIN_IDS, ANTHROPIC_API_KEY, AUTH_CALLBACK_PATH, AUTH_CLIENT_ID' \
-    '  AUTH_DOMAIN, AUTH_INSTANCE, AUTH_TENANT_ID, NOTIFICATION_BASE_URL' \
-    '  NOTIFICATION_DEFAULT_APP_NAME, NOTIFICATION_DEFAULT_BUTTON_TEXT' \
+    '  AUTH_DOMAIN, AUTH_INSTANCE, AUTH_TENANT_ID, AZURE_OPENAI_API_KEY' \
+    '  LLM_ALLOW_KEY_ENTRY_IN_APP, LLM_API_VERSION, LLM_ENDPOINT, LLM_MODEL' \
+    '  LLM_PROVIDER, LLM_SEND_REASONING_EFFORT, NOTIFICATION_BASE_URL' \
+    '  NOTIFICATION_DEFAULT_APP_NAME, NOTIFICATION_DEFAULT_BUTTON_TEXT, OPENAI_API_KEY' \
     '  OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS' \
     '  OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_RESOURCE_ATTRIBUTES, OTEL_SERVICE_NAME' \
     '  SMTP_BCC_EMAIL, SMTP_FROM_EMAIL, SMTP_FROM_NAME, SMTP_HOST, SMTP_PASSWORD' \
@@ -273,9 +275,17 @@ add_setting "Auth__ClientId" "${AUTH_CLIENT_ID:-}"
 add_setting "Auth__Domain" "${AUTH_DOMAIN:-}"
 add_setting "Auth__Instance" "${AUTH_INSTANCE:-https://login.microsoftonline.com/}"
 add_setting "Auth__TenantId" "${AUTH_TENANT_ID:-}"
+add_setting "AZURE_OPENAI_API_KEY" "${AZURE_OPENAI_API_KEY:-}"
+add_setting "Llm__AllowKeyEntryInApp" "${LLM_ALLOW_KEY_ENTRY_IN_APP:-}"
+add_setting "Llm__ApiVersion" "${LLM_API_VERSION:-}"
+add_setting "Llm__Endpoint" "${LLM_ENDPOINT:-}"
+add_setting "Llm__Model" "${LLM_MODEL:-}"
+add_setting "Llm__Provider" "${LLM_PROVIDER:-}"
+add_setting "Llm__SendReasoningEffort" "${LLM_SEND_REASONING_EFFORT:-}"
 add_setting "Notification__BaseUrl" "${NOTIFICATION_BASE_URL:-}"
 add_setting "Notification__DefaultAppName" "${NOTIFICATION_DEFAULT_APP_NAME:-}"
 add_setting "Notification__DefaultButtonText" "${NOTIFICATION_DEFAULT_BUTTON_TEXT:-}"
+add_setting "OPENAI_API_KEY" "${OPENAI_API_KEY:-}"
 app_settings+=("OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}")
 add_setting "OTEL_EXPORTER_OTLP_HEADERS" "${OTEL_EXPORTER_OTLP_HEADERS:-}"
 add_setting "OTEL_EXPORTER_OTLP_PROTOCOL" "${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}"

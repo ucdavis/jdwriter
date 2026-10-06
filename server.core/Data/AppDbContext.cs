@@ -61,6 +61,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<AdminGrant> AdminGrants => Set<AdminGrant>();
     public DbSet<AppSecret> AppSecrets => Set<AppSecret>();
+    public DbSet<AppSecretAudit> AppSecretAudits => Set<AppSecretAudit>();
     public DbSet<CorpusUpload> CorpusUploads => Set<CorpusUpload>();
     public DbSet<StandardsWorkbook> StandardsWorkbooks => Set<StandardsWorkbook>();
 
@@ -372,6 +373,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(x => new { x.Status, x.UcJobCode });
             e.HasOne(x => x.UploadedBy).WithMany()
                 .HasForeignKey(x => x.UploadedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<AppSecretAudit>(e =>
+        {
+            e.Property(x => x.SecretName).HasMaxLength(100);
+            e.Property(x => x.Action).HasMaxLength(20);
+            e.Property(x => x.LastFour).HasMaxLength(4);
+            e.HasIndex(x => x.At);
+            // The audit outlives the user it names.
+            e.HasOne(x => x.User).WithMany()
+                .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<AppSecret>(e =>

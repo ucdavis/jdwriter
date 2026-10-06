@@ -35,9 +35,17 @@ jobs:
       AUTH_DOMAIN: ${{ vars.AUTH_DOMAIN }}
       AUTH_INSTANCE: ${{ vars.AUTH_INSTANCE || 'https://login.microsoftonline.com/' }}
       AUTH_TENANT_ID: ${{ vars.AUTH_TENANT_ID }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      LLM_ALLOW_KEY_ENTRY_IN_APP: ${{ vars.LLM_ALLOW_KEY_ENTRY_IN_APP }}
+      LLM_API_VERSION: ${{ vars.LLM_API_VERSION }}
+      LLM_ENDPOINT: ${{ vars.LLM_ENDPOINT }}
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
+      LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+      LLM_SEND_REASONING_EFFORT: ${{ vars.LLM_SEND_REASONING_EFFORT }}
       NOTIFICATION_BASE_URL: ${{ vars.NOTIFICATION_BASE_URL }}
       NOTIFICATION_DEFAULT_APP_NAME: ${{ vars.NOTIFICATION_DEFAULT_APP_NAME }}
       NOTIFICATION_DEFAULT_BUTTON_TEXT: ${{ vars.NOTIFICATION_DEFAULT_BUTTON_TEXT }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${{ vars.OTEL_EXPORTER_OTLP_PROTOCOL || 'http/protobuf' }}
@@ -221,9 +229,17 @@ jobs:
           add_setting "Auth__Domain" "$AUTH_DOMAIN"
           add_setting "Auth__Instance" "$AUTH_INSTANCE"
           add_setting "Auth__TenantId" "$AUTH_TENANT_ID"
+          add_setting "AZURE_OPENAI_API_KEY" "$AZURE_OPENAI_API_KEY"
+          add_setting "Llm__AllowKeyEntryInApp" "$LLM_ALLOW_KEY_ENTRY_IN_APP"
+          add_setting "Llm__ApiVersion" "$LLM_API_VERSION"
+          add_setting "Llm__Endpoint" "$LLM_ENDPOINT"
+          add_setting "Llm__Model" "$LLM_MODEL"
+          add_setting "Llm__Provider" "$LLM_PROVIDER"
+          add_setting "Llm__SendReasoningEffort" "$LLM_SEND_REASONING_EFFORT"
           add_setting "Notification__BaseUrl" "$NOTIFICATION_BASE_URL"
           add_setting "Notification__DefaultAppName" "$NOTIFICATION_DEFAULT_APP_NAME"
           add_setting "Notification__DefaultButtonText" "$NOTIFICATION_DEFAULT_BUTTON_TEXT"
+          add_setting "OPENAI_API_KEY" "$OPENAI_API_KEY"
           settings+=("OTEL_EXPORTER_OTLP_ENDPOINT=$OTEL_EXPORTER_OTLP_ENDPOINT")
           add_setting "OTEL_EXPORTER_OTLP_HEADERS" "$OTEL_EXPORTER_OTLP_HEADERS"
           add_setting "OTEL_EXPORTER_OTLP_PROTOCOL" "$OTEL_EXPORTER_OTLP_PROTOCOL"

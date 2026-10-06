@@ -70,6 +70,11 @@ Each of these was a real bug once. Preserve them explicitly, and do not "simplif
 - **Superseded job codes are remapped at parse time,** and every path that creates a profile
   guards against them. Hiding a dead class from browse and the classifier is not sufficient.
 - **Six real JDs do not sum to 100% time** (range 0-200). Do not add a constraint requiring it.
+- **One model seam.** Every model call goes through `IStructuredLlm`; the provider (Anthropic,
+  Azure OpenAI, OpenAI-compatible) is chosen by `Llm:Provider` configuration and never in the app.
+  Prompts are the same bytes for every provider — do not fork them per model.
+- **Keys are write-only and audited.** No endpoint or log ever carries a key. In-app keys are
+  stored per provider, encrypted with Data Protection, and every change writes `AppSecretAudits`.
 
 ### Data handling
 

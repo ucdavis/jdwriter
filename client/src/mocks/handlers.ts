@@ -110,6 +110,15 @@ const misfitsFor = (threshold: number): MisfitsResponse => {
 /** What the mocked build has "saved" this session, so My JDs has something to show. */
 let savedJds: SavedJd[] = [];
 
+const mockKeyStatus = {
+  audit: [],
+  endpoint: '',
+  keyEntryAllowed: true,
+  keyRequired: true,
+  model: 'claude-opus-5',
+  provider: 'anthropic',
+} satisfies Partial<ApiKeyStatus>;
+
 export const handlers = [
   http.get('/api/jds', () =>
     HttpResponse.json<SavedJdListResponse>({
@@ -614,6 +623,7 @@ export const handlers = [
 
   http.get('/api/admin/settings/api-key', () =>
     HttpResponse.json<ApiKeyStatus>({
+      ...mockKeyStatus,
       configurationHasKey: true,
       lastFour: 'cfg1',
       source: 'configuration',
@@ -627,6 +637,7 @@ export const handlers = [
     const { key } = (await request.json()) as { key: string };
     await delay(600);
     return HttpResponse.json<ApiKeyStatus>({
+      ...mockKeyStatus,
       configurationHasKey: true,
       lastFour: key.slice(-4),
       source: 'app',
@@ -638,6 +649,7 @@ export const handlers = [
 
   http.delete('/api/admin/settings/api-key', () =>
     HttpResponse.json<ApiKeyStatus>({
+      ...mockKeyStatus,
       configurationHasKey: true,
       lastFour: 'cfg1',
       source: 'configuration',

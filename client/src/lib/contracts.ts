@@ -568,9 +568,28 @@ export type AdminsResponse = { admins: AdminEntry[] };
 export type SecurityStatus = { databaseEncryptedAtRest: boolean | null };
 
 /** Where the Anthropic key in use came from. Never contains the key. */
-export type ApiKeyStatus = {
-  configurationHasKey: boolean;
+/** Set per environment in server configuration (Llm:Provider); never chosen in the app. */
+export type LlmProvider = 'anthropic' | 'azureOpenAi' | 'openAiCompatible';
+
+export type KeyAuditEntry = {
+  action: 'set' | 'cleared';
+  at: string;
+  by: string | null;
   lastFour: string | null;
+};
+
+export type ApiKeyStatus = {
+  /** Recent key changes, newest first — who and when, never the value. */
+  audit: Array<KeyAuditEntry>;
+  configurationHasKey: boolean;
+  endpoint: string;
+  /** False when this environment manages keys in Key Vault only. */
+  keyEntryAllowed: boolean;
+  /** False for a local OpenAI-compatible server that needs no key. */
+  keyRequired: boolean;
+  lastFour: string | null;
+  model: string;
+  provider: LlmProvider;
   source: 'app' | 'configuration' | 'none';
   /** A key is stored but can no longer be decrypted; configuration is being used instead. */
   storedKeyUnreadable: boolean;
