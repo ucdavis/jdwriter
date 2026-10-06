@@ -1,21 +1,41 @@
 import { Badge, Card, Eyebrow, Fact, PageHeader } from '@/shared/ui/primitives.tsx';
 import { BuildFlow } from '@/features/build/BuildFlow.tsx';
+import { asDraftState } from '@/features/build/useBuildState.ts';
+import { savedJdQueryOptions } from '@/queries/jds.ts';
+import { useQuery } from '@tanstack/react-query';
 import { classProfileQueryOptions, useClassProfile } from '@/queries/classes.ts';
 import { useIsAdmin } from '@/shared/ui/AppShell.tsx';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import type { Distribution, EnvelopeSource } from '@/lib/contracts.ts';
 import type { RouterContext } from '@/main.tsx';
 
+// Route options must follow TanStack Router's order (search validation before loader deps
+// before the loader) for its type inference, which outranks alphabetical key sorting.
+/* eslint-disable perfectionist/sort-objects */
 export const Route = createFileRoute('/(authenticated)/class/$slug')({
-  component: ClassPage,
-  loader: ({
+  // ?draft=<id> continues a saved JD instead of starting from the envelope.
+  validateSearch: (search: Record<string, unknown>): { draft?: number } => {
+    const draft = Number(search.draft);
+    return Number.isInteger(draft) && draft > 0 ? { draft } : {};
+  },
+  loaderDeps: ({ search }) => ({ draft: search.draft }),
+  loader: async ({
     context,
+    deps,
     params,
   }: {
     context: RouterContext;
+    deps: { draft?: number };
     params: { slug: string };
-  }) => context.queryClient.ensureQueryData(classProfileQueryOptions(params.slug)),
+  }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(classProfileQueryOptions(params.slug)),
+      deps.draft ? context.queryClient.ensureQueryData(savedJdQueryOptions(deps.draft)) : null,
+    ]);
+  },
+  component: ClassPage,
 });
+/* eslint-enable perfectionist/sort-objects */
 
 /** A tri-state consensus reads as Yes / No / Not specified, never as a bare false. */
 const triStateLabel = (d: Distribution): string =>
@@ -38,6 +58,13 @@ const sourceBadge = (
 
 function ClassPage() {
   const { slug } = Route.useParams();
+  const { draft: draftId } = Route.useSearch();
+  const { data: saved } = useQuery({ ...savedJdQueryOptions(draftId ?? 0), enabled: draftId != null });
+  // Only a draft of THIS class resumes here; anything else starts fresh from the envelope.
+  const draft =
+    draftId != null && saved && saved.slug === slug
+      ? { id: draftId, state: asDraftState(saved.draftState) }
+      : null;
   const { data: profile } = useClassProfile(slug);
   const isAdmin = useIsAdmin();
 
@@ -151,6 +178,7 @@ function ClassPage() {
 
       {envelope ? (
         <BuildFlow
+          draft={draft}
           envelope={{
             certs: envelope.requiredCertifications,
             education: envelope.education,
@@ -160,6 +188,7 @@ function ClassPage() {
             workEnvironment: envelope.workEnvironment,
             workExperience: envelope.workExperience,
           }}
+          key={draft ? `draft-${draft.id}` : 'fresh'}
           slug={profile.slug}
           title={profile.title}
         />

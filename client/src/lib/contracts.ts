@@ -283,6 +283,8 @@ export type BuildRequest = {
   /** The saved JD this build session already wrote; re-assembling updates it. */
   authoredJdId?: number | null;
   department: string;
+  /** The build screen as left, so the JD can be reopened and continued. */
+  draftState?: unknown;
   keptCerts: string[];
   keptEducation: string[];
   keptMinKSA: string[];
@@ -487,6 +489,8 @@ export type BootstrapCreateResponse = {
 // ---------------------------------------------------------------- saved JDs
 
 export type SavedJdSummary = {
+  /** False for a draft saved before it was ever assembled. */
+  assembled: boolean;
   createdAt: string;
   createdBy: string | null;
   department: string;
@@ -504,9 +508,13 @@ export type SavedJdListResponse = { jds: SavedJdSummary[] };
 
 /** A saved JD: the build's result shape plus who wrote it, when, and what they added. */
 export type SavedJd = AssembledJd & {
+  /** False for a draft saved before it was ever assembled. */
+  assembled: boolean;
   authorAdditions: string[];
   createdAt: string;
   createdBy: string | null;
+  /** The saved build screen, for "Continue editing"; null for JDs saved before drafts. */
+  draftState: unknown;
   notes: string;
   updatedAt: string;
 };

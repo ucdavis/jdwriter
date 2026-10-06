@@ -15,6 +15,9 @@ public sealed class SavedJdSummary
     public string UcJobCode { get; set; } = "";
     public AuthoredJdStatus Status { get; set; }
     public int UnallocatedPct { get; set; }
+
+    /// <summary>False for a draft saved before it was ever assembled.</summary>
+    public bool Assembled { get; set; }
     public string? CreatedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -44,6 +47,12 @@ public sealed class SavedJd
     public string Notes { get; set; } = "";
     public bool InCorpus { get; set; }
     public string CorpusNote { get; set; } = "";
+
+    /// <summary>The saved build screen, for "Continue editing"; null for JDs saved before drafts existed.</summary>
+    public System.Text.Json.JsonElement? DraftState { get; set; }
+
+    /// <summary>False for a draft saved before it was ever assembled.</summary>
+    public bool Assembled { get; set; }
     public string? CreatedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -62,6 +71,9 @@ public sealed class AuthoredJdStore
         _db = db;
     }
 
+    /// <summary>The most draft state accepted from a client: generous for any real build screen.</summary>
+    public const int MaxDraftStateChars = 512 * 1024;
+
     /// <summary>
     /// Save an assembly. When <paramref name="existingId"/> names a JD this user wrote, it is
     /// updated in place — re-assembling in one build session revises one record rather than
@@ -73,10 +85,63 @@ public sealed class AuthoredJdStore
         ClassProfile profile,
         int? userId,
         int? existingId,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        string? draftState = null)
     {
         var fresh = assembled.ToEntity(profile.Id, userId, inputs, profile.EnvelopeSource);
+        fresh.DraftState = draftState;
+        fresh.AssembledAt = DateTimeOffset.UtcNow;
+        return await UpsertAsync(fresh, userId, existingId, ct);
+    }
 
+    /// <summary>
+    /// Save work in progress without assembling it: no model call, always a Draft whatever the
+    /// allocation, and never in the corpus — only finished JDs are evidence. Saving a draft over a
+    /// JD that was already assembled turns it back into a draft and withdraws its corpus copy.
+    /// </summary>
+    public async Task<int> SaveDraftAsync(
+        BuildInputs inputs,
+        ClassProfile profile,
+        int? userId,
+        int? existingId,
+        string? draftState,
+        CancellationToken ct = default)
+    {
+        var asDrafted = new AssembledJd
+        {
+            Slug = profile.Slug,
+            Title = profile.Title,
+            WorkingTitle = inputs.WorkingTitle.Length > 0 ? inputs.WorkingTitle : profile.Title,
+            Department = inputs.Department,
+            UcJobCode = profile.UcJobCode,
+            Jd = new Jd
+            {
+                KeyResponsibilities = [.. inputs.KeptResponsibilities.Select(r => r.Clone())],
+                LicensesCertifications = [.. inputs.KeptCerts],
+                Education = [.. inputs.KeptEducation],
+                WorkExperience = [.. inputs.KeptWorkExperience],
+                MinKSA = [.. inputs.KeptMinKSA],
+                PrefKSA = [.. inputs.KeptPrefKSA],
+                WorkEnvironment = [.. inputs.KeptWorkEnvironment],
+            },
+            UnallocatedPct = 100 - inputs.KeptResponsibilities.Sum(r => r.PctTime),
+        };
+
+        var fresh = asDrafted.ToEntity(profile.Id, userId, inputs, profile.EnvelopeSource);
+        fresh.Status = AuthoredJdStatus.Draft;
+        fresh.DraftState = draftState;
+        fresh.AssembledAt = null;
+        fresh.InCorpus = false;
+        fresh.CorpusNote = "Draft — not assembled yet, so not in the corpus.";
+        var id = await UpsertAsync(fresh, userId, existingId, ct);
+
+        _db.JobDescriptions.RemoveRange(await _db.JobDescriptions.Where(j => j.AuthoredJdId == id).ToListAsync(ct));
+        await _db.SaveChangesAsync(ct);
+        return id;
+    }
+
+    private async Task<int> UpsertAsync(AuthoredJd fresh, int? userId, int? existingId, CancellationToken ct)
+    {
         AuthoredJd? existing = null;
         if (existingId != null && userId != null)
         {
@@ -111,6 +176,10 @@ public sealed class AuthoredJdStore
         existing.UnallocatedPct = fresh.UnallocatedPct;
         existing.Notes = fresh.Notes;
         existing.EnvelopeSource = fresh.EnvelopeSource;
+        existing.DraftState = fresh.DraftState ?? existing.DraftState;
+        existing.AssembledAt = fresh.AssembledAt;
+        existing.InCorpus = fresh.InCorpus;
+        existing.CorpusNote = fresh.CorpusNote;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
         existing.KeyResponsibilities = fresh.KeyResponsibilities;
         existing.Items = fresh.Items;
@@ -192,6 +261,7 @@ public sealed class AuthoredJdStore
                 UcJobCode = a.UcJobCode,
                 Status = a.Status,
                 UnallocatedPct = a.UnallocatedPct,
+                Assembled = a.AssembledAt != null,
                 CreatedBy = a.CreatedBy != null ? (a.CreatedBy.DisplayName ?? a.CreatedBy.LoginId) : null,
                 CreatedAt = a.CreatedAt,
                 UpdatedAt = a.UpdatedAt,
@@ -267,6 +337,8 @@ public sealed class AuthoredJdStore
             Notes = a.Notes,
             InCorpus = a.InCorpus,
             CorpusNote = a.CorpusNote,
+            DraftState = a.DraftState == null ? null : System.Text.Json.JsonDocument.Parse(a.DraftState).RootElement.Clone(),
+            Assembled = a.AssembledAt != null,
             CreatedBy = a.CreatedBy?.DisplayName ?? a.CreatedBy?.LoginId,
             CreatedAt = a.CreatedAt,
             UpdatedAt = a.UpdatedAt,

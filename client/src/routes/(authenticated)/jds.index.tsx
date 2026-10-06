@@ -106,7 +106,11 @@ function SavedJdsPage() {
                       Created {when(j.createdAt)}
                     </span>
                     <Badge tone={j.status === 'ready' ? 'green' : 'yellow'}>
-                      {j.status === 'ready' ? 'Ready' : `Draft · ${j.unallocatedPct}% unallocated`}
+                      {j.status === 'ready'
+                        ? 'Ready'
+                        : j.assembled
+                          ? `Draft · ${j.unallocatedPct}% unallocated`
+                          : 'Draft · not assembled'}
                     </Badge>
                   </div>
                 </Link>
