@@ -401,6 +401,21 @@ export type MisfitsResponse = {
 export type FitSuggestRequest = { slug: string; sourceFile: string };
 export type FitSuggestResponse = { matches: ClassMatch[] };
 
+/** Rewrite a misfit into a class: its own when targetSlug is omitted. */
+export type FitRewriteRequest = { slug: string; sourceFile: string; targetSlug?: string };
+
+/** The rewrite is saved as a draft; open it at /class/{slug}?draft={authoredJdId}. */
+export type FitRewriteResponse = {
+  authoredJdId: number;
+  carriedDuties: number;
+  droppedFunctions: number;
+  keptFunctions: number;
+  /** Incumbent work the rewrite left out because it does not belong in the class. */
+  outside: Array<{ pct: number | null; reason: string; text: string }>;
+  slug: string;
+  title: string;
+};
+
 // ---------------------------------------------------------------- admin
 
 export type PendingClass = {

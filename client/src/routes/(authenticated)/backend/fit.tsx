@@ -4,8 +4,8 @@ import { Badge, Card, Eyebrow, Note, PageHeader } from '@/shared/ui/primitives.t
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { misfitsQueryOptions, useMisfits } from '@/queries/classes.ts';
-import { useSuggestClass } from '@/queries/authoring.ts';
-import type { Misfit } from '@/lib/contracts.ts';
+import { useRewriteToFit, useSuggestClass } from '@/queries/authoring.ts';
+import type { FitRewriteResponse, Misfit } from '@/lib/contracts.ts';
 import type { RouterContext } from '@/main.tsx';
 
 const CAP = 150;
@@ -86,6 +86,7 @@ function FitContent() {
 
 const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
   const suggest = useSuggestClass();
+  const rewrite = useRewriteToFit();
   const matches = suggest.data?.matches;
   const best = matches?.[0];
   const bestIsCurrent = best?.slug === misfit.slug;
@@ -118,16 +119,31 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
             </div>
           ) : null}
         </div>
-        <button
-          className="btn btn-outline btn-xs shrink-0"
-          disabled={suggest.isPending}
-          onClick={() =>
-            suggest.mutate({ slug: misfit.slug, sourceFile: misfit.sourceFile })
-          }
-          type="button"
-        >
-          {suggest.isPending ? 'Matching…' : 'Suggest class'}
-        </button>
+        <div className="flex shrink-0 gap-1.5">
+          <button
+            className="btn btn-outline btn-xs"
+            disabled={suggest.isPending}
+            onClick={() =>
+              suggest.mutate({ slug: misfit.slug, sourceFile: misfit.sourceFile })
+            }
+            type="button"
+          >
+            {suggest.isPending ? 'Matching…' : 'Suggest class'}
+          </button>
+          <button
+            className="btn btn-outline btn-xs"
+            disabled={rewrite.isPending}
+            onClick={() =>
+              rewrite.mutate({ slug: misfit.slug, sourceFile: misfit.sourceFile })
+            }
+            title={`Draft a new JD for ${misfit.classTitle} from this one`}
+            type="button"
+          >
+            {rewrite.isPending && !rewrite.variables?.targetSlug
+              ? 'Rewriting…'
+              : 'Rewrite to fit'}
+          </button>
+        </div>
       </div>
 
       {suggest.error ? (
@@ -135,6 +151,12 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
           <Note tone="red">{messageOf(suggest.error)}</Note>
         </div>
       ) : null}
+      {rewrite.error ? (
+        <div className="mt-2">
+          <Note tone="red">{messageOf(rewrite.error)}</Note>
+        </div>
+      ) : null}
+      {rewrite.data ? <RewriteResult result={rewrite.data} /> : null}
 
       {matches ? (
         <div className="mt-3 rounded-lg border border-base-300 bg-base-200 p-3">
@@ -155,6 +177,22 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
                 {best.title}
               </Link>{' '}
               <Badge tone="green">{best.confidence}%</Badge>
+              <button
+                className="btn btn-primary btn-xs ml-2"
+                disabled={rewrite.isPending}
+                onClick={() =>
+                  rewrite.mutate({
+                    slug: misfit.slug,
+                    sourceFile: misfit.sourceFile,
+                    targetSlug: best.slug,
+                  })
+                }
+                type="button"
+              >
+                {rewrite.isPending && rewrite.variables?.targetSlug === best.slug
+                  ? 'Rewriting…'
+                  : `Rewrite to fit ${best.title}`}
+              </button>
               <div className="mt-1 text-[12px] text-base-content/65">{best.rationale}</div>
             </div>
           ) : null}
@@ -172,3 +210,38 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
     </Card>
   );
 };
+
+/**
+ * A rewrite is a draft, not a JD: the analyst opens it in the build screen, where the
+ * carried-over duties go through the envelope check and assembly like any other.
+ */
+const RewriteResult = ({ result }: { result: FitRewriteResponse }) => (
+  <div className="mt-3 rounded-lg border border-success/30 bg-success/5 p-3 text-[12.5px]">
+    <div>
+      Draft written for <span className="font-semibold">{result.title}</span>: {result.keptFunctions}{' '}
+      function{result.keptFunctions === 1 ? '' : 's'} kept, {result.carriedDuties} of the
+      incumbent&apos;s duties carried over.{' '}
+      <Link
+        className="font-semibold text-primary hover:underline"
+        params={{ slug: result.slug }}
+        search={{ draft: result.authoredJdId }}
+        to="/class/$slug"
+      >
+        Open draft →
+      </Link>
+    </div>
+    {result.outside.length > 0 ? (
+      <div className="mt-2 text-[12px] text-base-content/65">
+        Left out — outside this class:
+        <ul className="mt-1 list-disc pl-5">
+          {result.outside.map((o) => (
+            <li key={o.text}>
+              {o.text}
+              {o.pct === null ? '' : ` (${o.pct}%)`} — {o.reason}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null}
+  </div>
+);
