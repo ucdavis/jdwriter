@@ -23,13 +23,13 @@
     <h1>Sign in to JDWriter</h1>
     @if (ViewData["EntraConfigured"] is true)
     {
-        <form action="/login/ucdavis" method="get">
+        <form action="@Url.Content("~/login/ucdavis")" method="get">
             <input type="hidden" name="returnUrl" value="@Model" />
             <button type="submit"><strong>Sign in to UC Davis</strong></button>
         </form>
     }
     <p>Or use a fictional account for local development.</p>
-    <form action="/login/local" method="post">
+    <form action="@Url.Content("~/login/local")" method="post">
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@Model" />
         <button name="persona" value="sample" type="submit">
@@ -44,12 +44,12 @@
     @if (User.Identity?.IsAuthenticated == true)
     {
         <p>Signed in as <strong>@User.Identity.Name</strong>. <a href="@Model">Continue to the app</a></p>
-        <form action="/logout/local" method="post">
+        <form action="@Url.Content("~/logout/local")" method="post">
             @Html.AntiForgeryToken()
             <button type="submit">Sign out</button>
         </form>
     }
-    <p><a href="/about">Visit the public about page</a></p>
+    <p><a href="@Url.Content("~/about")">Visit the public about page</a></p>
 </main>
 </body>
 </html>

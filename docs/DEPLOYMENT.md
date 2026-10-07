@@ -90,6 +90,35 @@ has saved JDs, by design — after go-live, add JDs with **Upload JDs** on `/bac
   - **Key changes** lists every in-app change to the key — who and when, never the value.
 - Add the other admins by login ID.
 
+## 5. Mounting under CAES People
+
+JDWriter is one of several CAES HR apps that share a host. `people.caes.ucdavis.edu/` is the CAES
+People landing page, and each app lives under a path: JDWriter at `/jdwriter`, with CompBuilder and
+HireHelper to follow. A front door (Azure Front Door or Application Gateway) routes each path to its
+app's App Service. Every app is its own repo and deployment; the landing page is the separate
+`caes-people` repo.
+
+To mount JDWriter at a path:
+
+1. **Set `APP_PATH_BASE`** to `/jdwriter` in the environment and run **Configure Azure**. Unset, the
+   app serves at its root as before. One build serves any mount point: the server writes the path
+   into `index.html` as `<base href>`, and the client takes its router base path and API prefix
+   from that.
+2. **Add the redirect URI** `https://people.caes.ucdavis.edu/jdwriter/signin-oidc` to the Entra app
+   registration. The sign-in callback is relative to the mount point.
+3. **Route `/jdwriter/*` to the App Service without stripping the prefix.** The app expects to see
+   it and removes it itself.
+4. **Keep the public host name on the request.** Front Door and Application Gateway typically
+   rewrite `Host` to the App Service's `*.azurewebsites.net` name. The app would then build its
+   Entra redirect URI from that name and sign-in would fail. Either bind `people.caes.ucdavis.edu`
+   on the App Service as a custom domain and forward the original host, or have the app trust
+   `X-Forwarded-Host` from the front door. That second option is not enabled today, because it
+   needs the front door's addresses as known proxies.
+
+The App Service health probe can keep using `/health`: the app answers at its root as well as under
+the mount point. The auth cookie is scoped to the mount point, so apps on the same host keep separate
+sessions.
+
 ## Where sensitive data lives
 
 | Data | Where | Protection |

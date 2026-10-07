@@ -11,10 +11,17 @@ namespace Server.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public class AccountController(IConfiguration configuration, IHostEnvironment environment) : Controller
 {
+    /// <summary>
+    /// The app's own root, mount point included ("/jdwriter/" under CAES People). A bare "/" would
+    /// send the user to the portal's landing page instead of back into JDWriter. A return URL from
+    /// the client already carries the mount point, because it is the browser's full path.
+    /// </summary>
+    private string AppRoot => Url.Content("~/");
+
     [HttpGet("login")]
     public IActionResult Login(string? returnUrl)
     {
-        var safeReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl! : "/";
+        var safeReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl! : AppRoot;
         if (LocalAuthentication.IsEnabled(configuration, environment))
         {
             ViewData["EntraConfigured"] = AuthenticationHelper.IsEntraConfigured(configuration);
@@ -40,7 +47,7 @@ public class AccountController(IConfiguration configuration, IHostEnvironment en
 
         return Challenge(new AuthenticationProperties
         {
-            RedirectUri = Url.IsLocalUrl(returnUrl) ? returnUrl! : "/",
+            RedirectUri = Url.IsLocalUrl(returnUrl) ? returnUrl! : AppRoot,
         }, OpenIdConnectDefaults.AuthenticationScheme);
     }
 
@@ -60,7 +67,7 @@ public class AccountController(IConfiguration configuration, IHostEnvironment en
         }
 
         await HttpContext.SignInAsync(LocalAuthentication.Scheme, principal);
-        return LocalRedirect(Url.IsLocalUrl(returnUrl) ? returnUrl! : "/");
+        return LocalRedirect(Url.IsLocalUrl(returnUrl) ? returnUrl! : AppRoot);
     }
 
     [HttpPost("logout/local")]
@@ -73,6 +80,6 @@ public class AccountController(IConfiguration configuration, IHostEnvironment en
         }
 
         await HttpContext.SignOutAsync(LocalAuthentication.Scheme);
-        return LocalRedirect("/login");
+        return LocalRedirect(Url.Content("~/login"));
     }
 }

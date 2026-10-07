@@ -7,6 +7,7 @@ import './main.css';
 // Import the generated route tree
 import { routeTree } from './routeTree.gen.ts';
 import { startMockServiceWorker } from './mocks/start.ts';
+import { basePath } from './lib/basePath.ts';
 
 const queryClient = new QueryClient();
 
@@ -14,6 +15,8 @@ export type RouterContext = { queryClient: QueryClient };
 
 // Create a new router instance
 const router = createRouter({
+  // The mount point the server wrote into index.html; '/' when there is none.
+  basepath: basePath() || '/',
   context: { queryClient },
   defaultPreload: 'intent',
   routeTree,

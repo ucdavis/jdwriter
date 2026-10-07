@@ -226,6 +226,20 @@ try
 
     app.UseForwardedHeaders();
 
+    // The app's mount point: "" at a host's root, "/jdwriter" under CAES People. Everything after
+    // this sees paths relative to it — routing, static files, the sign-in callback, and the auth
+    // cookie, which is scoped to the mount point so apps sharing the host keep separate sessions.
+    var pathBase = SpaIndex.NormalizePathBase(builder.Configuration["App:PathBase"]);
+    if (pathBase.Length > 0)
+    {
+        app.UsePathBase(pathBase);
+    }
+
+    // Explicit, and only after UsePathBase. Left implicit, routing is added at the very start of
+    // the pipeline and matches "/jdwriter/api/..." before the mount point is stripped, so every
+    // API call and the sign-in page fall through to the SPA's index.html.
+    app.UseRouting();
+
     app.Use(async (context, next) =>
     {
         context.Response.OnStarting(() =>
@@ -259,7 +273,8 @@ try
         }
     };
 
-    app.UseDefaultFiles();
+    // No UseDefaultFiles: "/" must reach the SPA fallback below, which writes the <base href> into
+    // index.html. Served raw, the client could not tell which path it is mounted at.
     app.UseStaticFiles(staticFileOptions);
 
     app.UseResponseCaching();
@@ -298,7 +313,7 @@ try
         NoStore = false,
     });
 
-    app.MapFallbackToFile("/index.html", staticFileOptions);
+    app.MapFallback(SpaIndex.Endpoint(app.Environment, ApplyNoStoreHeaders));
 
     app.Logger.LogInformation("Startup complete. Listening on {Urls}", string.Join(", ", app.Urls));
     app.Run();

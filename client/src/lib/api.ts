@@ -1,3 +1,5 @@
+import { appUrl } from './basePath.ts';
+
 export class HttpError extends Error {
   constructor(
     public status: number,
@@ -30,7 +32,7 @@ export async function fetchJson<T>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const res = await fetch(url, {
+  const res = await fetch(appUrl(url), {
     credentials: 'same-origin', // front/back proxy on same domain and during prod it's same origin too
     signal, // for cancellation/abort
     ...requestInit,
@@ -44,7 +46,9 @@ export async function fetchJson<T>(
 
   // Auto-redirect on 401
   if (res.status === 401 && !skipRedirectOn401) {
-    window.location.href = `/login?returnUrl=${toRedirectParam()}`;
+    // The return URL is the full browser path, mount point included, which the server
+    // redirects to as-is after sign-in.
+    window.location.href = appUrl(`/login?returnUrl=${toRedirectParam()}`);
     // Halt the current render/update
     return new Promise<T>(() => {});
   }
