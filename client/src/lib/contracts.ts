@@ -525,6 +525,19 @@ export type SupersededProfile = {
   title: string;
 };
 
+/** Why an imported envelope did not become a class in this environment. */
+export type EnvelopeImportRefusal =
+  | 'codeMismatch'
+  | 'exists'
+  | 'invalid'
+  | 'noStandard'
+  | 'superseded';
+
+export type EnvelopeImportResult = {
+  created: Array<{ slug: string; title: string; ucJobCode: string }>;
+  skipped: Array<{ message: string; reason: EnvelopeImportRefusal; title: string }>;
+};
+
 export type RetirementResult = {
   profiles: SupersededProfile[];
   /** Corpus JDs moved from a retired code to its successor. */

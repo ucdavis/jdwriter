@@ -53,11 +53,46 @@ public sealed class BootstrapMeta
     public string Program { get; set; } = "";
 }
 
+/// <summary>Why a class was not created from its standard.</summary>
+public enum BootstrapRefusal
+{
+    NoStandard,
+    Superseded,
+    Exists,
+
+    /// <summary>The standard resolves to a different job code here than where the envelope was made.</summary>
+    CodeMismatch,
+    Invalid,
+}
+
+/// <summary>
+/// A refusal to create a class, with a machine-readable reason. Still an
+/// <see cref="InvalidOperationException"/>, so a caller that only shows the message keeps working.
+/// </summary>
+public sealed class BootstrapRefusedException : InvalidOperationException
+{
+    public BootstrapRefusedException(BootstrapRefusal reason, string message) : base(message) => Reason = reason;
+
+    public BootstrapRefusal Reason { get; }
+}
+
 public interface IBootstrapper
 {
     Task<List<BootstrapCandidate>> GetCandidatesAsync(CancellationToken ct = default);
 
     Task<ClassProfile> BootstrapAsync(string title, CancellationToken ct = default);
+
+    /// <summary>
+    /// Create a class from its standard with an envelope made elsewhere — another environment's
+    /// bootstrap — instead of calling the model. Everything but the envelope is rebuilt from THIS
+    /// environment's standard and title reference, under the same guards as <see cref="BootstrapAsync"/>.
+    /// </summary>
+    /// <param name="expectedCode">
+    /// The code the class had where the envelope was made. Refused if this environment resolves the
+    /// standard differently: the envelope was written for that classification.
+    /// </param>
+    Task<ClassProfile> ImportAsync(
+        string title, string expectedCode, JobEnvelope envelope, string note, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -149,32 +184,57 @@ public sealed class Bootstrapper : IBootstrapper
     /// Build and persist a standard-derived profile. Refuses to overwrite an existing profile —
     /// bootstrapping is only for classes with no corpus.
     /// </summary>
-    public async Task<ClassProfile> BootstrapAsync(string title, CancellationToken ct = default)
+    public Task<ClassProfile> BootstrapAsync(string title, CancellationToken ct = default) =>
+        CreateAsync(title, null, (std, meta) => _envelopes.BuildAsync(std, meta, ct), null, ct);
+
+    public Task<ClassProfile> ImportAsync(
+        string title, string expectedCode, JobEnvelope envelope, string note, CancellationToken ct = default)
+    {
+        if (envelope.KeyResponsibilities.Count == 0)
+        {
+            throw new BootstrapRefusedException(BootstrapRefusal.Invalid, $"The envelope for \"{title}\" has no responsibilities.");
+        }
+
+        return CreateAsync(title, expectedCode, (_, _) => Task.FromResult(envelope), note, ct);
+    }
+
+    /// <summary>
+    /// The one way a standard-derived class is created, whatever supplies its envelope. Every guard
+    /// lives here so that a second create path cannot skip one.
+    /// </summary>
+    private async Task<ClassProfile> CreateAsync(
+        string title,
+        string? expectedCode,
+        Func<ClassStandardRecord, BootstrapMeta, Task<JobEnvelope>> buildEnvelope,
+        string? note,
+        CancellationToken ct)
     {
         var standards = await _standards.GetIndexAsync(ct);
         var titleCodes = await _titleCodes.GetAsync(ct);
 
         var std = FindStandard(standards, title)
-                  ?? throw new InvalidOperationException($"No standard found for \"{title}\"");
+                  ?? throw new BootstrapRefusedException(BootstrapRefusal.NoStandard, $"No standard found for \"{title}\"");
 
         var tc = titleCodes.FindTitleCode(std.LongTitle);
 
         // Refuse rather than silently building the class under the successor's code: the two
-        // standards differ, and the RP one is the right source to build from.
+        // standards differ, and the successor's own standard is the right source to build from.
         var sup = tc is not null ? titleCodes.SupersededBy(tc.Code) : null;
         if (sup is not null)
         {
-            throw new InvalidOperationException(
+            throw new BootstrapRefusedException(BootstrapRefusal.Superseded,
                 $"{std.LongTitle} ({sup.FromCode}) is superseded by {sup.ToTitle} ({sup.ToCode}) — bootstrap that class instead.");
         }
 
         var code = tc?.Code ?? "";
-        var slug = SlugFor(code, std.LongTitle);
-
-        if (await _db.ClassProfiles.AnyAsync(p => p.Slug == slug, ct))
+        if (expectedCode is not null && TitleCodeIndex.Pad(expectedCode) != TitleCodeIndex.Pad(code))
         {
-            throw new InvalidOperationException($"A profile already exists for {slug}");
+            throw new BootstrapRefusedException(BootstrapRefusal.CodeMismatch,
+                $"{std.LongTitle} resolves to {(code.Length > 0 ? code : "no job code")} here, but the envelope was made for {(expectedCode.Length > 0 ? expectedCode : "no job code")}.");
         }
+
+        var slug = SlugFor(code, std.LongTitle);
+        await RefuseIfProfiledAsync(slug, code, std.LongTitle, titleCodes, ct);
 
         var meta = new BootstrapMeta
         {
@@ -185,7 +245,7 @@ public sealed class Bootstrapper : IBootstrapper
             Program = std.PersProg,
         };
 
-        var envelope = await _envelopes.BuildAsync(std, meta, ct);
+        var envelope = await buildEnvelope(std, meta);
 
         var profile = new ClassProfile
         {
@@ -200,7 +260,7 @@ public sealed class Bootstrapper : IBootstrapper
             Envelope = envelope,
             EnvelopeSource = EnvelopeSource.Standard,
             Coverage = null,
-            GeneratedNote =
+            GeneratedNote = note ??
                 "Standard-derived — no JD corpus yet. Ingest JDs for this class to learn the real envelope.",
         };
 
@@ -242,6 +302,33 @@ public sealed class Bootstrapper : IBootstrapper
         return standards.All.FirstOrDefault(s => s.LongTitle == title)
                ?? standards.All.FirstOrDefault(s => TitleNormalizer.TitleCodeKey(s.LongTitle) == strict)
                ?? standards.All.FirstOrDefault(s => TitleNormalizer.TitleKey(s.LongTitle) == loose);
+    }
+
+    /// <summary>
+    /// A class already has a profile when one shares its slug, its job code, or its loose title key —
+    /// the same test the candidate list applies. Checking the slug alone let a standard-derived class
+    /// be created beside a corpus profile filed under a differently spelled title. A profile under a
+    /// superseded code does not count: it is a dead class awaiting retirement.
+    /// </summary>
+    private async Task RefuseIfProfiledAsync(
+        string slug, string code, string title, TitleCodeIndex titleCodes, CancellationToken ct)
+    {
+        var profiles = await _db.ClassProfiles.AsNoTracking()
+            .Select(p => new { p.Slug, p.UcJobCode, p.Title })
+            .ToListAsync(ct);
+
+        var key = TitleNormalizer.TitleKey(title);
+        var hit = profiles.FirstOrDefault(p => p.Slug == slug)
+                  ?? profiles.FirstOrDefault(p =>
+                      !titleCodes.IsSuperseded(p.UcJobCode)
+                      && ((code.Length > 0 && TitleCodeIndex.Pad(p.UcJobCode) == TitleCodeIndex.Pad(code))
+                          || TitleNormalizer.TitleKey(p.Title) == key));
+
+        if (hit is not null)
+        {
+            throw new BootstrapRefusedException(BootstrapRefusal.Exists,
+                $"A profile already exists for {title}: {hit.Title} ({hit.Slug}).");
+        }
     }
 
     /// <summary>

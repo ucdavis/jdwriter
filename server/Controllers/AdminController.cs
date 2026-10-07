@@ -35,6 +35,7 @@ public class AdminController : ApiControllerBase
     private readonly IngestPipeline _pipeline;
     private readonly IBootstrapper _bootstrapper;
     private readonly ISupersessionReconciler _supersessions;
+    private readonly EnvelopeTransfer _envelopeTransfer;
     private readonly IStandardsStore _standards;
     private readonly StandardsImporter _standardsImporter;
     private readonly IClassProfileRepository _profiles;
@@ -51,6 +52,7 @@ public class AdminController : ApiControllerBase
         IngestPipeline pipeline,
         IBootstrapper bootstrapper,
         ISupersessionReconciler supersessions,
+        EnvelopeTransfer envelopeTransfer,
         IStandardsStore standards,
         StandardsImporter standardsImporter,
         IClassProfileRepository profiles,
@@ -66,6 +68,7 @@ public class AdminController : ApiControllerBase
         _pipeline = pipeline;
         _bootstrapper = bootstrapper;
         _supersessions = supersessions;
+        _envelopeTransfer = envelopeTransfer;
         _standards = standards;
         _standardsImporter = standardsImporter;
         _profiles = profiles;
@@ -382,6 +385,42 @@ public class AdminController : ApiControllerBase
     [HttpPost("supersessions/retire")]
     public async Task<IActionResult> Retire(CancellationToken ct) =>
         Ok(await _supersessions.RetireAsync(ct));
+
+    /// <summary>
+    /// Every standard-derived envelope, as a file another environment can import — so classes can
+    /// be bootstrapped locally and the results loaded into production without re-running the model.
+    /// Envelopes are products of the system; the file is for moving between databases, never for
+    /// committing.
+    /// </summary>
+    [HttpGet("envelopes/export")]
+    public async Task<IActionResult> ExportEnvelopes(CancellationToken ct)
+    {
+        var bundle = await _envelopeTransfer.ExportAsync(ct);
+        var json = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(bundle, ExportJson);
+        return File(json, "application/json", $"jdwriter-standard-envelopes-{bundle.ExportedAt:yyyy-MM-dd}.json");
+    }
+
+    // The web defaults (camelCase, string enums), indented so the file reads in a diff tool.
+    private static readonly System.Text.Json.JsonSerializerOptions ExportJson =
+        new(System.Text.Json.JsonSerializerDefaults.Web) { WriteIndented = true };
+
+    /// <summary>
+    /// Create a class for each envelope in an export that this environment does not have yet. Never
+    /// overwrites an existing class; each one refused is reported with its reason.
+    /// </summary>
+    [HttpPost("envelopes/import")]
+    [RequestSizeLimit(20_000_000)]
+    public async Task<IActionResult> ImportEnvelopes(EnvelopeBundle bundle, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _envelopeTransfer.ImportAsync(bundle, ct));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
     /// <summary>
     /// Drop the cached reference data. Needed after a CLI import, because the caches key on cheap
