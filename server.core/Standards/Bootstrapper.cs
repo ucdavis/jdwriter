@@ -16,6 +16,13 @@ public sealed class BootstrapCandidate
     public string Family { get; set; } = "";
     public string Function { get; set; } = "";
     public string Grade { get; set; } = "";
+
+    /// <summary>
+    /// The code is on UC Davis payroll, not merely a title UCD could use. Bulk creation takes only
+    /// these: browse and the classifier exclude matrix-only titles, and a class nobody holds is
+    /// one to create deliberately, if at all.
+    /// </summary>
+    public bool InUse { get; set; }
 }
 
 /// <summary>
@@ -90,12 +97,16 @@ public sealed class Bootstrapper : IBootstrapper
         var standards = await _standards.GetIndexAsync(ct);
         var titleCodes = await _titleCodes.GetAsync(ct);
 
-        var profiledTitles = await _db.ClassProfiles.AsNoTracking()
-            .Select(p => p.Title)
+        var profiled = await _db.ClassProfiles.AsNoTracking()
+            .Select(p => new { p.Title, p.UcJobCode })
             .ToListAsync(ct);
 
-        var have = profiledTitles
-            .Select(TitleNormalizer.TitleKey)
+        // A profile still filed under a superseded code is a dead class awaiting retirement, and it
+        // must not count as "having" its successor: the loose key drops the union suffix, so
+        // "Financial Anl 3" would otherwise hide "Financial Analyst 3 CX" from this list.
+        var have = profiled
+            .Where(p => !titleCodes.IsSuperseded(p.UcJobCode))
+            .Select(p => TitleNormalizer.TitleKey(p.Title))
             .ToHashSet(StringComparer.Ordinal);
 
         var result = new List<BootstrapCandidate>();
@@ -127,6 +138,7 @@ public sealed class Bootstrapper : IBootstrapper
                 Family = tc?.Family ?? "",
                 Function = tc?.Function ?? "",
                 Grade = !string.IsNullOrEmpty(s.Grade) ? s.Grade : tc?.Grade ?? "",
+                InUse = tc?.IsInUse ?? false,
             });
         }
 

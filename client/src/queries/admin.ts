@@ -11,6 +11,7 @@ import type {
   BootstrapCreateResponse,
   BootstrapResponse,
   IngestScanResponse,
+  RetirementResult,
   StandardsIngestResponse,
 } from '../lib/contracts.ts';
 
@@ -74,6 +75,30 @@ export const useBootstrapClass = () => {
         method: 'POST',
       }),
     // A new class appears in the class list and the analyst index.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classes'] }),
+  });
+};
+
+/** Profiles still filed under a code a union successor has superseded. Read-only. */
+export const useRetirementPreview = () =>
+  useMutation({
+    mutationFn: () =>
+      // A read, but run on demand from a button, so it stays a mutation.
+      fetchJson<RetirementResult>('/api/admin/supersessions/retire'),
+  });
+
+/**
+ * Retire every profile under a superseded code. Idempotent, so "Create all" runs it first
+ * without asking: a retired class must not hide its successor's standard from the candidates.
+ */
+export const useRetireSuperseded = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      fetchJson<RetirementResult>('/api/admin/supersessions/retire', {
+        method: 'POST',
+      }),
+    // Classes are merged, renamed or removed.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classes'] }),
   });
 };

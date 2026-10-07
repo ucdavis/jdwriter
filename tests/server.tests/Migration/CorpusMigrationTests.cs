@@ -28,7 +28,8 @@ public class CorpusMigrationTests : IDisposable
     // parity suite derives the JD numbers from the exports, and the POC's own files carry the
     // standards and profile counts.
     private const int ExpectedTitleCodes = 3471;
-    private const int ExpectedSupersessions = 29;
+    // 29 RP pairs from the POC, plus 44 from the CX, TX, RX and HX units.
+    private const int ExpectedSupersessions = 73;
     private const int ExpectedStandards = 214;
     private const int ExpectedStandardsWithCode = 187;
     private const int ExpectedJobDescriptions = 1367;
@@ -141,7 +142,7 @@ public class CorpusMigrationTests : IDisposable
 
         // And the rewrite is auditable rather than invisible.
         var remapped = Migrated.Count(j => j.OriginalUcJobCode != null);
-        remapped.Should().Be(97, "97 exports are filed under one of 8 superseded codes");
+        remapped.Should().Be(104, "104 exports are filed under one of 9 superseded codes");
 
         Migrated
             .Where(j => j.OriginalUcJobCode != null)

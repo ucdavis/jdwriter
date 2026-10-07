@@ -50,14 +50,15 @@ public class TitleCode
 }
 
 /// <summary>
-/// A job code retired by accretion into the RP (Research and Public Service Professionals)
-/// bargaining unit, and the code that replaced it.
+/// A job code retired by accretion into a bargaining unit — RP, CX, TX, RX or HX — and the
+/// suffixed code that replaced it.
 ///
 /// DERIVED, never authored. This cannot be inferred from the JD corpus: exports filed under a
 /// superseded code still read "99 - Non-Represented (PPSM)" because they predate the accretion.
 /// Nor does a union code imply supersession — most represented titles have no suffixed variant
 /// and are perfectly current. The only reliable signal is a base title holding BOTH an in-use
-/// non-RP code and an in-use RP code, which yields 29 pairs with no ambiguity.
+/// non-represented code and an in-use suffixed one. RP alone yields the POC's 29 pairs; the
+/// other units add 44 more.
 ///
 /// Stored rather than recomputed per request because it is read on nearly every corpus path;
 /// it must be rebuilt whenever <see cref="TitleCode"/> rows change.

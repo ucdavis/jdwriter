@@ -8,6 +8,10 @@ namespace Server.Tests.Titles;
 /// Byte-parity of job-code resolution and RP supersession derivation against the POC, over the
 /// full 3,471-row title reference.
 ///
+/// The POC derived RP pairs only. The port extends the same rule to the CX, TX, RX and HX units
+/// (see <see cref="UnionSupersessionTests"/>), so these tests compare the RP subset to the oracle
+/// exactly and account for the extension explicitly rather than loosening to a superset check.
+///
 /// Supersession in particular is derived, never authored, and it CANNOT be re-derived from the JD
 /// corpus — exports under a retired code still read non-represented. So this derivation is the
 /// source of truth for which classifications are alive, and it has to be exactly right.
@@ -65,7 +69,7 @@ public class TitleCodeIndexParityTests
         public string ToTitle { get; set; } = "";
     }
 
-    private static readonly TitleCodeIndex Index = BuildIndex();
+    internal static readonly TitleCodeIndex Index = BuildIndex();
 
     private static TitleCodeIndex BuildIndex()
     {
@@ -177,7 +181,7 @@ public class TitleCodeIndexParityTests
     public void Supersessions_are_derived_exactly()
     {
         var fixture = Fixtures.Load<SupersessionFile>("titleCodes.supersession.json");
-        var actual = Index.AllSupersessions();
+        var actual = Index.AllSupersessions().Where(IsRp).ToList();
 
         actual.Should().HaveCount(fixture.Supersessions.Count);
 
@@ -191,8 +195,14 @@ public class TitleCodeIndexParityTests
             got.ToTitle.Should().Be(want.ToTitle);
         }
 
-        Index.AmbiguousSupersessions().Should().BeEquivalentTo(fixture.Ambiguous);
+        // The oracle has no ambiguous RP group; the extension adds exactly one, pinned by
+        // UnionSupersessionTests.
+        Index.AmbiguousSupersessions().Where(a => !a.StartsWith("RSCH AND DEV ENGR 4 ", StringComparison.Ordinal))
+            .Should().BeEquivalentTo(fixture.Ambiguous);
     }
+
+    private static bool IsRp(Supersession s) =>
+        s.ToTitle.Split(' ').Contains("RP", StringComparer.OrdinalIgnoreCase);
 
     [Fact]
     public void Superseded_codes_resolve_forward_and_are_hidden_from_the_in_use_list()
@@ -214,8 +224,10 @@ public class TitleCodeIndexParityTests
         }
 
         // Hiding a dead class from browse is exactly what this list is for.
+        // The oracle's in-use list, less the codes the union extension retires.
+        var retiredByExtension = Index.AllSupersessions().Where(s => !IsRp(s)).Select(s => s.FromCode).ToHashSet();
         var inUse = Index.InUseTitleCodes().Select(t => t.Code).OrderBy(c => c, StringComparer.Ordinal).ToList();
-        inUse.Should().Equal(fixture.InUseCodes);
+        inUse.Should().Equal(fixture.InUseCodes.Where(c => !retiredByExtension.Contains(c)));
         inUse.Should().NotIntersectWith(fixture.Supersessions.Select(s => s.From));
     }
 

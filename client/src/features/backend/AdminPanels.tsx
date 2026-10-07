@@ -10,19 +10,28 @@ import {
   useUploadExports,
   useIngestScan,
   useIngestStandards,
+  useRetireSuperseded,
+  useRetirementPreview,
 } from '@/queries/admin.ts';
-import { useState } from 'react';
+import type { SupersededProfile } from '@/lib/contracts.ts';
+import { useRef, useState } from 'react';
 
 type RowStatus = 'done' | 'error' | 'running' | 'waiting';
 
-const statusBadge = (s: RowStatus | undefined) => {
+const statusBadge = (
+  s: RowStatus | undefined,
+  verb: { done: string; running: string } = {
+    done: 'ingested',
+    running: 'ingesting…',
+  }
+) => {
   switch (s) {
     case 'done':
-      return <Badge tone="green">ingested</Badge>;
+      return <Badge tone="green">{verb.done}</Badge>;
     case 'error':
       return <Badge tone="red">failed</Badge>;
     case 'running':
-      return <Badge tone="yellow">ingesting…</Badge>;
+      return <Badge tone="yellow">{verb.running}</Badge>;
     default:
       return <Badge tone="muted">new</Badge>;
   }
@@ -419,15 +428,216 @@ export const StandardsPanel = () => {
   );
 };
 
+const retireOutcome = (p: SupersededProfile) => {
+  const successor = `${p.successorTitle} (${p.successorCode})`;
+  switch (p.action) {
+    case 'merge':
+      return `Merge into ${successor}`;
+    case 'reidentify':
+      return `Becomes ${successor}`;
+    case 'remove':
+      return `Remove — ${successor} is created from its own standard`;
+  }
+};
+
+/**
+ * Classes filed under a non-represented code that a union-designated successor (RP, CX, TX,
+ * RX, HX) has superseded. Supersession is derived from the title reference, so a class can
+ * become dead after it was built; this retires it without losing its JDs or saved JDs.
+ */
+export const SupersessionPanel = () => {
+  const preview = useRetirementPreview();
+  const retire = useRetireSuperseded();
+  const shown = retire.data ?? preview.data;
+  const pending = retire.data ? [] : (preview.data?.profiles ?? []);
+  const error = preview.error ?? retire.error;
+  const rebuild = retire.data?.profiles.filter((p) => p.needsRebuild) ?? [];
+
+  return (
+    <Card className="mb-5 p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <Eyebrow>Superseded by a union title</Eyebrow>
+          <p className="mt-1 text-[13px] text-base-content/65">
+            Non-represented classes replaced by a union-designated successor —
+            RP, CX, TX, RX or HX after the title. Retiring one refiles its JDs
+            under the successor, then merges, renames or removes the old class;
+            saved JDs move with it. Create all does this first.
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            className="btn btn-outline btn-sm whitespace-nowrap"
+            disabled={preview.isPending || retire.isPending}
+            onClick={() => {
+              retire.reset();
+              preview.mutate();
+            }}
+            type="button"
+          >
+            {preview.isPending ? 'Checking…' : 'Check'}
+          </button>
+          {pending.length > 0 ? (
+            <button
+              className="btn btn-primary btn-sm whitespace-nowrap"
+              disabled={retire.isPending}
+              onClick={() => retire.mutate()}
+              type="button"
+            >
+              {retire.isPending ? 'Retiring…' : `Retire ${pending.length}`}
+            </button>
+          ) : null}
+        </div>
+      </div>
+      {error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(error)}</Note>
+        </div>
+      ) : null}
+      {retire.data ? (
+        <div className="mt-3 flex flex-col gap-2">
+          <Note tone="green">
+            Retired {retire.data.profiles.length} class
+            {retire.data.profiles.length === 1 ? '' : 'es'} and refiled{' '}
+            {retire.data.refiledJds} JD{retire.data.refiledJds === 1 ? '' : 's'}
+            .
+          </Note>
+          {rebuild.length > 0 ? (
+            <Note tone="yellow">
+              Rebuild from the corpus to learn from the refiled JDs:{' '}
+              {rebuild.map((p) => p.successorTitle).join(', ')}.
+            </Note>
+          ) : null}
+        </div>
+      ) : shown && shown.profiles.length === 0 ? (
+        <p className="mt-3 text-[12.5px] text-base-content/65">
+          Nothing to retire — no class is filed under a superseded code.
+        </p>
+      ) : null}
+      {shown && shown.profiles.length > 0 ? (
+        <ul className="mt-3 divide-y divide-base-300 rounded-lg border border-base-300">
+          {shown.profiles.map((p) => (
+            <li
+              className="flex items-center justify-between gap-3 px-3 py-2.5"
+              key={p.slug}
+            >
+              <div className="min-w-0">
+                <div className="truncate text-[13px] font-medium">
+                  {p.title} ({p.code})
+                </div>
+                <div className="text-[11.5px] text-base-content/65 tnum">
+                  {retireOutcome(p)}
+                  {p.corpusJds
+                    ? ` · ${p.corpusJds} corpus JD${p.corpusJds === 1 ? '' : 's'}`
+                    : ''}
+                  {p.authoredJds
+                    ? ` · ${p.authoredJds} saved JD${p.authoredJds === 1 ? '' : 's'}`
+                    : ''}
+                </div>
+              </div>
+              {retire.data ? <Badge tone="green">retired</Badge> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </Card>
+  );
+};
+
 export const BootstrapPanel = () => {
   const bootstrap = useBootstrapCandidates();
   const create = useBootstrapClass();
+  const retire = useRetireSuperseded();
   const [filter, setFilter] = useState('');
+  const [status, setStatus] = useState<Record<string, RowStatus>>({});
+  const [running, setRunning] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<{
+    created: number;
+    failed: number;
+    retired: number;
+    stopped: boolean;
+  } | null>(null);
+  const stopRequested = useRef(false);
   const candidates = bootstrap.data?.candidates;
   const shown = (candidates ?? []).filter((c) =>
     filter ? c.title.toLowerCase().includes(filter.toLowerCase()) : true
   );
-  const error = bootstrap.error ?? create.error;
+  // Bulk creation takes only classes on UC Davis payroll. Matrix-only titles and standards
+  // with no UCD code stay in the list for a deliberate, one-at-a-time decision.
+  const inUse = (candidates ?? []).filter((c) => c.inUse);
+  const mutationError = bootstrap.error ?? create.error;
+  const error =
+    runError ?? (running || !mutationError ? null : messageOf(mutationError));
+
+  /**
+   * ONE CLASS PER REQUEST, in sequence, like corpus ingest: each envelope is a model call,
+   * and a single bulk request would let one slow class time out the whole run and leave the
+   * operator unable to tell which ones landed.
+   */
+  const createAll = async () => {
+    if (
+      !window.confirm(
+        `Create starter envelopes for all ${inUse.length} candidate classes in use at UC Davis? ` +
+          'Superseded classes are retired first. Each envelope is a model call, so this can ' +
+          'take a while; you can stop it part-way.' +
+          (candidates && candidates.length > inUse.length
+            ? ` The other ${candidates.length - inUse.length} (not on payroll, or no UC Davis ` +
+              'code) are left for you to create one at a time.'
+            : '')
+      )
+    ) {
+      return;
+    }
+
+    setRunning(true);
+    setRunError(null);
+    setSummary(null);
+    setStatus({});
+    stopRequested.current = false;
+
+    let retired = 0;
+    try {
+      retired = (await retire.mutateAsync()).profiles.length;
+    } catch (error_) {
+      setRunError(`Retiring superseded classes failed: ${messageOf(error_)}`);
+      setRunning(false);
+      return;
+    }
+
+    // Retiring can surface successors a dead class was hiding, so re-ask before creating.
+    let list;
+    try {
+      list = (await bootstrap.mutateAsync()).candidates.filter((c) => c.inUse);
+    } catch (error_) {
+      setRunError(messageOf(error_));
+      setRunning(false);
+      return;
+    }
+
+    let created = 0;
+    let failed = 0;
+    for (const c of list) {
+      if (stopRequested.current) {
+        break;
+      }
+      setStatus((s) => ({ ...s, [c.title]: 'running' }));
+      try {
+        await create.mutateAsync(c.title);
+        created++;
+        setStatus((s) => ({ ...s, [c.title]: 'done' }));
+      } catch (error_) {
+        failed++;
+        setStatus((s) => ({ ...s, [c.title]: 'error' }));
+        setRunError(`${c.title}: ${messageOf(error_)}`);
+      }
+    }
+
+    setSummary({ created, failed, retired, stopped: stopRequested.current });
+    setRunning(false);
+    // Created classes drop out; failed ones stay, still marked.
+    bootstrap.mutate();
+  };
 
   const createFor = (title: string) =>
     create.mutate(title, {
@@ -449,26 +659,71 @@ export const BootstrapPanel = () => {
             against one would produce a JD under a dead classification.
           </p>
         </div>
-        <button
-          className="btn btn-outline btn-sm whitespace-nowrap"
-          disabled={bootstrap.isPending}
-          onClick={() => bootstrap.mutate()}
-          type="button"
-        >
-          {bootstrap.isPending ? 'Looking…' : candidates ? 'Reload list' : 'Find candidates'}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            className="btn btn-outline btn-sm whitespace-nowrap"
+            disabled={bootstrap.isPending || running}
+            onClick={() => bootstrap.mutate()}
+            type="button"
+          >
+            {bootstrap.isPending && !running
+              ? 'Looking…'
+              : candidates
+                ? 'Reload list'
+                : 'Find candidates'}
+          </button>
+          {running ? (
+            <button
+              className="btn btn-ghost btn-sm whitespace-nowrap"
+              onClick={() => {
+                stopRequested.current = true;
+              }}
+              type="button"
+            >
+              Stop after this one
+            </button>
+          ) : inUse.length > 0 ? (
+            <button
+              className="btn btn-primary btn-sm whitespace-nowrap"
+              disabled={create.isPending}
+              onClick={() => void createAll()}
+              title="Every candidate on UC Davis payroll; the rest are created one at a time"
+              type="button"
+            >
+              Create all {inUse.length}
+            </button>
+          ) : null}
+        </div>
       </div>
       {error ? (
         <div className="mt-3">
-          <Note tone="red">{messageOf(error)}</Note>
+          <Note tone="red">{error}</Note>
         </div>
       ) : null}
-      {create.data ? (
+      {summary ? (
+        <div className="mt-3">
+          <Note tone={summary.failed ? 'yellow' : 'green'}>
+            {summary.stopped ? 'Stopped. ' : ''}Created {summary.created} class
+            {summary.created === 1 ? '' : 'es'} from their standards
+            {summary.failed ? `; ${summary.failed} failed` : ''}
+            {summary.retired
+              ? `. Retired ${summary.retired} superseded class${summary.retired === 1 ? '' : 'es'} first`
+              : ''}
+            .
+          </Note>
+        </div>
+      ) : create.data && !running ? (
         <div className="mt-3">
           <Note tone="green">
             Created {create.data.title} ({create.data.ucJobCode}) from its standard.
           </Note>
         </div>
+      ) : null}
+      {running ? (
+        <p className="mt-2 text-[11.5px] text-base-content/50">
+          Creating {Object.values(status).filter((v) => v === 'done').length} of{' '}
+          {inUse.length}… each envelope is a model call.
+        </p>
       ) : null}
       {candidates ? (
         candidates.length === 0 ? (
@@ -498,18 +753,26 @@ export const BootstrapPanel = () => {
                       {c.code ? `Code ${c.code}` : 'no code match'}
                       {c.family ? ` · ${c.family}` : ''}
                       {c.grade ? ` · ${c.grade}` : ''}
+                      {c.code && !c.inUse ? ' · not on UC Davis payroll' : ''}
                     </div>
                   </div>
-                  <button
-                    className="btn btn-primary btn-sm shrink-0"
-                    disabled={create.isPending}
-                    onClick={() => createFor(c.title)}
-                    type="button"
-                  >
-                    {create.isPending && create.variables === c.title
-                      ? 'Creating…'
-                      : 'Create envelope'}
-                  </button>
+                  {status[c.title] ? (
+                    statusBadge(status[c.title], {
+                      done: 'created',
+                      running: 'creating…',
+                    })
+                  ) : (
+                    <button
+                      className="btn btn-primary btn-sm shrink-0"
+                      disabled={create.isPending || running}
+                      onClick={() => createFor(c.title)}
+                      type="button"
+                    >
+                      {create.isPending && create.variables === c.title
+                        ? 'Creating…'
+                        : 'Create envelope'}
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

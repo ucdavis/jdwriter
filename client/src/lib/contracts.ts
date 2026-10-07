@@ -474,6 +474,8 @@ export type BootstrapCandidate = {
   family: string;
   function: string;
   grade: string;
+  /** On UC Davis payroll. Create all takes only these; the rest are created one at a time. */
+  inUse: boolean;
   title: string;
 };
 
@@ -484,6 +486,34 @@ export type BootstrapCreateResponse = {
   slug: string;
   title: string;
   ucJobCode: string;
+};
+
+/**
+ * What retiring a profile under a superseded code does: fold it into the successor's existing
+ * profile, re-identify it as the successor (it carries corpus JDs or saved JDs), or remove a
+ * standard-only class so the successor can be built from its own standard.
+ */
+export type RetireAction = 'merge' | 'reidentify' | 'remove';
+
+export type SupersededProfile = {
+  action: RetireAction;
+  authoredJds: number;
+  code: string;
+  corpusJds: number;
+  /** The successor was built without this class's corpus JDs and should be rebuilt. */
+  needsRebuild: boolean;
+  slug: string;
+  successorCode: string;
+  /** Null when the profile is removed. */
+  successorSlug: string | null;
+  successorTitle: string;
+  title: string;
+};
+
+export type RetirementResult = {
+  profiles: SupersededProfile[];
+  /** Corpus JDs moved from a retired code to its successor. */
+  refiledJds: number;
 };
 
 // ---------------------------------------------------------------- saved JDs
