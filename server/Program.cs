@@ -142,6 +142,7 @@ try
     builder.Services.AddScoped<IDescriptionClassifier, DescriptionClassifier>();
     builder.Services.AddScoped<IJdAssembler, JdAssembler>();
     builder.Services.AddScoped<IFitService, FitService>();
+    builder.Services.AddScoped<IFitRewriter, FitRewriter>();
 
     // ---- standards and bootstrap
     builder.Services.AddScoped<IStandardEnvelopeBuilder, SynthesizedEnvelopeBuilder>();

@@ -11,6 +11,8 @@ import type {
   EnvelopeSaveRequest,
   EnvelopeSaveResponse,
   ExtractResponse,
+  FitRewriteRequest,
+  FitRewriteResponse,
   FitSuggestRequest,
   FitSuggestResponse,
   IntakeRequest,
@@ -94,3 +96,17 @@ export const useSuggestClass = () =>
   useMutation({
     mutationFn: post<FitSuggestRequest, FitSuggestResponse>('/api/fit/suggest'),
   });
+
+/**
+ * Rewrite a misfitting JD to fit a class, saved as a draft for review. One model call that
+ * only maps the incumbent's work onto the class's functions; the text and % time are built
+ * from the envelope and the incumbent's own JD.
+ */
+export const useRewriteToFit = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: post<FitRewriteRequest, FitRewriteResponse>('/api/fit/rewrite'),
+    // The draft appears in the saved-JD lists.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jds'] }),
+  });
+};
