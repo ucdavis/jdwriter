@@ -148,6 +148,7 @@ try
     builder.Services.AddScoped<IStandardEnvelopeBuilder, SynthesizedEnvelopeBuilder>();
     builder.Services.AddScoped<IBootstrapper, Bootstrapper>();
     builder.Services.AddScoped<ISupersessionReconciler, SupersessionReconciler>();
+    builder.Services.AddScoped<EnvelopeTransfer>();
     // add auth policies here
 
     // add db context (check secrets first, then config, then default)

@@ -9,11 +9,12 @@ import {
   useUploadedPending,
   useUploadExports,
   useIngestScan,
+  useImportEnvelopes,
   useIngestStandards,
   useRetireSuperseded,
   useRetirementPreview,
 } from '@/queries/admin.ts';
-import type { SupersededProfile } from '@/lib/contracts.ts';
+import type { EnvelopeImportRefusal, SupersededProfile } from '@/lib/contracts.ts';
 import { useRef, useState } from 'react';
 
 type RowStatus = 'done' | 'error' | 'running' | 'waiting';
@@ -778,6 +779,92 @@ export const BootstrapPanel = () => {
             </ul>
           </div>
         )
+      ) : null}
+    </Card>
+  );
+};
+
+const refusalLabel: Record<EnvelopeImportRefusal, string> = {
+  codeMismatch: 'different job code here',
+  exists: 'already has a class',
+  invalid: 'invalid envelope',
+  noStandard: 'no standard here',
+  superseded: 'superseded here',
+};
+
+/**
+ * Bootstrap where it is cheap and safe — locally — then move the results. Only the envelope
+ * travels: the receiving environment rebuilds each class from its own standard, refuses
+ * superseded codes, and never overwrites a class it already has.
+ */
+export const EnvelopeTransferPanel = () => {
+  const importEnvelopes = useImportEnvelopes();
+  const result = importEnvelopes.data;
+
+  return (
+    <Card className="mb-5 p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <Eyebrow>Move envelopes between environments</Eyebrow>
+          <p className="mt-1 text-[13px] text-base-content/65">
+            Download every standard-derived envelope here, then import the file in another
+            environment — bootstrap locally, load into production, and pay for each envelope
+            once. Each class is rebuilt from that environment&apos;s own standard; existing and
+            superseded classes are skipped. The file holds system output: never commit it.
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <a
+            className="btn btn-outline btn-sm whitespace-nowrap"
+            download
+            href="/api/admin/envelopes/export"
+          >
+            Download envelopes
+          </a>
+          <label className="btn btn-primary btn-sm whitespace-nowrap">
+            {importEnvelopes.isPending ? 'Importing…' : 'Import envelopes'}
+            <input
+              accept=".json,application/json"
+              aria-label="Import an envelope export"
+              className="hidden"
+              disabled={importEnvelopes.isPending}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  importEnvelopes.mutate(file);
+                }
+                e.target.value = '';
+              }}
+              type="file"
+            />
+          </label>
+        </div>
+      </div>
+      {importEnvelopes.error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(importEnvelopes.error)}</Note>
+        </div>
+      ) : null}
+      {result ? (
+        <div className="mt-3 flex flex-col gap-2" data-testid="envelope-import-summary">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={result.created.length ? 'green' : 'muted'}>
+              {result.created.length} class{result.created.length === 1 ? '' : 'es'} created
+            </Badge>
+            {result.skipped.length > 0 ? (
+              <Badge tone="yellow">{result.skipped.length} skipped</Badge>
+            ) : null}
+          </div>
+          {result.skipped.length > 0 ? (
+            <ul className="text-[12px] text-base-content/65">
+              {result.skipped.map((s) => (
+                <li key={s.title} title={s.message}>
+                  {s.title} — {refusalLabel[s.reason]}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       ) : null}
     </Card>
   );

@@ -10,6 +10,7 @@ import type {
   AdminsResponse,
   BootstrapCreateResponse,
   BootstrapResponse,
+  EnvelopeImportResult,
   IngestScanResponse,
   RetirementResult,
   StandardsIngestResponse,
@@ -224,6 +225,32 @@ export const useUploadStandards = () => {
       });
     },
     // Standard-linked badges across the class list may change.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classes'] }),
+  });
+};
+
+/**
+ * Load an envelope export from another environment. The file is sent as it was downloaded;
+ * the server rebuilds each class from its own standard and never overwrites an existing one.
+ */
+export const useImportEnvelopes = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      // Read first, parse second: only a parse failure means "not JSON".
+      const text = await file.text();
+      let bundle: unknown;
+      try {
+        bundle = JSON.parse(text);
+      } catch {
+        throw new Error(`${file.name} is not an envelope export (it is not JSON).`);
+      }
+      return fetchJson<EnvelopeImportResult>('/api/admin/envelopes/import', {
+        body: JSON.stringify(bundle),
+        method: 'POST',
+      });
+    },
+    // New classes appear in the class list.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classes'] }),
   });
 };
