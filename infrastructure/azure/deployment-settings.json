@@ -5,6 +5,14 @@
   "overrides": {},
   "additions": [
     {
+      "githubName": "APP_PATH_BASE",
+      "appServiceName": "App__PathBase",
+      "classification": "variable",
+      "valueType": "string",
+      "requiredWhen": "never",
+      "description": "The path JDWriter is mounted at behind a shared host, e.g. /jdwriter under CAES People (people.caes.ucdavis.edu/jdwriter). Leave unset to serve at the root. Add <host><path>/signin-oidc to the Entra app registration's redirect URIs when setting it."
+    },
+    {
       "githubName": "ADMIN_BOOTSTRAP_LOGIN_IDS",
       "appServiceName": "Admin__BootstrapLoginIds",
       "classification": "variable",

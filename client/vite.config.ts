@@ -13,7 +13,11 @@ const target = env.ASPNETCORE_URLS
     : 'http://localhost:5165';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // Built assets are referenced relative to <base href>, which the server sets to the app's
+  // mount point at request time — so one build runs at a host's root or under a path such as
+  // /jdwriter. The dev server stays at the root.
+  base: command === 'build' ? './' : '/',
   plugins: [
     tanstackRouter({
       autoCodeSplitting: true,
@@ -56,4 +60,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
