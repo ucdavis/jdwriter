@@ -154,8 +154,7 @@ public sealed class Bootstrapper : IBootstrapper
         var standards = await _standards.GetIndexAsync(ct);
         var titleCodes = await _titleCodes.GetAsync(ct);
 
-        var wanted = TitleNormalizer.TitleKey(title);
-        var std = standards.All.FirstOrDefault(s => TitleNormalizer.TitleKey(s.LongTitle) == wanted)
+        var std = FindStandard(standards, title)
                   ?? throw new InvalidOperationException($"No standard found for \"{title}\"");
 
         var tc = titleCodes.FindTitleCode(std.LongTitle);
@@ -225,6 +224,24 @@ public sealed class Bootstrapper : IBootstrapper
         _db.ClassProfiles.Add(profile);
         await _db.SaveChangesAsync(ct);
         return profile;
+    }
+
+    /// <summary>
+    /// The standard a title names: the exact title, then the strict key, and only then the loose one.
+    ///
+    /// The loose key drops union suffixes, so "Financial Analyst 3 CX" and the retired "Financial
+    /// Analyst 3" share it, and a loose-only lookup returned whichever came first — usually the
+    /// retired class, which the supersession guard then refused. The strict key keeps the suffix
+    /// while still expanding abbreviations ("Project Policy Anl 4 Rp"). A loose-only match remains
+    /// for titles that differ in nothing else, and a wrong one can only be refused, never built.
+    /// </summary>
+    private static ClassStandardRecord? FindStandard(StandardsIndex standards, string title)
+    {
+        var strict = TitleNormalizer.TitleCodeKey(title);
+        var loose = TitleNormalizer.TitleKey(title);
+        return standards.All.FirstOrDefault(s => s.LongTitle == title)
+               ?? standards.All.FirstOrDefault(s => TitleNormalizer.TitleCodeKey(s.LongTitle) == strict)
+               ?? standards.All.FirstOrDefault(s => TitleNormalizer.TitleKey(s.LongTitle) == loose);
     }
 
     /// <summary>

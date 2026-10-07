@@ -163,6 +163,38 @@ public class BootstrapperTests
     }
 
     [Fact]
+    public async Task A_union_successor_is_built_from_its_own_standard_not_its_predecessors()
+    {
+        // The loose key drops the union suffix, so looking the standard up by it alone found the
+        // retired "Financial Analyst 3" first and refused the live CX class as superseded — every
+        // successor Create all exists to build.
+        var (boot, db, _) = Build(
+            [S("Financial Analyst 3"), S("Financial Analyst 3 CX", grade: "Grade 22")],
+            [Tc("007709", "FINANCIAL ANL 3"), Tc("005183", "FINANCIAL ANL 3 CX")]);
+        using var _db = db;
+
+        var profile = await boot.BootstrapAsync("Financial Analyst 3 CX");
+
+        profile.UcJobCode.Should().Be("005183");
+        profile.Title.Should().Be("Financial Analyst 3 CX");
+        profile.Distributions.Single(d => d.Field == DistributionField.SalaryGrade).Consensus.Should().Be("Grade 22");
+    }
+
+    [Fact]
+    public async Task A_corpus_spelled_union_title_finds_its_standard_by_the_strict_key()
+    {
+        var (boot, db, _) = Build(
+            [S("Project and Policy Analyst 4"), S("Project and Policy Analyst 4 RP")],
+            [Tc("007399", "PROJECT POLICY ANL 4"), Tc("005258", "PROJECT POLICY ANL 4 RP")]);
+        using var _db = db;
+
+        var profile = await boot.BootstrapAsync("Project Policy Anl 4 Rp");
+
+        profile.UcJobCode.Should().Be("005258");
+        profile.Title.Should().Be("Project and Policy Analyst 4 RP");
+    }
+
+    [Fact]
     public async Task A_profile_under_a_superseded_code_does_not_hide_its_successors_standard()
     {
         // The loose key drops the union suffix, so a not-yet-retired "Financial Anl 3" profile would
