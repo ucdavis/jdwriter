@@ -69,10 +69,12 @@ public interface IStructuredLlm
 public sealed class StructuredLlm : IStructuredLlm
 {
     /// <summary>
-    /// Claude Opus 5. Thinking is on by default on this model, and the ladder's low/medium settings
-    /// are strong enough that the cheap call sites stay there.
+    /// Claude Opus 5.5 — the Opus 5 successor at a lower price ($4 / $20 per MTok against $5 / $25),
+    /// with the same tokenizer and output limits. Thinking is always on (it cannot be disabled, so
+    /// adaptive is sent explicitly) and the default effort is medium, which every call site sets
+    /// explicitly anyway. Override with Llm:Model — e.g. "claude-opus-5" to go back without a deploy.
     /// </summary>
-    public const string Model = "claude-opus-5";
+    public const string Model = "claude-opus-5-5";
 
     private readonly ILogger<StructuredLlm> _logger;
     private readonly IApiKeySource _keys;

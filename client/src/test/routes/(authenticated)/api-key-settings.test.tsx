@@ -13,7 +13,7 @@ const status = (over: Partial<ApiKeyStatus>): ApiKeyStatus => ({
   keyEntryAllowed: true,
   keyRequired: true,
   lastFour: 'cfg1',
-  model: 'claude-opus-5',
+  model: 'claude-opus-5-5',
   provider: 'anthropic',
   source: 'configuration',
   storedKeyUnreadable: false,

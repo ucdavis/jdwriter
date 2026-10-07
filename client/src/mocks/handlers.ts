@@ -116,7 +116,7 @@ const mockKeyStatus = {
   endpoint: '',
   keyEntryAllowed: true,
   keyRequired: true,
-  model: 'claude-opus-5',
+  model: 'claude-opus-5-5',
   provider: 'anthropic',
 } satisfies Partial<ApiKeyStatus>;
 
