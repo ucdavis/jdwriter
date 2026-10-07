@@ -3,7 +3,10 @@ using Jdw.Cli.PocSource;
 using Microsoft.EntityFrameworkCore;
 using Server.Core.Data;
 using Server.Core.Domain;
+using Microsoft.Extensions.Caching.Memory;
 using Server.Core.Ingest;
+using Server.Core.Profiles;
+using Server.Core.Standards;
 using Server.Core.Titles;
 
 namespace Jdw.Cli.Migration;
@@ -79,6 +82,7 @@ public sealed class CorpusMigrator
         await MigrateStandardsAsync(report, ct);
         await MigrateCorpusAsync(index, report, ct);
         await MigrateProfilesAsync(report, ct);
+        await RetireSupersededProfilesAsync(index, report, ct);
         await MigrateComplianceRulesAsync(report, ct);
 
         return report;
@@ -318,6 +322,50 @@ public sealed class CorpusMigrator
         }
 
         return jd;
+    }
+
+    // ---------------------------------------------------------------- superseded profiles
+
+    /// <summary>
+    /// The POC computed its profiles under an RP-only supersession map, so one can be filed under a
+    /// code the wider map retires (FINANCIAL ANL 3, now FINANCIAL ANL 3 CX). Loading it as-is would
+    /// be a create path with no supersession guard, so it is retired exactly as the admin screen
+    /// does it. Write-only: it needs the profiles in the database to act on.
+    /// </summary>
+    private async Task RetireSupersededProfilesAsync(
+        TitleCodeIndex index, MigrationReport report, CancellationToken ct)
+    {
+        if (!_write)
+        {
+            return;
+        }
+
+        // The bulk load left tens of thousands of entities tracked with detection off; retirement
+        // edits tracked rows and relies on detection to save them.
+        _db.ChangeTracker.Clear();
+        _db.ChangeTracker.AutoDetectChangesEnabled = true;
+
+        var reconciler = new SupersessionReconciler(
+            _db, new FixedTitleCodes(index), new StandardsStore(_db, new MemoryCache(new MemoryCacheOptions())));
+        var result = await reconciler.RetireAsync(ct);
+
+        report.RetiredProfiles = result.Profiles.Count;
+        foreach (var p in result.Profiles)
+        {
+            _log($"retired {p.Slug} ({p.Code}) -> {p.Action} {p.SuccessorSlug ?? p.SuccessorCode}");
+        }
+
+        _db.ChangeTracker.AutoDetectChangesEnabled = false;
+    }
+
+    /// <summary>The index this run built, served without a database round trip or a cache.</summary>
+    private sealed class FixedTitleCodes(TitleCodeIndex index) : ITitleCodeService
+    {
+        public Task<TitleCodeIndex> GetAsync(CancellationToken ct = default) => Task.FromResult(index);
+
+        public void Invalidate()
+        {
+        }
     }
 
     // ---------------------------------------------------------------- class profiles

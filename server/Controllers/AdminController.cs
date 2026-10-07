@@ -34,6 +34,7 @@ public class AdminController : ApiControllerBase
 {
     private readonly IngestPipeline _pipeline;
     private readonly IBootstrapper _bootstrapper;
+    private readonly ISupersessionReconciler _supersessions;
     private readonly IStandardsStore _standards;
     private readonly StandardsImporter _standardsImporter;
     private readonly IClassProfileRepository _profiles;
@@ -49,6 +50,7 @@ public class AdminController : ApiControllerBase
     public AdminController(
         IngestPipeline pipeline,
         IBootstrapper bootstrapper,
+        ISupersessionReconciler supersessions,
         IStandardsStore standards,
         StandardsImporter standardsImporter,
         IClassProfileRepository profiles,
@@ -63,6 +65,7 @@ public class AdminController : ApiControllerBase
     {
         _pipeline = pipeline;
         _bootstrapper = bootstrapper;
+        _supersessions = supersessions;
         _standards = standards;
         _standardsImporter = standardsImporter;
         _profiles = profiles;
@@ -362,6 +365,23 @@ public class AdminController : ApiControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Profiles still filed under a code a union successor has superseded, and what retiring each
+    /// would do. Read-only.
+    /// </summary>
+    [HttpGet("supersessions/retire")]
+    public async Task<IActionResult> RetirementPreview(CancellationToken ct) =>
+        Ok(await _supersessions.PreviewAsync(ct));
+
+    /// <summary>
+    /// Retire every profile under a superseded code: refile its corpus JDs to the successor, then
+    /// merge it into the successor's profile, re-identify it as the successor, or remove it if it
+    /// is a standard-only class with nothing attached. Idempotent.
+    /// </summary>
+    [HttpPost("supersessions/retire")]
+    public async Task<IActionResult> Retire(CancellationToken ct) =>
+        Ok(await _supersessions.RetireAsync(ct));
 
     /// <summary>
     /// Drop the cached reference data. Needed after a CLI import, because the caches key on cheap

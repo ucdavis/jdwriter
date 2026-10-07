@@ -13,6 +13,7 @@ import type {
   AssembledJd,
   BootstrapCreateResponse,
   BootstrapResponse,
+  RetirementResult,
   BuildRequest,
   ClassifyRequest,
   ClassifyResponse,
@@ -692,6 +693,32 @@ export const handlers = [
     });
   }),
 
+  http.get('/api/admin/supersessions/retire', async () => {
+    await delay(500);
+    return HttpResponse.json<RetirementResult>({
+      profiles: [
+        {
+          action: 'reidentify',
+          authoredJds: 0,
+          code: '100709',
+          corpusJds: 3,
+          needsRebuild: false,
+          slug: '100709-widget-anl-3',
+          successorCode: '100183',
+          successorSlug: '100183-widget-anl-3-cx',
+          successorTitle: 'Widget Anl 3 Cx',
+          title: 'Widget Anl 3',
+        },
+      ],
+      refiledJds: 3,
+    });
+  }),
+
+  http.post('/api/admin/supersessions/retire', async () => {
+    await delay(700);
+    return HttpResponse.json<RetirementResult>({ profiles: [], refiledJds: 0 });
+  }),
+
   http.get('/api/admin/bootstrap/candidates', async () => {
     await delay(700);
     return HttpResponse.json<BootstrapResponse>({
@@ -701,6 +728,7 @@ export const handlers = [
           family: 'Student Services',
           function: 'Academic Advising',
           grade: 'Grade 20',
+          inUse: true,
           title: 'Academic Achievement Counselor 3',
         },
       ],

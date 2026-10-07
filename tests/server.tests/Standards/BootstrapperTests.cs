@@ -148,6 +148,39 @@ public class BootstrapperTests
     }
 
     [Fact]
+    public async Task A_candidate_says_whether_its_code_is_on_payroll()
+    {
+        var (boot, db, _) = Build(
+            [S("Widget Analyst 2"), S("Widget Analyst 3"), S("Gadget Planner 1")],
+            [Tc("111111", "Widget Analyst 2"), Tc("111112", "Widget Analyst 3", source: "matrix")]);
+        using var _db = db;
+
+        var candidates = (await boot.GetCandidatesAsync()).ToDictionary(c => c.Title, c => c.InUse);
+
+        candidates["Widget Analyst 2"].Should().BeTrue();
+        candidates["Widget Analyst 3"].Should().BeFalse("a matrix-only title is one UCD could use, not one it does");
+        candidates["Gadget Planner 1"].Should().BeFalse("no UC Davis code at all");
+    }
+
+    [Fact]
+    public async Task A_profile_under_a_superseded_code_does_not_hide_its_successors_standard()
+    {
+        // The loose key drops the union suffix, so a not-yet-retired "Financial Anl 3" profile would
+        // otherwise count as having "Financial Analyst 3 CX" and the live class could never be built.
+        var (boot, db, _) = Build(
+            [S("Financial Analyst 3"), S("Financial Analyst 3 CX")],
+            [Tc("007709", "FINANCIAL ANL 3"), Tc("005183", "FINANCIAL ANL 3 CX")]);
+        using var _db = db;
+
+        db.ClassProfiles.Add(new ClassProfile { Slug = "x", Title = "Financial Anl 3", UcJobCode = "007709" });
+        await db.SaveChangesAsync();
+
+        var candidates = await boot.GetCandidatesAsync();
+
+        candidates.Select(c => c.Code).Should().Equal("005183");
+    }
+
+    [Fact]
     public async Task A_standard_for_a_superseded_code_is_never_offered()
     {
         // THE guard. Offering it would recreate a class that browse and the classifier deliberately

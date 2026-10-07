@@ -36,11 +36,24 @@ public sealed partial class TitleCodeIndex
     [GeneratedRegex("[^0-9]")]
     private static partial Regex NonDigit();
 
-    [GeneratedRegex(@"\s+(RP|GF)\b", RegexOptions.IgnoreCase)]
-    private static partial Regex RpSuffix();
+    /// <summary>
+    /// Bargaining units whose accretion issues a suffixed successor code: RP (Research and Public
+    /// Service Professionals), CX (Clerical), TX (Technical), RX (Research Support) and HX (Health
+    /// Care Professionals).
+    ///
+    /// Deliberately NOT every suffix. NEX means non-exempt ("SRA 2" and "SRA 2 NEX" are both
+    /// current, and treating it as a union would refile 118 JDs under the wrong class); EX marks
+    /// exempt medical-center professions; SV, LD and PD are supervisor, lead and per-diem variants.
+    ///
+    /// GF (grandfathered) is stripped from the base too, as the POC did, so a GF variant is a
+    /// second candidate in its group and the group is reported as ambiguous rather than guessed —
+    /// which is why "RSCH AND DEV ENGR 4" (with an in-use "... TX GF") is not paired.
+    /// </summary>
+    [GeneratedRegex(@"\s+(RP|CX|TX|RX|HX|GF)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex UnionSuffix();
 
-    [GeneratedRegex(@"\bRP\b", RegexOptions.IgnoreCase)]
-    private static partial Regex IsRpTitle();
+    [GeneratedRegex(@"\b(RP|CX|TX|RX|HX)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex IsUnionTitle();
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Whitespace();
@@ -154,18 +167,21 @@ public sealed partial class TitleCodeIndex
         _supersededFrom.TryGetValue(Pad(code), out var s) ? s.ToCode : code;
 
     /// <summary>
-    /// Derive RP accretion pairs.
+    /// Derive union accretion pairs.
     ///
-    /// When a population is accreted into the RP (Research and Public Service Professionals)
-    /// bargaining unit, UC issues a NEW job code with an "RP" suffix and the non-represented code
-    /// it replaces is left with no incumbents. Both codes stay in the reference, so the pairing
-    /// has to be computed.
+    /// When a population is accreted into a bargaining unit (RP, CX, TX, RX or HX — see
+    /// <see cref="UnionSuffix"/>), UC issues a NEW job code with the unit as a suffix and the
+    /// non-represented code it replaces is left with no incumbents. Both codes stay in the
+    /// reference, so the pairing has to be computed.
+    ///
+    /// The POC derived RP pairs only. Its 29 are reproduced exactly (the parity fixture pins them);
+    /// the other units extend the same rule rather than changing it.
     ///
     /// This CANNOT be inferred from the JD corpus: exports under a superseded code still read
     /// "99 - Non-Represented (PPSM)" because they predate the accretion. Nor does a union code
     /// imply supersession — most represented titles have no suffixed variant and are current.
-    /// The only reliable signal is a base title holding BOTH an in-use non-RP code and an in-use
-    /// RP code.
+    /// The only reliable signal is a base title holding BOTH an in-use non-represented code and an
+    /// in-use suffixed one.
     /// </summary>
     private static (List<Supersession>, List<string>, Dictionary<string, Supersession>) DeriveSupersessions(
         List<TitleCode> all)
@@ -184,7 +200,7 @@ public sealed partial class TitleCodeIndex
                 continue;
             }
 
-            var b = Whitespace().Replace(RpSuffix().Replace(t.Title, " "), " ").Trim();
+            var b = Whitespace().Replace(UnionSuffix().Replace(t.Title, " "), " ").Trim();
             if (byBase.TryGetValue(b, out var list))
             {
                 list.Add(t);
@@ -202,8 +218,8 @@ public sealed partial class TitleCodeIndex
         foreach (var b in order)
         {
             var group = byBase[b];
-            var reps = group.Where(t => IsRpTitle().IsMatch(t.Title)).ToList();
-            var plain = group.Where(t => !IsRpTitle().IsMatch(t.Title)).ToList();
+            var reps = group.Where(t => IsUnionTitle().IsMatch(t.Title)).ToList();
+            var plain = group.Where(t => !IsUnionTitle().IsMatch(t.Title)).ToList();
 
             if (reps.Count == 0 || plain.Count == 0)
             {

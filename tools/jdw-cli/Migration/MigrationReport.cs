@@ -34,6 +34,9 @@ public sealed class MigrationReport
     public int ProfilesWithCoverage { get; set; }
     public int ProfilesWithConsolidated { get; set; }
 
+    /// <summary>Profiles filed under a superseded code, retired after loading. Written runs only.</summary>
+    public int RetiredProfiles { get; set; }
+
     public int ComplianceRules { get; set; }
 
     /// <summary>
@@ -62,6 +65,7 @@ public sealed class MigrationReport
         sb.AppendLine($"    qualification items {JdQualificationItems,7}");
         sb.AppendLine($"    PEM entries         {JdPemEntries,7}");
         sb.AppendLine($"  class profiles        {Profiles,7}   (envelope: {ProfilesWithEnvelope}, coverage: {ProfilesWithCoverage}, consolidated: {ProfilesWithConsolidated})");
+        sb.AppendLine($"    retired superseded  {RetiredProfiles,7}{(DryRun ? "   (applied on --write)" : "")}");
         sb.AppendLine($"  compliance rules      {ComplianceRules,7}");
 
         if (PercentAnomalies.Count > 0)

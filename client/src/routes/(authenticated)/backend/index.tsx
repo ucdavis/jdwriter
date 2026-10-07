@@ -1,5 +1,6 @@
 import {
   BootstrapPanel,
+  SupersessionPanel,
   IngestPanel,
   StandardsPanel,
   UploadPanel,
@@ -77,6 +78,7 @@ function EnvelopeIndex() {
       <UploadPanel />
       <IngestPanel />
       <StandardsPanel />
+      <SupersessionPanel />
       <BootstrapPanel />
 
       {classes.length === 0 ? (
