@@ -45,7 +45,6 @@ function FitContent() {
   return (
     <>
       <PageHeader
-        back={{ label: 'Back to envelopes', to: '/backend' }}
         eyebrow="Back end · goodness of fit"
         sub={`Real JDs whose responsibilities fall below ${threshold}% coverage of their assigned class standard. These are the positions most likely mis-slotted — check which class actually fits.`}
         title="Reclassification review"

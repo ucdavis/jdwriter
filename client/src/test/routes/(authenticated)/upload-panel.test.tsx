@@ -40,7 +40,7 @@ describe('upload JDs', () => {
         });
       })
     );
-    renderRoute({ initialPath: '/backend' });
+    renderRoute({ initialPath: '/backend/corpus' });
 
     const input = await screen.findByLabelText('Upload HRTMS export files');
     await user.upload(input, [
@@ -73,7 +73,7 @@ describe('upload JDs', () => {
         return HttpResponse.json({ ok: true });
       })
     );
-    renderRoute({ initialPath: '/backend' });
+    renderRoute({ initialPath: '/backend/corpus' });
 
     // Wait for the upload list itself — the folder panel also says "new class".
     await screen.findByText(/3 uploaded · refreshes a class with 154 JDs/);
@@ -103,7 +103,7 @@ describe('upload JDs', () => {
         })
       )
     );
-    renderRoute({ initialPath: '/backend' });
+    renderRoute({ initialPath: '/backend/corpus' });
 
     await screen.findByText(/2 written in the app · 1 from Classify · refreshes a class with 154 JDs/);
     expect(screen.getByText(/edited by hand — rebuilding replaces those edits/)).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe('upload JDs', () => {
     testServer.use(
       http.get('/api/admin/ingest/pending', () => HttpResponse.json({ configured: false, pending: [] }))
     );
-    renderRoute({ initialPath: '/backend' });
+    renderRoute({ initialPath: '/backend/corpus' });
 
     await screen.findByText('Upload JDs');
     await waitFor(() =>
@@ -139,7 +139,7 @@ describe('upload JDs', () => {
         })
       )
     );
-    renderRoute({ initialPath: '/backend' });
+    renderRoute({ initialPath: '/backend/corpus' });
 
     await user.upload(await screen.findByLabelText('Upload job standards workbooks'), [
       new File(['x'], 'a.xlsx'),

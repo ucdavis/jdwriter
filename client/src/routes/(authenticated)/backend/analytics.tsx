@@ -61,7 +61,6 @@ function AnalyticsContent() {
   return (
     <>
       <PageHeader
-        back={{ label: 'Back to envelopes', to: '/backend' }}
         eyebrow="Back end · analytics"
         sub="How JDWriter is being used, and how its classes are used and fit."
         title="Analytics"

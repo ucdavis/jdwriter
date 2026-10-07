@@ -34,7 +34,6 @@ function SettingsPage() {
   return (
     <AdminOnly>
       <PageHeader
-        back={{ label: 'Back to envelopes', to: '/backend' }}
         eyebrow="Back end · settings"
         sub="Who can reach the back end, and the API key the app uses. Everyone who signs in can author and classify."
         title="Settings"
