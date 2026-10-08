@@ -4,7 +4,7 @@ import type { BuildRequest, EnvelopeCheckResponse, SavedJd } from '@/lib/contrac
 import { screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 const check = (over: Partial<EnvelopeCheckResponse>): EnvelopeCheckResponse => ({
   betterFitChecked: false,
@@ -139,7 +139,6 @@ const savedJd = (over: Partial<SavedJd> = {}): SavedJd => ({
 
 describe('a finished JD', () => {
   setupRouteTest();
-  afterEach(() => vi.unstubAllGlobals());
 
   it('downloads as Word from the saved record, beside the PDF', async () => {
     testServer.use(http.get('/api/jds/12', () => HttpResponse.json(savedJd())));
@@ -151,44 +150,43 @@ describe('a finished JD', () => {
     expect(screen.getByRole('button', { name: '⤓ Download PDF' })).toBeEnabled();
   });
 
-  it('shows the hand-off to the workforce management tool, and copies the JD for pasting', async () => {
-    const user = userEvent.setup();
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+  it('starts the workforce management justification with the JD attached', async () => {
     testServer.use(
       http.get('/api/jds/12', () => HttpResponse.json(savedJd())),
-      http.get('/api/links', () => HttpResponse.json({ wfmUrl: 'https://cthulhu.example.edu/' }))
+      http.get('/api/links', () =>
+        HttpResponse.json({ wfmUrl: 'https://people.example.edu/wfm/requests/new' })
+      )
     );
     renderRoute({ initialPath: '/jds/12' });
 
     const steps = await screen.findByRole('region', {
-      name: 'Request the position in the workforce management tool',
+      name: 'Take this job description to the workforce management justification',
     });
-    expect(await within(steps).findByRole('link', { name: 'CTHULHU' })).toHaveAttribute(
-      'href',
-      'https://cthulhu.example.edu/'
-    );
-    expect(steps).toHaveTextContent('Build Requisition (WMR + VRF)');
-    expect(steps).toHaveTextContent('pick Lab Ast 1 (UC Job Code 009605)');
+    const start = await within(steps).findByRole('link', {
+      name: 'Start the workforce management justification →',
+    });
 
-    await user.click(within(steps).getByRole('button', { name: 'Copy JD text' }));
+    // WFM is told where the JD comes from, and the absolute URL to fetch it from.
+    const url = new URL(start.getAttribute('href')!);
+    expect(url.origin + url.pathname).toBe('https://people.example.edu/wfm/requests/new');
+    expect(url.searchParams.get('source')).toBe('jdwriter');
+    expect(url.searchParams.get('jd')).toBe(`${window.location.origin}/api/jds/12/handoff`);
 
-    const text = writeText.mock.calls[0][0] as string;
-    expect(text).toContain('Greenhouse Tech');
-    expect(text).toContain('Key Responsibilities — Total 100%');
-    expect(text).toContain('100% Greenhouse Operations\n• Waters and records plants.');
-    expect(within(steps).getByRole('button', { name: 'Copied ✓' })).toBeInTheDocument();
+    expect(steps).toHaveTextContent('Job description (done)');
+    expect(steps).toHaveTextContent('submit it all as one complete package');
   });
 
-  it('names the tool without a link until it has an address', async () => {
+  it('offers the JD as Markdown and JSON until the workforce management tool is live', async () => {
     testServer.use(http.get('/api/jds/12', () => HttpResponse.json(savedJd())));
     renderRoute({ initialPath: '/jds/12' });
 
     const steps = await screen.findByRole('region', {
-      name: 'Request the position in the workforce management tool',
+      name: 'Take this job description to the workforce management justification',
     });
-    expect(steps).toHaveTextContent('CTHULHU');
-    expect(within(steps).queryByRole('link', { name: 'CTHULHU' })).not.toBeInTheDocument();
+    expect(await within(steps).findByText(/not available yet/)).toBeInTheDocument();
+    expect(within(steps).queryByRole('link', { name: /Start the workforce/ })).not.toBeInTheDocument();
+    expect(within(steps).getByRole('link', { name: 'Markdown' })).toHaveAttribute('href', '/api/jds/12/markdown');
+    expect(within(steps).getByRole('link', { name: 'JSON' })).toHaveAttribute('href', '/api/jds/12/handoff');
   });
 
   it('offers neither the hand-off nor Word for a JD that is not ready', async () => {

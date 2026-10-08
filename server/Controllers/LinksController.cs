@@ -6,8 +6,8 @@ namespace Server.Controllers;
 
 /// <summary>
 /// Where JDWriter hands off to other CAES People tools. Configuration, not code: the workforce
-/// management tool (CTHULHU) has no production address yet, and a link appears only once
-/// <c>Wfm:Url</c> (WFM_URL in deployment) is set.
+/// management (WFM) tool is not live yet, and "Start the workforce management justification"
+/// appears only once <c>Wfm:Url</c> (WFM_URL in deployment) names its start page.
 /// </summary>
 [ApiController]
 [Route("api/links")]

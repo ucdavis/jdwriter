@@ -97,7 +97,7 @@
       "classification": "variable",
       "valueType": "string",
       "requiredWhen": "never",
-      "description": "HTTPS address of the workforce management tool (CTHULHU), linked from a finished JD's next steps. Leave unset until it has a production address; the steps are shown without a link."
+      "description": "HTTPS address of the workforce management (WFM) tool's page for starting a new justification. JDWriter's \"Start the workforce management justification\" button opens it with ?source=jdwriter&jd=<handoff URL> (docs/WFM-HANDOFF.md). Leave unset until WFM is live; the button is then replaced by Markdown and JSON downloads."
     }
   ]
 }
