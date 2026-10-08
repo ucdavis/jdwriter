@@ -67,24 +67,64 @@ public class JdsController : ApiControllerBase
     [HttpGet("{id:int}/docx")]
     public async Task<IActionResult> Docx(int id, CancellationToken ct)
     {
+        var (jd, refusal) = await PublishableAsync(id, ct);
+        return refusal ?? File(
+            JdDocx.Build(jd!),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            JdDocx.FileName(jd!));
+    }
+
+    /// <summary>
+    /// The JD as JDWriter hands it to the workforce management tool (format jdwriter.jd, version 1;
+    /// docs/WFM-HANDOFF.md). WFM fetches this from the user's browser on the same host, so the
+    /// user's own JDWriter session authorizes it and the usual access rule applies.
+    /// </summary>
+    [HttpGet("{id:int}/handoff")]
+    public async Task<IActionResult> Handoff(int id, CancellationToken ct)
+    {
+        var (jd, refusal) = await PublishableAsync(id, ct);
+        return refusal ?? Ok(JdHandoffBuilder.Build(jd!, AppBaseUrl(), DateTimeOffset.UtcNow));
+    }
+
+    /// <summary>The JD as Markdown, for the HR package. Same sections and order as the PDF and Word file.</summary>
+    [HttpGet("{id:int}/markdown")]
+    public async Task<IActionResult> Markdown(int id, CancellationToken ct)
+    {
+        var (jd, refusal) = await PublishableAsync(id, ct);
+        if (refusal is not null)
+        {
+            return refusal;
+        }
+
+        var name = Path.ChangeExtension(JdDocx.FileName(jd!), ".md");
+        return File(System.Text.Encoding.UTF8.GetBytes(JdHandoffBuilder.Markdown(jd!)), "text/markdown; charset=utf-8", name);
+    }
+
+    /// <summary>
+    /// A JD the caller may read and that is finished. Someone else's reads as not found rather than
+    /// forbidden, so ids cannot be probed; one with unallocated time is refused, because every copy
+    /// of a JD that leaves the app should be one that could be published.
+    /// </summary>
+    private async Task<(SavedJd? Jd, IActionResult? Refusal)> PublishableAsync(int id, CancellationToken ct)
+    {
         var found = await _store.GetAsync(id, ct);
         if (found == null
             || (found.Value.OwnerId != await User.IdAsync(_db, ct) && !User.IsInRole(AppRoles.Admin)))
         {
-            return NotFound(new { message = "That job description was not found." });
+            return (null, NotFound(new { message = "That job description was not found." }));
         }
 
         var jd = found.Value.Jd;
         if (!jd.CanPublish)
         {
-            return BadRequest(new { message = $"{jd.UnallocatedPct}% of time is unallocated, so this JD is not publishable yet." });
+            return (null, BadRequest(new { message = $"{jd.UnallocatedPct}% of time is unallocated, so this JD is not publishable yet." }));
         }
 
-        return File(
-            JdDocx.Build(jd),
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            JdDocx.FileName(jd));
+        return (jd, null);
     }
+
+    /// <summary>JDWriter's absolute root as this request reached it, mount point included.</summary>
+    private string AppBaseUrl() => $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
 
     /// <summary>Delete one of your saved JDs (an admin may delete any). 404 for anyone else's.</summary>
     [HttpDelete("{id:int}")]
