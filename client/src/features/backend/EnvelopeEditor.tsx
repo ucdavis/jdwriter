@@ -129,7 +129,7 @@ export const EnvelopeEditor = ({
         <Eyebrow>Job summary</Eyebrow>
         <textarea
           aria-label="Job summary"
-          className="textarea textarea-bordered mt-1 w-full resize-none text-[13px]"
+          className="textarea textarea-bordered mt-1 w-full resize-none text-sm"
           onChange={(e) => update('summary', e.target.value)}
           rows={3}
           value={envelope.summary}
@@ -138,7 +138,7 @@ export const EnvelopeEditor = ({
           <Eyebrow>Scope statement</Eyebrow>
           <textarea
             aria-label="Scope statement"
-            className="textarea textarea-bordered mt-1 w-full resize-none text-[13px]"
+            className="textarea textarea-bordered mt-1 w-full resize-none text-sm"
             onChange={(e) => update('scopeStatement', e.target.value)}
             rows={3}
             value={envelope.scopeStatement}
@@ -164,7 +164,7 @@ export const EnvelopeEditor = ({
                   type="number"
                   value={r.pctTime}
                 />
-                <span className="text-[13px] text-base-content/65">%</span>
+                <span className="text-sm text-base-content/65">%</span>
                 <input
                   aria-label="Function name"
                   className="input input-bordered input-sm flex-1 font-semibold"
@@ -173,7 +173,7 @@ export const EnvelopeEditor = ({
                 />
                 <button
                   aria-label="Remove function"
-                  className="px-1 text-[13px] text-base-content/50 hover:text-error"
+                  className="px-1 text-sm text-base-content/50 hover:text-error"
                   onClick={() =>
                     update(
                       'keyResponsibilities',
@@ -222,7 +222,7 @@ export const EnvelopeEditor = ({
         </Card>
       ))}
 
-      <p className="text-[11.5px] text-base-content/50">
+      <p className="text-xs text-base-content/50">
         Saving marks this envelope as <strong>manually edited</strong>; re-running ingest
         will preserve it rather than re-synthesizing it from the corpus.
       </p>
@@ -242,17 +242,17 @@ const ListEditor = ({
   <div className="space-y-1.5">
     {items.map((it, i) => (
       <div className="flex items-start gap-2" key={i}>
-        <span className="mt-2 text-[13px] text-primary">•</span>
+        <span className="mt-2 text-sm text-primary">•</span>
         <textarea
           aria-label={`Item ${i + 1}`}
-          className="textarea textarea-bordered textarea-sm flex-1 resize-y text-[13px]"
+          className="textarea textarea-bordered textarea-sm flex-1 resize-y text-sm"
           onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))}
           rows={1}
           value={it}
         />
         <button
           aria-label="Remove item"
-          className="mt-1.5 text-[13px] text-base-content/50 hover:text-error"
+          className="mt-1.5 text-sm text-base-content/50 hover:text-error"
           onClick={() => onChange(items.filter((_, j) => j !== i))}
           type="button"
         >
@@ -261,7 +261,7 @@ const ListEditor = ({
       </div>
     ))}
     <button
-      className="text-[12px] font-medium text-primary hover:underline"
+      className="text-sm font-medium text-primary hover:underline"
       onClick={() => onChange([...items, ''])}
       type="button"
     >

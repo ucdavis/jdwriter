@@ -72,14 +72,14 @@ function JdReviewContent() {
       <div className="space-y-5">
         <Card className="p-5">
           <Eyebrow>Job description</Eyebrow>
-          <h2 className="mt-1 text-[19px] font-bold">
+          <h2 className="mt-1 text-lg font-bold">
             {record.workingTitle || record.ucJobTitle}
           </h2>
-          <div className="mt-1 text-[12.5px] text-base-content/65">
+          <div className="mt-1 text-sm text-base-content/65">
             {record.ucJobTitle} · code <span className="tnum">{record.ucJobCode}</span>
             {record.departmentName ? ` · ${record.departmentName}` : ''}
           </div>
-          <div className="mt-1 text-[12px] text-base-content/65">
+          <div className="mt-1 text-sm text-base-content/65">
             {meta}
             {record.supervises ? ' · supervises' : ''}
             {record.leads ? ' · leads' : ''}
@@ -87,7 +87,7 @@ function JdReviewContent() {
           <div className="mt-3 flex items-center gap-2">
             <Badge tone={tone}>{coveredPct}% fits the standard envelope</Badge>
             <Link
-              className="text-[12px] text-primary hover:underline"
+              className="text-sm text-primary hover:underline"
               params={{ slug: profile.slug }}
               to="/backend/edit/$slug"
             >
@@ -100,13 +100,13 @@ function JdReviewContent() {
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="p-4">
               <Eyebrow>This JD — summary</Eyebrow>
-              <p className="mt-2 text-[12.5px] leading-relaxed">
+              <p className="mt-2 text-sm leading-relaxed">
                 {record.jobSummary || '—'}
               </p>
             </Card>
             <Card className="bg-base-200 p-4">
               <Eyebrow>Standard envelope — summary</Eyebrow>
-              <p className="mt-2 text-[12.5px] leading-relaxed">
+              <p className="mt-2 text-sm leading-relaxed">
                 {envelope?.summary || '—'}
               </p>
             </Card>
@@ -121,9 +121,9 @@ function JdReviewContent() {
                 <li key={r.functionName}>
                   <div className="flex items-center gap-2">
                     {r.pct == null ? null : (
-                      <span className="text-[12px] font-semibold tnum">{r.pct}%</span>
+                      <span className="text-sm font-semibold tnum">{r.pct}%</span>
                     )}
-                    <span className="text-[12.5px] font-medium">{r.functionName}</span>
+                    <span className="text-sm font-medium">{r.functionName}</span>
                     <Badge tone={r.inEnvelope ? 'green' : 'yellow'}>
                       {r.inEnvelope ? 'in envelope' : 'idiosyncratic'}
                     </Badge>
@@ -132,7 +132,7 @@ function JdReviewContent() {
                     <ul className="ml-4 mt-1 space-y-0.5">
                       {r.duties.map((d) => (
                         <li
-                          className="list-disc text-[11.5px] leading-snug text-base-content/65"
+                          className="list-disc text-xs leading-snug text-base-content/65"
                           key={d}
                         >
                           {d}
@@ -150,13 +150,13 @@ function JdReviewContent() {
               {(envelope?.keyResponsibilities ?? []).map((r) => (
                 <li key={r.functionName}>
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-semibold tnum">{r.pctTime}%</span>
-                    <span className="text-[12.5px] font-medium">{r.functionName}</span>
+                    <span className="text-sm font-semibold tnum">{r.pctTime}%</span>
+                    <span className="text-sm font-medium">{r.functionName}</span>
                   </div>
                   <ul className="ml-4 mt-1 space-y-0.5">
                     {r.duties.slice(0, 5).map((d) => (
                       <li
-                        className="list-disc text-[11.5px] leading-snug text-base-content/65"
+                        className="list-disc text-xs leading-snug text-base-content/65"
                         key={d}
                       >
                         {d}
@@ -166,7 +166,7 @@ function JdReviewContent() {
                 </li>
               ))}
               {!envelope ? (
-                <li className="text-[12px] text-base-content/65">No envelope yet.</li>
+                <li className="text-sm text-base-content/65">No envelope yet.</li>
               ) : null}
             </ul>
           </Card>
@@ -192,19 +192,19 @@ function JdReviewContent() {
 
 const QualList = ({ items, label }: { items: string[]; label: string }) => (
   <div>
-    <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-base-content/50">
+    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
       {label}
     </div>
     {items.length ? (
       <ul className="space-y-0.5">
         {items.map((it) => (
-          <li className="ml-4 list-disc text-[12px] leading-snug" key={it}>
+          <li className="ml-4 list-disc text-sm leading-snug" key={it}>
             {it}
           </li>
         ))}
       </ul>
     ) : (
-      <span className="text-[12px] text-base-content/50">—</span>
+      <span className="text-sm text-base-content/50">—</span>
     )}
   </div>
 );

@@ -48,8 +48,8 @@ export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
             type="button"
           >
             <span className="flex min-w-0 flex-col">
-              <span className="truncate text-[13.5px] font-medium">{c.title}</span>
-              <span className="text-[11.5px] text-base-content/65 tnum">
+              <span className="truncate text-sm font-medium">{c.title}</span>
+              <span className="text-xs text-base-content/65 tnum">
                 Code {c.ucJobCode}
                 {c.ready
                   ? c.bargainingUnit
@@ -68,13 +68,13 @@ export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
           </button>
         ))}
         {hidden > 0 ? (
-          <div className="px-3 py-2.5 text-center text-[11.5px] text-base-content/50">
+          <div className="px-3 py-2.5 text-center text-xs text-base-content/50">
             +{hidden.toLocaleString()} more in-use titles — refine your search to narrow
             the list.
           </div>
         ) : null}
         {filtered.length === 0 ? (
-          <div className="px-3 py-6 text-center text-[13px] text-base-content/65">
+          <div className="px-3 py-6 text-center text-sm text-base-content/65">
             No matching classes.
           </div>
         ) : null}

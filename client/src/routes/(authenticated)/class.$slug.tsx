@@ -98,14 +98,14 @@ function ClassPage() {
               <Badge tone={source.tone}>{source.label}</Badge>
             </div>
           </div>
-          <p className="mt-2.5 text-[14px] leading-relaxed">{envelope.summary}</p>
-          <p className="mt-2 text-[13px] leading-relaxed text-base-content/65">
+          <p className="mt-2.5 text-sm leading-relaxed">{envelope.summary}</p>
+          <p className="mt-2 text-sm leading-relaxed text-base-content/65">
             {envelope.scopeStatement}
           </p>
           {/* The standard's detail page is part of the back end, so only admins get the link. */}
           {profile.standard && isAdmin ? (
             <Link
-              className="mt-3 inline-block text-[12.5px] font-medium text-info hover:underline"
+              className="mt-3 inline-block text-sm font-medium text-info hover:underline"
               params={{ slug: profile.slug }}
               to="/backend/standard/$slug"
             >
@@ -114,12 +114,12 @@ function ClassPage() {
           ) : null}
           {envelope.outOfEnvelope.length > 0 ? (
             <details className="mt-3">
-              <summary className="cursor-pointer text-[11.5px] font-semibold uppercase tracking-wide text-warning">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-warning">
                 Outside this envelope → suggests a different class
               </summary>
               <ul className="mt-2 space-y-1">
                 {envelope.outOfEnvelope.map((o) => (
-                  <li className="flex gap-2 text-[12.5px] text-base-content/65" key={o}>
+                  <li className="flex gap-2 text-sm text-base-content/65" key={o}>
                     <span className="text-warning">⚠</span>
                     <span>{o}</span>
                   </li>
@@ -170,7 +170,7 @@ function ClassPage() {
 
       <div className="mb-3">
         <div className="eyebrow">Build the job description</div>
-        <p className="mt-1 text-[13px] text-base-content/65">
+        <p className="mt-1 text-sm text-base-content/65">
           Keep what applies, drop what doesn&apos;t, add anything unit-specific — then
           assemble.
         </p>
@@ -194,7 +194,7 @@ function ClassPage() {
         />
       ) : (
         <Card className="p-6">
-          <p className="text-[13px] text-base-content/65">
+          <p className="text-sm text-base-content/65">
             This class has no envelope yet, so there is nothing to tailor. Ingest its JDs
             or bootstrap it from an official standard on the back end first.
           </p>

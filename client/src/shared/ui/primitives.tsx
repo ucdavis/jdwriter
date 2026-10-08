@@ -54,7 +54,7 @@ export const Badge = ({
   tone?: Tone;
 }) => (
   <span
-    className={`inline-flex items-center rounded-full px-2.5 py-[3px] text-[11.5px] font-semibold ${toneClass[tone]}`}
+    className={`inline-flex items-center rounded-full px-2.5 py-[3px] text-xs font-semibold ${toneClass[tone]}`}
   >
     {children}
   </span>
@@ -79,7 +79,7 @@ export const Note = ({
         ? 'bg-success/10 border-success/20 text-success'
         : 'bg-warning/10 border-warning/20 text-warning';
   return (
-    <div className={`rounded-lg border px-3.5 py-2.5 text-[13px] ${cls}`}>
+    <div className={`rounded-lg border px-3.5 py-2.5 text-sm ${cls}`}>
       {children}
     </div>
   );
@@ -103,7 +103,7 @@ export const PageHeader = ({
   <div className="mb-7">
     {back ? (
       <Link
-        className="text-[13px] font-medium text-primary hover:underline"
+        className="text-sm font-medium text-primary hover:underline"
         params={back.params}
         to={back.to}
       >
@@ -111,7 +111,7 @@ export const PageHeader = ({
       </Link>
     ) : null}
     {eyebrow ? <div className="eyebrow mt-2">{eyebrow}</div> : null}
-    <h1 className="mt-1 text-[26px] font-bold tracking-tight">{title}</h1>
+    <h1 className="mt-1 text-3xl font-bold tracking-tight">{title}</h1>
     {sub ? (
       <p className="mt-1.5 max-w-2xl text-sm text-base-content/65">{sub}</p>
     ) : null}
@@ -122,7 +122,7 @@ export const PageHeader = ({
 export const Stat = ({ label, value }: { label: string; value: string }) => (
   <div>
     <Eyebrow>{label}</Eyebrow>
-    <div className="mt-0.5 text-[14px] font-semibold tnum">{value}</div>
+    <div className="mt-0.5 text-sm font-semibold tnum">{value}</div>
   </div>
 );
 
@@ -141,9 +141,9 @@ export const Fact = ({
 }) => (
   <div>
     <Eyebrow>{label}</Eyebrow>
-    <div className="mt-0.5 text-[15px] font-semibold">{value}</div>
+    <div className="mt-0.5 text-base font-semibold">{value}</div>
     {agreement < 1 ? (
-      <div className="mt-0.5 text-[10.5px] text-base-content/50 tnum">
+      <div className="mt-0.5 text-xs text-base-content/50 tnum">
         {Math.round(agreement * 100)}% agreement
       </div>
     ) : null}
@@ -190,7 +190,7 @@ export const AddRow = ({
 }) => (
   <div className="mt-2 flex gap-2">
     <input
-      className="input input-bordered input-sm flex-1 text-[12.5px]"
+      className="input input-bordered input-sm flex-1 text-sm"
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {

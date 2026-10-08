@@ -32,7 +32,7 @@ export const BackendNav = () => {
             'aria-current': 'page',
             className: 'border-primary text-primary',
           }}
-          className="-mb-px whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-[13px] font-medium text-base-content/65 hover:text-base-content"
+          className="-mb-px whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-sm font-medium text-base-content/65 hover:text-base-content"
           key={t.to}
           to={t.to}
         >
