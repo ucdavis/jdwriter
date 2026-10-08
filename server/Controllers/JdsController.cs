@@ -59,6 +59,33 @@ public class JdsController : ApiControllerBase
         return Ok(found.Value.Jd);
     }
 
+    /// <summary>
+    /// The JD as a Word document — the same sections as the PDF. Same access as reading it, and
+    /// refused while time is unallocated, as the PDF is: a .docx that looks final but is not
+    /// publishable would travel further than the screen that says so.
+    /// </summary>
+    [HttpGet("{id:int}/docx")]
+    public async Task<IActionResult> Docx(int id, CancellationToken ct)
+    {
+        var found = await _store.GetAsync(id, ct);
+        if (found == null
+            || (found.Value.OwnerId != await User.IdAsync(_db, ct) && !User.IsInRole(AppRoles.Admin)))
+        {
+            return NotFound(new { message = "That job description was not found." });
+        }
+
+        var jd = found.Value.Jd;
+        if (!jd.CanPublish)
+        {
+            return BadRequest(new { message = $"{jd.UnallocatedPct}% of time is unallocated, so this JD is not publishable yet." });
+        }
+
+        return File(
+            JdDocx.Build(jd),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            JdDocx.FileName(jd));
+    }
+
     /// <summary>Delete one of your saved JDs (an admin may delete any). 404 for anyone else's.</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)

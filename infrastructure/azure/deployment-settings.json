@@ -90,6 +90,14 @@
       "valueType": "string",
       "requiredWhen": "never",
       "description": "Key for an OpenAI-compatible endpoint, when LLM_PROVIDER is openai-compatible and the endpoint needs one (a local model server usually does not)."
+    },
+    {
+      "githubName": "WFM_URL",
+      "appServiceName": "Wfm__Url",
+      "classification": "variable",
+      "valueType": "string",
+      "requiredWhen": "never",
+      "description": "HTTPS address of the workforce management tool (CTHULHU), linked from a finished JD's next steps. Leave unset until it has a production address; the steps are shown without a link."
     }
   ]
 }

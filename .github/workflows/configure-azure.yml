@@ -62,6 +62,7 @@ jobs:
       SMTP_TIMEOUT: ${{ vars.SMTP_TIMEOUT }}
       SMTP_USE_SSL: ${{ vars.SMTP_USE_SSL }}
       SMTP_USERNAME: ${{ vars.SMTP_USERNAME }}
+      WFM_URL: ${{ vars.WFM_URL }}
       # </deployment-settings:workflow-env>
       AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
       AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
@@ -257,6 +258,7 @@ jobs:
           add_setting "Smtp__Timeout" "$SMTP_TIMEOUT"
           add_setting "Smtp__UseSsl" "$SMTP_USE_SSL"
           add_setting "Smtp__Username" "$SMTP_USERNAME"
+          add_setting "Wfm__Url" "$WFM_URL"
           # </deployment-settings:workflow-runtime-settings>
 
           az webapp config appsettings set \

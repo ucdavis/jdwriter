@@ -1,6 +1,8 @@
 import { Badge, Card, Eyebrow, Note } from '@/shared/ui/primitives.tsx';
 import type { AssembledJd } from '@/lib/contracts.ts';
 import { Link } from '@tanstack/react-router';
+import { appUrl } from '@/lib/basePath.ts';
+import { NextSteps } from './NextSteps.tsx';
 import type { ReactNode } from 'react';
 
 /**
@@ -63,16 +65,30 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
             </span>
           ) : null}
         </div>
-        <button
-          className="btn btn-primary btn-sm"
-          disabled={!publishable}
-          onClick={() => window.print()}
-          title={publishable ? undefined : 'Percent of time must total 100%'}
-          type="button"
-        >
-          ⤓ Download PDF
-        </button>
+        <div className="flex gap-2">
+          {/* Word comes from the saved record, so it needs one; every assembly is saved. */}
+          {publishable && result.authoredJdId ? (
+            <a
+              className="btn btn-outline btn-sm"
+              download
+              href={appUrl(`/api/jds/${result.authoredJdId}/docx`)}
+            >
+              ⤓ Download Word
+            </a>
+          ) : null}
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={!publishable}
+            onClick={() => window.print()}
+            title={publishable ? undefined : 'Percent of time must total 100%'}
+            type="button"
+          >
+            ⤓ Download PDF
+          </button>
+        </div>
       </div>
+
+      {publishable && result.status === 'ready' ? <NextSteps result={result} /> : null}
 
       <div id="jd-print">
         <Card className="p-6">

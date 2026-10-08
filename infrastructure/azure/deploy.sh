@@ -43,7 +43,8 @@ USAGE
     '  OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS' \
     '  OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_RESOURCE_ATTRIBUTES, OTEL_SERVICE_NAME' \
     '  SMTP_BCC_EMAIL, SMTP_FROM_EMAIL, SMTP_FROM_NAME, SMTP_HOST, SMTP_PASSWORD' \
-    '  SMTP_PORT, SMTP_REPLY_TO_EMAIL, SMTP_TIMEOUT, SMTP_USE_SSL, SMTP_USERNAME'
+    '  SMTP_PORT, SMTP_REPLY_TO_EMAIL, SMTP_TIMEOUT, SMTP_USE_SSL, SMTP_USERNAME' \
+    '  WFM_URL'
   # </deployment-settings:deploy-sh-help>
 }
 
@@ -302,6 +303,7 @@ add_setting "Smtp__ReplyToEmail" "${SMTP_REPLY_TO_EMAIL:-}"
 add_setting "Smtp__Timeout" "${SMTP_TIMEOUT:-}"
 add_setting "Smtp__UseSsl" "${SMTP_USE_SSL:-}"
 add_setting "Smtp__Username" "${SMTP_USERNAME:-}"
+add_setting "Wfm__Url" "${WFM_URL:-}"
 # </deployment-settings:deploy-sh-runtime-settings>
 
 printf 'Applying runtime settings to %s...\n' "$WEB_APP_NAME"
