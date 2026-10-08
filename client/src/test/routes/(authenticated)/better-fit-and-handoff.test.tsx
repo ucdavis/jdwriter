@@ -150,7 +150,7 @@ describe('a finished JD', () => {
     expect(screen.getByRole('button', { name: '⤓ Download PDF' })).toBeEnabled();
   });
 
-  it('starts the workforce management justification with the JD attached', async () => {
+  it('begins the Workforce Management request with the JD attached', async () => {
     testServer.use(
       http.get('/api/jds/12', () => HttpResponse.json(savedJd())),
       http.get('/api/links', () =>
@@ -160,10 +160,10 @@ describe('a finished JD', () => {
     renderRoute({ initialPath: '/jds/12' });
 
     const steps = await screen.findByRole('region', {
-      name: 'Take this job description to the workforce management justification',
+      name: 'Take this job description to the Workforce Management request',
     });
     const start = await within(steps).findByRole('link', {
-      name: 'Start the workforce management justification →',
+      name: 'Begin working on the Workforce Management request →',
     });
 
     // WFM is told where the JD comes from, and the absolute URL to fetch it from.
@@ -181,10 +181,10 @@ describe('a finished JD', () => {
     renderRoute({ initialPath: '/jds/12' });
 
     const steps = await screen.findByRole('region', {
-      name: 'Take this job description to the workforce management justification',
+      name: 'Take this job description to the Workforce Management request',
     });
     expect(await within(steps).findByText(/not available yet/)).toBeInTheDocument();
-    expect(within(steps).queryByRole('link', { name: /Start the workforce/ })).not.toBeInTheDocument();
+    expect(within(steps).queryByRole('link', { name: /Begin working on the Workforce/ })).not.toBeInTheDocument();
     expect(within(steps).getByRole('link', { name: 'Markdown' })).toHaveAttribute('href', '/api/jds/12/markdown');
     expect(within(steps).getByRole('link', { name: 'JSON' })).toHaveAttribute('href', '/api/jds/12/handoff');
   });

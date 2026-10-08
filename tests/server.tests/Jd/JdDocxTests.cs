@@ -130,8 +130,8 @@ public class JdDocxTests
     }
 
     [Theory]
-    [InlineData("https://cthulhu.example.edu/", "https://cthulhu.example.edu/")]
-    [InlineData("http://cthulhu.example.edu/", null)]
+    [InlineData("https://wfm.example.edu/", "https://wfm.example.edu/")]
+    [InlineData("http://wfm.example.edu/", null)]
     [InlineData("not a url", null)]
     [InlineData(null, null)]
     public void The_workforce_tool_is_linked_only_at_an_https_address(string? configured, string? expected)

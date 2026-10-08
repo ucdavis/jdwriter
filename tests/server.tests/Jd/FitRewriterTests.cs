@@ -66,12 +66,29 @@ public class FitRewriterTests
         ("Reports", 50, ["Writes monthly variance reports."]),
         ("Event planning", 10, ["Plans the department holiday party."]));
 
-    private static async Task<(FitRewrite Rewrite, CannedLlm Llm)> Run(JobDescription jd, object plan)
+    private static async Task<(FitRewrite Rewrite, CannedLlm Llm)> Run(
+        JobDescription jd, object plan, RewriteMode mode = RewriteMode.Correct)
     {
         var llm = new CannedLlm().Returns(plan);
-        var rewrite = await new FitRewriter(llm).RewriteAsync(Target(), jd);
+        var rewrite = await new FitRewriter(llm).RewriteAsync(Target(), jd, mode);
         return (rewrite, llm);
     }
+
+    private static List<(string Text, bool Kept, bool Added, string[] MatchedFrom)> DraftDuties(FitRewrite rewrite, int function)
+    {
+        using var doc = JsonDocument.Parse(rewrite.DraftState);
+        return doc.RootElement.GetProperty("resps")[function].GetProperty("duties").EnumerateArray()
+            .Select(d => (
+                d.GetProperty("text").GetString()!,
+                d.GetProperty("kept").GetBoolean(),
+                d.GetProperty("added").GetBoolean(),
+                d.GetProperty("matchedFrom").EnumerateArray().Select(x => x.GetString()!).ToArray()))
+            .ToList();
+    }
+
+    private static readonly JobDescription Greenhouse = Incumbent(
+        ("Budget work", 60, ["Prepares budget forecasts for the tomato trials.", "Reconciles the ledgers."]),
+        ("Reports", 40, ["Writes monthly variance reports.", "Presents results."]));
 
     private static readonly object TypicalPlan = new
     {
@@ -241,5 +258,77 @@ public class FitRewriterTests
             .And.Contain("R0. Budgeting (70%)")
             .And.Contain("  R2.0 Plans the department holiday party.");
         request.System.Should().Contain("never write job description text yourself");
+    }
+
+    [Fact]
+    public async Task A_matched_duty_keeps_its_standard_duty_and_shows_the_authors_wording_under_it()
+    {
+        var (rewrite, _) = await Run(Greenhouse, new
+        {
+            placements = new[] { new { responsibility = 0, function = 0 }, new { responsibility = 1, function = 1 } },
+            functions = new[] { new { function = 0, keepDuties = new[] { 0 } } },
+            carryOver = new[] { new { responsibility = 0, duty = 0, function = 0 } },
+            outside = Array.Empty<object>(),
+            matches = new[]
+            {
+                // "Reconciles the ledgers." is what standard duty F0.1 says.
+                new { responsibility = 0, duty = 1, function = 0, standardDuty = 1 },
+                new { responsibility = 1, duty = 0, function = 1, standardDuty = 0 },
+                // Already carried: carrying wins, so it is not also matched.
+                new { responsibility = 0, duty = 0, function = 0, standardDuty = 0 },
+                // A standard duty that does not exist is ignored.
+                new { responsibility = 1, duty = 1, function = 1, standardDuty = 9 },
+            },
+        });
+
+        DraftDuties(rewrite, 0).Select(d => (d.Text, d.Kept, d.Added, string.Join(" | ", d.MatchedFrom))).Should().Equal(
+            ("Prepares budget forecasts.", true, false, ""),
+            ("Reconciles ledgers monthly.", true, false, "Reconciles the ledgers."),
+            ("Prepares budget forecasts for the tomato trials.", true, true, ""));
+        DraftDuties(rewrite, 1)[0].MatchedFrom.Should().Equal("Writes monthly variance reports.");
+        rewrite.MatchedDuties.Should().Be(2);
+        rewrite.CarriedDuties.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Keeping_specifics_brings_over_anything_the_plan_left_unaccounted_for()
+    {
+        // The plan places the work but says nothing about two duties. When starting from the unit's
+        // own document they come over as written, so nothing the author wrote vanishes.
+        var plan = new
+        {
+            placements = new[] { new { responsibility = 0, function = 0 }, new { responsibility = 1, function = 1 } },
+            functions = new[] { new { function = 0, keepDuties = new[] { 0 } } },
+            carryOver = new[] { new { responsibility = 0, duty = 0, function = 0 } },
+            outside = new[] { new { responsibility = 1, duty = 1, reason = "Not this class." } },
+            matches = new[] { new { responsibility = 0, duty = 1, function = 0, standardDuty = 1 } },
+        };
+
+        var (specifics, _) = await Run(Greenhouse, plan, RewriteMode.KeepSpecifics);
+        specifics.Inputs.AddedItems.Should().Equal(
+            "Prepares budget forecasts for the tomato trials.", "Writes monthly variance reports.");
+
+        // Correcting a misfit does not: there, an unaccounted duty is not carried by default.
+        var (correct, _) = await Run(Greenhouse, plan, RewriteMode.Correct);
+        correct.Inputs.AddedItems.Should().Equal("Prepares budget forecasts for the tomato trials.");
+    }
+
+    [Fact]
+    public async Task Each_mode_tells_the_model_its_own_carry_over_rule()
+    {
+        var plan = new
+        {
+            placements = new[] { new { responsibility = 0, function = 0 } },
+            functions = Array.Empty<object>(), carryOver = Array.Empty<object>(),
+            outside = Array.Empty<object>(), matches = Array.Empty<object>(),
+        };
+
+        var (_, specifics) = await Run(Greenhouse, plan, RewriteMode.KeepSpecifics);
+        specifics.Requests.Single().System.Should().Contain("the unit's specifics must survive")
+            .And.Contain("Match every other incumbent duty");
+
+        var (_, correct) = await Run(Greenhouse, plan, RewriteMode.Correct);
+        correct.Requests.Single().System.Should().Contain("only when it is within the class and no kept standard duty already says it")
+            .And.NotContain("specifics must survive");
     }
 }

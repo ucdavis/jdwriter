@@ -135,7 +135,7 @@ public class FitController : ApiControllerBase
         FitRewrite rewrite;
         try
         {
-            rewrite = await _rewriter.RewriteAsync(target, incumbent, ct);
+            rewrite = await _rewriter.RewriteAsync(target, incumbent, RewriteMode.Correct, ct);
         }
         catch (InvalidOperationException ex)
         {
@@ -157,6 +157,7 @@ public class FitController : ApiControllerBase
             rewrite.KeptFunctions,
             rewrite.DroppedFunctions,
             rewrite.CarriedDuties,
+            rewrite.MatchedDuties,
             rewrite.Outside,
         });
     }

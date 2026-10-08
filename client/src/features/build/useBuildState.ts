@@ -7,7 +7,16 @@ import type { BuildRequest, KeyResponsibility } from '@/lib/contracts.ts';
  * free-text editing, because the point of the envelope is that most positions in a class
  * need under 10% customisation — and free text makes drift invisible.
  */
-export type Item = { added: boolean; kept: boolean; text: string };
+export type Item = {
+  added: boolean;
+  kept: boolean;
+  /**
+   * Lines from the author's own document that this standard item covers — set when a JD is
+   * started from a description or rewritten to fit — so they can see where their wording went.
+   */
+  matchedFrom?: string[];
+  text: string;
+};
 
 export type RespState = {
   draft: string;

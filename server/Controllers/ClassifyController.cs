@@ -126,7 +126,7 @@ public class ClassifyController : ApiControllerBase
         FitRewrite rewrite;
         try
         {
-            rewrite = await _rewriter.RewriteAsync(profile, ClassifySubmissions.ToJobDescription(body.Distilled), ct);
+            rewrite = await _rewriter.RewriteAsync(profile, ClassifySubmissions.ToJobDescription(body.Distilled), RewriteMode.KeepSpecifics, ct);
         }
         catch (InvalidOperationException ex)
         {
@@ -146,6 +146,7 @@ public class ClassifyController : ApiControllerBase
             rewrite.KeptFunctions,
             rewrite.DroppedFunctions,
             rewrite.CarriedDuties,
+            rewrite.MatchedDuties,
             rewrite.Outside,
         });
     }
