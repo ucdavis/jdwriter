@@ -41,7 +41,7 @@ export const ProposedCompare = ({
     <div className="mt-3 rounded-lg border border-base-300 bg-base-200 px-3.5 py-3">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={tone}>{badge}</Badge>
-        <span className="text-[12.5px] text-base-content/65">
+        <span className="text-sm text-base-content/65">
           The form proposes <span className="font-medium text-base-content">{label}</span>
           {proposed.title ? ` (${proposed.code})` : ''}; this analysis says{' '}
           <span className="font-medium text-base-content">{got}</span>.
@@ -49,7 +49,7 @@ export const ProposedCompare = ({
       </div>
 
       {corpusGap ? (
-        <p className="mt-2 text-[12.5px] text-base-content/65">
+        <p className="mt-2 text-sm text-base-content/65">
           <span className="font-medium text-base-content">{label}</span> has no ingested
           JD corpus, so it could not have been returned by the classifier at all. Treat
           this as a gap in our corpus rather than as a disagreement with the unit — ingest
@@ -59,21 +59,21 @@ export const ProposedCompare = ({
 
       {assessment ? (
         <div className="mt-2.5">
-          <p className="text-[13px]">{assessment.summary}</p>
+          <p className="text-sm">{assessment.summary}</p>
           {assessment.comparedAs ? (
-            <p className="mt-1 text-[11.5px] text-base-content/50">
+            <p className="mt-1 text-xs text-base-content/50">
               {label} is superseded, so it was assessed as {assessment.comparedAs}.
             </p>
           ) : null}
 
           {assessment.contradicts.length > 0 ? (
             <div className="mt-3">
-              <div className="mb-1.5 text-[11.5px] font-semibold text-base-content/50">
+              <div className="mb-1.5 text-xs font-semibold text-base-content/50">
                 What doesn&apos;t fit {label}
               </div>
               <ul className="space-y-1.5">
                 {assessment.contradicts.map((c) => (
-                  <li className="text-[12.5px] text-base-content/65" key={c.point}>
+                  <li className="text-sm text-base-content/65" key={c.point}>
                     <span className="mr-1.5 text-error">•</span>
                     <span className="text-base-content">{c.point}</span>
                     {/* The quoted evidence is what makes this usable in a conversation
@@ -90,12 +90,12 @@ export const ProposedCompare = ({
 
           {assessment.missing.length > 0 ? (
             <div className="mt-3">
-              <div className="mb-1.5 text-[11.5px] font-semibold text-base-content/50">
+              <div className="mb-1.5 text-xs font-semibold text-base-content/50">
                 Expected by {label} but absent from the description
               </div>
               <ul className="space-y-1">
                 {assessment.missing.map((m) => (
-                  <li className="text-[12.5px] text-base-content/65" key={m}>
+                  <li className="text-sm text-base-content/65" key={m}>
                     <span className="mr-1.5 text-warning">•</span>
                     {m}
                   </li>
@@ -106,12 +106,12 @@ export const ProposedCompare = ({
 
           {assessment.supports.length > 0 ? (
             <div className="mt-3">
-              <div className="mb-1.5 text-[11.5px] font-semibold text-base-content/50">
+              <div className="mb-1.5 text-xs font-semibold text-base-content/50">
                 What does fit {label}
               </div>
               <ul className="space-y-1">
                 {assessment.supports.map((s) => (
-                  <li className="text-[12.5px] text-base-content/65" key={s}>
+                  <li className="text-sm text-base-content/65" key={s}>
                     <span className="mr-1.5 text-success">✓</span>
                     {s}
                   </li>
@@ -120,7 +120,7 @@ export const ProposedCompare = ({
             </div>
           ) : null}
 
-          <p className="mt-3 text-[11.5px] text-base-content/50">
+          <p className="mt-3 text-xs text-base-content/50">
             The ranking above was produced without showing the model the proposed code, so
             it couldn&apos;t simply ratify it. This section then assessed {label} on its
             own merits

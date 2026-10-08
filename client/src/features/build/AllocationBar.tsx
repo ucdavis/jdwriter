@@ -71,7 +71,7 @@ export const AllocationBar = ({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-baseline gap-3">
           <Eyebrow>Percent of time</Eyebrow>
-          <span className="text-[26px] font-bold tnum" data-testid="allocation-total">
+          <span className="text-3xl font-bold tnum" data-testid="allocation-total">
             {totalPct}%
           </span>
           <Badge tone={balanced ? 'green' : short ? 'yellow' : 'red'}>
@@ -120,7 +120,7 @@ export const AllocationBar = ({
       </div>
 
       {balanced ? null : (
-        <p className="mt-2 text-[12.5px] text-base-content/65">
+        <p className="mt-2 text-sm text-base-content/65">
           {short ? (
             <>
               Dropping a responsibility frees up its share of time. Decide where that{' '}

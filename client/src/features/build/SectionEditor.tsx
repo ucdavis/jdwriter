@@ -39,7 +39,7 @@ export const SectionEditor = ({
         <Badge tone="muted">{keptCount} selected</Badge>
       </div>
       {items.length === 0 ? (
-        <p className="mt-2 text-[12.5px] text-base-content/50">
+        <p className="mt-2 text-sm text-base-content/50">
           None in the standard for this class.
         </p>
       ) : null}
@@ -58,7 +58,7 @@ export const SectionEditor = ({
                 type="checkbox"
               />
               <span
-                className={`text-[13px] ${
+                className={`text-sm ${
                   it.kept ? '' : 'text-base-content/50 line-through'
                 }`}
               >
@@ -68,7 +68,7 @@ export const SectionEditor = ({
             {it.added ? (
               <button
                 aria-label="Remove added item"
-                className="text-[13px] text-base-content/50 hover:text-error"
+                className="text-sm text-base-content/50 hover:text-error"
                 onClick={() => setItems((arr) => arr.filter((_, j) => j !== i))}
                 type="button"
               >

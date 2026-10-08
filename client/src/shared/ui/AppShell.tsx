@@ -32,27 +32,27 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             <span className="text-base font-bold leading-tight text-ucd-gold">
               JDWriter
             </span>
-            <span className="text-[9.5px] font-medium tracking-wide text-white/70">
+            <span className="text-xs font-medium tracking-wide text-white/70">
               UC Davis Job Description Studio
             </span>
           </div>
         </Link>
         <nav className="flex items-center gap-4">
           <Link
-            className="text-[12px] font-medium text-white/75 hover:text-ucd-gold"
+            className="text-sm font-medium text-white/75 hover:text-ucd-gold"
             to="/classify"
           >
             Classify
           </Link>
           <Link
-            className="text-[12px] font-medium text-white/75 hover:text-ucd-gold"
+            className="text-sm font-medium text-white/75 hover:text-ucd-gold"
             to="/jds"
           >
             My JDs
           </Link>
           {isAdmin ? (
             <Link
-              className="text-[12px] font-medium text-white/75 hover:text-ucd-gold"
+              className="text-sm font-medium text-white/75 hover:text-ucd-gold"
               to="/backend"
             >
               Back end
@@ -78,8 +78,8 @@ export const AdminOnly = ({ children }: { children: ReactNode }) => {
   if (!isAdmin) {
     return (
       <div className="rounded-xl border border-base-300 bg-base-100 p-6">
-        <h2 className="text-[17px] font-bold">Admin access required</h2>
-        <p className="mt-2 text-[13px] text-base-content/65">
+        <h2 className="text-lg font-bold">Admin access required</h2>
+        <p className="mt-2 text-sm text-base-content/65">
           This is the JDWriter back end — envelopes, reclassification review, ingest and
           settings. It is open to JDWriter admins only; ask an admin if you need access.
         </p>

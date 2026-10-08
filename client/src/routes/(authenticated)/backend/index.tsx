@@ -122,7 +122,7 @@ function EnvelopeIndex() {
 
       {classes.length === 0 ? (
         <Card className="p-6">
-          <p className="text-[13px] text-base-content/65">
+          <p className="text-sm text-base-content/65">
             No envelopes yet.{' '}
             <Link
               className="font-medium text-primary hover:underline"
@@ -167,7 +167,7 @@ function EnvelopeIndex() {
                 );
               })}
             </div>
-            <label className="ml-auto flex items-center gap-2 text-[12px] text-base-content/65">
+            <label className="ml-auto flex items-center gap-2 text-sm text-base-content/65">
               Sort
               <select
                 className="select select-xs select-bordered"
@@ -188,7 +188,7 @@ function EnvelopeIndex() {
 
           {shown.length === 0 ? (
             <Card className="p-6">
-              <p className="text-[13px] text-base-content/65">
+              <p className="text-sm text-base-content/65">
                 No classes match.{' '}
                 <button
                   className="font-medium text-primary hover:underline"
@@ -225,13 +225,13 @@ function SummaryRow({ c }: { c: ClassSummary }) {
           <div className="flex flex-wrap items-center gap-2">
             {c.standardLinked && hasJds ? (
               <span
-                className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-success/10 text-[12px] font-bold text-success"
+                className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-success/10 text-sm font-bold text-success"
                 title="All components ingested — JDs + official standard"
               >
                 ✓
               </span>
             ) : null}
-            <h2 className="text-[15px] font-bold">{c.title}</h2>
+            <h2 className="text-base font-bold">{c.title}</h2>
             <Badge tone="accent">Code {c.ucJobCode || '—'}</Badge>
             {source ? <Badge tone={source.tone}>{source.label}</Badge> : null}
             {c.standardLinked ? (
@@ -246,7 +246,7 @@ function SummaryRow({ c }: { c: ClassSummary }) {
               <Badge tone="muted">not consolidated</Badge>
             ) : null}
           </div>
-          <div className="mt-0.5 text-[12px] text-base-content/65">
+          <div className="mt-0.5 text-sm text-base-content/65">
             {[c.ctJobFamily, c.ctJobFunction, c.personnelProgram]
               .filter(Boolean)
               .join(' · ')}
@@ -254,14 +254,14 @@ function SummaryRow({ c }: { c: ClassSummary }) {
         </div>
         <div className="flex items-center gap-3 whitespace-nowrap">
           <Link
-            className="text-[13px] font-medium text-primary hover:underline"
+            className="text-sm font-medium text-primary hover:underline"
             params={{ slug: c.slug }}
             to="/backend/edit/$slug"
           >
             Edit envelope
           </Link>
           <Link
-            className="text-[13px] font-medium text-base-content/65 hover:underline"
+            className="text-sm font-medium text-base-content/65 hover:underline"
             params={{ slug: c.slug }}
             to="/class/$slug"
           >
@@ -270,7 +270,7 @@ function SummaryRow({ c }: { c: ClassSummary }) {
         </div>
       </div>
 
-      <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-[12px]">
+      <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
         <Fact label="Corpus" value={`${c.corpusSize} JDs`} />
         <Fact label="Grade" value={c.grade ?? '—'} />
         <Fact label="Responsibilities" value={`${c.responsibilities}`} />
@@ -289,7 +289,7 @@ function SummaryRow({ c }: { c: ClassSummary }) {
 
       {hasJds ? (
         <Link
-          className="mt-1.5 inline-block text-[12px] font-medium text-primary hover:underline"
+          className="mt-1.5 inline-block text-sm font-medium text-primary hover:underline"
           params={{ slug: c.slug }}
           to="/backend/jds/$slug"
         >

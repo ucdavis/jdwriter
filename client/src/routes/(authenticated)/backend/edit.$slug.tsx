@@ -34,7 +34,7 @@ function EditEnvelopePage() {
       />
       {profile.standard ? (
         <Link
-          className="mb-4 inline-block text-[12.5px] font-medium text-info hover:underline"
+          className="mb-4 inline-block text-sm font-medium text-info hover:underline"
           params={{ slug }}
           to="/backend/standard/$slug"
         >
@@ -45,7 +45,7 @@ function EditEnvelopePage() {
         <EnvelopeEditor initial={profile.envelope} slug={slug} />
       ) : (
         <Card className="p-6">
-          <p className="text-[13px] text-base-content/65">
+          <p className="text-sm text-base-content/65">
             This class has no envelope to edit yet. Ingest its JDs, or bootstrap it from an
             official standard, first.
           </p>

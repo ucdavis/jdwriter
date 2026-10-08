@@ -53,7 +53,7 @@ export const NlIntake = () => {
         >
           {match.isPending ? 'Matching…' : 'Find matching class'}
         </button>
-        <span className="text-[11.5px] text-base-content/50">
+        <span className="text-xs text-base-content/50">
           Your description is matched against every ingested job class.
         </span>
       </div>
@@ -68,7 +68,7 @@ export const NlIntake = () => {
         <div className="mt-4">
           <div className="eyebrow mb-2">Suggested classes</div>
           {matches.length === 0 ? (
-            <p className="text-[13px] text-base-content/65">
+            <p className="text-sm text-base-content/65">
               No close match. Try the search on the right.
             </p>
           ) : (
@@ -83,10 +83,10 @@ export const NlIntake = () => {
                   type="button"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-[13.5px] font-medium">{m.title}</span>
+                    <span className="text-sm font-medium">{m.title}</span>
                     <Badge tone={toneFor(m.confidence)}>{m.confidence}% match</Badge>
                   </div>
-                  <div className="mt-1 text-[12px] text-base-content/65">
+                  <div className="mt-1 text-sm text-base-content/65">
                     {m.rationale}
                   </div>
                 </button>

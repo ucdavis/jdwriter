@@ -30,10 +30,10 @@ export const StandardDetail = ({
     <div
       className={`space-y-3 rounded-lg border border-info/20 bg-info/5 px-3.5 py-3 ${className}`}
     >
-      {meta ? <div className="text-[11.5px] text-base-content/65">{meta}</div> : null}
+      {meta ? <div className="text-xs text-base-content/65">{meta}</div> : null}
       {standard.genericScope || standard.customScope ? (
         <Block label="Scope">
-          <p className="text-[12px] leading-relaxed">
+          <p className="text-sm leading-relaxed">
             {standard.genericScope || standard.customScope}
           </p>
         </Block>
@@ -43,7 +43,7 @@ export const StandardDetail = ({
       <ListBlock items={standard.education} label="Education" />
       <ListBlock items={standard.licenses} label="Licenses & certifications" />
       <ListBlock items={standard.specialConditions} label="Special conditions" />
-      <p className="pt-1 text-[10.5px] text-base-content/50">
+      <p className="pt-1 text-xs text-base-content/50">
         Authoritative baseline for qualifications and scope. The corpus still drives the
         % time responsibilities — re-ingest this class to blend the standard into its
         synthesized envelope.
@@ -55,7 +55,7 @@ export const StandardDetail = ({
 /** A collapsed disclosure, for use on a list card where the standard is secondary. */
 export const StandardBlock = ({ standard }: { standard: ClassStandard }) => (
   <details className="mt-3">
-    <summary className="cursor-pointer text-[12px] font-medium text-info">
+    <summary className="cursor-pointer text-sm font-medium text-info">
       Official standard linked · {standard.longTitle}
     </summary>
     <StandardDetail className="mt-2" standard={standard} />
@@ -64,7 +64,7 @@ export const StandardBlock = ({ standard }: { standard: ClassStandard }) => (
 
 const Block = ({ children, label }: { children: ReactNode; label: string }) => (
   <div>
-    <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-base-content/50">
+    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
       {label}
     </div>
     {children}
@@ -79,7 +79,7 @@ const ListBlock = ({ items, label }: { items: string[]; label: string }) => {
     <Block label={label}>
       <ul className="space-y-1">
         {items.map((it) => (
-          <li className="flex gap-1.5 text-[12px] leading-snug" key={it}>
+          <li className="flex gap-1.5 text-sm leading-snug" key={it}>
             <span className="text-info">·</span>
             <span>{it}</span>
           </li>

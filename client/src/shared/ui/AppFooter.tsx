@@ -1,12 +1,13 @@
 import { asset } from '@/lib/basePath.ts';
 
 /**
- * The CAES People footer: the college lockup, who built it, and where to get help. The corner art
+ * The CAES People footer: the college lockup, who built it, and where to get help. It sits on the
+ * page's own gray, with no band or rule of its own, as the other CAES apps' footers do. The corner art
  * is JDWriter's own — writing tools, gold on the left and blues on the right — in the layout the
  * other CAES apps share (Leaves has leaves), so the family reads as one while each app is its own.
  */
 export const AppFooter = () => (
-  <footer className="relative mt-16 overflow-hidden border-t border-base-300 bg-base-100">
+  <footer className="relative mt-16 overflow-hidden">
     {/* Decoration only: hidden from assistive tech, and dropped on narrow screens where it would
         crowd the logo. */}
     <img
@@ -29,7 +30,7 @@ export const AppFooter = () => (
           src={asset('caes.svg')}
         />
       </a>
-      <p className="text-[12.5px] text-base-content/60">
+      <p className="text-sm text-base-content/60">
         Created in association with{' '}
         <a
           className="underline hover:text-primary"

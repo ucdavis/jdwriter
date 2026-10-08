@@ -27,7 +27,7 @@ function SavedJdPage() {
       />
 
       {jd.assembled ? null : (
-        <p className="mb-3 text-[13px] text-warning" data-testid="not-assembled">
+        <p className="mb-3 text-sm text-warning" data-testid="not-assembled">
           Draft — saved before it was assembled. Continue editing to finish it.
         </p>
       )}
@@ -62,7 +62,7 @@ function SavedJdPage() {
           {jd.authorAdditions.length > 0 ? (
             <>
               <Eyebrow>Added beyond the envelope</Eyebrow>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px]">
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
                 {jd.authorAdditions.map((a) => (
                   <li key={a}>{a}</li>
                 ))}
@@ -72,7 +72,7 @@ function SavedJdPage() {
           {jd.notes ? (
             <div className={jd.authorAdditions.length > 0 ? 'mt-4' : ''}>
               <Eyebrow>Notes to HR</Eyebrow>
-              <p className="mt-1 text-[13px]">{jd.notes}</p>
+              <p className="mt-1 text-sm">{jd.notes}</p>
             </div>
           ) : null}
         </Card>
