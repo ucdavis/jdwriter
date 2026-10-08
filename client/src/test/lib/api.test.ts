@@ -29,6 +29,20 @@ describe('fetchJson', () => {
     }
   );
 
+  it('marks every call as coming from JDWriter, which the server requires of state changes', async () => {
+    // A cross-site page cannot add this header without a CORS preflight, which is never granted,
+    // so its presence is what distinguishes a real call from a forged one.
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response('{}', { headers: { 'Content-Type': 'application/json' } })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchJson('/api/admin/supersessions/retire', { method: 'POST' });
+
+    const request = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(new Headers(request.headers).get('X-Requested-With')).toBe('JDWriter');
+  });
+
   it('leaves a FormData body for the browser to label as multipart', async () => {
     // Forcing application/json onto a file upload strips the multipart boundary, and the
     // server then cannot read the file at all.

@@ -32,6 +32,7 @@ public class FitController : ApiControllerBase
     private readonly IFitRewriter _rewriter;
     private readonly AuthoredJdStore _saved;
     private readonly AppDbContext _db;
+    private readonly ILogger<FitController> _logger;
 
     public FitController(
         IFitService fit,
@@ -40,7 +41,8 @@ public class FitController : ApiControllerBase
         IStructuredLlm llm,
         IFitRewriter rewriter,
         AuthoredJdStore saved,
-        AppDbContext db)
+        AppDbContext db,
+        ILogger<FitController> logger)
     {
         _fit = fit;
         _matcher = matcher;
@@ -49,6 +51,7 @@ public class FitController : ApiControllerBase
         _rewriter = rewriter;
         _saved = saved;
         _db = db;
+        _logger = logger;
     }
 
     /// <summary>
@@ -143,7 +146,10 @@ public class FitController : ApiControllerBase
         }
         catch (StructuredLlmException ex)
         {
-            return StatusCode(502, new { message = ex.Message });
+            // The provider's own error text can name deployments or configuration; it is logged, and
+            // the author gets a message that is useful without it.
+            _logger.LogWarning(ex, "Model call failed while rewriting to fit");
+            return StatusCode(502, new { message = "The rewrite could not be completed — the AI service did not return a usable answer. Try again in a moment." });
         }
 
         var id = await _saved.SaveDraftAsync(

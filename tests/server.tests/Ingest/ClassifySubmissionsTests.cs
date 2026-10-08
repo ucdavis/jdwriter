@@ -109,6 +109,25 @@ public class ClassifySubmissionsTests
     }
 
     [Fact]
+    public async Task A_pasted_export_never_replaces_a_record_it_did_not_create()
+    {
+        // The position number comes from pasted text any author controls. Replacing by it alone let
+        // anyone delete the real exported JD for a position by pasting a fake with the same number.
+        using var db = TestDbContextFactory.CreateInMemory();
+        db.JobDescriptions.Add(new JobDescription
+        {
+            SourceFile = "real.html", UcJobCode = "004724", UcPathPositionNumber = "40000003",
+            WorkingTitle = "The real one", Origin = CorpusOrigin.Export,
+        });
+        await db.SaveChangesAsync();
+        var filer = new ClassifySubmissions(db, new Titles());
+
+        await filer.FileAsync(Export("004724", "40000003", "Forged"), Ranked("004724", "F"), null);
+
+        (await db.JobDescriptions.Select(j => j.WorkingTitle).ToListAsync()).Should().BeEquivalentTo(["The real one", "Forged"]);
+    }
+
+    [Fact]
     public async Task A_resubmitted_export_of_a_position_replaces_the_earlier_copy()
     {
         using var db = TestDbContextFactory.CreateInMemory();

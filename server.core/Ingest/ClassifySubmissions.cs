@@ -78,11 +78,16 @@ public sealed partial class ClassifySubmissions
             record.SourceFile = $"classify/submission-{original.Id}";
         }
 
-        // A re-submitted export of the same position replaces the earlier copy.
+        // A re-submitted export of the same position replaces the earlier SUBMISSION — and only that.
+        // The position number comes from pasted text any author controls, so it must never reach
+        // records it did not create: the CLI load, admin uploads and authored JDs are not replaced
+        // from here.
         if (!string.IsNullOrEmpty(record.UcPathPositionNumber))
         {
             _db.JobDescriptions.RemoveRange(await _db.JobDescriptions
-                .Where(j => j.UcJobCode == record.UcJobCode && j.UcPathPositionNumber == record.UcPathPositionNumber)
+                .Where(j => j.Origin == CorpusOrigin.Classify
+                            && j.UcJobCode == record.UcJobCode
+                            && j.UcPathPositionNumber == record.UcPathPositionNumber)
                 .ToListAsync(ct));
         }
 

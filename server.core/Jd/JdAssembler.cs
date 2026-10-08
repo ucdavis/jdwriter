@@ -240,6 +240,53 @@ public sealed class JdAssembler : IJdAssembler
 
     // ---------------------------------------------------------------- prompt assembly
 
+    /// <summary>
+    /// The build with every addition declared. The client reports what it kept and what it added, but
+    /// "kept" is only text it sends: an item that is not in the class envelope is an addition however
+    /// it arrived, so the envelope check — and the corpus that learns from finished JDs — must see it
+    /// as one. Without this, rewriting "kept" items skipped the check entirely.
+    /// </summary>
+    public static BuildInputs WithUndeclaredAdditions(ClassProfile profile, BuildInputs inputs)
+    {
+        var envelope = profile.Envelope is null ? new EnvelopeWire() : EnvelopeWire.From(profile.Envelope);
+        var standard = envelope.KeyResponsibilities.SelectMany(r => r.Duties)
+            .Concat(envelope.RequiredCertifications).Concat(envelope.Education).Concat(envelope.WorkExperience)
+            .Concat(envelope.MinQualifications).Concat(envelope.PrefQualifications).Concat(envelope.WorkEnvironment)
+            .Select(ItemKey)
+            .ToHashSet(StringComparer.Ordinal);
+        var declared = inputs.AddedItems.Select(ItemKey).ToHashSet(StringComparer.Ordinal);
+
+        var undeclared = inputs.KeptResponsibilities.SelectMany(r => r.Duties)
+            .Concat(inputs.KeptCerts).Concat(inputs.KeptEducation).Concat(inputs.KeptWorkExperience)
+            .Concat(inputs.KeptMinKSA).Concat(inputs.KeptPrefKSA).Concat(inputs.KeptWorkEnvironment)
+            .Where(t => !standard.Contains(ItemKey(t)) && declared.Add(ItemKey(t)))
+            .ToList();
+        if (undeclared.Count == 0)
+        {
+            return inputs;
+        }
+
+        return new BuildInputs
+        {
+            WorkingTitle = inputs.WorkingTitle,
+            Department = inputs.Department,
+            KeptResponsibilities = inputs.KeptResponsibilities,
+            KeptCerts = inputs.KeptCerts,
+            KeptEducation = inputs.KeptEducation,
+            KeptWorkExperience = inputs.KeptWorkExperience,
+            KeptMinKSA = inputs.KeptMinKSA,
+            KeptPrefKSA = inputs.KeptPrefKSA,
+            KeptWorkEnvironment = inputs.KeptWorkEnvironment,
+            AddedItems = [.. inputs.AddedItems, .. undeclared],
+            Notes = inputs.Notes,
+        };
+    }
+
+    /// <summary>Case, punctuation and spacing do not make an item new.</summary>
+    private static string ItemKey(string text) =>
+        string.Join(' ', new string((text ?? "").ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : ' ').ToArray())
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries));
+
     public bool HasAdditions(BuildInputs inputs) =>
         inputs.AddedItems.Count > 0 || inputs.Notes.Trim().Length > 0;
 

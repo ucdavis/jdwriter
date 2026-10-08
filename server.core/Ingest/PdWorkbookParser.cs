@@ -375,8 +375,7 @@ public static partial class PdWorkbookParser
     /// </summary>
     private static List<List<string>> ReadRows(IXLWorksheet ws)
     {
-        var lastRow = ws.LastRowUsed()?.RowNumber() ?? 0;
-        var lastCol = ws.LastColumnUsed()?.ColumnNumber() ?? 0;
+        var (lastRow, lastCol) = WorksheetLimits.UsedRange(ws);
         var rows = new List<List<string>>(lastRow);
 
         for (var r = 1; r <= lastRow; r++)

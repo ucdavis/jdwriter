@@ -130,7 +130,6 @@ public sealed class ClassProfileView
     public DistributionWire Supervises { get; set; } = new();
     public DistributionWire Leads { get; set; } = new();
     public DistributionWire WorksOutdoorsOver50pct { get; set; } = new();
-    public List<string> SourceFiles { get; set; } = [];
     /// <summary>Null for most classes — a gap in standards coverage, not a matching failure.</summary>
     public ClassStandardRecord? Standard { get; set; }
 
@@ -164,7 +163,6 @@ public sealed class ClassProfileView
             Supervises = Dist(DistributionField.Supervises),
             Leads = Dist(DistributionField.Leads),
             WorksOutdoorsOver50pct = Dist(DistributionField.WorksOutdoorsOver50pct),
-            SourceFiles = [.. p.SourceFiles.OrderBy(s => s.Ordinal).Select(s => s.SourceFile)],
             Standard = standard,
         };
     }

@@ -50,8 +50,7 @@ public class JdsController : ApiControllerBase
     {
         var found = await _store.GetAsync(id, ct);
         // Someone else's JD reads as not found rather than forbidden, so ids cannot be probed.
-        if (found == null
-            || (found.Value.OwnerId != await User.IdAsync(_db, ct) && !User.IsInRole(AppRoles.Admin)))
+        if (found == null || !await MayReadAsync(found.Value.OwnerId, ct))
         {
             return NotFound(new { message = "That job description was not found." });
         }
@@ -108,8 +107,7 @@ public class JdsController : ApiControllerBase
     private async Task<(SavedJd? Jd, IActionResult? Refusal)> PublishableAsync(int id, CancellationToken ct)
     {
         var found = await _store.GetAsync(id, ct);
-        if (found == null
-            || (found.Value.OwnerId != await User.IdAsync(_db, ct) && !User.IsInRole(AppRoles.Admin)))
+        if (found == null || !await MayReadAsync(found.Value.OwnerId, ct))
         {
             return (null, NotFound(new { message = "That job description was not found." }));
         }
@@ -121,6 +119,21 @@ public class JdsController : ApiControllerBase
         }
 
         return (jd, null);
+    }
+
+    /// <summary>
+    /// The JD's author, or an admin. Null never matches null: a JD whose owner was deleted is not
+    /// readable by a caller who has no user record.
+    /// </summary>
+    private async Task<bool> MayReadAsync(int? ownerId, CancellationToken ct)
+    {
+        if (User.IsInRole(AppRoles.Admin))
+        {
+            return true;
+        }
+
+        var me = await User.IdAsync(_db, ct);
+        return me != null && ownerId == me;
     }
 
     /// <summary>JDWriter's absolute root as this request reached it, mount point included.</summary>

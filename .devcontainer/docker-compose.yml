@@ -38,7 +38,9 @@ services:
     networks:
       - dev
     ports:
-      - "14333:1433"
+      # This machine only: the local database holds the real corpus, and the sa password is in
+      # this file. The app container reaches SQL over the compose network, not this port.
+      - "127.0.0.1:14333:1433"
 
 volumes:
   sql-data:

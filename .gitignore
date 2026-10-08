@@ -57,3 +57,13 @@ publish/
 # Envelope exports (Back end → Corpus & standards) are products of the system: they move
 # between databases and are never committed.
 jdwriter-standard-envelopes-*.json
+
+# Certificates and private keys never belong in the repository.
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Built client output copied in by publish; only the placeholder is tracked.
+server/wwwroot/*
+!server/wwwroot/.gitkeep

@@ -225,8 +225,22 @@ public class AdminController : ApiControllerBase
     /// Where the HRTMS exports live. Configured via <c>Corpus:Directory</c>, overridable per
     /// request so an analyst can point at a freshly exported batch.
     /// </summary>
-    private string? ResolveCorpusDir(string? fromRequest) =>
-        !string.IsNullOrWhiteSpace(fromRequest) ? fromRequest : _config["Corpus:Directory"];
+    /// <remarks>
+    /// The override must sit inside the configured directory. Taken as-is, it let an admin point the
+    /// reader at any folder the server can read.
+    /// </remarks>
+    private string? ResolveCorpusDir(string? fromRequest)
+    {
+        var configured = _config["Corpus:Directory"];
+        if (string.IsNullOrWhiteSpace(fromRequest) || string.IsNullOrWhiteSpace(configured))
+        {
+            return configured;
+        }
+
+        var root = Path.GetFullPath(configured).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var requested = Path.GetFullPath(fromRequest).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        return requested.StartsWith(root, StringComparison.Ordinal) ? requested : null;
+    }
 
     [HttpGet("ingest/pending")]
     public async Task<IActionResult> Pending([FromQuery] string? corpusDir, CancellationToken ct)

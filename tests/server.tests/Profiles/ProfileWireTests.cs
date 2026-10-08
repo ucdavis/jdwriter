@@ -113,7 +113,8 @@ public class ProfileWireTests
         view.UnionCode.Consensus.Should().Be("TX", "not the grade sitting beside it");
         view.FlsaStatus.Consensus.Should().BeNull("an absent distribution reads as no consensus");
         view.FlsaStatus.Agreement.Should().Be(0);
-        view.SourceFiles.Should().Equal("a.HTML", "b.HTML");
+        // HRTMS file names embed UCPath position numbers, and this view goes to every author.
+        System.Text.Json.JsonSerializer.Serialize(view).Should().NotContain("a.HTML").And.NotContain("SourceFiles");
         view.Envelope.Should().BeNull();
     }
 

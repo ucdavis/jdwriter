@@ -24,6 +24,10 @@ export async function fetchJson<T>(
   if (!headers.has('Accept')) {
     headers.set('Accept', 'application/json');
   }
+  // The server refuses state-changing API calls without it. A page on another origin cannot add a
+  // custom header without a CORS preflight, which JDWriter never grants — so this is what tells a
+  // real call from a forged one (WebHardening.cs).
+  headers.set('X-Requested-With', 'JDWriter');
   // Only a string body is labelled JSON (every JSON caller passes JSON.stringify). Anything
   // else — FormData above all — is left for the browser, which writes the multipart
   // Content-Type itself, boundary included. Forcing application/json onto a FormData body

@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
 using ClosedXML.Excel;
 
+using Server.Core.Ingest;
+
 namespace Server.Core.Standards;
 
 /// <summary>A parsed official UC job standard for one classification.</summary>
@@ -477,8 +479,7 @@ public static partial class StandardsWorkbookParser
     /// </summary>
     private static List<List<string>> ReadRows(IXLWorksheet ws)
     {
-        var lastRow = ws.LastRowUsed()?.RowNumber() ?? 0;
-        var lastCol = ws.LastColumnUsed()?.ColumnNumber() ?? 0;
+        var (lastRow, lastCol) = WorksheetLimits.UsedRange(ws);
         var rows = new List<List<string>>(lastRow);
 
         for (var r = 1; r <= lastRow; r++)

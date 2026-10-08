@@ -67,11 +67,18 @@ public class ClassifyController : ApiControllerBase
     }
 
     [HttpPost]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(WebHardening.ModelPolicy)]
     public async Task<IActionResult> Classify(ClassifyRequest body, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(body.Description))
         {
             return BadRequest(new { message = "Paste or upload a description before classifying." });
+        }
+
+        var tooLong = RequestLimits.Description(body.Description);
+        if (tooLong is not null)
+        {
+            return BadRequest(new { message = tooLong });
         }
 
         if (!_llm.HasApiKey)
@@ -104,9 +111,10 @@ public class ClassifyController : ApiControllerBase
     /// a draft the author opens in the build screen, where the envelope check polices what came in.
     /// </summary>
     [HttpPost("start-jd")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(WebHardening.ModelPolicy)]
     public async Task<IActionResult> StartJd(ClassifyStartRequest body, CancellationToken ct)
     {
-        var problem = Validate(body.Distilled);
+        var problem = RequestLimits.Distilled(body.Distilled);
         if (problem is not null)
         {
             return BadRequest(new { message = problem });
@@ -134,7 +142,10 @@ public class ClassifyController : ApiControllerBase
         }
         catch (StructuredLlmException ex)
         {
-            return StatusCode(502, new { message = ex.Message });
+            // The provider's own error text can name deployments or configuration; it is logged, and
+            // the author gets a message that is useful without it.
+            _logger.LogWarning(ex, "Model call failed while rewriting to fit");
+            return StatusCode(502, new { message = "Starting a JD could not be completed — the AI service did not return a usable answer. Try again in a moment." });
         }
 
         var id = await _saved.SaveDraftAsync(rewrite.Inputs, profile, await User.IdAsync(_db, ct), null, rewrite.DraftState, ct);
@@ -152,31 +163,12 @@ public class ClassifyController : ApiControllerBase
     }
 
     /// <summary>
-    /// The distilled JD comes back from the client, so it is bounded here before any of it reaches a
-    /// prompt: a real description has a handful of functions with a handful of duties each.
-    /// </summary>
-    private static string? Validate(DistilledJd? d)
-    {
-        if (d is null || d.Functions.Count == 0)
-        {
-            return "Classify a description first — there is nothing to start a JD from.";
-        }
-
-        if (d.Functions.Count > 40 || d.Functions.Any(f => f.Duties.Count > 60))
-        {
-            return "That description is too large to start a JD from.";
-        }
-
-        var texts = d.Functions.SelectMany(f => f.Duties.Prepend(f.Name)).Append(d.WorkingTitle).Append(d.Summary);
-        return texts.Any(t => (t ?? "").Length > 4000) ? "That description is too large to start a JD from." : null;
-    }
-
-    /// <summary>
     /// Pull text out of an uploaded document. Deterministic — never a model call — and it
     /// deliberately does NOT classify: the text lands in the textarea so a mangled PDF can be fixed
     /// before it costs an API call.
     /// </summary>
     [HttpPost("extract")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(WebHardening.ModelPolicy)]
     [RequestSizeLimit(MaxUploadBytes)]
     public async Task<IActionResult> Extract(IFormFile? file, CancellationToken ct)
     {
