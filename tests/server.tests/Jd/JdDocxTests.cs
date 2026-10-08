@@ -43,7 +43,7 @@ public class JdDocxTests
     {
         using var stream = new MemoryStream(docx);
         using var doc = WordprocessingDocument.Open(stream, false);
-        return doc.MainDocumentPart!.Document.Body!.Elements<Paragraph>()
+        return doc.MainDocumentPart!.Document!.Body!.Elements<Paragraph>()
             .Select(p => (p.ParagraphProperties?.ParagraphStyleId?.Val?.Value ?? "", p.InnerText))
             .ToList();
     }

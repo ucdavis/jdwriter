@@ -1,8 +1,8 @@
 import { Badge, Card, Eyebrow, Meter, Note } from '@/shared/ui/primitives.tsx';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { ProposedCompare } from './ProposedCompare.tsx';
-import { useClassify, useExtractDocument } from '@/queries/authoring.ts';
+import { useClassify, useExtractDocument, useStartJdFromClass } from '@/queries/authoring.ts';
 import { useRef, useState, type DragEvent } from 'react';
 import type { ClassifyMatch, ClassifyVerdict, LevelFit } from '@/lib/contracts.ts';
 
@@ -57,6 +57,8 @@ export const DescriptionClassifier = () => {
 
   const extract = useExtractDocument();
   const classify = useClassify();
+  const start = useStartJdFromClass();
+  const navigate = useNavigate();
   const file = extract.data;
 
   const ingestFile = (f: File) => {
@@ -78,6 +80,28 @@ export const DescriptionClassifier = () => {
 
   const result = classify.data;
   const [top, ...alternatives] = result?.matches ?? [];
+
+  // The class's standard as the frame, this description's work merged in, opened as a draft.
+  const startFrom = (slug: string) => {
+    if (result) {
+      start.mutate(
+        { distilled: result.distilled, slug },
+        {
+          onSuccess: (r) =>
+            void navigate({
+              params: { slug: r.slug },
+              search: { draft: r.authoredJdId },
+              to: '/class/$slug',
+            }),
+        }
+      );
+    }
+  };
+  const startProps = (slug: string) => ({
+    onStart: () => startFrom(slug),
+    startDisabled: start.isPending,
+    starting: start.isPending && start.variables?.slug === slug,
+  });
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
 
   return (
@@ -248,14 +272,16 @@ export const DescriptionClassifier = () => {
             ) : null}
           </Card>
 
-          {top ? <MatchCard match={top} primary /> : null}
+          {start.error ? <Note tone="red">{messageOf(start.error)}</Note> : null}
+
+          {top ? <MatchCard match={top} primary {...startProps(top.slug)} /> : null}
 
           {alternatives.length > 0 ? (
             <div>
               <div className="eyebrow mb-2">Other classes considered</div>
               <div className="space-y-3">
                 {alternatives.map((m) => (
-                  <MatchCard key={m.slug} match={m} />
+                  <MatchCard key={m.slug} match={m} {...startProps(m.slug)} />
                 ))}
               </div>
             </div>
@@ -268,10 +294,16 @@ export const DescriptionClassifier = () => {
 
 const MatchCard = ({
   match,
+  onStart,
   primary = false,
+  startDisabled,
+  starting,
 }: {
   match: ClassifyMatch;
+  onStart: () => void;
   primary?: boolean;
+  startDisabled: boolean;
+  starting: boolean;
 }) => (
   <Card className={`p-5 ${primary ? 'border-primary/40' : ''}`}>
     <div className="flex items-start justify-between gap-3">
@@ -310,6 +342,21 @@ const MatchCard = ({
         <FunctionList items={match.outOfClass} label="Outside this class" tone="orange" />
       </div>
     ) : null}
+
+    <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-base-300 pt-3.5">
+      <button
+        className={`btn btn-sm ${primary ? 'btn-primary' : 'btn-outline'}`}
+        disabled={startDisabled}
+        onClick={onStart}
+        type="button"
+      >
+        {starting ? 'Starting your JD…' : 'Start a JD from this class →'}
+      </button>
+      <span className="text-[11.5px] text-base-content/50">
+        Uses this class&apos;s standard and merges in your description&apos;s work. Opens as a
+        draft you can edit.
+      </span>
+    </div>
   </Card>
 );
 

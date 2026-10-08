@@ -132,11 +132,21 @@ public sealed partial class ClassifySubmissions
             return null;
         }
 
-        var d = result.Distilled;
+        var jd = ToJobDescription(result.Distilled);
+        jd.UcJobCode = top.UcJobCode;
+        jd.UcJobTitle = top.Title;
+        return jd;
+    }
+
+    /// <summary>
+    /// A distilled description as a JD record, unfiled: the shape both the corpus and "Start a JD
+    /// from this class" read. % time is rounded to whole points; the JD keeps the description's own
+    /// split even when it does not sum to 100, because real ones often do not.
+    /// </summary>
+    public static JobDescription ToJobDescription(DistilledJd d)
+    {
         var jd = new JobDescription
         {
-            UcJobCode = top.UcJobCode,
-            UcJobTitle = top.Title,
             WorkingTitle = d.WorkingTitle,
             JobSummary = d.Summary,
             Supervises = d.Supervises == "yes" ? true : d.Supervises == "no" ? false : null,

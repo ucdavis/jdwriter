@@ -254,12 +254,25 @@ export type ClassifyRequest = {
   proposedCode?: string | null;
 };
 
+/**
+ * How the description was read: its work as functions with % time and duties. Sent back
+ * unchanged to start a JD from a recommended class, so the document is not read twice.
+ */
+export type DistilledJd = {
+  education: string[];
+  experience: string[];
+  functions: Array<{ duties: string[]; name: string; pctTime: number }>;
+  ksas: string[];
+  source: 'hrtms' | 'text';
+  summary: string;
+  supervises: 'no' | 'unclear' | 'yes';
+  workingTitle: string;
+};
+
+export type ClassifyStartRequest = { distilled: DistilledJd; slug: string };
+
 export type ClassifyResponse = {
-  distilled: {
-    functions: Array<{ name: string }>;
-    source: 'hrtms' | 'text';
-    workingTitle: string;
-  };
+  distilled: DistilledJd;
   /** Job code the submission was saved to the corpus under; null when not filed. */
   filedUnder?: string | null;
   matches: ClassifyMatch[];
