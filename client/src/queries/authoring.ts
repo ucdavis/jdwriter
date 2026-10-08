@@ -2,6 +2,7 @@ import { fetchJson } from '../lib/api.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   AssembledJd,
+  BetterFitResponse,
   BuildRequest,
   ClassifyRequest,
   ClassifyResponse,
@@ -53,6 +54,12 @@ export const useClassify = () =>
 export const useEnvelopeCheck = () =>
   useMutation({
     mutationFn: post<BuildRequest, EnvelopeCheckResponse>('/api/build/check'),
+  });
+
+/** Is there a class that fits this build better than its own? One model call, any verdict. */
+export const useBetterFit = () =>
+  useMutation({
+    mutationFn: post<BuildRequest, BetterFitResponse>('/api/build/better-fit'),
   });
 
 export const useAssembleJd = () => {

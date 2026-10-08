@@ -298,11 +298,22 @@ export type BuildRequest = {
 };
 
 export type EnvelopeCheckResponse = {
+  /** A borderline verdict also searches for a better fit; with no suggestion, the class is still best. */
+  betterFitChecked: boolean;
   matchedSignals: string[];
   rationale: string;
   suggestedClass: string;
+  /** Why the suggested class fits better (borderline only). */
+  suggestedRationale: string;
   suggestedSlug: string;
   verdict: 'borderline' | 'in_envelope' | 'out_of_envelope';
+};
+
+/** "Look for a better fit": an empty suggestion means the current class is still the best match. */
+export type BetterFitResponse = {
+  rationale: string;
+  suggestedClass: string;
+  suggestedSlug: string;
 };
 
 export type ComplianceEdit = {

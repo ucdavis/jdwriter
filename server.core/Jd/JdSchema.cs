@@ -304,4 +304,22 @@ public sealed class EnvelopeCheck
 
     [Description("1-2 sentence explanation for the verdict.")]
     public string Rationale { get; set; } = "";
+
+    /// <summary>Why the suggested class fits better. Set by the better-fit search, not the verdict.</summary>
+    public string SuggestedRationale { get; set; } = "";
+
+    /// <summary>
+    /// The catalog was searched for a better fit. With no suggestion, that is an answer — the current
+    /// class is still the best match — rather than a search that never ran.
+    /// </summary>
+    public bool BetterFitChecked { get; set; }
+}
+
+/// <summary>A search of the catalog for a class that fits a build better than its own.</summary>
+public sealed class BetterFit
+{
+    /// <summary>The better class, or empty when the current one is still the best match.</summary>
+    public string SuggestedClass { get; set; } = "";
+    public string SuggestedSlug { get; set; } = "";
+    public string Rationale { get; set; } = "";
 }

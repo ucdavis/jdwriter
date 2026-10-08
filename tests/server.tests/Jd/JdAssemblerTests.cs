@@ -60,6 +60,12 @@ public class JdAssemblerTests
         public string FallbackClass { get; set; } = "";
     }
 
+    private sealed class BetterFitDto
+    {
+        public int Index { get; set; }
+        public string Rationale { get; set; } = "";
+    }
+
     /// <summary>
     /// The fake is generic over the requested type, so responses are registered as the anonymous
     /// shapes the assembler's private classes deserialize from. Reflection bridges the two: the
@@ -112,7 +118,7 @@ public class JdAssemblerTests
     }
 
     private static FakeStructuredLlm Llm(Gen? gen = null, EditsDto? edits = null,
-        VerdictDto? verdict = null, AltDto? alt = null)
+        VerdictDto? verdict = null, AltDto? alt = null, BetterFitDto? better = null)
     {
         var fake = new FakeStructuredLlm();
 
@@ -131,6 +137,11 @@ public class JdAssemblerTests
         if (alt is not null)
         {
             fake.Respond("build.checkAlternative", _ => alt);
+        }
+
+        if (better is not null)
+        {
+            fake.Respond("build.betterFit", _ => better);
         }
 
         return fake;
@@ -156,9 +167,10 @@ public class JdAssemblerTests
     }
 
     private static (JdAssembler Assembler, TranslatingLlm Llm) Build(
-        Gen? gen = null, EditsDto? edits = null, VerdictDto? verdict = null, AltDto? alt = null)
+        Gen? gen = null, EditsDto? edits = null, VerdictDto? verdict = null, AltDto? alt = null,
+        BetterFitDto? better = null)
     {
-        var translating = new TranslatingLlm(Llm(gen, edits, verdict, alt));
+        var translating = new TranslatingLlm(Llm(gen, edits, verdict, alt, better));
         return (new JdAssembler(translating), translating);
     }
 
@@ -666,27 +678,83 @@ public class JdAssemblerTests
         llm.Requests.Should().NotContain(r => r.Label == "build.checkAlternative");
     }
 
-    [Fact]
-    public async Task Borderline_does_not_route_the_manager_elsewhere()
+    private static readonly VerdictDto Stretch = new()
     {
-        // Borderline means "stretches the class but still fits". Suggesting a different class would
-        // be wrong advice.
-        var (assembler, llm) = Build(verdict: new VerdictDto
-        {
-            Verdict = EnvelopeVerdict.Borderline,
-            MatchedSignals = ["Managing a budget."],
-            Rationale = "Mild stretch.",
-        });
+        Verdict = EnvelopeVerdict.Borderline,
+        MatchedSignals = ["Managing a budget."],
+        Rationale = "Mild stretch.",
+    };
 
-        var others = new List<ClassDescriptor>
-        {
-            new() { Slug = "x", Title = "Other Class", UcJobCode = "111111", Summary = "s" },
-        };
+    private static List<ClassDescriptor> Catalog() =>
+    [
+        new() { Slug = "x", Title = "Other Class", UcJobCode = "111111", Summary = "Other work." },
+        new() { Slug = "y", Title = "Budget Analyst 2", UcJobCode = "222222", Summary = "Budgets." },
+    ];
 
-        var result = await assembler.CheckEnvelopeAsync(JdTestData.Profile(), JdTestData.Inputs(), others);
+    [Fact]
+    public async Task Borderline_also_suggests_a_better_fit_without_changing_the_verdict()
+    {
+        // Borderline still fits, so the manager is not routed away. But the product decision
+        // (2026-10-08) is to show what else might fit: a second query, asked as "is anything clearly
+        // better?" rather than the out-of-envelope "where should this go?".
+        var (assembler, llm) = Build(verdict: Stretch, better: new BetterFitDto { Index = 1, Rationale = "Budget work dominates." });
+
+        var result = await assembler.CheckEnvelopeAsync(JdTestData.Profile(), JdTestData.Inputs(), Catalog());
+
+        result.Verdict.Should().Be(EnvelopeVerdict.Borderline);
+        result.SuggestedSlug.Should().Be("y");
+        result.SuggestedClass.Should().Be("Budget Analyst 2");
+        result.SuggestedRationale.Should().Be("Budget work dominates.");
+        result.BetterFitChecked.Should().BeTrue();
+        llm.Requests.Select(r => r.Label).Should().Equal("build.checkEnvelope", "build.betterFit");
+    }
+
+    [Fact]
+    public async Task Borderline_says_so_when_the_current_class_is_still_the_best_fit()
+    {
+        var (assembler, _) = Build(verdict: Stretch, better: new BetterFitDto { Index = -1, Rationale = "Nothing fits better." });
+
+        var result = await assembler.CheckEnvelopeAsync(JdTestData.Profile(), JdTestData.Inputs(), Catalog());
 
         result.SuggestedSlug.Should().BeEmpty();
-        llm.Requests.Should().NotContain(r => r.Label == "build.checkAlternative");
+        result.SuggestedClass.Should().BeEmpty();
+        result.BetterFitChecked.Should().BeTrue("an empty suggestion is an answer, not a search that never ran");
+    }
+
+    [Fact]
+    public async Task A_better_fit_index_outside_the_catalog_is_ignored()
+    {
+        var (assembler, _) = Build(better: new BetterFitDto { Index = 7, Rationale = "?" });
+
+        var result = await assembler.FindBetterFitAsync(JdTestData.Profile(), JdTestData.Inputs(), Catalog());
+
+        result.SuggestedSlug.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task The_better_fit_search_sees_the_whole_position_and_the_catalog()
+    {
+        var (assembler, llm) = Build(better: new BetterFitDto { Index = -1, Rationale = "Fine." });
+        var inputs = JdTestData.Inputs();
+
+        await assembler.FindBetterFitAsync(JdTestData.Profile(), inputs, Catalog());
+
+        var request = llm.Requests.Single();
+        request.System.Should().Be(JdAssembler.BetterFitSystem);
+        request.User.Should().Contain($"CURRENT CLASS: {JdTestData.Profile().Title}")
+            .And.Contain($"{inputs.KeptResponsibilities[0].PctTime}% {inputs.KeptResponsibilities[0].FunctionName}")
+            .And.Contain("1: Budget Analyst 2 (code 222222) — Budgets.");
+    }
+
+    [Fact]
+    public async Task With_no_other_classes_there_is_nothing_to_ask()
+    {
+        var (assembler, llm) = Build();
+
+        var result = await assembler.FindBetterFitAsync(JdTestData.Profile(), JdTestData.Inputs(), []);
+
+        result.SuggestedSlug.Should().BeEmpty();
+        llm.Requests.Should().BeEmpty();
     }
 
     [Fact]

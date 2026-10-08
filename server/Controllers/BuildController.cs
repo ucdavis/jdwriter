@@ -144,6 +144,28 @@ public class BuildController : ApiControllerBase
     }
 
     /// <summary>
+    /// Is there a class that fits this build better than its own? Asked on demand from the envelope
+    /// check, whatever its verdict. One model call over the class catalog; staying put is an answer.
+    /// </summary>
+    [HttpPost("better-fit")]
+    public async Task<IActionResult> BetterFit(BuildRequest body, CancellationToken ct)
+    {
+        var profile = await _profiles.GetBySlugAsync(body.Slug, ct);
+        if (profile is null)
+        {
+            return NotFound(new { message = $"No class found for “{body.Slug}”." });
+        }
+
+        if (!_llm.HasApiKey)
+        {
+            return StatusCode(503, new { message = "Looking for a better fit is unavailable — no AI provider is configured." });
+        }
+
+        var others = await _profiles.GetDescriptorsAsync(body.Slug, ct);
+        return Ok(await _assembler.FindBetterFitAsync(profile, body.ToInputs(), others, ct));
+    }
+
+    /// <summary>
     /// Save the build as a draft without assembling it: instant, no model, no provider needed,
     /// always a Draft and never in the corpus. Reopen it later with "Continue editing".
     /// </summary>

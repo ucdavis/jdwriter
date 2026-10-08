@@ -49,6 +49,16 @@ public interface IJdAssembler
         IReadOnlyList<ClassDescriptor>? others = null,
         CancellationToken ct = default);
 
+    /// <summary>
+    /// Is there a class that fits this build better than its own? Unlike the out-of-envelope
+    /// alternative, "stay" is a valid answer: the build may stretch its class and still belong in it.
+    /// </summary>
+    Task<BetterFit> FindBetterFitAsync(
+        ClassProfile profile,
+        BuildInputs inputs,
+        IReadOnlyList<ClassDescriptor> others,
+        CancellationToken ct = default);
+
     Task<AssembledJd> AssembleAsync(
         ClassProfile profile,
         BuildInputs inputs,
@@ -99,6 +109,15 @@ public sealed class JdAssembler : IJdAssembler
 
         [Description("When index is -1, the name of the UC class that would fit; otherwise empty.")]
         public string FallbackClass { get; set; } = "";
+    }
+
+    private sealed class BetterFitResponse
+    {
+        [Description("Number of a catalog class that fits the described position clearly better than the current class, or -1 if the current class is still the best fit.")]
+        public int Index { get; set; }
+
+        [Description("One or two sentences: why that class fits better, or why the current class is still right.")]
+        public string Rationale { get; set; } = "";
     }
 
     private sealed class GeneratedFunction
@@ -170,6 +189,19 @@ public sealed class JdAssembler : IJdAssembler
 
         Return the number of the best match. Only pick a class that genuinely fits the described work —
         if none of them does, return index -1 and name the UC class that would fit in fallbackClass.
+        """;
+
+    // Not a port: written for JDWriter. The out-of-envelope alternative (AltSystem) asks where a
+    // position that LEFT its class should go; this asks whether a position that still fits has a
+    // better home, so staying put must be an answer the model can give.
+    internal const string BetterFitSystem = """
+        You are a UC Davis HR classification analyst. A manager is building a job description in a job class.
+        Given the position as they have built it — the standard work they kept and anything they added — the
+        class it is in now, and a numbered catalog of other job classes, decide whether one of those classes
+        fits the described work clearly better than the current class.
+
+        Return its number, or -1 if the current class is still the best fit. Prefer -1 unless another class
+        is a clearly better match for the work as a whole, not merely for one addition. Explain briefly.
         """;
 
     internal const string GenSystem = """
@@ -319,11 +351,21 @@ public sealed class JdAssembler : IJdAssembler
             SuggestedSlug = "",
         };
 
-        // Only a full out-of-envelope verdict warrants an alternative. Borderline means "stretches
-        // the class but still fits", so routing the manager elsewhere would be wrong — and stage 2
-        // costs roughly ten thousand tokens to usually name the class they are already in.
-        if (verdict.Verdict != EnvelopeVerdict.OutOfEnvelope || others is null || others.Count == 0)
+        if (others is null || others.Count == 0 || verdict.Verdict == EnvelopeVerdict.InEnvelope)
         {
+            return result;
+        }
+
+        // Borderline stretches the class but still fits it. The manager is shown what else might fit,
+        // without being routed away — a second query (product decision, 2026-10-08), asked as "is
+        // anything clearly better?" so that staying put is an answer rather than a failure to find one.
+        if (verdict.Verdict == EnvelopeVerdict.Borderline)
+        {
+            var better = await FindBetterFitAsync(profile, inputs, others, ct);
+            result.SuggestedClass = better.SuggestedClass;
+            result.SuggestedSlug = better.SuggestedSlug;
+            result.SuggestedRationale = better.Rationale;
+            result.BetterFitChecked = true;
             return result;
         }
 
@@ -374,6 +416,53 @@ public sealed class JdAssembler : IJdAssembler
         }
 
         return result;
+    }
+
+    public async Task<BetterFit> FindBetterFitAsync(
+        ClassProfile profile,
+        BuildInputs inputs,
+        IReadOnlyList<ClassDescriptor> others,
+        CancellationToken ct = default)
+    {
+        if (others.Count == 0)
+        {
+            return new BetterFit { Rationale = "There are no other classes to compare against." };
+        }
+
+        var catalog = string.Join('\n', others.Select((o, i) => $"{i}: {o.Title} (code {o.UcJobCode}) — {o.Summary}"));
+        var kept = string.Join('\n', inputs.KeptResponsibilities.Select(r =>
+            $"- {r.PctTime}% {r.FunctionName}: {string.Join("; ", r.Duties)}"));
+        var additions = HasAdditions(inputs) ? AdditionsText(inputs) : "(none)";
+
+        var response = await _llm.StructuredAsync<BetterFitResponse>(new StructuredRequest
+        {
+            System = BetterFitSystem,
+            User = $"""
+                CURRENT CLASS: {profile.Title} (code {profile.UcJobCode})
+                Working title: {(inputs.WorkingTitle.Length > 0 ? inputs.WorkingTitle : "(none)")}
+
+                THE POSITION AS BUILT — functions kept, with % time and duties:
+                {kept}
+
+                MANAGER'S ADDITIONS:
+                {additions}
+
+                CATALOG:
+                {catalog}
+                """,
+            Effort = LlmEffort.Low,
+            Label = "build.betterFit",
+        }, ct);
+
+        // The index is resolved here; the model never handles a slug. The current class is not in
+        // the catalog, so any valid index is a different class.
+        var picked = response.Index >= 0 && response.Index < others.Count ? others[response.Index] : null;
+        return new BetterFit
+        {
+            SuggestedClass = picked?.Title ?? "",
+            SuggestedSlug = picked?.Slug ?? "",
+            Rationale = response.Rationale.Trim(),
+        };
     }
 
     // ---------------------------------------------------------------- generation
