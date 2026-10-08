@@ -15,6 +15,7 @@ import {
   useRetirementPreview,
 } from '@/queries/admin.ts';
 import type { EnvelopeImportRefusal, SupersededProfile } from '@/lib/contracts.ts';
+import { appUrl } from '@/lib/basePath.ts';
 import { useRef, useState } from 'react';
 
 type RowStatus = 'done' | 'error' | 'running' | 'waiting';
@@ -817,7 +818,7 @@ export const EnvelopeTransferPanel = () => {
           <a
             className="btn btn-outline btn-sm whitespace-nowrap"
             download
-            href="/api/admin/envelopes/export"
+            href={appUrl('/api/admin/envelopes/export')}
           >
             Download envelopes
           </a>
