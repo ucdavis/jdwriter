@@ -112,15 +112,22 @@ public class BuildController : ApiControllerBase
     /// to hear so would be both slow and pointless.
     /// </summary>
     [HttpPost("check")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(WebHardening.ModelPolicy)]
     public async Task<IActionResult> Check(BuildRequest body, CancellationToken ct)
     {
+        var tooLarge = RequestLimits.Build(body);
+        if (tooLarge is not null)
+        {
+            return BadRequest(new { message = tooLarge });
+        }
+
         var profile = await _profiles.GetBySlugAsync(body.Slug, ct);
         if (profile is null)
         {
             return NotFound(new { message = $"No class found for “{body.Slug}”." });
         }
 
-        if (!_assembler.HasAdditions(body.ToInputs()))
+        if (!_assembler.HasAdditions(Inputs(profile, body)))
         {
             return Ok(new EnvelopeCheck
             {
@@ -137,7 +144,7 @@ public class BuildController : ApiControllerBase
         // Peer classes are supplied so an out-of-envelope verdict can route to a REAL neighbouring
         // class by index, rather than naming one the catalogue may not contain.
         var others = await _profiles.GetDescriptorsAsync(body.Slug, ct);
-        var inputs = body.ToInputs();
+        var inputs = Inputs(profile, body);
         var check = await _assembler.CheckEnvelopeAsync(profile, inputs, others, ct);
         _checks.Remember(profile.Slug, inputs, check.Verdict);
         return Ok(check);
@@ -148,8 +155,15 @@ public class BuildController : ApiControllerBase
     /// check, whatever its verdict. One model call over the class catalog; staying put is an answer.
     /// </summary>
     [HttpPost("better-fit")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(WebHardening.ModelPolicy)]
     public async Task<IActionResult> BetterFit(BuildRequest body, CancellationToken ct)
     {
+        var tooLarge = RequestLimits.Build(body);
+        if (tooLarge is not null)
+        {
+            return BadRequest(new { message = tooLarge });
+        }
+
         var profile = await _profiles.GetBySlugAsync(body.Slug, ct);
         if (profile is null)
         {
@@ -162,7 +176,7 @@ public class BuildController : ApiControllerBase
         }
 
         var others = await _profiles.GetDescriptorsAsync(body.Slug, ct);
-        return Ok(await _assembler.FindBetterFitAsync(profile, body.ToInputs(), others, ct));
+        return Ok(await _assembler.FindBetterFitAsync(profile, Inputs(profile, body), others, ct));
     }
 
     /// <summary>
@@ -172,6 +186,12 @@ public class BuildController : ApiControllerBase
     [HttpPost("draft")]
     public async Task<IActionResult> SaveDraft(BuildRequest body, CancellationToken ct)
     {
+        var tooLarge = RequestLimits.Build(body);
+        if (tooLarge is not null)
+        {
+            return BadRequest(new { message = tooLarge });
+        }
+
         var profile = await _profiles.GetBySlugAsync(body.Slug, ct);
         if (profile is null)
         {
@@ -181,7 +201,7 @@ public class BuildController : ApiControllerBase
         try
         {
             var id = await _saved.SaveDraftAsync(
-                body.ToInputs(), profile, await User.IdAsync(_db, ct), body.AuthoredJdId, body.DraftStateText(), ct);
+                Inputs(profile, body), profile, await User.IdAsync(_db, ct), body.AuthoredJdId, body.DraftStateText(), ct);
             return Ok(new { authoredJdId = id });
         }
         catch (ArgumentException ex)
@@ -191,15 +211,22 @@ public class BuildController : ApiControllerBase
     }
 
     [HttpPost("assemble")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(WebHardening.ModelPolicy)]
     public async Task<IActionResult> Assemble(BuildRequest body, CancellationToken ct)
     {
+        var tooLarge = RequestLimits.Build(body);
+        if (tooLarge is not null)
+        {
+            return BadRequest(new { message = tooLarge });
+        }
+
         var profile = await _profiles.GetBySlugAsync(body.Slug, ct);
         if (profile is null)
         {
             return NotFound(new { message = $"No class found for “{body.Slug}”." });
         }
 
-        var inputs = body.ToInputs();
+        var inputs = Inputs(profile, body);
 
         // An unchanged build needs no model at all, so only a changed one needs a provider.
         if (!JdAssembler.IsUnchanged(profile, inputs) && !_llm.HasApiKey)
@@ -245,4 +272,8 @@ public class BuildController : ApiControllerBase
         await _saved.SyncCorpusAsync(assembled.AuthoredJdId.Value, assembled, inputs, profile, verdict, ct);
         return Ok(assembled);
     }
+
+    /// <summary>The build as submitted, with anything sent as "kept" that is not in the envelope declared as added.</summary>
+    private static BuildInputs Inputs(ClassProfile profile, BuildRequest body) =>
+        JdAssembler.WithUndeclaredAdditions(profile, body.ToInputs());
 }

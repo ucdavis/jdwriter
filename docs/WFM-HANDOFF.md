@@ -55,6 +55,18 @@ craft one.
 If WFM ends up on a different host, the browser fetch stops working. That would need CORS on
 JDWriter plus a server-to-server credential, and should be designed together.
 
+## Treat everything in it as untrusted text
+
+Every string in the handoff document was written by a person or an AI model: titles, summaries,
+duties, qualifications. Render all of it as text, never as HTML. If WFM shows the Markdown file
+rendered, turn raw HTML off in the Markdown renderer.
+
+This matters more because the apps share a host. JDWriter's sign-in cookie is limited to
+`/jdwriter`, but that is not a security boundary between apps on one origin. A script injected
+into WFM could call JDWriter's API as the signed-in user, and the reverse is also true. Each app
+on `people.caes.ucdavis.edu` is trusted by the others, so each must hold the same bar: no unsafe
+HTML rendering, and no third-party scripts that have not been vetted.
+
 ## The handoff document (`jdwriter.jd`, version 1)
 
 `GET /jdwriter/api/jds/{id}/handoff` returns:

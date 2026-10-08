@@ -105,6 +105,23 @@ public sealed class EnvelopeTransfer
         };
     }
 
+    private static bool WithinBounds(BundledEnvelope e)
+    {
+        var w = e.Envelope;
+        var lists = new[]
+        {
+            w.RequiredCertifications, w.Education, w.WorkExperience, w.MinQualifications, w.PrefQualifications,
+            w.ConditionsOfEmployment, w.WorkEnvironment, w.PhysicalRequirements, w.OutOfEnvelope,
+        };
+        var texts = lists.SelectMany(l => l)
+            .Concat(w.KeyResponsibilities.SelectMany(r => r.Duties.Append(r.FunctionName)))
+            .Append(w.Summary).Append(w.ScopeStatement).Append(e.Title);
+        return w.KeyResponsibilities.Count <= 40
+               && w.KeyResponsibilities.All(r => r.Duties.Count <= 60)
+               && lists.All(l => l.Count <= 200)
+               && texts.All(t => (t ?? "").Length <= 4_000);
+    }
+
     /// <summary>
     /// Create a class for each bundled envelope that this environment does not already have. Never
     /// overwrites: an existing class — learned from JDs, edited by hand, or bootstrapped here — is
@@ -116,6 +133,12 @@ public sealed class EnvelopeTransfer
         {
             throw new InvalidOperationException(
                 $"Not a JDWriter envelope export (format \"{bundle.Format}\", version {bundle.Version}).");
+        }
+
+        // Admin-only, but still a file from elsewhere: bounded before any of it is stored.
+        if (bundle.Envelopes.Count > 2_000 || bundle.Envelopes.Any(e => !WithinBounds(e)))
+        {
+            throw new InvalidOperationException("This export is larger than any real set of envelopes; it was not imported.");
         }
 
         var note = $"Standard-derived — envelope generated in another environment (exported "

@@ -121,7 +121,6 @@ export type ClassProfileResponse = {
   personnelProgram: string;
   salaryGrade: Distribution;
   slug: string;
-  sourceFiles: string[];
   /** Null for roughly 46 of 65 classes. A normal state, not an error. */
   standard: ClassStandard | null;
   supervises: Distribution;

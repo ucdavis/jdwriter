@@ -142,6 +142,7 @@ try
     builder.Services.AddScoped<IDescriptionClassifier, DescriptionClassifier>();
     builder.Services.AddScoped<IJdAssembler, JdAssembler>();
     builder.Services.AddScoped<IFitService, FitService>();
+    builder.Services.AddJdWriterRateLimits();
     builder.Services.AddScoped<IFitRewriter, FitRewriter>();
 
     // ---- standards and bootstrap
@@ -225,6 +226,7 @@ try
     }
 
     app.UseForwardedHeaders();
+    app.UseSecurityHeaders();
 
     // The app's mount point: "" at a host's root, "/jdwriter" under CAES People. Everything after
     // this sees paths relative to it — routing, static files, the sign-in callback, and the auth
@@ -289,12 +291,15 @@ try
     else
     {
         // only use HTTPS redirection in non-development environments
+        app.UseHsts();
         app.UseHttpsRedirection();
     }
 
 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseApiRequestGuard();
+    app.UseRateLimiter();
 
     // enrich every log with request context
     app.UseRequestContextLogging();

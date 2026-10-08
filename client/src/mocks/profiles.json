@@ -118,14 +118,6 @@
       "consensus": "STEPS"
     },
     "slug": "009605-lab-ast-1",
-    "sourceFiles": [
-      "Sample Class/JD-001.HTML",
-      "Sample Class/JD-002.HTML",
-      "Sample Class/JD-003.HTML",
-      "Sample Class/JD-004.HTML",
-      "Sample Class/JD-005.HTML",
-      "Sample Class/JD-006.HTML"
-    ],
     "standard": null,
     "supervises": {
       "agreement": 0.8376623376623377,
@@ -381,11 +373,6 @@
       "consensus": "Grade 24"
     },
     "slug": "005943-agriculture-mgr-1",
-    "sourceFiles": [
-      "Sample Class/JD-001.HTML",
-      "Sample Class/JD-002.HTML",
-      "Sample Class/JD-003.HTML"
-    ],
     "standard": null,
     "supervises": {
       "agreement": 0.6666666666666666,
@@ -539,7 +526,6 @@
       "consensus": "Grade 20"
     },
     "slug": "004501-academic-achievement-counselor-3",
-    "sourceFiles": [],
     "standard": null,
     "supervises": {
       "agreement": 1,

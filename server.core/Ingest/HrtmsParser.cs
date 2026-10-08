@@ -20,11 +20,20 @@ namespace Server.Core.Ingest;
 public static partial class HrtmsParser
 {
     // ---------------------------------------------------------------- regexes
+    //
+    // The lazy-dotall patterns are bounded in time. Pasted text that opens many <td>s and never
+    // closes them makes each match rescan to the end — quadratic: a 100 KB paste measured 17.6 s
+    // of CPU, and the classify endpoint accepts pasted text from any signed-in author. A real
+    // export matches in milliseconds; past the limit the text is simply not treated as an export
+    // (every caller already falls back on a parse failure). Patterns are unchanged, so fixture
+    // parity is unaffected.
 
-    [GeneratedRegex(@"<(script|style)[^>]*>.*?</\1>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private const int MatchTimeoutMs = 2000;
+
+    [GeneratedRegex(@"<(script|style)[^>]*>.*?</\1>", RegexOptions.IgnoreCase | RegexOptions.Singleline, MatchTimeoutMs)]
     private static partial Regex ScriptOrStyle();
 
-    [GeneratedRegex(@"<td\b[^>]*>(.*?)</td>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    [GeneratedRegex(@"<td\b[^>]*>(.*?)</td>", RegexOptions.IgnoreCase | RegexOptions.Singleline, MatchTimeoutMs)]
     private static partial Regex TableCell();
 
     [GeneratedRegex("<[^>]+>")]

@@ -1,3 +1,4 @@
+using Server.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Server.Core.Ai;
@@ -31,11 +32,18 @@ public class IntakeController : ApiControllerBase
     }
 
     [HttpPost("match")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(WebHardening.ModelPolicy)]
     public async Task<IActionResult> Match(IntakeMatchRequest body, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(body.Request))
         {
             return BadRequest(new { message = "Describe the role you need before searching." });
+        }
+
+        var tooLong = RequestLimits.IntakeRequest(body.Request);
+        if (tooLong is not null)
+        {
+            return BadRequest(new { message = tooLong });
         }
 
         if (!_llm.HasApiKey)

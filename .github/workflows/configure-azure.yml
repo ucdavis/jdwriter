@@ -174,7 +174,15 @@ jobs:
             --template-file infrastructure/azure/main.bicep \
             --parameters "${params[@]}" \
             --query properties.outputs \
-            --output json | tee deployment-outputs.json
+            --output json > deployment-outputs.json
+
+          # Actions logs are public for this repository. Mask the one secret-bearing output, then print
+          # the rest for troubleshooting.
+          app_insights="$(jq -r '.appInsightsConnectionString.value // empty' deployment-outputs.json)"
+          if [[ -n "$app_insights" ]]; then
+            echo "::add-mask::$app_insights"
+          fi
+          jq 'del(.appInsightsConnectionString)' deployment-outputs.json
 
           deployment_guard_passed="$(jq -r '.deploymentGuardPassed.value // false' deployment-outputs.json)"
           if [[ "$deployment_guard_passed" != "true" ]]; then

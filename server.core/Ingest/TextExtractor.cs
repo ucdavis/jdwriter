@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
@@ -83,6 +84,7 @@ public static partial class TextExtractor
     /// expensive way to classify one position.
     /// </summary>
     private const int MaxChars = 400_000;
+    private const int MaxPdfPages = 100;
 
     /// <summary>
     /// An extraction that yields almost nothing is the signature of a scanned or image-only PDF.
@@ -256,7 +258,9 @@ public static partial class TextExtractor
     private static (string Text, string? Note) ExtractDocx(byte[] bytes)
     {
         using var stream = new MemoryStream(bytes, writable: false);
-        using var doc = WordprocessingDocument.Open(stream, isEditable: false);
+        // A .docx is a zip: a few megabytes can inflate to gigabytes of XML. The SDK refuses a part
+        // past this many characters instead of building it in memory.
+        using var doc = WordprocessingDocument.Open(stream, isEditable: false, new OpenSettings { MaxCharactersInPart = 20_000_000 });
 
         var body = doc.MainDocumentPart?.Document?.Body;
         if (body is null)
@@ -289,6 +293,12 @@ public static partial class TextExtractor
     private static (string Text, string? Note) ExtractPdf(byte[] bytes)
     {
         using var pdf = PdfDocument.Open(bytes);
+        if (pdf.NumberOfPages > MaxPdfPages)
+        {
+            // A job description is a few pages; a document this long is not one, and reading it
+            // costs real CPU.
+            throw new InvalidDataException($"{pdf.NumberOfPages} pages is more than a job description ({MaxPdfPages} at most).");
+        }
 
         var pages = new List<string>();
         foreach (var page in pdf.GetPages())
@@ -340,8 +350,7 @@ public static partial class TextExtractor
 
         foreach (var ws in wb.Worksheets)
         {
-            var lastRow = ws.LastRowUsed()?.RowNumber() ?? 0;
-            var lastCol = ws.LastColumnUsed()?.ColumnNumber() ?? 0;
+            var (lastRow, lastCol) = WorksheetLimits.UsedRange(ws);
 
             var lines = new List<string>();
             for (var r = 1; r <= lastRow; r++)
