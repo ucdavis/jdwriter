@@ -2,7 +2,7 @@ import { fetchJson } from '../lib/api.ts';
 import { useQuery } from '@tanstack/react-query';
 
 export type Links = {
-  /** The workforce management tool (CTHULHU); null until it has a production address. */
+  /** The Workforce Management tool's start page; null until it has a production address. */
   wfmUrl: string | null;
 };
 

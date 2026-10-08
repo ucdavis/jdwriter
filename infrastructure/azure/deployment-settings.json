@@ -97,7 +97,7 @@
       "classification": "variable",
       "valueType": "string",
       "requiredWhen": "never",
-      "description": "HTTPS address of the workforce management (WFM) tool's page for starting a new justification. JDWriter's \"Start the workforce management justification\" button opens it with ?source=jdwriter&jd=<handoff URL> (docs/WFM-HANDOFF.md). Leave unset until WFM is live; the button is then replaced by Markdown and JSON downloads."
+      "description": "HTTPS address of the Workforce Management (WFM) tool's page for starting a new request. JDWriter's \"Begin working on the Workforce Management request\" button opens it with ?source=jdwriter&jd=<handoff URL> (docs/WFM-HANDOFF.md). Leave unset until WFM is live; Markdown and JSON downloads stand in for the button."
     }
   ]
 }

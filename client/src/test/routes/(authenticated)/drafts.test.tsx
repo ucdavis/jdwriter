@@ -113,6 +113,42 @@ describe('drafts', () => {
     await waitFor(() => expect(sentIds).toEqual([12]));
   });
 
+  it('shows, under a standard duty, the lines of the author\'s document it covers', async () => {
+    const user = userEvent.setup();
+    let snapshot: DraftState | null = null;
+    testServer.use(
+      http.post('/api/build/draft', async ({ request }) => {
+        snapshot = ((await request.json()) as BuildRequest).draftState as DraftState;
+        return HttpResponse.json({ authoredJdId: 12 });
+      })
+    );
+    renderRoute({ initialPath: '/class/009605-lab-ast-1' });
+    await user.click(await screen.findByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(snapshot).not.toBeNull());
+    cleanup();
+
+    // As a JD started from a description arrives: one standard duty matched to the author's line.
+    const started: DraftState = {
+      ...snapshot!,
+      resps: snapshot!.resps.map((r, i) =>
+        i === 0
+          ? {
+              ...r,
+              duties: r.duties.map((d, j) =>
+                j === 0 ? { ...d, matchedFrom: ['Water and monitor the tomato trials.'] } : d
+              ),
+            }
+          : r
+      ),
+    };
+    testServer.use(http.get('/api/jds/:id', () => HttpResponse.json(draftJd(started))));
+    renderRoute({ initialPath: '/class/009605-lab-ast-1?draft=12' });
+
+    expect(await screen.findByTestId('matched-from')).toHaveTextContent(
+      'From your description: “Water and monitor the tomato trials.”'
+    );
+  });
+
   it('marks a never-assembled draft and offers Continue editing', async () => {
     testServer.use(
       http.get('/api/jds/:id', () =>

@@ -20,6 +20,7 @@ const rewritten = (over: Partial<FitRewriteResponse>): FitRewriteResponse => ({
   carriedDuties: 3,
   droppedFunctions: 1,
   keptFunctions: 2,
+  matchedDuties: 4,
   outside: [{ pct: 10, reason: 'Event planning is not financial analysis.', text: 'Event planning' }],
   slug: misfit.slug,
   title: misfit.classTitle,
@@ -47,7 +48,9 @@ describe('reclassification review: rewrite to fit', () => {
 
     await screen.findByText(/Draft written for/);
     expect(sent).toEqual({ slug: misfit.slug, sourceFile: misfit.sourceFile });
-    expect(screen.getByText(/2 functions kept, 3 of the incumbent's duties carried over/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/2 functions kept, 3 of the incumbent's duties carried over, 4 matched to standard duties/)
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open draft →' })).toHaveAttribute(
       'href',
       '/class/005183-financial-anl-3-cx?draft=12'

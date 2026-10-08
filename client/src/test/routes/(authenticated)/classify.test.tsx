@@ -92,6 +92,7 @@ describe('classify', () => {
           carriedDuties: 1,
           droppedFunctions: 0,
           keptFunctions: 2,
+          matchedDuties: 0,
           outside: [],
           slug: sent.slug,
           title: 'Recommended Class',

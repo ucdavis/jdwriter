@@ -220,7 +220,7 @@ const RewriteResult = ({ result }: { result: FitRewriteResponse }) => (
     <div>
       Draft written for <span className="font-semibold">{result.title}</span>: {result.keptFunctions}{' '}
       function{result.keptFunctions === 1 ? '' : 's'} kept, {result.carriedDuties} of the
-      incumbent&apos;s duties carried over.{' '}
+      incumbent&apos;s duties carried over, {result.matchedDuties} matched to standard duties.{' '}
       <Link
         className="font-semibold text-primary hover:underline"
         params={{ slug: result.slug }}

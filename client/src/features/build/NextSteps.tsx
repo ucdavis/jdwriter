@@ -30,23 +30,23 @@ export const NextSteps = ({ result }: { result: AssembledJd }) => {
     >
       <Eyebrow>Next steps</Eyebrow>
       <h2 className="mt-1 text-[16px] font-bold" id="next-steps-heading">
-        Take this job description to the workforce management justification
+        Take this job description to the Workforce Management request
       </h2>
       <ol className="mt-3 space-y-3 text-[13px]">
         <Step done n={1} title="Job description">
           Finished and saved. Download it as Word or PDF for your records.
         </Step>
-        <Step n={2} title="Workforce management justification">
-          Opens the workforce management tool with this job description attached. There you
-          complete the justification and the request for the position.
+        <Step n={2} title="Workforce Management request">
+          Takes this job description over to the Workforce Management tool, where you complete
+          the request and its justification for the position.
           <div className="mt-2">
             {wfmUrl ? (
               <a className="btn btn-primary btn-sm" href={startUrl(wfmUrl, handoff)}>
-                Start the workforce management justification →
+                Begin working on the Workforce Management request →
               </a>
             ) : (
               <span className="text-[12px] text-base-content/65">
-                The workforce management tool is not available yet. Until it is, keep the
+                The Workforce Management tool is not available yet. Until it is, keep the
                 downloads below with your request:{' '}
                 <a className="text-primary hover:underline" download href={appUrl(`/api/jds/${id}/markdown`)}>
                   Markdown
@@ -60,7 +60,7 @@ export const NextSteps = ({ result }: { result: AssembledJd }) => {
           </div>
         </Step>
         <Step n={3} title="Submit to HR">
-          In the workforce management tool, add this job description and anything else HR
+          In the Workforce Management tool, add this job description and anything else HR
           requires — an org chart, for example — and submit it all as one complete package.
         </Step>
       </ol>

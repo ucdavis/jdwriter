@@ -26,6 +26,41 @@ public sealed class RewritePlan
 
     [Description("Incumbent work that does not belong in this class at all, with a one-sentence reason each.")]
     public List<RewriteOutside> Outside { get; set; } = [];
+
+    [Description("Each incumbent duty that is neither carried over nor outside the class, matched to the standard duty that covers it.")]
+    public List<RewriteMatch> Matches { get; set; } = [];
+}
+
+public sealed class RewriteMatch
+{
+    [Description("The incumbent responsibility's number.")]
+    public int Responsibility { get; set; }
+
+    [Description("The duty's number within that responsibility.")]
+    public int Duty { get; set; }
+
+    [Description("The class function's number.")]
+    public int Function { get; set; }
+
+    [Description("The number of the standard duty, within that function, that covers it.")]
+    public int StandardDuty { get; set; }
+}
+
+/// <summary>How much of the source JD's own wording a rewrite keeps.</summary>
+public enum RewriteMode
+{
+    /// <summary>
+    /// Reclassification: correct a misfit toward its class. An incumbent duty comes over only when no
+    /// kept standard duty already says it; the rest are matched to the standard duty that does.
+    /// </summary>
+    Correct,
+
+    /// <summary>
+    /// Starting from a unit's own document: its specifics survive. A duty comes over whenever it names
+    /// concrete work, even if a standard duty covers it generally; only plain restatements are matched.
+    /// Anything the plan leaves unaccounted for comes over too, so nothing the author wrote vanishes.
+    /// </summary>
+    KeepSpecifics,
 }
 
 public sealed class RewritePlacement
@@ -89,6 +124,9 @@ public sealed class FitRewrite
     public int KeptFunctions { get; set; }
     public int DroppedFunctions { get; set; }
     public int CarriedDuties { get; set; }
+
+    /// <summary>Source duties matched to a standard duty, shown under it in the build screen.</summary>
+    public int MatchedDuties { get; set; }
     public List<RewriteOmission> Outside { get; set; } = [];
 }
 
@@ -99,7 +137,8 @@ public interface IFitRewriter
     /// drawing the incumbent's actual work into them. Produces a build-screen draft, never a
     /// finished JD — the analyst reviews it and assembles it through the normal checks.
     /// </summary>
-    Task<FitRewrite> RewriteAsync(ClassProfile target, JobDescription incumbent, CancellationToken ct = default);
+    Task<FitRewrite> RewriteAsync(
+        ClassProfile target, JobDescription incumbent, RewriteMode mode = RewriteMode.Correct, CancellationToken ct = default);
 }
 
 public sealed partial class FitRewriter : IFitRewriter
@@ -109,7 +148,7 @@ public sealed partial class FitRewriter : IFitRewriter
     public FitRewriter(IStructuredLlm llm) => _llm = llm;
 
     private const string SystemPrompt = """
-        You help a UC Davis HR classification analyst correct a job description that does not fit its job class.
+        You help a UC Davis HR classification analyst {0}.
 
         You are given the CLASS ENVELOPE — the class's standard functions, each with numbered standard duties — and the INCUMBENT'S JD: what the person in the position actually does, as numbered responsibilities with % time and numbered duties.
 
@@ -117,11 +156,21 @@ public sealed partial class FitRewriter : IFitRewriter
 
         1. Place every incumbent responsibility in the one class function its work most belongs to. Use -1 only when the work genuinely falls outside this class (another class's work, or a different level).
         2. For each class function that received work, keep the standard duties that describe what this incumbent actually does. Do not keep duties for work they do not do.
-        3. Carry over an incumbent duty only when it is within the class and no kept standard duty already says it. Put it under the function it belongs to.
-        4. List incumbent work that does not belong in this class, with a one-sentence reason each. A whole responsibility placed at -1 must appear here.
+        3. {1}
+        4. Match every other incumbent duty that is within the class to the standard duty that covers it, so the author can see where their wording went.
+        5. List incumbent work that does not belong in this class, with a one-sentence reason each. A whole responsibility placed at -1 must appear here.
         """;
 
-    public async Task<FitRewrite> RewriteAsync(ClassProfile target, JobDescription incumbent, CancellationToken ct = default)
+    private static string PromptFor(RewriteMode mode) => mode == RewriteMode.KeepSpecifics
+        ? string.Format(SystemPrompt,
+            "turn a unit's own job description into one for a job class, keeping what the unit wrote",
+            "Carry over every incumbent duty that is within the class and names specific work — particular crops, systems, methods, populations, tools or outputs — even when a standard duty covers it in general terms: the unit's specifics must survive. Match a duty to a standard duty instead only when the standard says the same thing as specifically. Put each carried duty under the function it belongs to.")
+        : string.Format(SystemPrompt,
+            "correct a job description that does not fit its job class",
+            "Carry over an incumbent duty only when it is within the class and no kept standard duty already says it. Put it under the function it belongs to.");
+
+    public async Task<FitRewrite> RewriteAsync(
+        ClassProfile target, JobDescription incumbent, RewriteMode mode = RewriteMode.Correct, CancellationToken ct = default)
     {
         var envelope = target.Envelope ?? throw new InvalidOperationException($"{target.Title} has no envelope to rewrite against.");
         var functions = envelope.KeyResponsibilities.OrderBy(r => r.Ordinal).ToList();
@@ -133,14 +182,14 @@ public sealed partial class FitRewriter : IFitRewriter
 
         var plan = await _llm.StructuredAsync<RewritePlan>(new StructuredRequest
         {
-            System = SystemPrompt,
+            System = PromptFor(mode),
             User = BuildUser(target, functions, incumbent, resps),
             Effort = LlmEffort.Medium,
             MaxTokens = 8000,
             Label = "fit.rewrite",
         }, ct);
 
-        return Assemble(envelope, functions, incumbent, resps, plan);
+        return Assemble(envelope, functions, incumbent, resps, plan, mode);
     }
 
     private static string BuildUser(
@@ -192,7 +241,8 @@ public sealed partial class FitRewriter : IFitRewriter
         List<EnvelopeResponsibility> functions,
         JobDescription incumbent,
         List<JdResponsibility> resps,
-        RewritePlan plan)
+        RewritePlan plan,
+        RewriteMode mode = RewriteMode.Correct)
     {
         var dutiesOf = functions.Select(f => f.Duties.OrderBy(d => d.Ordinal).Select(d => d.Text).ToList()).ToList();
         var incumbentDuties = resps.Select(r => r.Duties.OrderBy(d => d.Ordinal).Select(d => d.Text).ToList()).ToList();
@@ -258,10 +308,12 @@ public sealed partial class FitRewriter : IFitRewriter
             }
         }
 
+        bool IsDuty(int r, int d) => r >= 0 && r < resps.Count && d >= 0 && d < incumbentDuties[r].Count;
+        var accounted = new HashSet<(int, int)>();
+
         foreach (var c in plan.CarryOver)
         {
-            if (c.Responsibility < 0 || c.Responsibility >= resps.Count || c.Duty < 0
-                || c.Duty >= incumbentDuties[c.Responsibility].Count || !kept.Contains(c.Function))
+            if (!IsDuty(c.Responsibility, c.Duty) || !kept.Contains(c.Function) || !accounted.Add((c.Responsibility, c.Duty)))
             {
                 continue;
             }
@@ -271,6 +323,50 @@ public sealed partial class FitRewriter : IFitRewriter
             if (said.Add(Norm(text)))
             {
                 carried[c.Function].Add(text);
+            }
+        }
+
+        // Matches show the author where their wording went: under the standard duty that covers it,
+        // which is kept so the match is visible. A duty already carried over is not also matched.
+        var matchedFrom = dutiesOf.Select(ds => ds.Select(_ => new List<string>()).ToList()).ToList();
+        var matchedCount = 0;
+        foreach (var m in plan.Matches)
+        {
+            if (!IsDuty(m.Responsibility, m.Duty) || !kept.Contains(m.Function)
+                || m.StandardDuty < 0 || m.StandardDuty >= dutiesOf[m.Function].Count
+                || !accounted.Add((m.Responsibility, m.Duty)))
+            {
+                continue;
+            }
+
+            keepDuty[m.Function].Add(m.StandardDuty);
+            said.Add(Norm(dutiesOf[m.Function][m.StandardDuty]));
+            matchedFrom[m.Function][m.StandardDuty].Add(incumbentDuties[m.Responsibility][m.Duty]);
+            matchedCount++;
+        }
+
+        foreach (var o in plan.Outside.Where(o => IsDuty(o.Responsibility, o.Duty)))
+        {
+            accounted.Add((o.Responsibility, o.Duty));
+        }
+
+        // Keeping the unit's specifics means nothing it wrote may vanish: a duty of placed work that the
+        // plan neither carried, matched nor set outside comes over as written.
+        if (mode == RewriteMode.KeepSpecifics)
+        {
+            for (var r = 0; r < resps.Count; r++)
+            {
+                for (var d = 0; d < incumbentDuties[r].Count; d++)
+                {
+                    if (placedIn[r] >= 0 && !accounted.Contains((r, d)))
+                    {
+                        var text = incumbentDuties[r][d];
+                        if (said.Add(Norm(text)))
+                        {
+                            carried[placedIn[r]].Add(text);
+                        }
+                    }
+                }
             }
         }
 
@@ -289,8 +385,14 @@ public sealed partial class FitRewriter : IFitRewriter
             // screen, taking its share of time with it; its standard duties stand in instead.
             var keepAll = isKept && keepDuty[f].Count == 0 && carried[f].Count == 0;
             var items = dutiesOf[f]
-                .Select((text, d) => new { added = false, kept = isKept && (keepAll || keepDuty[f].Contains(d)), text })
-                .Concat(carried[f].Select(text => new { added = true, kept = true, text }))
+                .Select((text, d) => new
+                {
+                    added = false,
+                    kept = isKept && (keepAll || keepDuty[f].Contains(d)),
+                    matchedFrom = isKept ? matchedFrom[f][d].ToArray() : [],
+                    text,
+                })
+                .Concat(carried[f].Select(text => new { added = true, kept = true, matchedFrom = Array.Empty<string>(), text }))
                 .ToList();
 
             resps0.Add(new
@@ -348,6 +450,7 @@ public sealed partial class FitRewriter : IFitRewriter
             KeptFunctions = kept.Count,
             DroppedFunctions = functions.Count - kept.Count,
             CarriedDuties = carried.Sum(c => c.Count),
+            MatchedDuties = matchedCount,
             Outside = Omissions(resps, incumbentDuties, placedIn, plan),
         };
     }

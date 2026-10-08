@@ -225,6 +225,15 @@ export const BuildFlow = ({
                                 }`}
                               >
                                 {d.added ? <Badge tone="green">+</Badge> : null} {d.text}
+                                {d.matchedFrom && d.matchedFrom.length > 0 ? (
+                                  <span className="mt-0.5 block text-[11.5px] text-base-content/55" data-testid="matched-from">
+                                    {d.matchedFrom.map((m) => (
+                                      <span className="block" key={m}>
+                                        ↳ From your description: “{m}”
+                                      </span>
+                                    ))}
+                                  </span>
+                                ) : null}
                               </span>
                             </label>
                             {d.added ? (

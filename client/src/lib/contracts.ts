@@ -434,6 +434,8 @@ export type FitRewriteResponse = {
   carriedDuties: number;
   droppedFunctions: number;
   keptFunctions: number;
+  /** Source duties matched to a standard duty; shown under it in the build screen. */
+  matchedDuties: number;
   /** Incumbent work the rewrite left out because it does not belong in the class. */
   outside: Array<{ pct: number | null; reason: string; text: string }>;
   slug: string;

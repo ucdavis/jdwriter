@@ -6,7 +6,7 @@ namespace Server.Controllers;
 
 /// <summary>
 /// Where JDWriter hands off to other CAES People tools. Configuration, not code: the workforce
-/// management (WFM) tool is not live yet, and "Start the workforce management justification"
+/// management (WFM) tool is not live yet, and "Begin working on the Workforce Management request"
 /// appears only once <c>Wfm:Url</c> (WFM_URL in deployment) names its start page.
 /// </summary>
 [ApiController]

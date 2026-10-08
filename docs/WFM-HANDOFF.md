@@ -3,7 +3,7 @@
 The process is **JDWriter → workforce management (WFM) → HR**:
 
 1. The author finishes a job description in JDWriter.
-2. They choose **Start the workforce management justification**. WFM opens with the JD attached.
+2. They choose **Begin working on the Workforce Management request**. WFM opens with the JD attached.
 3. In WFM they complete the justification and request, add the JD and anything else HR needs
    (an org chart, for example), and submit everything to HR as one package.
 
@@ -12,7 +12,7 @@ This page is the contract for step 2, written for whoever builds the WFM side.
 ## The start link
 
 JDWriter's button opens the address configured as `WFM_URL` (`Wfm:Url`): WFM's page for starting a
-new justification. It adds two query parameters:
+new Workforce Management request. It adds two query parameters:
 
 ```
 https://people.caes.ucdavis.edu/wfm/requests/new?source=jdwriter&jd=https%3A%2F%2Fpeople.caes.ucdavis.edu%2Fjdwriter%2Fapi%2Fjds%2F12%2Fhandoff

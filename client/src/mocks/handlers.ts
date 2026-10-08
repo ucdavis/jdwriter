@@ -434,6 +434,7 @@ export const handlers = [
       carriedDuties: 1,
       droppedFunctions: 0,
       keptFunctions: 2,
+      matchedDuties: 1,
       outside: [],
       slug,
       title: profiles.find((p) => p.slug === slug)?.title ?? slug,
