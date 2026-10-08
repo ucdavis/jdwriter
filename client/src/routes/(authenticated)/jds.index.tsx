@@ -4,6 +4,7 @@ import { type JdScope, savedJdsQueryOptions, useDeleteJd, useSavedJds } from '@/
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import type { RouterContext } from '@/main.tsx';
+import { asset } from '@/lib/basePath.ts';
 
 export const Route = createFileRoute('/(authenticated)/jds/')({
   component: SavedJdsPage,
@@ -76,8 +77,9 @@ function SavedJdsPage() {
       ) : null}
 
       {!isPending && jds.length === 0 ? (
-        <Card className="p-6">
-          <p className="text-[13px] text-base-content/65">
+        <Card className="flex flex-col items-center p-8 text-center">
+          <img alt="" className="mb-4 h-16 w-16 rounded-xl" src={asset('icon-192.png')} />
+          <p className="max-w-md text-[13px] text-base-content/65">
             Nothing saved yet. Pick a class on the start page and build a job description — it
             is saved as soon as you assemble it.
           </p>

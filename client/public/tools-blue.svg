@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="presentation" aria-hidden="true">
+  <!-- JDWriter footer art, right corner: the same writing tools in UC Davis navy and blues. -->
+  <defs>
+    <g id="clipboard">
+      <rect x="0" y="12" width="100" height="128" rx="9"/>
+      <path d="M20 52 H80 M20 68 H80 M20 84 H80 M20 100 H62" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+      <rect x="31" y="0" width="38" height="24" rx="6" fill="#2D5F8A"/>
+      <circle cx="50" cy="9" r="4.5" fill="#fff" opacity=".9"/>
+    </g>
+    <g id="pen">
+      <rect x="2" y="0" width="16" height="96" rx="8"/>
+      <path d="M13 8 V54" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".75"/>
+      <rect x="4" y="92" width="12" height="18" rx="3" fill="#022851"/>
+      <path d="M3 109 H17 L10 142 Z"/>
+      <path d="M10 117 V136" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="10" cy="117" r="2.2" fill="#fff"/>
+    </g>
+    <g id="pencil">
+      <rect x="0" y="0" width="16" height="14" rx="4" fill="#13639E"/>
+      <rect x="0" y="12" width="16" height="8" fill="#022851"/>
+      <rect x="0" y="19" width="16" height="96"/>
+      <path d="M8 26 V108" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+      <path d="M0 115 H16 L8 138 Z" fill="#BFD8E8"/>
+      <path d="M5 129 H11 L8 138 Z" fill="#0A1E33"/>
+    </g>
+    <g id="sheet">
+      <path d="M0 0 H66 L88 22 V116 H0 Z"/>
+      <path d="M66 0 V22 H88 Z" fill="#022851"/>
+      <path d="M14 40 H74 M14 56 H74 M14 72 H74 M14 88 H52" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" opacity=".85"/>
+    </g>
+    <path id="paperclip" d="M14 8 V58 a7 7 0 0 1 -14 0 V16 a11 11 0 0 1 22 0 V64 a15 15 0 0 1 -30 0 V22" fill="none" stroke-width="4.5" stroke-linecap="round"/>
+  </defs>
+
+  <use href="#sheet" transform="translate(236 112) rotate(12)" fill="#3B88B0"/>
+  <use href="#sheet" transform="translate(196 136) rotate(-6)" fill="#13639E"/>
+  <use href="#clipboard" transform="translate(98 150) rotate(-10)" fill="#022851"/>
+  <use href="#pen" transform="translate(300 74) rotate(36)" fill="#6FA9C9"/>
+  <use href="#pencil" transform="translate(70 92) rotate(-58)" fill="#6FA9C9"/>
+  <use href="#paperclip" transform="translate(228 76) rotate(28) scale(.8)" stroke="#022851"/>
+</svg>

@@ -15,3 +15,9 @@ export const basePath = (): string =>
  */
 export const appUrl = (path: string): string =>
   path.startsWith('/') && !path.startsWith('//') ? `${basePath()}${path}` : path;
+
+/**
+ * A file from client/public (icons, logo, artwork). Vite's BASE_URL is "/" in development and
+ * "./" in a build, where the server's <base href> makes it resolve under the mount point.
+ */
+export const asset = (name: string): string => `${import.meta.env.BASE_URL}${name}`;

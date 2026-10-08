@@ -5,6 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sign in | JDWriter</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="@Url.Content("~/favicon-32.png")" />
+    <link rel="apple-touch-icon" sizes="180x180" href="@Url.Content("~/apple-touch-icon.png")" />
     <style>
         body { margin: 0; background: #f2f5f8; color: #172b40; font-family: system-ui, sans-serif; }
         main { max-width: 560px; margin: 10vh auto; padding: 32px; background: white; border-top: 6px solid #ffbf00; border-radius: 8px; }
@@ -15,10 +17,12 @@
         button:focus-visible, a:focus-visible { outline: 3px solid #13639e; outline-offset: 3px; }
         button span { display: block; margin-top: 6px; font-size: 14px; }
         a { color: #00588a; }
+        .brand { display: block; width: 72px; height: 72px; border-radius: 12px; margin-bottom: 12px; }
     </style>
 </head>
 <body>
 <main>
+    <img class="brand" src="@Url.Content("~/icon-192.png")" alt="" />
     <p>JDWriter · Development</p>
     <h1>Sign in to JDWriter</h1>
     @if (ViewData["EntraConfigured"] is true)

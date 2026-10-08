@@ -8,7 +8,7 @@ import { RouterContext } from '../../main.tsx';
 import { meQueryOptions } from '../../queries/user.ts';
 import { AppShell } from '@/shared/ui/AppShell.tsx';
 import { UserProvider } from '@/shared/auth/UserContext.tsx';
-import { appUrl } from '@/lib/basePath.ts';
+import { appUrl, asset } from '@/lib/basePath.ts';
 
 export const Route = createFileRoute('/(authenticated)')({
   beforeLoad: async ({ context }: { context: RouterContext }) => {
@@ -29,6 +29,7 @@ function AuthenticatedRouteError({ error }: ErrorComponentProps<unknown>) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
         <section className="max-w-lg text-center">
+          <img alt="" className="mx-auto mb-5 h-20 w-20 rounded-xl" src={asset('icon-192.png')} />
           <h1 className="text-3xl font-bold text-gray-900">
             Access unavailable
           </h1>
@@ -47,6 +48,7 @@ function AuthenticatedRouteError({ error }: ErrorComponentProps<unknown>) {
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12">
       <section className="max-w-lg text-center">
+        <img alt="" className="mx-auto mb-5 h-20 w-20 rounded-xl" src={asset('icon-192.png')} />
         <h1 className="text-3xl font-bold text-gray-900">
           We could not load this page
         </h1>

@@ -1,4 +1,6 @@
 import { Link } from '@tanstack/react-router';
+import { asset } from '@/lib/basePath.ts';
+import { AppFooter } from './AppFooter.tsx';
 import { useUser } from '@/shared/auth/UserContext.tsx';
 import type { ReactNode } from 'react';
 
@@ -21,12 +23,11 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   const isAdmin = useIsAdmin();
 
   return (
-    <>
+    // A full-height column, so the footer sits at the bottom of short pages instead of mid-screen.
+    <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 flex h-[60px] items-center justify-between bg-ucd-blue px-8">
         <Link className="flex items-center gap-2.5" to="/">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-ucd-gold text-lg font-bold text-ucd-blue">
-            JD
-          </div>
+          <img alt="" className="h-10 w-10 rounded-md bg-white object-cover" src={asset('icon-192.png')} />
           <div className="flex flex-col leading-none">
             <span className="text-base font-bold leading-tight text-ucd-gold">
               JDWriter
@@ -62,7 +63,8 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
       <main className="mx-auto w-full max-w-[1100px] flex-1 px-8 py-8">
         {children}
       </main>
-    </>
+      <AppFooter />
+    </div>
   );
 };
 
