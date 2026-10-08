@@ -12,6 +12,7 @@ import type {
   AdminsResponse,
   AssembledJd,
   BootstrapCreateResponse,
+  BetterFitResponse,
   BootstrapResponse,
   RetirementResult,
   BuildRequest,
@@ -412,16 +413,30 @@ export const handlers = [
     });
   }),
 
+  // No production address for the workforce management tool yet.
+  http.get('/api/links', () => HttpResponse.json({ wfmUrl: null })),
+
+  http.post('/api/build/better-fit', async () => {
+    await delay(700);
+    return HttpResponse.json<BetterFitResponse>({
+      rationale: 'The kept work and additions are typical of this class.',
+      suggestedClass: '',
+      suggestedSlug: '',
+    });
+  }),
+
   http.post('/api/build/check', async ({ request }) => {
     const body = (await request.json()) as BuildRequest;
     await delay(500);
     const many = body.addedItems.length > 2;
     return HttpResponse.json<EnvelopeCheckResponse>({
+      betterFitChecked: false,
       matchedSignals: many ? ['Supervises other staff', 'Sets unit budget'] : [],
       rationale: many
         ? 'The additions describe supervisory and budget responsibility, which belong to a higher class.'
         : 'The additions stay within the normal scope of this class.',
       suggestedClass: many ? profiles[1].title : '',
+      suggestedRationale: '',
       suggestedSlug: many ? profiles[1].slug : '',
       verdict: many ? 'out_of_envelope' : 'in_envelope',
     });

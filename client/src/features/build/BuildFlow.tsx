@@ -1,10 +1,16 @@
 import { AddRow, Badge, Card, Eyebrow, Field, Note } from '@/shared/ui/primitives.tsx';
 import { AllocationBar } from './AllocationBar.tsx';
 import { FinalJd } from './FinalJd.tsx';
+import { BetterFitPanel } from './BetterFitPanel.tsx';
 import { Link } from '@tanstack/react-router';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { SectionEditor } from './SectionEditor.tsx';
-import { useAssembleJd, useEnvelopeCheck, useSaveDraft } from '@/queries/authoring.ts';
+import {
+  useAssembleJd,
+  useBetterFit,
+  useEnvelopeCheck,
+  useSaveDraft,
+} from '@/queries/authoring.ts';
 import { type DraftState, type EnvelopeSections, useBuildState } from './useBuildState.ts';
 import { useState } from 'react';
 
@@ -74,6 +80,7 @@ export const BuildFlow = ({
   const state = useBuildState(envelope, draft?.state);
   const saveDraft = useSaveDraft();
   const check = useEnvelopeCheck();
+  const betterFit = useBetterFit();
   const assemble = useAssembleJd();
   // Set by the first assemble; sent back on later ones so they revise the same saved JD.
   const [savedId, setSavedId] = useState<number | null>(draft?.id ?? null);
@@ -82,8 +89,11 @@ export const BuildFlow = ({
   const busy = check.isPending || assemble.isPending;
   const balanced = state.totalPct === 100;
 
-  const runCheck = () =>
+  const runCheck = () => {
+    // A new check answers afresh; an earlier manual search described a different build.
+    betterFit.reset();
     check.mutate(state.buildRequest(slug), { onSuccess: () => setStep('check') });
+  };
   const runAssemble = () =>
     assemble.mutate(
       { ...state.buildRequest(slug), authoredJdId: savedId, draftState: state.snapshot() },
@@ -393,6 +403,27 @@ export const BuildFlow = ({
               ))}
             </ul>
           ) : null}
+          {check.data.verdict === 'borderline' && check.data.betterFitChecked ? (
+            <BetterFitPanel
+              currentTitle={title}
+              rationale={check.data.suggestedRationale}
+              suggestedClass={check.data.suggestedClass}
+              suggestedSlug={check.data.suggestedSlug}
+            />
+          ) : null}
+          {betterFit.data ? (
+            <BetterFitPanel
+              currentTitle={title}
+              rationale={betterFit.data.rationale}
+              suggestedClass={betterFit.data.suggestedClass}
+              suggestedSlug={betterFit.data.suggestedSlug}
+            />
+          ) : null}
+          {betterFit.error ? (
+            <div className="mt-3">
+              <Note tone="red">{messageOf(betterFit.error)}</Note>
+            </div>
+          ) : null}
           {check.data.verdict === 'out_of_envelope' && check.data.suggestedClass ? (
             <div className="mt-4 rounded-lg border border-primary/20 bg-primary/10 p-3.5">
               <div className="text-[12.5px]">
@@ -436,6 +467,18 @@ export const BuildFlow = ({
             >
               ← Back to tailoring
             </button>
+            {/* Offered whatever the verdict — a build can fit its class and still fit another
+                better — unless this check already searched. */}
+            {check.data.betterFitChecked || betterFit.data ? null : (
+              <button
+                className="btn btn-outline btn-sm"
+                disabled={betterFit.isPending}
+                onClick={() => betterFit.mutate(state.buildRequest(slug))}
+                type="button"
+              >
+                {betterFit.isPending ? 'Looking…' : 'Look for a better fit'}
+              </button>
+            )}
             {!balanced ? (
               <span className="text-[12px] text-warning">
                 {state.totalPct < 100
