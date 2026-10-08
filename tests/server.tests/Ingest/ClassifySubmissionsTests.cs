@@ -119,4 +119,32 @@ public class ClassifySubmissionsTests
 
         (await db.JobDescriptions.SingleAsync()).WorkingTitle.Should().Be("Senior Field Hand");
     }
+
+    [Fact]
+    public void A_distilled_description_becomes_a_jd_record_its_own_work_in_order()
+    {
+        // The shape "Start a JD from this class" maps onto a class standard, and the corpus files.
+        var jd = ClassifySubmissions.ToJobDescription(new DistilledJd
+        {
+            WorkingTitle = "Evaluation Analyst",
+            Summary = "Evaluates program outcomes.",
+            Supervises = "no",
+            Functions =
+            [
+                new DistilledFunction { Name = "ANALYSIS", PctTime = 62.5, Duties = ["Analyzes data.", "Writes reports."] },
+                new DistilledFunction { Name = "OTHER", PctTime = 37.5, Duties = ["Other duties."] },
+            ],
+            Education = ["Bachelor's degree", "or equivalent experience"],
+            Ksas = ["Statistics."],
+        });
+
+        jd.WorkingTitle.Should().Be("Evaluation Analyst");
+        jd.JobSummary.Should().Be("Evaluates program outcomes.");
+        jd.Supervises.Should().BeFalse();
+        jd.UcJobCode.Should().BeEmpty("it is not filed under any class until one is chosen");
+        jd.Responsibilities.Select(r => (r.Ordinal, r.FunctionName, r.Pct)).Should().Equal((0, "ANALYSIS", 63), (1, "OTHER", 38));
+        jd.Responsibilities[0].Duties.OrderBy(d => d.Ordinal).Select(d => d.Text).Should().Equal("Analyzes data.", "Writes reports.");
+        jd.Qualifications.Should().Contain(q => q.Kind == JdQualificationKind.Education && q.Text == "Bachelor's degree; or equivalent experience");
+        jd.Qualifications.Should().Contain(q => q.Kind == JdQualificationKind.KsaMin && q.Text == "Statistics.");
+    }
 }

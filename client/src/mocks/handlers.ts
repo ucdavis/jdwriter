@@ -14,6 +14,8 @@ import type {
   BootstrapCreateResponse,
   BetterFitResponse,
   BootstrapResponse,
+  ClassifyStartRequest,
+  FitRewriteResponse,
   RetirementResult,
   BuildRequest,
   ClassifyRequest,
@@ -366,8 +368,16 @@ export const handlers = [
     }
     return HttpResponse.json<ClassifyResponse>({
       distilled: {
-        functions: [{ name: 'ANALYSIS' }, { name: 'OTHER DUTIES AS ASSIGNED' }],
+        education: [],
+        experience: [],
+        functions: [
+          { duties: ['Analyzes program outcome data.'], name: 'ANALYSIS', pctTime: 90 },
+          { duties: ['Other duties as assigned.'], name: 'OTHER DUTIES AS ASSIGNED', pctTime: 10 },
+        ],
+        ksas: [],
         source: 'text',
+        summary: 'Evaluates program outcomes.',
+        supervises: 'no',
         workingTitle: 'Evaluation Analyst',
       },
       filedUnder: '006256',
@@ -415,6 +425,20 @@ export const handlers = [
 
   // No production address for the workforce management tool yet.
   http.get('/api/links', () => HttpResponse.json({ wfmUrl: null })),
+
+  http.post('/api/classify/start-jd', async ({ request }) => {
+    const { slug } = (await request.json()) as ClassifyStartRequest;
+    await delay(900);
+    return HttpResponse.json<FitRewriteResponse>({
+      authoredJdId: 1001,
+      carriedDuties: 1,
+      droppedFunctions: 0,
+      keptFunctions: 2,
+      outside: [],
+      slug,
+      title: profiles.find((p) => p.slug === slug)?.title ?? slug,
+    });
+  }),
 
   http.post('/api/build/better-fit', async () => {
     await delay(700);

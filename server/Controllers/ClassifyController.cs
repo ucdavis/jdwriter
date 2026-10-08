@@ -6,6 +6,7 @@ using Server.Core.Ai;
 using Server.Core.Domain;
 using Server.Core.Ingest;
 using Server.Core.Intake;
+using Server.Core.Jd;
 using Server.Core.Profiles;
 using Server.Core.Titles;
 
@@ -20,6 +21,12 @@ namespace Server.Controllers;
 /// </summary>
 public sealed record ClassifyRequest(string Description, string? ProposedCode);
 
+/// <summary>
+/// Start a JD in <paramref name="Slug"/> from the description just classified. The distilled form is
+/// the one the classify response returned, sent back as-is so the document is not read twice.
+/// </summary>
+public sealed record ClassifyStartRequest(string Slug, DistilledJd Distilled);
+
 [ApiController]
 [Route("api/classify")]
 [Authorize(Roles = AppRoles.Author)]
@@ -32,6 +39,8 @@ public class ClassifyController : ApiControllerBase
     private readonly ITitleCodeService _titleCodes;
     private readonly IStructuredLlm _llm;
     private readonly ClassifySubmissions _submissions;
+    private readonly IFitRewriter _rewriter;
+    private readonly AuthoredJdStore _saved;
     private readonly AppDbContext _db;
     private readonly ILogger<ClassifyController> _logger;
 
@@ -41,6 +50,8 @@ public class ClassifyController : ApiControllerBase
         ITitleCodeService titleCodes,
         IStructuredLlm llm,
         ClassifySubmissions submissions,
+        IFitRewriter rewriter,
+        AuthoredJdStore saved,
         AppDbContext db,
         ILogger<ClassifyController> logger)
     {
@@ -49,6 +60,8 @@ public class ClassifyController : ApiControllerBase
         _titleCodes = titleCodes;
         _llm = llm;
         _submissions = submissions;
+        _rewriter = rewriter;
+        _saved = saved;
         _db = db;
         _logger = logger;
     }
@@ -81,6 +94,80 @@ public class ClassifyController : ApiControllerBase
         }
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Begin a JD in a recommended class from the description that was classified: the class's
+    /// standard as the frame, the description's own work merged into it. The same mapping as
+    /// "Rewrite to fit" — one model call that places the description's work in the class's functions
+    /// by index; the text is the standard's and the description's, the % time is computed — saved as
+    /// a draft the author opens in the build screen, where the envelope check polices what came in.
+    /// </summary>
+    [HttpPost("start-jd")]
+    public async Task<IActionResult> StartJd(ClassifyStartRequest body, CancellationToken ct)
+    {
+        var problem = Validate(body.Distilled);
+        if (problem is not null)
+        {
+            return BadRequest(new { message = problem });
+        }
+
+        var profile = await _profiles.GetBySlugAsync(body.Slug, ct);
+        if (profile is null)
+        {
+            return NotFound(new { message = $"No class found for “{body.Slug}”." });
+        }
+
+        if (!_llm.HasApiKey)
+        {
+            return StatusCode(503, new { message = "Starting a JD from a description is unavailable — no AI provider is configured." });
+        }
+
+        FitRewrite rewrite;
+        try
+        {
+            rewrite = await _rewriter.RewriteAsync(profile, ClassifySubmissions.ToJobDescription(body.Distilled), ct);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (StructuredLlmException ex)
+        {
+            return StatusCode(502, new { message = ex.Message });
+        }
+
+        var id = await _saved.SaveDraftAsync(rewrite.Inputs, profile, await User.IdAsync(_db, ct), null, rewrite.DraftState, ct);
+        return Ok(new
+        {
+            authoredJdId = id,
+            slug = profile.Slug,
+            title = profile.Title,
+            rewrite.KeptFunctions,
+            rewrite.DroppedFunctions,
+            rewrite.CarriedDuties,
+            rewrite.Outside,
+        });
+    }
+
+    /// <summary>
+    /// The distilled JD comes back from the client, so it is bounded here before any of it reaches a
+    /// prompt: a real description has a handful of functions with a handful of duties each.
+    /// </summary>
+    private static string? Validate(DistilledJd? d)
+    {
+        if (d is null || d.Functions.Count == 0)
+        {
+            return "Classify a description first — there is nothing to start a JD from.";
+        }
+
+        if (d.Functions.Count > 40 || d.Functions.Any(f => f.Duties.Count > 60))
+        {
+            return "That description is too large to start a JD from.";
+        }
+
+        var texts = d.Functions.SelectMany(f => f.Duties.Prepend(f.Name)).Append(d.WorkingTitle).Append(d.Summary);
+        return texts.Any(t => (t ?? "").Length > 4000) ? "That description is too large to start a JD from." : null;
     }
 
     /// <summary>

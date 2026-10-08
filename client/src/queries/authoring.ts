@@ -6,6 +6,7 @@ import type {
   BuildRequest,
   ClassifyRequest,
   ClassifyResponse,
+  ClassifyStartRequest,
   CoverageCheckRequest,
   CoverageReport,
   EnvelopeCheckResponse,
@@ -50,6 +51,19 @@ export const useClassify = () =>
   useMutation({
     mutationFn: post<ClassifyRequest, ClassifyResponse>('/api/classify'),
   });
+
+/**
+ * Start a JD in a recommended class from the description just classified: the class's standard,
+ * with the description's own work merged in. Saved as a draft to open in the build screen.
+ */
+export const useStartJdFromClass = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: post<ClassifyStartRequest, FitRewriteResponse>('/api/classify/start-jd'),
+    // The draft appears in the saved-JD lists.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jds'] }),
+  });
+};
 
 export const useEnvelopeCheck = () =>
   useMutation({
