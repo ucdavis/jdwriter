@@ -520,12 +520,17 @@ export type BootstrapCandidate = {
   family: string;
   function: string;
   grade: string;
-  /** On UC Davis payroll. Create all takes only these; the rest are created one at a time. */
-  inUse: boolean;
   title: string;
 };
 
-export type BootstrapResponse = { candidates: BootstrapCandidate[] };
+/** Candidates are only classes on UC Davis payroll; the counts say how many standards were left out. */
+export type BootstrapResponse = {
+  candidates: BootstrapCandidate[];
+  /** Standards whose title matches no UC job code. */
+  noCodeMatch: number;
+  /** Standards whose title is in the UC title matrix but not on UC Davis payroll. */
+  notOnPayroll: number;
+};
 
 export type BootstrapCreateResponse = {
   envelopeSource: EnvelopeSource;
@@ -562,6 +567,7 @@ export type EnvelopeImportRefusal =
   | 'exists'
   | 'invalid'
   | 'noStandard'
+  | 'notOnPayroll'
   | 'superseded';
 
 export type EnvelopeImportResult = {

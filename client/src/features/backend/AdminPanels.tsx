@@ -737,9 +737,9 @@ export const BootstrapPanel = () => {
   const shown = (candidates ?? []).filter((c) =>
     filter ? c.title.toLowerCase().includes(filter.toLowerCase()) : true
   );
-  // Bulk creation takes only classes on UC Davis payroll. Matrix-only titles and standards
-  // with no UCD code stay in the list for a deliberate, one-at-a-time decision.
-  const inUse = (candidates ?? []).filter((c) => c.inUse);
+  // Every candidate is on UC Davis payroll: the server leaves out classes UC Davis can't use.
+  const all = candidates ?? [];
+  const leftOut = (bootstrap.data?.notOnPayroll ?? 0) + (bootstrap.data?.noCodeMatch ?? 0);
   const mutationError = bootstrap.error ?? create.error;
   const error =
     runError ?? (running || !mutationError ? null : messageOf(mutationError));
@@ -752,13 +752,9 @@ export const BootstrapPanel = () => {
   const createAll = async () => {
     if (
       !window.confirm(
-        `Create starter envelopes for all ${inUse.length} candidate classes in use at UC Davis? ` +
+        `Create starter envelopes for all ${all.length} candidate classes? ` +
           'Superseded classes are retired first. Each envelope is a model call, so this can ' +
-          'take a while; you can stop it part-way.' +
-          (candidates && candidates.length > inUse.length
-            ? ` The other ${candidates.length - inUse.length} (not on payroll, or no UC Davis ` +
-              'code) are left for you to create one at a time.'
-            : '')
+          'take a while; you can stop it part-way.'
       )
     ) {
       return;
@@ -782,7 +778,7 @@ export const BootstrapPanel = () => {
     // Retiring can surface successors a dead class was hiding, so re-ask before creating.
     let list;
     try {
-      list = (await bootstrap.mutateAsync()).candidates.filter((c) => c.inUse);
+      list = (await bootstrap.mutateAsync()).candidates;
     } catch (error_) {
       setRunError(messageOf(error_));
       setRunning(false);
@@ -856,15 +852,14 @@ export const BootstrapPanel = () => {
             >
               Stop after this one
             </button>
-          ) : inUse.length > 0 ? (
+          ) : all.length > 0 ? (
             <button
               className="btn btn-primary btn-sm whitespace-nowrap"
               disabled={create.isPending}
               onClick={() => void createAll()}
-              title="Every candidate on UC Davis payroll; the rest are created one at a time"
               type="button"
             >
-              Create all {inUse.length}
+              Create all {all.length}
             </button>
           ) : null}
         </div>
@@ -896,13 +891,20 @@ export const BootstrapPanel = () => {
       {running ? (
         <p className="mt-2 text-sm text-base-content/50">
           Creating {Object.values(status).filter((v) => v === 'done').length} of{' '}
-          {inUse.length}… each envelope is a model call.
+          {all.length}… each envelope is a model call.
+        </p>
+      ) : null}
+      {leftOut > 0 ? (
+        <p className="mt-3 text-base text-base-content/65" data-testid="bootstrap-left-out">
+          Only classes on UC Davis payroll are listed. {leftOut} standard
+          {leftOut === 1 ? ' is' : 's are'} left out: their titles aren&apos;t used at UC Davis, so
+          an envelope for them could never be used.
         </p>
       ) : null}
       {candidates ? (
         candidates.length === 0 ? (
           <p className="mt-3 text-base text-base-content/65">
-            No candidates — every standard with a resolvable code already has a profile.
+            No candidates — every standard for a class on UC Davis payroll already has a profile.
           </p>
         ) : (
           <div className="mt-3">
@@ -924,10 +926,9 @@ export const BootstrapPanel = () => {
                   <div className="min-w-0">
                     <div className="truncate text-base font-semibold">{c.title}</div>
                     <div className="text-sm text-base-content/65 tnum">
-                      {c.code ? `Code ${c.code}` : 'no code match'}
+                      Code {c.code}
                       {c.family ? ` · ${c.family}` : ''}
                       {c.grade ? ` · ${c.grade}` : ''}
-                      {c.code && !c.inUse ? ' · not on UC Davis payroll' : ''}
                     </div>
                   </div>
                   {status[c.title] ? (
@@ -962,6 +963,7 @@ const refusalLabel: Record<EnvelopeImportRefusal, string> = {
   exists: 'already has a class',
   invalid: 'invalid envelope',
   noStandard: 'no standard here',
+  notOnPayroll: 'not on UC Davis payroll',
   superseded: 'superseded here',
 };
 

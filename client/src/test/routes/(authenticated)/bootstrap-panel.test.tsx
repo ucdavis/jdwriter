@@ -5,12 +5,11 @@ import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const candidate = (title: string, code: string, inUse = true) => ({
+const candidate = (title: string, code: string) => ({
   code,
   family: 'Student Services',
   function: 'Advising',
   grade: 'Grade 20',
-  inUse,
   title,
 });
 
@@ -209,50 +208,28 @@ describe('bootstrap from a standard', () => {
       expect(screen.getByText('failed')).toBeInTheDocument();
     });
 
-    it('takes only classes on UC Davis payroll and leaves the rest listed', async () => {
+    it('lists only classes on UC Davis payroll and says how many standards were left out', async () => {
       const user = userEvent.setup();
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
-      const created: string[] = [];
-      let remaining = [
-        candidate('Widget Analyst 2', '111111'),
-        candidate('Widget Analyst 3 CX GF', '111112', false),
-        candidate('Systemwide Planner 1', '', false),
-      ];
       testServer.use(
-        http.post('/api/admin/supersessions/retire', () =>
-          HttpResponse.json({ profiles: [], refiledJds: 0 })
-        ),
         http.get('/api/admin/bootstrap/candidates', () =>
-          HttpResponse.json({ candidates: remaining })
-        ),
-        http.post('/api/admin/bootstrap', async ({ request }) => {
-          const { title } = (await request.json()) as { title: string };
-          created.push(title);
-          remaining = remaining.filter((c) => c.title !== title);
-          return HttpResponse.json({
-            envelopeSource: 'standard',
-            slug: 'x',
-            title,
-            ucJobCode: '111111',
-          });
-        })
+          HttpResponse.json({
+            candidates: [candidate('Widget Analyst 2', '111111')],
+            noCodeMatch: 31,
+            notOnPayroll: 59,
+          })
+        )
       );
       renderRoute({ initialPath: '/backend/corpus' });
 
       await user.click(
         await screen.findByRole('button', { name: 'Find candidates' })
       );
-      expect(
-        await screen.findByText(/Code 111112 .* not on UC Davis payroll/)
-      ).toBeInTheDocument();
-      await user.click(screen.getByRole('button', { name: 'Create all 1' }));
 
-      await screen.findByText(/Created 1 class from their standards/);
-      expect(created).toEqual(['Widget Analyst 2']);
-      expect(window.confirm).toHaveBeenCalledWith(
-        expect.stringContaining('The other 2')
+      expect(await screen.findByTestId('bootstrap-left-out')).toHaveTextContent(
+        /90 standards are left out/
       );
-      await screen.findByText('2 of 2');
+      expect(screen.getByRole('button', { name: 'Create all 1' })).toBeInTheDocument();
+      expect(screen.queryByText(/not on UC Davis payroll/)).not.toBeInTheDocument();
     });
 
     it('does nothing when the confirmation is declined', async () => {

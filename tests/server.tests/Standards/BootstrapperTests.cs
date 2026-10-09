@@ -111,7 +111,7 @@ public class BootstrapperTests
         var (boot, db, _) = Build([S("Widget Analyst 2")], [Tc("111111", "Widget Analyst 2")]);
         using var _db = db;
 
-        var candidates = await boot.GetCandidatesAsync();
+        var candidates = (await boot.GetCandidatesAsync()).Candidates;
 
         candidates.Should().ContainSingle();
         candidates[0].Title.Should().Be("Widget Analyst 2");
@@ -128,7 +128,7 @@ public class BootstrapperTests
         db.ClassProfiles.Add(new ClassProfile { Slug = "x", Title = "Widget Analyst 2", UcJobCode = "111111" });
         await db.SaveChangesAsync();
 
-        (await boot.GetCandidatesAsync()).Should().BeEmpty();
+        (await boot.GetCandidatesAsync()).Candidates.Should().BeEmpty();
     }
 
     [Fact]
@@ -144,22 +144,47 @@ public class BootstrapperTests
         db.ClassProfiles.Add(new ClassProfile { Slug = "x", Title = "Rsch Data Anl 2", UcJobCode = "006256" });
         await db.SaveChangesAsync();
 
-        (await boot.GetCandidatesAsync()).Should().BeEmpty("the abbreviated corpus spelling is the same class");
+        (await boot.GetCandidatesAsync()).Candidates.Should().BeEmpty("the abbreviated corpus spelling is the same class");
     }
 
     [Fact]
-    public async Task A_candidate_says_whether_its_code_is_on_payroll()
+    public async Task Only_classes_on_UC_Davis_payroll_are_offered_and_the_rest_are_counted()
     {
+        // UC Davis uses about 1,100 of UC's codes. An envelope for any other could never be used.
         var (boot, db, _) = Build(
-            [S("Widget Analyst 2"), S("Widget Analyst 3"), S("Gadget Planner 1")],
-            [Tc("111111", "Widget Analyst 2"), Tc("111112", "Widget Analyst 3", source: "matrix")]);
+            [S("Widget Analyst 2"), S("Widget Analyst 3"), S("Widget Analyst 4"), S("Gadget Planner 1")],
+            [
+                Tc("111111", "Widget Analyst 2"),
+                Tc("111112", "Widget Analyst 3", source: "matrix"),
+                Tc("111113", "Widget Analyst 4", source: "payroll_list"),
+            ]);
         using var _db = db;
 
-        var candidates = (await boot.GetCandidatesAsync()).ToDictionary(c => c.Title, c => c.InUse);
+        var result = await boot.GetCandidatesAsync();
 
-        candidates["Widget Analyst 2"].Should().BeTrue();
-        candidates["Widget Analyst 3"].Should().BeFalse("a matrix-only title is one UCD could use, not one it does");
-        candidates["Gadget Planner 1"].Should().BeFalse("no UC Davis code at all");
+        result.Candidates.Select(c => c.Title).Should().Equal("Widget Analyst 2", "Widget Analyst 4");
+        result.NotOnPayroll.Should().Be(1, "a matrix-only title is one UC Davis could use, not one it does");
+        result.NoCodeMatch.Should().Be(1, "no UC job code at all");
+    }
+
+    [Theory]
+    [InlineData("Widget Analyst 3", "isn't on UC Davis payroll")]
+    [InlineData("Gadget Planner 1", "doesn't match a UC job code")]
+    public async Task Creating_a_class_UC_Davis_cannot_use_is_refused(string title, string reason)
+    {
+        // The list hides these; creation refuses them too, so no other path (one class at a time,
+        // an envelope moved in from another environment) can make one.
+        var (boot, db, _) = Build(
+            [S("Widget Analyst 3"), S("Gadget Planner 1")],
+            [Tc("111112", "Widget Analyst 3", source: "matrix")]);
+        using var _db = db;
+
+        var refused = await FluentActions.Awaiting(() => boot.BootstrapAsync(title))
+            .Should().ThrowAsync<BootstrapRefusedException>();
+
+        refused.Which.Reason.Should().Be(BootstrapRefusal.NotOnPayroll);
+        refused.Which.Message.Should().Contain(reason);
+        (await db.ClassProfiles.CountAsync()).Should().Be(0);
     }
 
     [Fact]
@@ -207,7 +232,7 @@ public class BootstrapperTests
         db.ClassProfiles.Add(new ClassProfile { Slug = "x", Title = "Financial Anl 3", UcJobCode = "007709" });
         await db.SaveChangesAsync();
 
-        var candidates = await boot.GetCandidatesAsync();
+        var candidates = (await boot.GetCandidatesAsync()).Candidates;
 
         candidates.Select(c => c.Code).Should().Equal("005183");
     }
@@ -223,7 +248,7 @@ public class BootstrapperTests
             [Tc("007396", "PROJECT POLICY ANL 1"), Tc("005255", "PROJECT POLICY ANL 1 RP")]);
         using var _db = db;
 
-        var candidates = await boot.GetCandidatesAsync();
+        var candidates = (await boot.GetCandidatesAsync()).Candidates;
 
         candidates.Should().ContainSingle("only the live successor may be offered");
         candidates[0].Title.Should().Be("PROJECT POLICY ANL 1 RP");
@@ -346,17 +371,8 @@ public class BootstrapperTests
             .WithMessage("*No standard found*");
     }
 
-    [Fact]
-    public async Task A_title_with_no_resolvable_code_still_bootstraps_under_a_std_slug()
-    {
-        // 27 standards are UC-systemwide titles with no UCD equivalent. They are still worth
-        // bootstrapping; they just have no code to key on.
-        var (boot, db, _) = Build([S("Systemwide Academic Personnel Analyst 3")], []);
-        using var _db = db;
-
-        var profile = await boot.BootstrapAsync("Systemwide Academic Personnel Analyst 3");
-
-        profile.UcJobCode.Should().Be("");
-        profile.Slug.Should().Be("std-systemwide-academic-personnel-analyst-3");
-    }
+    // A title with no resolvable code used to bootstrap under a "std-" slug, on the reasoning that
+    // UC-systemwide titles were still worth having. Reversed (2026-10-09): UC Davis can't use a class
+    // that isn't on its payroll, so creation now refuses it — see
+    // Creating_a_class_UC_Davis_cannot_use_is_refused.
 }
