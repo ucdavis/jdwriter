@@ -24,8 +24,11 @@ const STEPS: Array<[Step, string]> = [
   ['final', 'Your JD'],
 ];
 
-/** Where the author is, as a progress bar with named steps. */
-const Progress = ({ step }: { step: Step }) => {
+/**
+ * Where the author is, as a progress bar with named steps. Earlier steps are links back; later
+ * ones are reached only by passing the check, so they are not.
+ */
+const Progress = ({ onGo, step }: { onGo: (step: Step) => void; step: Step }) => {
   const current = STEPS.findIndex(([s]) => s === step);
   const done = step === 'final' ? STEPS.length : current;
   return (
@@ -56,7 +59,18 @@ const Progress = ({ step }: { step: Step }) => {
             >
               {i < done ? '✓' : i + 1}
             </span>
-            {label}
+            {i < current ? (
+              <button
+                className="font-semibold underline-offset-4 hover:underline"
+                onClick={() => onGo(key)}
+                title={`Back to ${label.toLowerCase()}`}
+                type="button"
+              >
+                {label}
+              </button>
+            ) : (
+              label
+            )}
           </li>
         ))}
       </ol>
@@ -202,7 +216,7 @@ export const BuildFlow = ({
   return (
     <div className="space-y-5">
       {step === 'duties' ? overview : null}
-      <Progress step={step} />
+      <Progress onGo={go} step={step} />
       {error ? <Note tone="red">{messageOf(error)}</Note> : null}
 
       {step === 'duties' ? (
@@ -236,8 +250,6 @@ export const BuildFlow = ({
             </div>
           </Card>
 
-          {state.dupNote ? <Note tone="yellow">{state.dupNote}</Note> : null}
-
           <AllocationBar onRedistribute={state.setResps} resps={state.resps} totalPct={state.totalPct} />
           <DutiesEditor state={state} />
 
@@ -270,11 +282,7 @@ export const BuildFlow = ({
               currentTitle={title}
               heading={dutiesCheck.result.verdict === 'out_of_envelope' ? 'Check completed — take a look' : 'Check completed!'}
               onLookForBetterFit={() => betterFit.mutate(state.buildRequest(slug))}
-            >
-              <button className="btn btn-ghost btn-sm" onClick={() => go('duties')} type="button">
-                ← Back to duties
-              </button>
-            </CheckResult>
+            />
           ) : null}
 
           <div>
@@ -285,8 +293,6 @@ export const BuildFlow = ({
             final check and let you know if we need to change anything.
           </p>
           </div>
-
-          {state.dupNote ? <Note tone="yellow">{state.dupNote}</Note> : null}
 
           <SectionEditor guardAdd={state.guardAdd} items={state.certs} setItems={state.setCerts} title="Licenses & certifications" />
           <SectionEditor guardAdd={state.guardAdd} items={state.education} setItems={state.setEducation} title="Education" />
@@ -340,9 +346,6 @@ export const BuildFlow = ({
               type="button"
             >
               {busy ? 'Checking and assembling…' : accepted ? 'Assemble anyway →' : 'Assemble the JD →'}
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={() => go('duties')} type="button">
-              ← Back to duties
             </button>
             {draftButton}
             {gateReason ? (

@@ -152,7 +152,37 @@ describe('the guided build', () => {
     const text = existing?.closest('label')?.textContent?.trim() ?? '';
     await user.type(add, `${text}{Enter}`);
 
-    expect(await screen.findByText(/^You added “.+”, and it already fits within “.+”, so it was not included\.$/)).toBeInTheDocument();
+    // Shown under the box it was typed in, not at the top of the page.
+    const refusal = await screen.findByTestId('add-refusal');
+    expect(refusal).toHaveTextContent(/^You added “.+”, and it already fits within “.+”, so it was not included\.$/);
+    expect(add.parentElement?.parentElement).toContainElement(refusal);
+
+    // Typing again clears it.
+    await user.type(add, 'x');
+    expect(screen.queryByTestId('add-refusal')).not.toBeInTheDocument();
+  });
+
+  it('goes back a step from the progress bar, with no separate back buttons', async () => {
+    const user = userEvent.setup();
+    countChecks('in_envelope');
+    open();
+
+    await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
+    await screen.findByTestId('requirements-intro');
+    expect(screen.queryByRole('button', { name: /Back to duties/ })).not.toBeInTheDocument();
+    // Later steps are not links: they are reached by passing the check.
+    expect(screen.queryByRole('button', { name: 'Your JD' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Duties' }));
+    expect(await screen.findByTestId('duties-intro')).toBeInTheDocument();
+  });
+
+  it('says how many job descriptions the envelope was built from', async () => {
+    open();
+
+    await screen.findByTestId('duties-intro');
+    expect(screen.getByText(/^Built from \d+ job descriptions?$/)).toBeInTheDocument();
+    expect(screen.queryByText('AI-synthesized')).not.toBeInTheDocument();
   });
 
   it('has a Home link in the top navigation', async () => {

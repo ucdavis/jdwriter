@@ -43,18 +43,22 @@ export const Route = createFileRoute('/(authenticated)/class/$slug')({
 const triStateLabel = (d: Distribution): string =>
   d.consensus === 'true' ? 'Yes' : d.consensus === 'false' ? 'No' : 'Not specified';
 
+/**
+ * Where the envelope came from, in an author's terms: how many real job descriptions it was built
+ * from. (How it was synthesized is a back-end concern; the evidence behind it is not.)
+ */
 const sourceBadge = (
-  source: EnvelopeSource | null
+  source: EnvelopeSource | null,
+  corpusSize: number
 ): { label: string; tone: 'muted' | 'purple' | 'teal' | 'yellow' } => {
+  const built = `Built from ${corpusSize} job description${corpusSize === 1 ? '' : 's'}`;
   switch (source) {
-    case 'claude':
-      return { label: 'AI-synthesized', tone: 'purple' };
-    case 'manual':
-      return { label: 'partner-edited', tone: 'teal' };
     case 'standard':
-      return { label: 'standard-derived · no JDs yet', tone: 'yellow' };
+      return { label: 'Built from the job standard (no JDs yet)', tone: 'yellow' };
+    case 'manual':
+      return { label: `${built} · edited by HR`, tone: 'teal' };
     default:
-      return { label: 'computed', tone: 'muted' };
+      return { label: built, tone: 'purple' };
   }
 };
 
@@ -75,7 +79,7 @@ function ClassPage() {
   }
 
   const envelope = profile.envelope;
-  const source = sourceBadge(profile.envelopeSource);
+  const source = sourceBadge(profile.envelopeSource, profile.corpusSize);
 
   return (
     <>
@@ -146,7 +150,6 @@ const EnvelopeOverview = ({
         <FactChip label="Supervises" value={triStateLabel(profile.supervises)} />
         <FactChip label="Leads" value={triStateLabel(profile.leads)} />
         <FactChip label="Outdoors >50%" value={triStateLabel(profile.worksOutdoorsOver50pct)} />
-        <FactChip label="Learned from" value={`${profile.corpusSize} JDs`} />
       </dl>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">

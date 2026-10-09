@@ -15,17 +15,24 @@ export const SectionEditor = ({
   setItems,
   title,
 }: {
-  guardAdd: (t: string) => boolean;
+  /** Why an addition is refused, or null when it may be added. */
+  guardAdd: (t: string) => string | null;
   items: Item[];
   setItems: Dispatch<SetStateAction<Item[]>>;
   title: string;
 }) => {
   const [draft, setDraft] = useState('');
+  const [refusal, setRefusal] = useState<string | null>(null);
   const keptCount = items.filter((i) => i.kept).length;
 
   const add = () => {
     const v = draft.trim();
-    if (!v || !guardAdd(v)) {
+    if (!v) {
+      return;
+    }
+    const refused = guardAdd(v);
+    setRefusal(refused);
+    if (refused) {
       return;
     }
     setItems((arr) => [...arr, { added: true, kept: true, text: v }]);
@@ -80,10 +87,21 @@ export const SectionEditor = ({
       </ul>
       <AddRow
         onAdd={add}
-        onChange={setDraft}
+        onChange={(v) => {
+          setDraft(v);
+          setRefusal(null);
+        }}
         placeholder={`Add to ${title.toLowerCase()}…`}
         value={draft}
       />
+      {refusal ? <AddRefusal text={refusal} /> : null}
     </Card>
   );
 };
+
+/** Why an addition was not included, shown under the box it was typed in. */
+export const AddRefusal = ({ text }: { text: string }) => (
+  <p className="mt-2 text-base text-warning" data-testid="add-refusal" role="status">
+    {text}
+  </p>
+);

@@ -1,4 +1,6 @@
 import { AddRow, Badge, Card, Eyebrow } from '@/shared/ui/primitives.tsx';
+import { AddRefusal } from './SectionEditor.tsx';
+import { useState } from 'react';
 import type { useBuildState } from './useBuildState.ts';
 
 type BuildState = ReturnType<typeof useBuildState>;
@@ -9,6 +11,8 @@ type BuildState = ReturnType<typeof useBuildState>;
  */
 export const DutiesEditor = ({ state }: { state: BuildState }) => {
   const balanced = state.totalPct === 100;
+  // Which function's add box refused a duty, and why — shown under that box.
+  const [refusal, setRefusal] = useState<{ at: number; text: string } | null>(null);
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between">
@@ -99,7 +103,12 @@ export const DutiesEditor = ({ state }: { state: BuildState }) => {
                 <AddRow
                   onAdd={() => {
                     const v = r.draft.trim();
-                    if (!v || !state.guardAdd(v)) {
+                    if (!v) {
+                      return;
+                    }
+                    const refused = state.guardAdd(v);
+                    setRefusal(refused ? { at: ri, text: refused } : null);
+                    if (refused) {
                       return;
                     }
                     state.patchResp(ri, {
@@ -107,10 +116,16 @@ export const DutiesEditor = ({ state }: { state: BuildState }) => {
                       duties: [...r.duties, { added: true, kept: true, text: v }],
                     });
                   }}
-                  onChange={(v) => state.patchResp(ri, { draft: v })}
+                  onChange={(v) => {
+                    state.patchResp(ri, { draft: v });
+                    if (refusal?.at === ri) {
+                      setRefusal(null);
+                    }
+                  }}
                   placeholder="Add a duty to this function…"
                   value={r.draft}
                 />
+                {refusal?.at === ri ? <AddRefusal text={refusal.text} /> : null}
               </>
             ) : null}
           </div>

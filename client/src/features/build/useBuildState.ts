@@ -70,7 +70,6 @@ export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState |
   const [workingTitle, setWorkingTitle] = useState(initial?.workingTitle ?? '');
   const [department, setDepartment] = useState(initial?.department ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
-  const [dupNote, setDupNote] = useState<string | null>(null);
 
   const [resps, setResps] = useState<RespState[]>(
     () =>
@@ -123,16 +122,15 @@ export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState |
     return null;
   };
 
-  const guardAdd = (text: string): boolean => {
+  /**
+   * Why an addition is refused, or null when it may be added. Returned rather than stored, so the
+   * editor shows it right under the box the author typed in — not at the top of a long page.
+   */
+  const guardAdd = (text: string): string | null => {
     const dup = findDuplicate(text);
-    if (dup) {
-      setDupNote(
-        `You added “${text.trim()}”, and it already fits within “${dup}”, so it was not included.`
-      );
-      return false;
-    }
-    setDupNote(null);
-    return true;
+    return dup
+      ? `You added “${text.trim()}”, and it already fits within “${dup}”, so it was not included.`
+      : null;
   };
 
   const patchResp = (index: number, patch: Partial<RespState>) =>
@@ -226,7 +224,6 @@ export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState |
     checkKey,
     customPct,
     department,
-    dupNote,
     education,
     guardAdd,
     minKSA,
