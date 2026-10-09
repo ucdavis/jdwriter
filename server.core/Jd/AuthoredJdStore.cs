@@ -38,6 +38,9 @@ public sealed class SavedJd
     public string? SalaryGrade { get; set; }
     public string? FlsaStatus { get; set; }
     public string? BargainingUnit { get; set; }
+    public bool? Supervises { get; set; }
+    public int? SupervisesCount { get; set; }
+    public bool? Leads { get; set; }
     public Jd Jd { get; set; } = new();
     public int UnallocatedPct { get; set; }
     public bool CanPublish => UnallocatedPct == 0;
@@ -171,6 +174,9 @@ public sealed class AuthoredJdStore
         existing.SalaryGrade = fresh.SalaryGrade;
         existing.FlsaStatus = fresh.FlsaStatus;
         existing.BargainingUnit = fresh.BargainingUnit;
+        existing.Supervises = fresh.Supervises;
+        existing.SupervisesCount = fresh.SupervisesCount;
+        existing.Leads = fresh.Leads;
         existing.JobSummary = fresh.JobSummary;
         existing.Status = fresh.Status;
         existing.UnallocatedPct = fresh.UnallocatedPct;
@@ -299,6 +305,9 @@ public sealed class AuthoredJdStore
             SalaryGrade = a.SalaryGrade,
             FlsaStatus = a.FlsaStatus,
             BargainingUnit = a.BargainingUnit,
+            Supervises = a.Supervises,
+            SupervisesCount = a.SupervisesCount,
+            Leads = a.Leads,
             Jd = new Jd
             {
                 JobSummary = a.JobSummary,

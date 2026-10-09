@@ -26,6 +26,10 @@ public class AuthoredJd
     public string? FlsaStatus { get; set; }
     public string? BargainingUnit { get; set; }
 
+    public bool? Supervises { get; set; }
+    public int? SupervisesCount { get; set; }
+    public bool? Leads { get; set; }
+
     public string JobSummary { get; set; } = "";
 
     // ---- provenance

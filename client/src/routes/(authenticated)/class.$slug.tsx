@@ -62,6 +62,9 @@ const sourceBadge = (
   }
 };
 
+/** Supervisor and manager titles start with Supervises and Leads at Yes; other roles at No. */
+const SUPERVISORY = /\b(supv|supervisor|mgr|manager|director|dir)\b/i;
+
 function ClassPage() {
   const { slug } = Route.useParams();
   const { draft: draftId } = Route.useSearch();
@@ -99,8 +102,10 @@ function ClassPage() {
           }}
           key={draft ? `draft-${draft.id}` : 'fresh'}
           overview={<EnvelopeOverview isAdmin={isAdmin} profile={profile} source={source} />}
+          role={{ represented: profile.isRepresented ?? false, supervisory: SUPERVISORY.test(profile.title) }}
           slug={profile.slug}
           title={profile.title}
+          unit={profile.bargainingUnit}
         />
       ) : (
         <Card className="p-6">
@@ -146,9 +151,7 @@ const EnvelopeOverview = ({
         <FactChip label="UC job code" value={profile.ucJobCode} />
         <FactChip label="Salary grade" value={profile.salaryGrade.consensus ?? '—'} />
         <FactChip label="FLSA" value={profile.flsaStatus.consensus ?? '—'} />
-        <FactChip label="Bargaining unit" value={profile.unionCode.consensus ?? '—'} />
-        <FactChip label="Supervises" value={triStateLabel(profile.supervises)} />
-        <FactChip label="Leads" value={triStateLabel(profile.leads)} />
+        <FactChip label="Bargaining unit" value={profile.bargainingUnit ?? profile.unionCode.consensus ?? '—'} />
         <FactChip label="Outdoors >50%" value={triStateLabel(profile.worksOutdoorsOver50pct)} />
       </dl>
 

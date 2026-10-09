@@ -57,6 +57,8 @@ public static class JdDocx
                 facts.Add($"Bargaining Unit: {saved.BargainingUnit}");
             }
 
+            facts.AddRange(JdHandoffBuilder.SupervisionFacts(saved));
+
             if (facts.Count > 0)
             {
                 body.Append(Paragraph(string.Join(" · ", facts)));

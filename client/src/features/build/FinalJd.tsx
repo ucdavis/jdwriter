@@ -29,6 +29,15 @@ export const FinalJd = ({
   // The server reports the shortfall and refuses to call such a JD publishable. If one
   // reaches this screen anyway, say so rather than offering a download that looks final.
   const publishable = result.unallocatedPct === 0;
+  // As the author stated them, matching the Word and Markdown files.
+  const supervision = [
+    result.supervises == null
+      ? null
+      : result.supervises && result.supervisesCount != null
+        ? `Supervises: Yes (${result.supervisesCount} ${result.supervisesCount === 1 ? 'person' : 'people'})`
+        : `Supervises: ${result.supervises ? 'Yes' : 'No'}`,
+    result.leads == null ? null : `Leads: ${result.leads ? 'Yes' : 'No'}`,
+  ].filter((x): x is string => x !== null);
   const savedStatus = result.authoredJdId ? (
     <span className="text-base text-base-content/65" data-testid="saved-status">
       Saved as{' '}
@@ -129,9 +138,11 @@ export const FinalJd = ({
               {result.flsaStatus ? <Badge tone="muted">{result.flsaStatus}</Badge> : null}
             </div>
           </div>
-          {result.bargainingUnit ? (
-            <div className="mt-2 text-sm text-base-content/50">
-              Bargaining Unit: {result.bargainingUnit}
+          {result.bargainingUnit || supervision.length > 0 ? (
+            <div className="mt-2 text-sm text-base-content/50" data-testid="jd-facts">
+              {[result.bargainingUnit ? `Bargaining Unit: ${result.bargainingUnit}` : null, ...supervision]
+                .filter(Boolean)
+                .join(' · ')}
             </div>
           ) : null}
 
