@@ -21,7 +21,7 @@ export function FieldWrapper({
   return (
     <div className="form-control w-full">
       <label className="label" htmlFor={controlId}>
-        <span className="label-text font-medium">{label}</span>
+        <span className="label-text font-semibold">{label}</span>
       </label>
       {children}
       {hasError && (

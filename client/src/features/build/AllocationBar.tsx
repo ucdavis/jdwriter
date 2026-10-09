@@ -120,7 +120,7 @@ export const AllocationBar = ({
       </div>
 
       {balanced ? null : (
-        <p className="mt-2 text-sm text-base-content/65">
+        <p className="mt-2 text-base text-base-content/65">
           {short ? (
             <>
               Dropping a responsibility frees up its share of time. Decide where that{' '}

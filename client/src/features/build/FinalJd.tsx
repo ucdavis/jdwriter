@@ -31,7 +31,7 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
       )}
 
       {result.fromEnvelope ? (
-        <p className="text-sm text-base-content/65" data-testid="from-envelope">
+        <p className="text-base text-base-content/65" data-testid="from-envelope">
           Assembled straight from the class envelope — nothing was changed, so no AI review was
           needed.
         </p>
@@ -43,7 +43,7 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
             <span data-testid="corpus-note">{result.corpusNote}</span>
           </Note>
         ) : (
-          <p className="text-sm text-base-content/65" data-testid="corpus-note">
+          <p className="text-base text-base-content/65" data-testid="corpus-note">
             {result.corpusNote}
           </p>
         )
@@ -53,7 +53,7 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
         <div className="flex items-center gap-2">
           <Eyebrow>Finished job description</Eyebrow>
           {result.authoredJdId ? (
-            <span className="text-sm text-base-content/65" data-testid="saved-status">
+            <span className="text-base text-base-content/65" data-testid="saved-status">
               Saved as{' '}
               <Badge tone={result.status === 'ready' ? 'green' : 'yellow'}>
                 {result.status === 'ready' ? 'Ready' : 'Draft'}
@@ -94,8 +94,8 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
         <Card className="p-6">
           <div className="flex items-center justify-between gap-3 border-b border-base-300 pb-3">
             <div>
-              <h2 className="text-xl font-bold">{result.workingTitle}</h2>
-              <div className="mt-0.5 text-sm text-base-content/65">
+              <h2 className="text-2xl font-bold">{result.workingTitle}</h2>
+              <div className="mt-0.5 text-base text-base-content/65">
                 {result.department ? `${result.department} · ` : ''}UC Job Code{' '}
                 <span className="tnum">{result.ucJobCode}</span>
               </div>
@@ -106,13 +106,13 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
             </div>
           </div>
           {result.bargainingUnit ? (
-            <div className="mt-2 text-xs text-base-content/50">
+            <div className="mt-2 text-sm text-base-content/50">
               Bargaining Unit: {result.bargainingUnit}
             </div>
           ) : null}
 
           <Section title="Job Summary">
-            <p className="text-sm leading-relaxed">{jd.jobSummary}</p>
+            <p className="text-base leading-relaxed">{jd.jobSummary}</p>
           </Section>
 
           {/* The total is displayed because it is a compliance property of the document,
@@ -122,14 +122,14 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
               {jd.keyResponsibilities.map((r) => (
                 <div key={r.functionName}>
                   <div className="flex items-baseline gap-2">
-                    <span className="w-10 text-sm font-bold text-primary tnum">
+                    <span className="w-10 text-base font-bold text-primary tnum">
                       {r.pctTime}%
                     </span>
-                    <span className="text-sm font-semibold">{r.functionName}</span>
+                    <span className="text-base font-semibold">{r.functionName}</span>
                   </div>
                   <ul className="ml-12 mt-1 space-y-1">
                     {r.duties.map((d) => (
-                      <li className="flex gap-2 text-sm" key={d}>
+                      <li className="flex gap-2 text-base" key={d}>
                         <span className="text-primary">•</span>
                         <span>{d}</span>
                       </li>
@@ -164,13 +164,13 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
           </Badge>
         </div>
         {result.complianceEdits.length === 0 ? (
-          <p className="mt-2 text-sm text-base-content/65">
+          <p className="mt-2 text-base text-base-content/65">
             No compliance issues found.
           </p>
         ) : (
           <ul className="mt-3 space-y-3">
             {result.complianceEdits.map((e) => (
-              <li className="text-sm" key={e.section}>
+              <li className="text-base" key={e.section}>
                 <div className="flex items-center gap-2">
                   <Badge tone={e.source === 'rule' ? 'muted' : 'purple'}>{e.source}</Badge>
                   <span className="text-base-content/50 tnum">{e.section}</span>
@@ -202,10 +202,10 @@ const SubList = ({ items, label }: { items: string[]; label: string }) => {
   }
   return (
     <div className="mt-3">
-      <div className="text-sm font-semibold">{label}</div>
+      <div className="text-base font-semibold">{label}</div>
       <ul className="mt-1 space-y-1">
         {items.map((it) => (
-          <li className="flex gap-2 text-sm" key={it}>
+          <li className="flex gap-2 text-base" key={it}>
             <span className="text-primary">•</span>
             <span>{it}</span>
           </li>
@@ -223,7 +223,7 @@ const BulletSection = ({ items, title }: { items: string[]; title: string }) => 
     <Section title={title}>
       <ul className="space-y-1.5">
         {items.map((it) => (
-          <li className="flex gap-2 text-sm" key={it}>
+          <li className="flex gap-2 text-base" key={it}>
             <span className="text-primary">•</span>
             <span>{it}</span>
           </li>

@@ -58,7 +58,7 @@ function AdminsPanel() {
   return (
     <Card className="p-5">
       <Eyebrow>Admins</Eyebrow>
-      <p className="mt-1 text-sm text-base-content/65">
+      <p className="mt-1 text-base text-base-content/65">
         Add an admin by UC Davis login ID (the part before @ucdavis.edu). It takes effect on
         their next request — they don&apos;t need to have signed in before, or to sign out and
         back in.
@@ -97,13 +97,13 @@ function AdminsPanel() {
         {admins.map((a) => (
           <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={a.loginId}>
             <div className="min-w-0">
-              <div className="text-sm font-medium">
+              <div className="text-base font-semibold">
                 {a.loginId}
                 {a.displayName ? (
                   <span className="font-normal text-base-content/65"> · {a.displayName}</span>
                 ) : null}
               </div>
-              <div className="text-xs text-base-content/65">
+              <div className="text-sm text-base-content/65">
                 {a.lastSeenAt ? `Last seen ${when(a.lastSeenAt)}` : 'Has not signed in yet'}
                 {a.grantedAt
                   ? ` · added ${when(a.grantedAt)}${a.grantedBy ? ` by ${a.grantedBy}` : ''}`
@@ -114,7 +114,7 @@ function AdminsPanel() {
               <Badge tone="muted">set in server configuration</Badge>
             ) : (
               <button
-                className="btn btn-ghost btn-xs text-error"
+                className="btn btn-ghost btn-sm text-error"
                 disabled={revoke.isPending}
                 onClick={() => revoke.mutate(a.loginId)}
                 type="button"
@@ -157,19 +157,19 @@ function ApiKeyPanel() {
   return (
     <Card className="mt-5 p-5">
       <Eyebrow>AI provider</Eyebrow>
-      <div className="mt-2 text-sm" data-testid="ai-provider">
+      <div className="mt-2 text-base" data-testid="ai-provider">
         <span className="font-semibold">{status ? provider : 'Loading…'}</span>
         {status?.model ? <span className="text-base-content/65"> · {status.model}</span> : null}
         {status?.endpoint ? (
           <span className="text-base-content/50"> · {status.endpoint}</span>
         ) : null}
       </div>
-      <p className="mt-1 text-sm text-base-content/55">
+      <p className="mt-1 text-base text-base-content/55">
         Which provider receives JD text is set per environment in server configuration
         (<code>Llm:Provider</code>), not here.
       </p>
 
-      <div className="mt-4 flex items-center gap-2 text-sm">
+      <div className="mt-4 flex items-center gap-2 text-base">
         <Badge
           tone={
             status?.source === 'none' && status.keyRequired
@@ -194,13 +194,13 @@ function ApiKeyPanel() {
       ) : null}
 
       {status?.keyEntryAllowed === false ? (
-        <p className="mt-3 text-sm text-base-content/65" data-testid="key-vault-only">
+        <p className="mt-3 text-base text-base-content/65" data-testid="key-vault-only">
           Keys for this environment are managed in Azure Key Vault and can&apos;t be entered or
           changed here.
         </p>
       ) : (
         <>
-          <p className="mt-3 text-sm text-base-content/65">
+          <p className="mt-3 text-base text-base-content/65">
             A key entered here is checked with {provider}, stored encrypted, and used in place
             of the one in server configuration until it is removed. It can&apos;t be viewed again
             — only its last four characters are shown. Every change is logged.
@@ -244,7 +244,7 @@ function ApiKeyPanel() {
             ) : null}
           </form>
           {status?.source === 'app' ? (
-            <p className="mt-2 text-xs text-base-content/50">
+            <p className="mt-2 text-sm text-base-content/50">
               {status.configurationHasKey
                 ? 'Removing it switches back to the key in server configuration.'
                 : 'There is no key in server configuration, so removing this one turns model features off.'}
@@ -261,10 +261,10 @@ function ApiKeyPanel() {
 
       {status && status.audit.length > 0 ? (
         <div className="mt-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-base-content/50">
+          <div className="text-sm font-semibold uppercase tracking-wide text-base-content/50">
             Key changes
           </div>
-          <ul className="mt-1 space-y-0.5 text-sm" data-testid="key-audit">
+          <ul className="mt-1 space-y-0.5 text-base" data-testid="key-audit">
             {status.audit.map((a) => (
               <li key={`${a.at}-${a.action}`}>
                 {a.action === 'set' ? `Set key ending …${a.lastFour}` : 'Removed the key'} —{' '}
@@ -285,7 +285,7 @@ function DataProtectionPanel() {
   return (
     <Card className="mt-5 p-5">
       <Eyebrow>Data protection</Eyebrow>
-      <div className="mt-2 flex items-center gap-2 text-sm" data-testid="encryption-at-rest">
+      <div className="mt-2 flex items-center gap-2 text-base" data-testid="encryption-at-rest">
         <Badge tone={encrypted === true ? 'green' : encrypted === false ? 'yellow' : 'muted'}>
           {encrypted === true ? 'encrypted' : encrypted === false ? 'not encrypted' : 'unknown'}
         </Badge>
@@ -297,7 +297,7 @@ function DataProtectionPanel() {
               : 'Encryption at rest could not be determined.'}
         </span>
       </div>
-      <p className="mt-3 text-sm text-base-content/65">
+      <p className="mt-3 text-base text-base-content/65">
         Uploaded job description exports and the JD corpus carry position numbers and
         reporting lines. They are kept only in the database — never on the server&apos;s disk —
         so database encryption covers them. The API key entered above is additionally

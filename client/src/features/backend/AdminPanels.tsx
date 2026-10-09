@@ -82,7 +82,7 @@ export const IngestPanel = () => {
       <div className="flex items-center justify-between gap-3">
         <div>
           <Eyebrow>New JDs from the corpus folder</Eyebrow>
-          <p className="mt-1 text-sm text-base-content/65">
+          <p className="mt-1 text-base text-base-content/65">
             {scan.isFetching
               ? 'Scanning the corpus for new classes…'
               : pending.length === 0
@@ -123,8 +123,8 @@ export const IngestPanel = () => {
           {pending.map((c) => (
             <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.code}>
               <span className="flex flex-col">
-                <span className="text-sm font-medium">{c.title}</span>
-                <span className="text-xs text-base-content/65 tnum">
+                <span className="text-base font-semibold">{c.title}</span>
+                <span className="text-sm text-base-content/65 tnum">
                   Code {c.code} · {c.fileCount} JD{c.fileCount === 1 ? '' : 's'}
                 </span>
               </span>
@@ -134,7 +134,7 @@ export const IngestPanel = () => {
         </ul>
       ) : null}
       {running ? (
-        <p className="mt-2 text-xs text-base-content/50">
+        <p className="mt-2 text-sm text-base-content/50">
           Each class is parsed, consolidated and synthesized — a large class can take a
           minute or two.
         </p>
@@ -189,7 +189,7 @@ export const UploadPanel = () => {
   return (
     <Card className="mb-5 p-5">
       <Eyebrow>Upload JDs</Eyebrow>
-      <p className="mt-1 text-sm text-base-content/65">
+      <p className="mt-1 text-base text-base-content/65">
         Add HRTMS job description exports (.html) — individual files or a whole folder. New
         classes get an envelope; existing classes are refreshed with the added JDs, and a newer
         export of the same position replaces the old one. Hand-edited envelopes are kept.
@@ -227,7 +227,7 @@ export const UploadPanel = () => {
           />
         </label>
         {upload.isPending ? (
-          <span className="text-sm text-base-content/65">Uploading…</span>
+          <span className="text-base text-base-content/65">Uploading…</span>
         ) : null}
       </div>
 
@@ -238,7 +238,7 @@ export const UploadPanel = () => {
       ) : null}
 
       {outcomes.length > 0 ? (
-        <div className="mt-3 text-sm" data-testid="upload-summary">
+        <div className="mt-3 text-base" data-testid="upload-summary">
           {count('added')} added · {count('duplicate')} already uploaded · {failed.length} not
           usable
           {failed.length > 0 ? (
@@ -256,7 +256,7 @@ export const UploadPanel = () => {
       {classes.length > 0 ? (
         <>
           <div className="mt-4 flex items-center justify-between gap-3">
-            <span className="text-sm font-medium">
+            <span className="text-base font-semibold">
               {classes.length} class{classes.length === 1 ? '' : 'es'} with new JDs to build in
             </span>
             <button
@@ -272,8 +272,8 @@ export const UploadPanel = () => {
             {classes.map((c) => (
               <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.code}>
                 <span className="flex flex-col">
-                  <span className="text-sm font-medium">{c.title}</span>
-                  <span className="text-xs text-base-content/65 tnum">
+                  <span className="text-base font-semibold">{c.title}</span>
+                  <span className="text-sm text-base-content/65 tnum">
                     Code {c.code} ·{' '}
                     {[
                       c.newFiles > 0 ? `${c.newFiles} uploaded` : null,
@@ -287,7 +287,7 @@ export const UploadPanel = () => {
                       : ' · new class'}
                   </span>
                   {c.hasManualEnvelope ? (
-                    <span className="text-xs text-warning">
+                    <span className="text-sm text-warning">
                       This class&apos;s envelope was edited by hand — rebuilding replaces those edits.
                     </span>
                   ) : null}
@@ -305,7 +305,7 @@ export const UploadPanel = () => {
         </div>
       ) : null}
       {running ? (
-        <p className="mt-2 text-xs text-base-content/50">
+        <p className="mt-2 text-sm text-base-content/50">
           Each class is consolidated and its envelope rebuilt — a large class can take a minute
           or two.
         </p>
@@ -326,7 +326,7 @@ export const StandardsPanel = () => {
       <div className="flex items-center justify-between gap-3">
         <div>
           <Eyebrow>Official job standards</Eyebrow>
-          <p className="mt-1 text-sm text-base-content/65">
+          <p className="mt-1 text-base text-base-content/65">
             Upload UC job-standard workbooks (Job Builder .xlsx exports). They augment envelopes
             with authoritative KSAs, education, certifications and scope — the corpus still
             drives the % time responsibilities, which is the actual-JD advantage. Uploads add
@@ -352,7 +352,7 @@ export const StandardsPanel = () => {
             />
           </label>
           <button
-            className="btn btn-ghost btn-xs whitespace-nowrap"
+            className="btn btn-ghost btn-sm whitespace-nowrap"
             disabled={ingest.isPending}
             onClick={() => ingest.mutate()}
             title="Rebuild every standard from the workbook folder configured on the server"
@@ -378,7 +378,7 @@ export const StandardsPanel = () => {
             </Badge>
           </div>
           {failed.length > 0 ? (
-            <ul className="list-disc pl-5 text-sm text-error">
+            <ul className="list-disc pl-5 text-base text-error">
               {failed.map((f) => (
                 <li key={f.fileName}>
                   {f.fileName}: {f.error}
@@ -387,7 +387,7 @@ export const StandardsPanel = () => {
             </ul>
           ) : null}
           {uploaded.files.some((f) => f.result === 'duplicate') ? (
-            <span className="text-sm text-base-content/50">
+            <span className="text-base text-base-content/50">
               {uploaded.files.filter((f) => f.result === 'duplicate').length} workbook(s) had
               already been uploaded.
             </span>
@@ -413,12 +413,12 @@ export const StandardsPanel = () => {
             </Badge>
           </div>
           {result.linkedCount > 0 ? (
-            <span className="text-sm text-base-content/65">
+            <span className="text-base text-base-content/65">
               Linked: {result.linkedSample.join(', ')}
             </span>
           ) : null}
           {result.uncodedSample.length > 0 ? (
-            <span className="text-sm text-base-content/50">
+            <span className="text-base text-base-content/50">
               {/* Unresolved codes are usually UC-systemwide titles with no UCD
                   equivalent, which is a coverage fact rather than a matching bug. */}
               No job code: {result.uncodedSample.join(', ')}
@@ -460,7 +460,7 @@ export const SupersessionPanel = () => {
       <div className="flex items-center justify-between gap-3">
         <div>
           <Eyebrow>Superseded by a union title</Eyebrow>
-          <p className="mt-1 text-sm text-base-content/65">
+          <p className="mt-1 text-base text-base-content/65">
             Non-represented classes replaced by a union-designated successor —
             RP, CX, TX, RX or HX after the title. Retiring one refiles its JDs
             under the successor, then merges, renames or removes the old class;
@@ -512,7 +512,7 @@ export const SupersessionPanel = () => {
           ) : null}
         </div>
       ) : shown && shown.profiles.length === 0 ? (
-        <p className="mt-3 text-sm text-base-content/65">
+        <p className="mt-3 text-base text-base-content/65">
           Nothing to retire — no class is filed under a superseded code.
         </p>
       ) : null}
@@ -524,10 +524,10 @@ export const SupersessionPanel = () => {
               key={p.slug}
             >
               <div className="min-w-0">
-                <div className="truncate text-sm font-medium">
+                <div className="truncate text-base font-semibold">
                   {p.title} ({p.code})
                 </div>
-                <div className="text-xs text-base-content/65 tnum">
+                <div className="text-sm text-base-content/65 tnum">
                   {retireOutcome(p)}
                   {p.corpusJds
                     ? ` · ${p.corpusJds} corpus JD${p.corpusJds === 1 ? '' : 's'}`
@@ -653,9 +653,9 @@ export const BootstrapPanel = () => {
       <div className="flex items-center justify-between gap-3">
         <div>
           <Eyebrow>Bootstrap from a standard</Eyebrow>
-          <p className="mt-1 text-sm text-base-content/65">
+          <p className="mt-1 text-base text-base-content/65">
             Create a starter envelope for a class that has an official standard but{' '}
-            <span className="font-medium">no job descriptions yet</span>. It is marked
+            <span className="font-semibold">no job descriptions yet</span>. It is marked
             standard-derived (% time is estimated) and converges to a learned envelope once
             JDs for that class are ingested. Superseded classes are never offered — authoring
             against one would produce a JD under a dead classification.
@@ -722,14 +722,14 @@ export const BootstrapPanel = () => {
         </div>
       ) : null}
       {running ? (
-        <p className="mt-2 text-xs text-base-content/50">
+        <p className="mt-2 text-sm text-base-content/50">
           Creating {Object.values(status).filter((v) => v === 'done').length} of{' '}
           {inUse.length}… each envelope is a model call.
         </p>
       ) : null}
       {candidates ? (
         candidates.length === 0 ? (
-          <p className="mt-3 text-sm text-base-content/65">
+          <p className="mt-3 text-base text-base-content/65">
             No candidates — every standard with a resolvable code already has a profile.
           </p>
         ) : (
@@ -742,7 +742,7 @@ export const BootstrapPanel = () => {
                 placeholder="Filter by title…"
                 value={filter}
               />
-              <span className="whitespace-nowrap text-sm text-base-content/50">
+              <span className="whitespace-nowrap text-base text-base-content/50">
                 {shown.length} of {candidates.length}
               </span>
             </div>
@@ -750,8 +750,8 @@ export const BootstrapPanel = () => {
               {shown.map((c) => (
                 <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.title}>
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{c.title}</div>
-                    <div className="text-xs text-base-content/65 tnum">
+                    <div className="truncate text-base font-semibold">{c.title}</div>
+                    <div className="text-sm text-base-content/65 tnum">
                       {c.code ? `Code ${c.code}` : 'no code match'}
                       {c.family ? ` · ${c.family}` : ''}
                       {c.grade ? ` · ${c.grade}` : ''}
@@ -807,7 +807,7 @@ export const EnvelopeTransferPanel = () => {
       <div className="flex items-center justify-between gap-3">
         <div>
           <Eyebrow>Move envelopes between environments</Eyebrow>
-          <p className="mt-1 text-sm text-base-content/65">
+          <p className="mt-1 text-base text-base-content/65">
             Download every standard-derived envelope here, then import the file in another
             environment — bootstrap locally, load into production, and pay for each envelope
             once. Each class is rebuilt from that environment&apos;s own standard; existing and
@@ -857,7 +857,7 @@ export const EnvelopeTransferPanel = () => {
             ) : null}
           </div>
           {result.skipped.length > 0 ? (
-            <ul className="text-sm text-base-content/65">
+            <ul className="text-base text-base-content/65">
               {result.skipped.map((s) => (
                 <li key={s.title} title={s.message}>
                   {s.title} — {refusalLabel[s.reason]}

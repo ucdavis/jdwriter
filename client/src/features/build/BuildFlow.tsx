@@ -29,12 +29,12 @@ const StepBar = ({ step }: { step: Step }) => {
       {STEPS.map(([key, label], i) => (
         <div className="flex items-center gap-2" key={key}>
           <span
-            className={`inline-flex items-center gap-1.5 text-sm font-medium ${
+            className={`inline-flex items-center gap-1.5 text-base font-semibold ${
               i <= current ? 'text-primary' : 'text-base-content/50'
             }`}
           >
             <span
-              className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${
+              className={`flex h-5 w-5 items-center justify-center rounded-full text-sm ${
                 i < current
                   ? 'bg-primary text-primary-content'
                   : i === current
@@ -132,7 +132,7 @@ export const BuildFlow = ({
               <Badge tone={state.customPct <= 10 ? 'green' : 'yellow'}>
                 Customization {state.customPct}%
               </Badge>
-              <span className="text-sm text-base-content/65">
+              <span className="text-base text-base-content/65">
                 {state.addedCount} added item{state.addedCount === 1 ? '' : 's'} · target
                 ≤10% (removals don&apos;t count)
               </span>
@@ -154,7 +154,7 @@ export const BuildFlow = ({
                 {state.totalPct}% of time
               </Badge>
             </div>
-            <p className="mb-3 mt-1 text-sm text-base-content/65">
+            <p className="mb-3 mt-1 text-base text-base-content/65">
               Uncheck a whole function that doesn&apos;t apply, drop individual duties, add
               unit-specific ones, and adjust % time to total 100.
             </p>
@@ -188,10 +188,10 @@ export const BuildFlow = ({
                       type="number"
                       value={r.pctTime}
                     />
-                    <span className="text-sm text-base-content/65">%</span>
+                    <span className="text-base text-base-content/65">%</span>
                     <input
                       aria-label="Function name"
-                      className={`flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-sm font-semibold outline-none hover:border-base-300 focus:border-primary ${
+                      className={`flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-base font-semibold outline-none hover:border-base-300 focus:border-primary ${
                         r.functionKept ? '' : 'text-base-content/50 line-through'
                       }`}
                       disabled={!r.functionKept}
@@ -220,13 +220,13 @@ export const BuildFlow = ({
                                 type="checkbox"
                               />
                               <span
-                                className={`text-sm ${
+                                className={`text-base ${
                                   d.kept ? '' : 'text-base-content/50 line-through'
                                 }`}
                               >
                                 {d.added ? <Badge tone="green">+</Badge> : null} {d.text}
                                 {d.matchedFrom && d.matchedFrom.length > 0 ? (
-                                  <span className="mt-0.5 block text-xs text-base-content/55" data-testid="matched-from">
+                                  <span className="mt-0.5 block text-sm text-base-content/55" data-testid="matched-from">
                                     {d.matchedFrom.map((m) => (
                                       <span className="block" key={m}>
                                         ↳ From your description: “{m}”
@@ -239,7 +239,7 @@ export const BuildFlow = ({
                             {d.added ? (
                               <button
                                 aria-label="Remove added duty"
-                                className="mt-0.5 text-sm text-base-content/50 hover:text-error"
+                                className="mt-0.5 text-base text-base-content/50 hover:text-error"
                                 onClick={() =>
                                   state.patchResp(ri, {
                                     duties: r.duties.filter((_, j) => j !== di),
@@ -274,7 +274,7 @@ export const BuildFlow = ({
               ))}
             </div>
             {!balanced ? (
-              <p className="mt-3 text-sm text-warning">
+              <p className="mt-3 text-base text-warning">
                 ⚠ Percent time totals {state.totalPct}% —{' '}
                 {state.totalPct < 100
                   ? `${100 - state.totalPct}% is unallocated.`
@@ -323,7 +323,7 @@ export const BuildFlow = ({
 
           <Card className="p-5">
             <Eyebrow>Standard (not editable)</Eyebrow>
-            <div className="mt-2 text-sm text-base-content/65">
+            <div className="mt-2 text-base text-base-content/65">
               Conditions of Employment and Physical Requirements are standard UC
               boilerplate and are included automatically in the final JD.
             </div>
@@ -333,7 +333,7 @@ export const BuildFlow = ({
             <Eyebrow>Anything else (optional)</Eyebrow>
             <textarea
               aria-label="Additional context"
-              className="textarea textarea-bordered mt-2 w-full resize-none text-sm"
+              className="textarea textarea-bordered mt-2 w-full resize-none text-base"
               onChange={(e) => state.setNotes(e.target.value)}
               placeholder="Special context for this position…"
               rows={2}
@@ -364,7 +364,7 @@ export const BuildFlow = ({
               {saveDraft.isPending ? 'Saving…' : 'Save draft'}
             </button>
             {saveDraft.isSuccess && !saveDraft.isPending ? (
-              <span className="text-sm text-success" data-testid="draft-saved">
+              <span className="text-base text-success" data-testid="draft-saved">
                 Draft saved ·{' '}
                 <Link className="underline" to="/jds">
                   My JDs
@@ -372,10 +372,10 @@ export const BuildFlow = ({
               </span>
             ) : null}
             {saveDraft.error ? (
-              <span className="text-sm text-error">{messageOf(saveDraft.error)}</span>
+              <span className="text-base text-error">{messageOf(saveDraft.error)}</span>
             ) : null}
             {!balanced ? (
-              <span className="text-sm text-warning" data-testid="build-gate-reason">
+              <span className="text-base text-warning" data-testid="build-gate-reason">
                 {state.totalPct < 100
                   ? `${100 - state.totalPct}% of time is unallocated — assign it before continuing.`
                   : `${state.totalPct - 100}% over-allocated — reduce it before continuing.`}
@@ -401,11 +401,11 @@ export const BuildFlow = ({
               {check.data.verdict.replaceAll('_', ' ')}
             </Badge>
           </div>
-          <p className="mt-3 text-sm">{check.data.rationale}</p>
+          <p className="mt-3 text-base">{check.data.rationale}</p>
           {check.data.matchedSignals.length > 0 ? (
             <ul className="mt-3 space-y-1">
               {check.data.matchedSignals.map((s) => (
-                <li className="flex gap-2 text-sm text-base-content/65" key={s}>
+                <li className="flex gap-2 text-base text-base-content/65" key={s}>
                   <span className="text-warning">⚠</span>
                   <span>{s}</span>
                 </li>
@@ -435,7 +435,7 @@ export const BuildFlow = ({
           ) : null}
           {check.data.verdict === 'out_of_envelope' && check.data.suggestedClass ? (
             <div className="mt-4 rounded-lg border border-primary/20 bg-primary/10 p-3.5">
-              <div className="text-sm">
+              <div className="text-base">
                 Your additions look more like{' '}
                 <span className="font-semibold text-primary">
                   {check.data.suggestedClass}
@@ -444,7 +444,7 @@ export const BuildFlow = ({
               </div>
               {check.data.suggestedSlug ? (
                 <Link
-                  className="btn btn-primary btn-xs mt-2.5"
+                  className="btn btn-primary btn-sm mt-2.5"
                   params={{ slug: check.data.suggestedSlug }}
                   to="/class/$slug"
                 >
@@ -489,7 +489,7 @@ export const BuildFlow = ({
               </button>
             )}
             {!balanced ? (
-              <span className="text-sm text-warning">
+              <span className="text-base text-warning">
                 {state.totalPct < 100
                   ? `${100 - state.totalPct}% of time is unallocated — a JD cannot be published until it totals 100%.`
                   : `${state.totalPct - 100}% over-allocated — a JD cannot be published until it totals 100%.`}

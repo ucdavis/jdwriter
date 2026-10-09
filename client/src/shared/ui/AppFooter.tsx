@@ -30,7 +30,7 @@ export const AppFooter = () => (
           src={asset('caes.svg')}
         />
       </a>
-      <p className="text-sm text-base-content/60">
+      <p className="text-base text-base-content/60">
         Created in association with{' '}
         <a
           className="underline hover:text-primary"

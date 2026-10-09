@@ -36,7 +36,7 @@
 
   /* The signature Walter label: small, uppercase, tracked, muted. */
   .eyebrow {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -70,4 +70,44 @@
     border: none !important;
     box-shadow: none !important;
   }
+}
+
+/*
+  One type system, matching the header (and the other CAES apps): Proxima Nova throughout, with
+  16px — 12pt — for body text, links, buttons and form fields.
+
+  daisyUI's compact sizes shrink a button's label to 11-12px and a field's text to 12px, which is
+  why "Save draft" read small beside the body text. They are normalized here, once, rather than at
+  each call site, so every button and field — and any added later — is the same size. Unlayered,
+  so these win over daisyUI's layered modifiers.
+*/
+[data-theme='gunrock'] {
+  /* Buttons and links in the header's navy, as Leaves uses its own brand colour for both. */
+  --color-primary: var(--color-ucd-blue);
+  --color-primary-content: #fff;
+}
+
+.btn-xs,
+.btn-sm,
+.btn-md {
+  --fontsize: 1rem;
+  --btn-p: 1rem;
+  --size: calc(var(--size-field, 0.25rem) * 10);
+}
+
+.btn {
+  font-weight: 600;
+}
+
+.input-xs,
+.input-sm,
+.input-md,
+.select-xs,
+.select-sm,
+.select-md,
+.textarea-xs,
+.textarea-sm,
+.textarea-md {
+  --size: calc(var(--size-field, 0.25rem) * 10);
+  font-size: 1rem;
 }

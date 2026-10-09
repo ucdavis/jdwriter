@@ -29,7 +29,7 @@ function Home() {
         <div className="flex flex-col gap-5">
           <Card className="p-5">
             <Eyebrow>AI-powered request</Eyebrow>
-            <p className="mb-3 mt-1 text-sm text-base-content/65">
+            <p className="mb-3 mt-1 text-base text-base-content/65">
               Describe what you need in plain language.
             </p>
             <NlIntake />
@@ -39,7 +39,7 @@ function Home() {
 
         <Card className="p-5">
           <Eyebrow>Browse job classes</Eyebrow>
-          <p className="mb-3 mt-1 text-sm text-base-content/65">
+          <p className="mb-3 mt-1 text-base text-base-content/65">
             {ready.length} class{ready.length === 1 ? '' : 'es'} ingested and ready ·{' '}
             {classes.length - ready.length} known titles awaiting ingestion.
           </p>
@@ -51,7 +51,7 @@ function Home() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <Eyebrow>Already have a description?</Eyebrow>
-            <p className="mt-1 max-w-xl text-sm text-base-content/65">
+            <p className="mt-1 max-w-xl text-base text-base-content/65">
               Many units already have something written. Drop in the Word file, PDF or
               Position Description workbook and we&apos;ll match it to a class with a
               confidence level, a level check, and the duties that fall outside it.

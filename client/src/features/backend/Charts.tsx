@@ -42,7 +42,7 @@ export const ColumnChart = ({
             >
               {showValue ? (
                 <span
-                  className="absolute text-xs font-medium text-base-content/70 tnum"
+                  className="absolute text-sm font-semibold text-base-content/70 tnum"
                   style={{ bottom: `calc(${(d.value / max) * 100}% + 2px)` }}
                 >
                   {d.value}
@@ -56,7 +56,7 @@ export const ColumnChart = ({
               />
               {isActive ? (
                 <span
-                  className="pointer-events-none absolute z-10 whitespace-nowrap rounded-md bg-base-content px-2 py-1 text-xs text-base-100 shadow"
+                  className="pointer-events-none absolute z-10 whitespace-nowrap rounded-md bg-base-content px-2 py-1 text-sm text-base-100 shadow"
                   role="tooltip"
                   style={{ bottom: `calc(${(d.value / max) * 100}% + 20px)` }}
                 >
@@ -69,7 +69,7 @@ export const ColumnChart = ({
       </div>
       <div className="mt-1 flex gap-1">
         {data.map((d) => (
-          <span className="flex-1 text-center text-xs text-base-content/50" key={d.key}>
+          <span className="flex-1 text-center text-sm text-base-content/50" key={d.key}>
             {d.tick}
           </span>
         ))}
@@ -97,7 +97,7 @@ export const BarList = ({
           key={d.key}
           title={`${d.label}: ${d.value} ${valueName}`}
         >
-          <span className="truncate text-sm">{d.label}</span>
+          <span className="truncate text-base">{d.label}</span>
           {/* The bar is a share of its own track, so small values stay visible; the value
               sits outside the track, at the tip, in a text token. */}
           <span className="block h-3">
@@ -106,7 +106,7 @@ export const BarList = ({
               style={{ minWidth: d.value > 0 ? '3px' : '1px', width: `${(d.value / max) * 100}%` }}
             />
           </span>
-          <span className="text-sm font-medium text-base-content/70 tnum">{d.value}</span>
+          <span className="text-base font-semibold text-base-content/70 tnum">{d.value}</span>
         </li>
       ))}
     </ul>

@@ -54,7 +54,7 @@ export const Badge = ({
   tone?: Tone;
 }) => (
   <span
-    className={`inline-flex items-center rounded-full px-2.5 py-[3px] text-xs font-semibold ${toneClass[tone]}`}
+    className={`inline-flex items-center rounded-full px-2.5 py-[3px] text-sm font-semibold ${toneClass[tone]}`}
   >
     {children}
   </span>
@@ -79,7 +79,7 @@ export const Note = ({
         ? 'bg-success/10 border-success/20 text-success'
         : 'bg-warning/10 border-warning/20 text-warning';
   return (
-    <div className={`rounded-lg border px-3.5 py-2.5 text-sm ${cls}`}>
+    <div className={`rounded-lg border px-3.5 py-2.5 text-base ${cls}`}>
       {children}
     </div>
   );
@@ -103,7 +103,7 @@ export const PageHeader = ({
   <div className="mb-7">
     {back ? (
       <Link
-        className="text-sm font-medium text-primary hover:underline"
+        className="text-base font-semibold text-primary hover:underline"
         params={back.params}
         to={back.to}
       >
@@ -113,7 +113,7 @@ export const PageHeader = ({
     {eyebrow ? <div className="eyebrow mt-2">{eyebrow}</div> : null}
     <h1 className="mt-1 text-3xl font-bold tracking-tight">{title}</h1>
     {sub ? (
-      <p className="mt-1.5 max-w-2xl text-sm text-base-content/65">{sub}</p>
+      <p className="mt-1.5 max-w-2xl text-base text-base-content/65">{sub}</p>
     ) : null}
   </div>
 );
@@ -122,7 +122,7 @@ export const PageHeader = ({
 export const Stat = ({ label, value }: { label: string; value: string }) => (
   <div>
     <Eyebrow>{label}</Eyebrow>
-    <div className="mt-0.5 text-sm font-semibold tnum">{value}</div>
+    <div className="mt-0.5 text-base font-semibold tnum">{value}</div>
   </div>
 );
 
@@ -143,7 +143,7 @@ export const Fact = ({
     <Eyebrow>{label}</Eyebrow>
     <div className="mt-0.5 text-base font-semibold">{value}</div>
     {agreement < 1 ? (
-      <div className="mt-0.5 text-xs text-base-content/50 tnum">
+      <div className="mt-0.5 text-sm text-base-content/50 tnum">
         {Math.round(agreement * 100)}% agreement
       </div>
     ) : null}
@@ -165,7 +165,7 @@ export const Field = ({
   <label className="block">
     <span className="eyebrow">{label}</span>
     <input
-      className="input input-bordered mt-1 w-full text-sm"
+      className="input input-bordered mt-1 w-full text-base"
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       value={value}
@@ -190,7 +190,7 @@ export const AddRow = ({
 }) => (
   <div className="mt-2 flex gap-2">
     <input
-      className="input input-bordered input-sm flex-1 text-sm"
+      className="input input-bordered input-sm flex-1 text-base"
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {

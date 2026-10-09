@@ -38,7 +38,7 @@ export const NlIntake = () => {
     <div>
       <textarea
         aria-label="Describe the role"
-        className="textarea textarea-bordered w-full resize-none text-sm"
+        className="textarea textarea-bordered w-full resize-none text-base"
         onChange={(e) => setText(e.target.value)}
         placeholder="Describe the role in your own words — e.g. “I need someone to run lab samples, log results, and help set up experiments.”"
         rows={3}
@@ -53,7 +53,7 @@ export const NlIntake = () => {
         >
           {match.isPending ? 'Matching…' : 'Find matching class'}
         </button>
-        <span className="text-xs text-base-content/50">
+        <span className="text-sm text-base-content/50">
           Your description is matched against every ingested job class.
         </span>
       </div>
@@ -68,7 +68,7 @@ export const NlIntake = () => {
         <div className="mt-4">
           <div className="eyebrow mb-2">Suggested classes</div>
           {matches.length === 0 ? (
-            <p className="text-sm text-base-content/65">
+            <p className="text-base text-base-content/65">
               No close match. Try the search on the right.
             </p>
           ) : (
@@ -83,10 +83,10 @@ export const NlIntake = () => {
                   type="button"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium">{m.title}</span>
+                    <span className="text-base font-semibold">{m.title}</span>
                     <Badge tone={toneFor(m.confidence)}>{m.confidence}% match</Badge>
                   </div>
-                  <div className="mt-1 text-sm text-base-content/65">
+                  <div className="mt-1 text-base text-base-content/65">
                     {m.rationale}
                   </div>
                 </button>
