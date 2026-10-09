@@ -89,7 +89,13 @@ HTML rendering, and no third-party scripts that have not been vetted.
     "flsaStatus": "Non-Exempt",
     "bargainingUnit": null
   },
-  "position": { "workingTitle": "Greenhouse Tech", "department": "Plant Sciences" },
+  "position": {
+    "workingTitle": "Greenhouse Tech",
+    "department": "Plant Sciences",
+    "supervises": false,
+    "supervisesCount": null,
+    "leads": true
+  },
   "jd": {
     "jobSummary": "…",
     "keyResponsibilities": [
@@ -119,6 +125,9 @@ What the fields guarantee:
 - **`keyResponsibilities[].pctTime`** sums to exactly 100. Only publishable JDs are handed off.
 - **`classification` is the UC job class.** `position.workingTitle` is the unit's name for the
   role.
+- **`position.supervises`, `supervisesCount` and `leads` are what the author stated** (added within
+  v1; absent or null on JDs saved before them). A union-represented class never has `supervises:
+  true` — JDWriter refuses to assemble one. `supervisesCount` is set only when `supervises` is true.
 - **`documents`** are the same JD as files, ready to attach to the HR package: Word (`docx`) and
   Markdown (`markdown`). Fetch them the same way as the handoff document.
 - **`source.url`** is the JD in JDWriter, for a person to open.
