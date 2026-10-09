@@ -5,6 +5,7 @@ import type {
   StandardsUploadResponse,
   SecurityStatus,
   UploadedPendingResponse,
+  QualificationRulesSummary,
   UploadOutcome,
   UploadResponse,
   ApiKeyStatus,
@@ -202,6 +203,26 @@ export const useImportDocument = () =>
       return fetchJson<UploadOutcome>('/api/admin/uploads/documents', { body, method: 'POST' });
     },
   });
+
+/**
+ * Apply the education rules to existing envelopes: a preferred degree moves to preferred
+ * qualifications, and a degree reads "or equivalent experience". `apply: false` previews.
+ */
+export const useQualificationRules = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (apply: boolean) =>
+      fetchJson<QualificationRulesSummary>('/api/admin/envelopes/qualification-rules', {
+        body: JSON.stringify({ apply }),
+        method: 'POST',
+      }),
+    onSuccess: (summary) => {
+      if (summary.applied) {
+        void queryClient.invalidateQueries({ queryKey: ['classes'] });
+      }
+    },
+  });
+};
 
 export const useIngestUploaded = () => {
   const queryClient = useQueryClient();

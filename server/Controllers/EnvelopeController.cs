@@ -70,6 +70,10 @@ public class EnvelopeController : ApiControllerBase
 
         var envelope = body.Envelope.ToEntity();
         envelope.ClassProfileId = profile.Id;
+
+        // House rules for education hold for hand edits too: a preferred degree typed into the
+        // education list is moved to preferred qualifications, and a degree gains "or equivalent".
+        QualificationRules.Apply(envelope);
         _db.JobEnvelopes.Add(envelope);
 
         // A hand-edited envelope is no longer the model's work, and the profile should say so —

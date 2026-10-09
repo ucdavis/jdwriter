@@ -5,6 +5,7 @@ import {
   useBootstrapClass,
   useIngestClass,
   useImportDocument,
+  useQualificationRules,
   useIngestUploaded,
   useUploadStandards,
   useUploadedPending,
@@ -478,6 +479,103 @@ export const DocumentImportPanel = () => {
                 ) : null}
               </span>
               <Badge tone={tone[r.status]}>{label[r.status]}</Badge>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </Card>
+  );
+};
+
+/**
+ * The education house rules, applied to envelopes written before they existed. New, rebuilt,
+ * bootstrapped, moved-in and hand-edited envelopes follow them automatically.
+ */
+export const QualificationRulesPanel = () => {
+  const rules = useQualificationRules();
+  const summary = rules.data;
+
+  const apply = () => {
+    if (
+      summary &&
+      window.confirm(
+        `Apply the education rules to ${summary.changed} envelope${summary.changed === 1 ? '' : 's'}? ` +
+          'Preferred degrees move to preferred qualifications, and degrees gain “or equivalent experience”.'
+      )
+    ) {
+      rules.mutate(true);
+    }
+  };
+
+  return (
+    <Card className="mb-5 p-5">
+      <Eyebrow>Education rules</Eyebrow>
+      <p className="mt-1 text-base text-base-content/65">
+        A preferred degree belongs in preferred qualifications, not education, and every degree
+        reads “or equivalent experience”. New and edited envelopes follow these rules
+        automatically; this applies them to envelopes written before.
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          className="btn btn-outline btn-sm"
+          disabled={rules.isPending}
+          onClick={() => rules.mutate(false)}
+          type="button"
+        >
+          {rules.isPending && !summary ? 'Checking…' : 'Preview'}
+        </button>
+        {summary && !summary.applied && summary.changed > 0 ? (
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={rules.isPending}
+            onClick={apply}
+            type="button"
+          >
+            Apply to {summary.changed}
+          </button>
+        ) : null}
+      </div>
+
+      {rules.error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(rules.error)}</Note>
+        </div>
+      ) : null}
+
+      {summary ? (
+        <div className="mt-3">
+          <Note tone={summary.applied ? 'green' : 'yellow'}>
+            {summary.changed === 0
+              ? `All ${summary.envelopes} envelopes already follow the rules.`
+              : `${summary.applied ? 'Applied to' : 'Would change'} ${summary.changed} of ${summary.envelopes} envelopes: ` +
+                `${summary.movedToPreferred} preferred degree${summary.movedToPreferred === 1 ? '' : 's'} moved to preferred qualifications, ` +
+                `${summary.equivalentAdded} degree${summary.equivalentAdded === 1 ? '' : 's'} given “or equivalent experience”.`}
+          </Note>
+        </div>
+      ) : null}
+
+      {summary && !summary.applied && summary.examples.length > 0 ? (
+        <ul className="mt-3 max-h-96 space-y-3 overflow-y-auto" data-testid="qualification-examples">
+          {summary.examples.map((e) => (
+            <li className="rounded-lg border border-base-300 p-3" key={e.slug}>
+              <div className="font-semibold">{e.title}</div>
+              <div className="mt-1 text-sm text-base-content/50">Education</div>
+              <ul className="list-disc pl-5 text-sm">
+                {e.educationAfter.map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+              {e.preferredChanged.length > 0 ? (
+                <>
+                  <div className="mt-1 text-sm text-base-content/50">Preferred qualifications</div>
+                  <ul className="list-disc pl-5 text-sm">
+                    {e.preferredChanged.map((t) => (
+                      <li key={t}>{t}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
             </li>
           ))}
         </ul>
