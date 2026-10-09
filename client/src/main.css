@@ -35,12 +35,13 @@
   }
 
   /* The signature Walter label: small, uppercase, tracked, muted. */
+  /* Section titles: bold and near-full contrast, so each section reads as a new one. */
   .eyebrow {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: color-mix(in oklch, var(--color-base-content) 65%, transparent);
+    color: color-mix(in oklch, var(--color-base-content) 85%, transparent);
   }
 }
 

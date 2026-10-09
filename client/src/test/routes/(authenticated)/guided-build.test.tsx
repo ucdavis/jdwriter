@@ -120,6 +120,41 @@ describe('the guided build', () => {
     await waitFor(() => expect(screen.getByTestId('duties-intro')).toBeInTheDocument());
   });
 
+  it('says plainly whether the build fits, and offers no better-fit search when it does', async () => {
+    const user = userEvent.setup();
+    countChecks('borderline');
+    open();
+
+    await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
+
+    expect(await screen.findByText('Check completed!')).toBeInTheDocument();
+    expect(screen.getByText('Fits class')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Look for a better fit' })).not.toBeInTheDocument();
+  });
+
+  it('says plainly when the build does not fit', async () => {
+    const user = userEvent.setup();
+    countChecks('out_of_envelope');
+    open();
+
+    await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
+
+    expect(await screen.findByText('Doesn’t fit class')).toBeInTheDocument();
+    expect(screen.getByText('Check completed — take a look')).toBeInTheDocument();
+  });
+
+  it('explains why an added item that the class already covers was not included', async () => {
+    const user = userEvent.setup();
+    open();
+
+    const add = (await screen.findAllByPlaceholderText('Add a duty to this function…'))[0];
+    const existing = screen.getAllByRole('checkbox', { checked: true }).find((c) => c.closest('li'));
+    const text = existing?.closest('label')?.textContent?.trim() ?? '';
+    await user.type(add, `${text}{Enter}`);
+
+    expect(await screen.findByText(/^You added “.+”, and it already fits within “.+”, so it was not included\.$/)).toBeInTheDocument();
+  });
+
   it('has a Home link in the top navigation', async () => {
     open();
 

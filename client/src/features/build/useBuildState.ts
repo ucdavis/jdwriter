@@ -127,7 +127,7 @@ export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState |
     const dup = findDuplicate(text);
     if (dup) {
       setDupNote(
-        `"${text.trim()}" is already covered by: "${dup}". Redundant items are removed.`
+        `You added “${text.trim()}”, and it already fits within “${dup}”, so it was not included.`
       );
       return false;
     }

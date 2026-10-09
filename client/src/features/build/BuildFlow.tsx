@@ -102,11 +102,17 @@ export const BuildFlow = ({
   const [savedId, setSavedId] = useState<number | null>(draft?.id ?? null);
   const [dutiesCheck, setDutiesCheck] = useState<{ key: string; result: EnvelopeCheckResponse } | null>(null);
   const [finalCheck, setFinalCheck] = useState<{ key: string; result: EnvelopeCheckResponse } | null>(null);
-  const top = useRef<HTMLDivElement>(null);
+  const firstRender = useRef(true);
 
-  // Each step reads as a new page: start it at the top. (scrollIntoView is absent in jsdom.)
+  // Each step reads as a new page: start it at the very top, title included. Not on first load,
+  // which the browser already shows from the top.
   useEffect(() => {
-    top.current?.scrollIntoView?.({ block: 'start' });
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, [step]);
 
   const error = check.error ?? assemble.error;
@@ -194,20 +200,23 @@ export const BuildFlow = ({
   );
 
   return (
-    <div className="space-y-5" ref={top}>
+    <div className="space-y-5">
       {step === 'duties' ? overview : null}
       <Progress step={step} />
       {error ? <Note tone="red">{messageOf(error)}</Note> : null}
 
       {step === 'duties' ? (
         <>
-          <p className="text-base leading-relaxed" data-testid="duties-intro">
+          <div>
+          <Eyebrow>Build your job description</Eyebrow>
+          <p className="mt-1 text-base leading-relaxed" data-testid="duties-intro">
             Here is where you build your custom job description (JD) based on the standard
             envelope. Below are the standard duties for the job. Select which items you&apos;d
             like to remove, or add the items you want in each section. Then make sure the total
             balances to 100% time. When you&apos;re done, we&apos;ll check it all against the
             standard and let you know if we need to make any changes.
           </p>
+          </div>
 
           <Card className="p-5">
             <Eyebrow>Position details</Eyebrow>
@@ -259,7 +268,7 @@ export const BuildFlow = ({
               betterFit={betterFit}
               check={dutiesCheck.result}
               currentTitle={title}
-              heading={dutiesCheck.result.verdict === 'in_envelope' ? 'Check completed!' : 'Check completed — take a look'}
+              heading={dutiesCheck.result.verdict === 'out_of_envelope' ? 'Check completed — take a look' : 'Check completed!'}
               onLookForBetterFit={() => betterFit.mutate(state.buildRequest(slug))}
             >
               <button className="btn btn-ghost btn-sm" onClick={() => go('duties')} type="button">
@@ -268,11 +277,14 @@ export const BuildFlow = ({
             </CheckResult>
           ) : null}
 
-          <p className="text-base leading-relaxed" data-testid="requirements-intro">
+          <div>
+          <Eyebrow>Finish the requirements</Eyebrow>
+          <p className="mt-1 text-base leading-relaxed" data-testid="requirements-intro">
             Now, let&apos;s finish the requirements for the job. Uncheck what you&apos;d like to
             remove, or add your own in the sections below. Once you&apos;re done, we&apos;ll do a
             final check and let you know if we need to change anything.
           </p>
+          </div>
 
           {state.dupNote ? <Note tone="yellow">{state.dupNote}</Note> : null}
 
