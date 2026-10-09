@@ -73,6 +73,12 @@ public class CorpusUploadsTests
 
     private static (AppDbContext Db, CorpusUploads Uploads) Harness()
     {
+        var (db, uploads, _) = HarnessWithPipeline();
+        return (db, uploads);
+    }
+
+    private static (AppDbContext Db, CorpusUploads Uploads, IngestPipeline Pipeline) HarnessWithPipeline()
+    {
         // Re-ingest runs inside a transaction; the in-memory provider has none, so it is told to
         // proceed rather than fail.
         var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
@@ -84,7 +90,7 @@ public class CorpusUploadsTests
         var llm = new FakeStructuredLlm { HasApiKey = false };
         var pipeline = new IngestPipeline(db, titles, llm, new Consolidator(llm),
             new EnvelopeSynthesizer(llm, new NoStandards()), NullLogger<IngestPipeline>.Instance);
-        return (db, new CorpusUploads(db, titles, pipeline));
+        return (db, new CorpusUploads(db, titles, pipeline), pipeline);
     }
 
     [Fact]
@@ -193,5 +199,99 @@ public class CorpusUploadsTests
         var ingest = () => uploads.IngestAsync("004724");
 
         await ingest.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Nothing in the corpus*");
+    }
+
+    // ------------------------------------------------------------------ bootstrapped, then real JDs
+
+    /// <summary>A class bootstrapped from its standard: its slug and title come from the standard.</summary>
+    private static async Task<ClassProfile> Starter(AppDbContext db)
+    {
+        var starter = new ClassProfile
+        {
+            Slug = "009605-laboratory-assistant-1",
+            UcJobCode = "009605",
+            Title = "Laboratory Assistant 1",
+            EnvelopeSource = EnvelopeSource.Standard,
+            CorpusSize = 0,
+            GeneratedNote = "Standard-derived — no JD corpus yet.",
+            Envelope = new JobEnvelope { Summary = "From the standard." },
+        };
+        db.ClassProfiles.Add(starter);
+        await db.SaveChangesAsync();
+        db.AuthoredJds.Add(new AuthoredJd { ClassProfileId = starter.Id, Title = starter.Title, UcJobCode = "009605" });
+        await db.SaveChangesAsync();
+        return starter;
+    }
+
+    [Fact]
+    public async Task Real_jds_turn_a_bootstrapped_class_into_a_learned_one_in_place()
+    {
+        var (db, uploads) = Harness();
+        var starter = await Starter(db);
+        await uploads.UploadAsync(
+        [
+            ("a.html", Export("009605", "LAB AST 1", "40000001", "Greenhouse Tech", (60, "Plant care"), (40, "Records"))),
+        ], userId: null);
+
+        var queued = (await uploads.PendingAsync()).Single();
+        queued.ExistingSlug.Should().Be(starter.Slug);
+        queued.ReplacesStarter.Should().BeTrue();
+
+        await uploads.IngestAsync("009605");
+        db.ChangeTracker.Clear();
+
+        var profile = await db.ClassProfiles.SingleAsync();
+        profile.Id.Should().Be(starter.Id, "one class per code: the starter is rebuilt, not duplicated");
+        profile.Slug.Should().Be(starter.Slug);
+        profile.Title.Should().Be("Laboratory Assistant 1", "the standard's title survives; it is not renamed to the payroll spelling");
+        profile.CorpusSize.Should().Be(1);
+        profile.EnvelopeSource.Should().NotBe(EnvelopeSource.Standard);
+        (await db.AuthoredJds.SingleAsync()).ClassProfileId.Should().Be(starter.Id, "saved JDs stay with their class");
+    }
+
+    [Fact]
+    public async Task Ingesting_without_a_slug_finds_the_class_by_job_code()
+    {
+        // The corpus-folder path passes no slug. Deriving one from the payroll title missed the
+        // starter's standard-titled slug and created a second class for the same code.
+        var (db, _, pipeline) = HarnessWithPipeline();
+        var starter = await Starter(db);
+        var record = HrtmsParser.Parse(
+            Encoding.UTF8.GetString(Export("009605", "LAB AST 1", "40000001", "Greenhouse Tech", (100, "Plant care"))),
+            "LAB AST 1/a.html");
+
+        await pipeline.IngestRecordsAsync([record]);
+        db.ChangeTracker.Clear();
+
+        (await db.ClassProfiles.Select(p => p.Id).ToListAsync()).Should().Equal(starter.Id);
+    }
+
+    [Fact]
+    public async Task The_corpus_folder_lists_new_exports_for_a_bootstrapped_class()
+    {
+        var (db, _, pipeline) = HarnessWithPipeline();
+        var starter = await Starter(db);
+        db.ClassProfiles.Add(new ClassProfile { Slug = "004724-farm-laborer", UcJobCode = "004724", Title = "Farm Laborer", CorpusSize = 3, EnvelopeSource = EnvelopeSource.Claude });
+        await db.SaveChangesAsync();
+
+        var dir = Directory.CreateTempSubdirectory("jdw-corpus-");
+        try
+        {
+            await File.WriteAllBytesAsync(Path.Combine(dir.FullName, "lab.html"), Export("009605", "LAB AST 1", "40000001", "Tech", (100, "Plant care")));
+            await File.WriteAllBytesAsync(Path.Combine(dir.FullName, "farm.html"), Export("004724", "FARM LABORER", "40000002", "Hand", (100, "Harvest")));
+
+            var pending = await pipeline.PendingClassesAsync(dir.FullName);
+
+            // The learned class is up to date and stays hidden; the starter is offered, under its own name.
+            var only = pending.Should().ContainSingle().Subject;
+            only.Code.Should().Be("009605");
+            only.Slug.Should().Be(starter.Slug);
+            only.Title.Should().Be("Laboratory Assistant 1");
+            only.ReplacesStarter.Should().BeTrue();
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
     }
 }

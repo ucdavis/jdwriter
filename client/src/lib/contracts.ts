@@ -446,6 +446,8 @@ export type FitRewriteResponse = {
 export type PendingClass = {
   code: string;
   fileCount: number;
+  /** The class exists only as a starter envelope from its standard; ingesting replaces it. */
+  replacesStarter: boolean;
   slug: string;
   title: string;
 };
@@ -493,6 +495,8 @@ export type UploadedClass = {
   /** Descriptions filed from Classify since the last rebuild. */
   newClassified: number;
   newFiles: number;
+  /** The class exists only as a starter envelope from its standard, which these JDs replace. */
+  replacesStarter: boolean;
   title: string;
 };
 

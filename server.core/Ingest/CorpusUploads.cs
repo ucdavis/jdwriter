@@ -30,6 +30,9 @@ public sealed class UploadedClass
     /// <summary>Set when the class already exists; ingesting refreshes it rather than creating it.</summary>
     public string? ExistingSlug { get; set; }
 
+    /// <summary>The class exists only as a starter envelope from its standard, which these JDs replace.</summary>
+    public bool ReplacesStarter { get; set; }
+
     /// <summary>Uploaded exports waiting to be added.</summary>
     public int NewFiles { get; set; }
 
@@ -135,7 +138,7 @@ public sealed class CorpusUploads
             .ToListAsync(ct);
 
         var profiles = await _db.ClassProfiles.AsNoTracking()
-            .Select(p => new { p.UcJobCode, p.Slug, p.Title, p.LastIngestedAt, p.EnvelopeSource })
+            .Select(p => new { p.UcJobCode, p.Slug, p.Title, p.LastIngestedAt, p.EnvelopeSource, p.CorpusSize })
             .ToListAsync(ct);
 
         var added = await _db.JobDescriptions.AsNoTracking()
@@ -173,6 +176,7 @@ public sealed class CorpusUploads
                     NewClassified = waiting.Count(w => w.UcJobCode == code && w.Origin == CorpusOrigin.Classify),
                     CorpusJds = corpus.GetValueOrDefault(code),
                     HasManualEnvelope = profile?.EnvelopeSource == EnvelopeSource.Manual,
+                    ReplacesStarter = profile?.EnvelopeSource == EnvelopeSource.Standard && profile.CorpusSize == 0,
                 };
             })
             .OrderBy(c => c.Title, StringComparer.Ordinal)

@@ -16,6 +16,12 @@ public sealed class PendingClass
     public string Slug { get; set; } = "";
     public string Title { get; set; } = "";
     public int FileCount { get; set; }
+
+    /// <summary>
+    /// The class exists only as a starter envelope bootstrapped from its standard; ingesting replaces
+    /// that with one learned from these JDs, on the same class.
+    /// </summary>
+    public bool ReplacesStarter { get; set; }
 }
 
 /// <summary>
@@ -110,18 +116,23 @@ public sealed partial class IngestPipeline
         return byCode;
     }
 
-    /// <summary>Classes present in the corpus with no profile in the database yet.</summary>
+    /// <summary>
+    /// Classes present in the corpus that have not learned from it yet: those with no class at all,
+    /// and those that exist only as a starter envelope bootstrapped from their standard. A starter
+    /// is matched by job code, so its new exports are not hidden behind the class it will become.
+    /// </summary>
     public async Task<List<PendingClass>> PendingClassesAsync(string corpusDir, CancellationToken ct = default)
     {
-        var done = await _db.ClassProfiles.AsNoTracking()
-            .Select(p => p.UcJobCode)
+        var profiles = await _db.ClassProfiles.AsNoTracking()
+            .Select(p => new { p.UcJobCode, p.Slug, p.Title, p.EnvelopeSource, p.CorpusSize })
             .ToListAsync(ct);
-        var doneCodes = done.Select(TitleCodeIndex.Pad).ToHashSet(StringComparer.Ordinal);
 
         var pending = new List<PendingClass>();
         foreach (var (code, recs) in await ScanCorpusAsync(corpusDir, ct))
         {
-            if (doneCodes.Contains(TitleCodeIndex.Pad(code)))
+            var existing = profiles.FirstOrDefault(p => TitleCodeIndex.Pad(p.UcJobCode) == TitleCodeIndex.Pad(code));
+            var starter = existing != null && existing.EnvelopeSource == EnvelopeSource.Standard && existing.CorpusSize == 0;
+            if (existing != null && !starter)
             {
                 continue;
             }
@@ -129,9 +140,10 @@ public sealed partial class IngestPipeline
             pending.Add(new PendingClass
             {
                 Code = code,
-                Slug = SlugForClass(code, recs[0].UcJobTitle),
-                Title = ProfileAggregator.Titleize(recs[0].UcJobTitle),
+                Slug = existing?.Slug ?? SlugForClass(code, recs[0].UcJobTitle),
+                Title = existing?.Title ?? ProfileAggregator.Titleize(recs[0].UcJobTitle),
                 FileCount = recs.Count,
+                ReplacesStarter = starter,
             });
         }
 
@@ -155,7 +167,18 @@ public sealed partial class IngestPipeline
     {
         ArgumentOutOfRangeException.ThrowIfZero(records.Count);
 
-        slug ??= SlugForClass(records[0].UcJobCode, records[0].UcJobTitle);
+        if (slug is null)
+        {
+            // Find the class by its job code, not by a slug derived from this batch's title. A class
+            // bootstrapped from its standard took its slug from the standard's title; one derived
+            // from the exports' payroll title would miss it and create a second class for the code.
+            var code = TitleCodeIndex.Pad(records[0].UcJobCode);
+            var known = await _db.ClassProfiles.AsNoTracking()
+                .Select(p => new { p.UcJobCode, p.Slug })
+                .ToListAsync(ct);
+            slug = known.FirstOrDefault(p => TitleCodeIndex.Pad(p.UcJobCode) == code)?.Slug
+                   ?? SlugForClass(records[0].UcJobCode, records[0].UcJobTitle);
+        }
         var profile = ProfileAggregator.Aggregate(records, slug);
 
         var existing = await _db.ClassProfiles.AsNoTracking()
@@ -308,8 +331,10 @@ public sealed partial class IngestPipeline
         _db.RemoveRange(p.SourceFiles);
         await _db.SaveChangesAsync(ct);
 
+        // The title is NOT replaced: a class keeps the name it was created with. A class bootstrapped
+        // from its standard keeps the standard's readable title ("Financial Analyst 3 CX") rather than
+        // turning into the payroll spelling ("Financial Anl 3 Cx") the moment real JDs arrive.
         p.UcJobCode = fresh.UcJobCode;
-        p.Title = fresh.Title;
         p.CtJobFamily = fresh.CtJobFamily;
         p.CtJobFunction = fresh.CtJobFunction;
         p.PersonnelProgram = fresh.PersonnelProgram;

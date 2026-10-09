@@ -574,7 +574,7 @@ export const handlers = [
     HttpResponse.json({
       configured: true,
       pending: [
-        { code: '006256', fileCount: 9, slug: '006256-rsch-data-anl-2', title: 'Rsch Data Anl 2' },
+        { code: '006256', fileCount: 9, replacesStarter: false, slug: '006256-rsch-data-anl-2', title: 'Rsch Data Anl 2' },
       ],
     })
   ),

@@ -126,6 +126,7 @@ export const IngestPanel = () => {
                 <span className="text-base font-semibold">{c.title}</span>
                 <span className="text-sm text-base-content/65 tnum">
                   Code {c.code} · {c.fileCount} JD{c.fileCount === 1 ? '' : 's'}
+                  {c.replacesStarter ? ' · replaces its starter envelope' : ''}
                 </span>
               </span>
               {statusBadge(status[c.code])}
@@ -282,9 +283,11 @@ export const UploadPanel = () => {
                     ]
                       .filter(Boolean)
                       .join(' · ')}
-                    {c.existingSlug
-                      ? ` · refreshes a class with ${c.corpusJds} JDs`
-                      : ' · new class'}
+                    {c.replacesStarter
+                      ? ' · replaces its starter envelope'
+                      : c.existingSlug
+                        ? ` · refreshes a class with ${c.corpusJds} JDs`
+                        : ' · new class'}
                   </span>
                   {c.hasManualEnvelope ? (
                     <span className="text-sm text-warning">
