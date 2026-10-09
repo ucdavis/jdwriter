@@ -38,21 +38,27 @@ public sealed partial class TitleCodeIndex
 
     /// <summary>
     /// Bargaining units whose accretion issues a suffixed successor code: RP (Research and Public
-    /// Service Professionals), CX (Clerical), TX (Technical), RX (Research Support) and HX (Health
-    /// Care Professionals).
+    /// Service Professionals), CX (Clerical), TX (Technical), RX (Research Support), HX (Health
+    /// Care Professionals) and SV (Student Services and Advising Professionals, UAW).
+    ///
+    /// SV was once listed here as a supervisor variant, wrongly: it is a bargaining unit, and its
+    /// titles are "bargaining unit only with no uncovered positions" (UCnet), so "ACAD ACHIEVEMENT
+    /// CNSLR 2 SV" (004972) replaces 004500 exactly as an RP code replaces its predecessor. Missing
+    /// it left 44 student-services classes unpaired, and a JD filed under a retired code built a
+    /// duplicate beside its successor.
     ///
     /// Deliberately NOT every suffix. NEX means non-exempt ("SRA 2" and "SRA 2 NEX" are both
     /// current, and treating it as a union would refile 118 JDs under the wrong class); EX marks
-    /// exempt medical-center professions; SV, LD and PD are supervisor, lead and per-diem variants.
+    /// exempt medical-center professions; LD and PD are lead and per-diem variants.
     ///
     /// GF (grandfathered) is stripped from the base too, as the POC did, so a GF variant is a
     /// second candidate in its group and the group is reported as ambiguous rather than guessed —
     /// which is why "RSCH AND DEV ENGR 4" (with an in-use "... TX GF") is not paired.
     /// </summary>
-    [GeneratedRegex(@"\s+(RP|CX|TX|RX|HX|GF)\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\s+(RP|CX|TX|RX|HX|SV|GF)\b", RegexOptions.IgnoreCase)]
     private static partial Regex UnionSuffix();
 
-    [GeneratedRegex(@"\b(RP|CX|TX|RX|HX)\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(RP|CX|TX|RX|HX|SV)\b", RegexOptions.IgnoreCase)]
     private static partial Regex IsUnionTitle();
 
     [GeneratedRegex(@"\s+")]
