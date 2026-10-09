@@ -1,5 +1,6 @@
 import {
   BootstrapPanel,
+  DocumentImportPanel,
   EnvelopeTransferPanel,
   IngestPanel,
   StandardsPanel,
@@ -26,10 +27,11 @@ function CorpusPage() {
 
       <Section
         id="jds"
-        sub="Upload HRTMS exports, or ingest new classes from the corpus folder. Each class is rebuilt from its JDs."
+        sub="Upload HRTMS exports, add JDs from other units as Word documents, or ingest new classes from the corpus folder. Each class is rebuilt from its JDs."
         title="Add job descriptions"
       >
         <UploadPanel />
+        <DocumentImportPanel />
         <IngestPanel />
       </Section>
 

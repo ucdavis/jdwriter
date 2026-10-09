@@ -94,7 +94,9 @@ Seed the real corpus into `prod` only. `test` gets a scrubbed subset (`jdw-cli m
 
 The 1,367-JD CLI load is only the start. Corpus records (`JobDescription`) carry an `Origin` —
 `Export` (CLI load or admin upload), `Authored` (a finished JD that changed its envelope and passed
-the envelope check), `Classify` (a Classify-page submission, filed under a class) — and an
+the envelope check), `Classify` (a Classify-page submission, filed under a class), `Imported` (a JD from a unit outside
+the college — JDX can't export HRTMS's format — read from a Word/PDF/text copy and filed under the
+class its stated title resolves to; never guessed on ambiguity) — and an
 `AddedAt` the CLI never sets. Rebuilding a class reads all of them. Uploaded and submitted
 originals are kept as bytes in the **database only** (Azure SQL encrypts at rest), never written to
 disk, never logged — HRTMS file names embed position numbers.

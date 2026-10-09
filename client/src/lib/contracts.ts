@@ -495,6 +495,8 @@ export type UploadedClass = {
   /** Descriptions filed from Classify since the last rebuild. */
   newClassified: number;
   newFiles: number;
+  /** JDs from units outside the college, imported from documents since the last rebuild. */
+  newImported: number;
   /** The class exists only as a starter envelope from its standard, which these JDs replace. */
   replacesStarter: boolean;
   title: string;

@@ -220,7 +220,7 @@ public enum CorpusUploadStatus
     Failed,
 
     /// <summary>
-    /// Filed straight into a class's corpus (Classify submissions). Counts at the class's next
+    /// Filed straight into a class's corpus (Classify submissions, imported documents). Counts at the class's next
     /// rebuild; the admin queue shows it as new evidence.
     /// </summary>
     Filed,
@@ -230,6 +230,9 @@ public enum CorpusUploadSource
 {
     Upload,
     Classify,
+
+    /// <summary>A Word, PDF or text JD from a unit outside the college, filed by the title it states.</summary>
+    Document,
 }
 
 public enum CorpusOrigin
@@ -242,4 +245,10 @@ public enum CorpusOrigin
 
     /// <summary>A description submitted on the Classify page, filed under a class.</summary>
     Classify,
+
+    /// <summary>
+    /// A JD from a unit outside the college, read from a Word, PDF or text copy (JDX cannot export
+    /// HRTMS's format) and filed under the class its stated title resolves to.
+    /// </summary>
+    Imported,
 }

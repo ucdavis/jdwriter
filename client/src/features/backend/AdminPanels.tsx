@@ -4,6 +4,7 @@ import {
   useBootstrapCandidates,
   useBootstrapClass,
   useIngestClass,
+  useImportDocument,
   useIngestUploaded,
   useUploadStandards,
   useUploadedPending,
@@ -16,6 +17,7 @@ import {
 } from '@/queries/admin.ts';
 import type { EnvelopeImportRefusal, SupersededProfile } from '@/lib/contracts.ts';
 import { appUrl } from '@/lib/basePath.ts';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
 type RowStatus = 'done' | 'error' | 'running' | 'waiting';
@@ -280,6 +282,7 @@ export const UploadPanel = () => {
                       c.newFiles > 0 ? `${c.newFiles} uploaded` : null,
                       c.newAuthored > 0 ? `${c.newAuthored} written in the app` : null,
                       c.newClassified > 0 ? `${c.newClassified} from Classify` : null,
+                      c.newImported > 0 ? `${c.newImported} from other units` : null,
                     ]
                       .filter(Boolean)
                       .join(' · ')}
@@ -312,6 +315,172 @@ export const UploadPanel = () => {
           Each class is consolidated and its envelope rebuilt — a large class can take a minute
           or two.
         </p>
+      ) : null}
+    </Card>
+  );
+};
+
+/** What a folder can hold that this panel reads. Everything else is skipped, not failed. */
+const DOCUMENT_TYPES = ['.docx', '.pdf', '.txt'];
+
+const isDocument = (file: File) =>
+  !file.name.startsWith('.') &&
+  // Word's lock file for an open document ("~$Analyst.docx") is not a document.
+  !file.name.startsWith('~$') &&
+  DOCUMENT_TYPES.some((ext) => file.name.toLowerCase().endsWith(ext));
+
+type DocumentRow = {
+  detail: string | null;
+  name: string;
+  status: 'added' | 'duplicate' | 'failed' | 'running' | 'waiting';
+};
+
+/**
+ * JDs from units outside the college. Those can't be exported from HRTMS; they arrive as copies out
+ * of JDX, saved from Word. Each document is filed under the UC job title it states, and the AI reads
+ * its responsibilities, % time and qualifications into the corpus.
+ *
+ * ONE DOCUMENT PER REQUEST, sequentially, as the ingest panels do: each is a model call, and a
+ * folder of them sent as one request would let one slow file time out the lot.
+ */
+export const DocumentImportPanel = () => {
+  const importDocument = useImportDocument();
+  const queryClient = useQueryClient();
+  const [rows, setRows] = useState<DocumentRow[]>([]);
+  const [skipped, setSkipped] = useState(0);
+  const [running, setRunning] = useState(false);
+  const stop = useRef(false);
+
+  const update = (i: number, row: Partial<DocumentRow>) =>
+    setRows((r) => r.map((x, k) => (k === i ? { ...x, ...row } : x)));
+
+  const run = async (list: FileList | null) => {
+    const all = [...(list ?? [])];
+    const files = all.filter(isDocument);
+    setSkipped(all.length - files.length);
+    setRows(files.map((f) => ({ detail: null, name: f.webkitRelativePath || f.name, status: 'waiting' })));
+    if (files.length === 0) {
+      return;
+    }
+
+    stop.current = false;
+    setRunning(true);
+    for (const [i, file] of files.entries()) {
+      if (stop.current) {
+        break;
+      }
+
+      update(i, { status: 'running' });
+      try {
+        const outcome = await importDocument.mutateAsync(file);
+        update(i, {
+          detail:
+            outcome.result === 'added'
+              ? `${outcome.title ?? ''} (${outcome.ucJobCode ?? ''})`
+              : outcome.result === 'duplicate'
+                ? 'Already added'
+                : outcome.error,
+          status: outcome.result,
+        });
+      } catch (error_) {
+        update(i, { detail: messageOf(error_), status: 'failed' });
+      }
+    }
+
+    setRunning(false);
+    void queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] });
+  };
+
+  const done = rows.filter((r) => r.status !== 'waiting' && r.status !== 'running').length;
+  const count = (s: DocumentRow['status']) => rows.filter((r) => r.status === s).length;
+  const tone = { added: 'green', duplicate: 'muted', failed: 'red', running: 'yellow', waiting: 'muted' } as const;
+  const label = { added: 'added', duplicate: 'already added', failed: 'failed', running: 'reading…', waiting: 'waiting' };
+
+  return (
+    <Card className="mb-5 p-5">
+      <Eyebrow>Add JDs from other units</Eyebrow>
+      <p className="mt-1 text-base text-base-content/65">
+        For job descriptions that can&apos;t be exported from HRTMS, such as copies out of JDX.
+        Save each from Word as a Word Document (.docx); PDF and text files work too. Add files or a
+        whole folder: each is filed under the UC job title it states, and the AI reads its
+        responsibilities, % time and qualifications. A document whose title doesn&apos;t match a
+        single UC title is listed, not guessed at. Added JDs appear above, ready to build in.
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <label className="btn btn-outline btn-sm">
+          Choose files
+          <input
+            accept={DOCUMENT_TYPES.join(',')}
+            aria-label="Add job description documents"
+            className="hidden"
+            disabled={running}
+            multiple
+            onChange={(e) => {
+              void run(e.target.files);
+              e.target.value = '';
+            }}
+            type="file"
+          />
+        </label>
+        <label className="btn btn-outline btn-sm">
+          Choose a folder
+          <input
+            aria-label="Add a folder of job description documents"
+            className="hidden"
+            disabled={running}
+            multiple
+            onChange={(e) => {
+              void run(e.target.files);
+              e.target.value = '';
+            }}
+            type="file"
+            {...{ webkitdirectory: '' }}
+          />
+        </label>
+        {running ? (
+          <>
+            <span className="text-base text-base-content/65 tnum">
+              Reading {Math.min(done + 1, rows.length)} of {rows.length}…
+            </span>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                stop.current = true;
+              }}
+              type="button"
+            >
+              Stop
+            </button>
+          </>
+        ) : null}
+      </div>
+
+      {rows.length > 0 && !running ? (
+        <p className="mt-3 text-base" data-testid="document-summary">
+          {count('added')} added · {count('duplicate')} already added · {count('failed')} not usable
+          {skipped > 0 ? ` · ${skipped} other file${skipped === 1 ? '' : 's'} skipped` : ''}
+        </p>
+      ) : null}
+
+      {rows.length > 0 ? (
+        <ul className="mt-2 max-h-96 divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300">
+          {rows.map((r) => (
+            <li className="flex items-start justify-between gap-3 px-3 py-2" key={r.name}>
+              <span className="flex min-w-0 flex-col">
+                <span className="truncate text-base">{r.name}</span>
+                {r.detail ? (
+                  <span
+                    className={`text-sm ${r.status === 'failed' ? 'text-error' : 'text-base-content/65'}`}
+                  >
+                    {r.detail}
+                  </span>
+                ) : null}
+              </span>
+              <Badge tone={tone[r.status]}>{label[r.status]}</Badge>
+            </li>
+          ))}
+        </ul>
       ) : null}
     </Card>
   );

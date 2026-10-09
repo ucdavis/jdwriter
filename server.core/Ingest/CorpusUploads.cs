@@ -42,6 +42,9 @@ public sealed class UploadedClass
     /// <summary>Descriptions filed from the Classify page since the class was last rebuilt.</summary>
     public int NewClassified { get; set; }
 
+    /// <summary>JDs from units outside the college, imported from documents since the last rebuild.</summary>
+    public int NewImported { get; set; }
+
     /// <summary>JDs already in the corpus for this class.</summary>
     public int CorpusJds { get; set; }
 
@@ -174,6 +177,7 @@ public sealed class CorpusUploads
                     NewFiles = upload?.Count ?? 0,
                     NewAuthored = waiting.Count(w => w.UcJobCode == code && w.Origin == CorpusOrigin.Authored),
                     NewClassified = waiting.Count(w => w.UcJobCode == code && w.Origin == CorpusOrigin.Classify),
+                    NewImported = waiting.Count(w => w.UcJobCode == code && w.Origin == CorpusOrigin.Imported),
                     CorpusJds = corpus.GetValueOrDefault(code),
                     HasManualEnvelope = profile?.EnvelopeSource == EnvelopeSource.Manual,
                     ReplacesStarter = profile?.EnvelopeSource == EnvelopeSource.Standard && profile.CorpusSize == 0,
