@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Server.Core.Data;
 using Server.Core.Domain;
+using Server.Core.Profiles;
 using Server.Core.Titles;
 
 namespace Server.Core.Standards;
@@ -283,6 +284,10 @@ public sealed class Bootstrapper : IBootstrapper
         };
 
         var envelope = await buildEnvelope(std, meta);
+
+        // House rules for education, applied in code whether the envelope was synthesized here or
+        // moved in from another environment.
+        QualificationRules.Apply(envelope);
 
         var profile = new ClassProfile
         {

@@ -143,7 +143,8 @@ public class EnvelopeTransferTests
         envelope.Summary.Should().Be("Model summary for Financial Analyst 2 CX.");
         envelope.KeyResponsibilities.Select(r => (r.FunctionName, r.PctTime)).Should().Equal(("PRIMARY", 60), ("SECONDARY", 40));
         envelope.KeyResponsibilities[0].Duties.Should().Equal("Does Financial Analyst 2 CX work.");
-        envelope.Education.Should().Equal("Bachelor's degree.");
+        // Arriving envelopes get the education house rules too: a degree reads "or equivalent".
+        envelope.Education.Should().Equal("Bachelor's degree or equivalent experience.");
 
         // Everything else is rebuilt from production's OWN standard, as a bootstrap there would.
         db.ProfileDistributions.Should().Contain(d => d.Field == DistributionField.UnionCode && d.Consensus == "CX");
