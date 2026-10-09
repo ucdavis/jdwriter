@@ -5,6 +5,7 @@ import type {
   StandardsUploadResponse,
   SecurityStatus,
   UploadedPendingResponse,
+  UploadOutcome,
   UploadResponse,
   ApiKeyStatus,
   AdminsResponse,
@@ -187,6 +188,20 @@ export const useUploadExports = () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] }),
   });
 };
+
+/**
+ * Add ONE JD from a unit outside the college (a Word, PDF or text copy). One document per request:
+ * each is a model call, so a folder is sent file by file and each verdict shows as it lands. The
+ * caller refreshes the rebuild queue once the whole folder is done.
+ */
+export const useImportDocument = () =>
+  useMutation({
+    mutationFn: (file: File) => {
+      const body = new FormData();
+      body.append('file', file, file.name);
+      return fetchJson<UploadOutcome>('/api/admin/uploads/documents', { body, method: 'POST' });
+    },
+  });
 
 export const useIngestUploaded = () => {
   const queryClient = useQueryClient();

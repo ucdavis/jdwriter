@@ -14,6 +14,7 @@ const pendingClass = (over: Partial<UploadedClass>): UploadedClass => ({
   newAuthored: 0,
   newClassified: 0,
   newFiles: 2,
+  newImported: 0,
   replacesStarter: false,
   title: 'Farm Laborer',
   ...over,

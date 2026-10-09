@@ -45,6 +45,7 @@ public class AdminController : ApiControllerBase
     private readonly AppDbContext _db;
     private readonly ApiKeySettings _apiKey;
     private readonly CorpusUploads _uploads;
+    private readonly CorpusDocuments _documents;
     private readonly DatabaseSecurity _security;
     private readonly Server.Core.Analytics.AdminAnalytics _analytics;
 
@@ -62,6 +63,7 @@ public class AdminController : ApiControllerBase
         AppDbContext db,
         ApiKeySettings apiKey,
         CorpusUploads uploads,
+        CorpusDocuments documents,
         DatabaseSecurity security,
         Server.Core.Analytics.AdminAnalytics analytics)
     {
@@ -78,6 +80,7 @@ public class AdminController : ApiControllerBase
         _db = db;
         _apiKey = apiKey;
         _uploads = uploads;
+        _documents = documents;
         _security = security;
         _analytics = analytics;
     }
@@ -121,6 +124,31 @@ public class AdminController : ApiControllerBase
 
         var outcomes = await _uploads.UploadAsync(read, await User.IdAsync(_db, ct), ct);
         return Ok(new { files = outcomes });
+    }
+
+    /// <summary>Ceiling for one document: the extractor's own limit, plus multipart overhead.</summary>
+    private const long MaxDocumentBytes = 21L * 1024 * 1024;
+
+    /// <summary>
+    /// Add one JD from a unit outside the college, from a Word, PDF or text copy. ONE document per
+    /// request: each is a model call, so the client sends a folder file by file and shows each
+    /// verdict as it lands, rather than letting one slow file time out the whole folder.
+    /// </summary>
+    [HttpPost("uploads/documents")]
+    [RequestSizeLimit(MaxDocumentBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxDocumentBytes)]
+    public async Task<IActionResult> ImportDocument(IFormFile? file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Choose a job description document (.docx, .pdf or .txt) to add." });
+        }
+
+        using var buffer = new MemoryStream();
+        await file.CopyToAsync(buffer, ct);
+        var outcome = await _documents.ImportAsync(
+            file.FileName, buffer.ToArray(), file.ContentType ?? "", await User.IdAsync(_db, ct), ct);
+        return Ok(outcome);
     }
 
     [HttpGet("uploads/pending")]
