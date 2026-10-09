@@ -226,6 +226,13 @@ public class BuildController : ApiControllerBase
             return NotFound(new { message = $"No class found for “{body.Slug}”." });
         }
 
+        // A finished JD names its department: HR routes and files it by department. Drafts may be
+        // saved without one; assembling cannot.
+        if (string.IsNullOrWhiteSpace(body.Department))
+        {
+            return BadRequest(new { message = "Department is required." });
+        }
+
         var inputs = Inputs(profile, body);
 
         // An unchanged build needs no model at all, so only a changed one needs a provider.

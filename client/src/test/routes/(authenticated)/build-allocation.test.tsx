@@ -3,6 +3,7 @@ import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import '@/test/mswUtils.ts';
+import { fillDepartment } from '@/test/build.ts';
 
 /**
  * The percent-of-time allocation gate on the guided build.
@@ -12,9 +13,13 @@ import '@/test/mswUtils.ts';
  * neither published silently nor rescaled away — the author is shown it and decides where
  * the freed time goes.
  */
-const openBuild = async () => {
+const openBuild = async (user?: ReturnType<typeof userEvent.setup>) => {
   renderRoute({ initialPath: '/class/009605-lab-ast-1' });
   await screen.findByTestId('duties-intro');
+  // With the department entered, only the time allocation can hold the build back.
+  if (user) {
+    await fillDepartment(user);
+  }
 };
 
 describe('build allocation', () => {
@@ -30,7 +35,7 @@ describe('build allocation', () => {
 
   it('names the shortfall and blocks continuing when a responsibility is dropped', async () => {
     const user = userEvent.setup();
-    await openBuild();
+    await openBuild(user);
 
     await waitFor(() => screen.getByTestId('allocation-total'));
 
@@ -52,7 +57,7 @@ describe('build allocation', () => {
 
   it('lets the author redistribute the freed time and then continue', async () => {
     const user = userEvent.setup();
-    await openBuild();
+    await openBuild(user);
 
     await waitFor(() => screen.getByTestId('allocation-total'));
     await user.click(screen.getAllByRole('checkbox', { name: /^Include / })[0]);
@@ -72,7 +77,7 @@ describe('build allocation', () => {
 
   it('treats over-allocation the same way', async () => {
     const user = userEvent.setup();
-    await openBuild();
+    await openBuild(user);
 
     await waitFor(() => screen.getByTestId('allocation-total'));
 
@@ -91,7 +96,7 @@ describe('build allocation', () => {
 
   it('never silently rescales the kept percentages', async () => {
     const user = userEvent.setup();
-    await openBuild();
+    await openBuild(user);
 
     await waitFor(() => screen.getByTestId('allocation-total'));
 
