@@ -19,7 +19,7 @@ const check = (over: Partial<EnvelopeCheckResponse>): EnvelopeCheckResponse => (
 
 const reviewAndContinue = async (user: ReturnType<typeof userEvent.setup>) => {
   renderRoute({ initialPath: '/class/009605-lab-ast-1' });
-  await user.click(await screen.findByRole('button', { name: 'Review & continue →' }));
+  await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
 };
 
 describe('a borderline fit', () => {

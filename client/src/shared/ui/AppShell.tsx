@@ -39,6 +39,13 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
         </Link>
         <nav className="flex items-center gap-4">
           <Link
+            activeOptions={{ exact: true }}
+            className="text-base font-semibold text-white/75 hover:text-ucd-gold"
+            to="/"
+          >
+            Home
+          </Link>
+          <Link
             className="text-base font-semibold text-white/75 hover:text-ucd-gold"
             to="/classify"
           >

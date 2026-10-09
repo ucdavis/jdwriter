@@ -14,7 +14,7 @@ import '@/test/mswUtils.ts';
  */
 const openBuild = async () => {
   renderRoute({ initialPath: '/class/009605-lab-ast-1' });
-  await waitFor(() => screen.getByText('Build the job description'));
+  await screen.findByTestId('duties-intro');
 };
 
 describe('build allocation', () => {
@@ -43,7 +43,7 @@ describe('build allocation', () => {
     });
 
     // The reason sits next to the disabled control, not only in a toast.
-    const cont = screen.getByRole('button', { name: /Review & continue/ });
+    const cont = screen.getByRole('button', { name: /Check my duties/ });
     expect(cont).toBeDisabled();
     expect(screen.getByTestId('build-gate-reason')).toHaveTextContent(
       /unallocated — assign it before continuing/
@@ -67,7 +67,7 @@ describe('build allocation', () => {
       expect(screen.getByTestId('allocation-total')).toHaveTextContent('100%');
     });
     expect(screen.getByText('balanced')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Review & continue/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /Check my duties/ })).toBeEnabled();
   });
 
   it('treats over-allocation the same way', async () => {
@@ -83,7 +83,7 @@ describe('build allocation', () => {
     await waitFor(() => {
       expect(screen.getByText(/% over-allocated$/)).toBeInTheDocument();
     });
-    expect(screen.getByRole('button', { name: /Review & continue/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Check my duties/ })).toBeDisabled();
     expect(screen.getByTestId('build-gate-reason')).toHaveTextContent(
       /over-allocated — reduce it before continuing/
     );
