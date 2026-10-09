@@ -155,16 +155,27 @@ export const Field = ({
   label,
   onChange,
   placeholder,
+  required = false,
   value,
 }: {
   label: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  /** Marked in the label and on the input; the caller decides what it blocks. */
+  required?: boolean;
   value: string;
 }) => (
   <label className="block">
-    <span className="eyebrow">{label}</span>
+    <span className="eyebrow">
+      {label}
+      {required ? (
+        <span aria-hidden className="text-error">
+          {' '}*
+        </span>
+      ) : null}
+    </span>
     <input
+      aria-required={required || undefined}
       className="input input-bordered mt-1 w-full text-base"
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}

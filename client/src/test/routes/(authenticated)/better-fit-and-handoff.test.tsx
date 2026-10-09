@@ -1,5 +1,6 @@
 import { renderRoute, setupRouteTest } from '@/test/renderRoute.tsx';
 import { testServer } from '@/test/mswUtils.ts';
+import { fillDepartment } from '@/test/build.ts';
 import type { BuildRequest, EnvelopeCheckResponse, SavedJd } from '@/lib/contracts.ts';
 import { screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -19,6 +20,7 @@ const check = (over: Partial<EnvelopeCheckResponse>): EnvelopeCheckResponse => (
 
 const reviewAndContinue = async (user: ReturnType<typeof userEvent.setup>) => {
   renderRoute({ initialPath: '/class/009605-lab-ast-1' });
+  await fillDepartment(user);
   await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
 };
 

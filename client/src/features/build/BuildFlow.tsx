@@ -132,6 +132,8 @@ export const BuildFlow = ({
   const error = check.error ?? assemble.error;
   const busy = check.isPending || assemble.isPending;
   const balanced = state.totalPct === 100;
+  const hasDepartment = state.department.trim().length > 0;
+  const ready = balanced && hasDepartment;
 
   const go = (next: Step) => {
     // A step change answers afresh; an earlier search described a different build.
@@ -180,11 +182,14 @@ export const BuildFlow = ({
     });
   };
 
-  const gateReason = balanced
-    ? null
-    : state.totalPct < 100
-      ? `${100 - state.totalPct}% of time is unallocated — assign it before continuing.`
-      : `${state.totalPct - 100}% over-allocated — reduce it before continuing.`;
+  // Why the author can't continue yet, most fundamental first.
+  const gateReason = !hasDepartment
+    ? 'Enter the department before continuing.'
+    : balanced
+      ? null
+      : state.totalPct < 100
+        ? `${100 - state.totalPct}% of time is unallocated — assign it before continuing.`
+        : `${state.totalPct - 100}% over-allocated — reduce it before continuing.`;
 
   const draftButton = (
     <>
@@ -245,6 +250,7 @@ export const BuildFlow = ({
                 label="Department"
                 onChange={state.setDepartment}
                 placeholder="e.g. Plant Pathology"
+                required
                 value={state.department}
               />
             </div>
@@ -256,7 +262,7 @@ export const BuildFlow = ({
           <div className="flex flex-wrap items-center gap-3">
             <button
               className="btn btn-primary btn-sm"
-              disabled={busy || !balanced}
+              disabled={busy || !ready}
               onClick={checkDuties}
               type="button"
             >
@@ -341,7 +347,7 @@ export const BuildFlow = ({
               className="btn btn-primary btn-sm"
               // Balance is re-checked here, not just on the previous step: the author can go back,
               // edit, and return, and the server refuses a non-zero shortfall anyway.
-              disabled={busy || !balanced}
+              disabled={busy || !ready}
               onClick={checkAndAssemble}
               type="button"
             >

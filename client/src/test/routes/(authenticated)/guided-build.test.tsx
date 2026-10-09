@@ -1,5 +1,6 @@
 import { renderRoute, setupRouteTest } from '@/test/renderRoute.tsx';
 import { testServer } from '@/test/mswUtils.ts';
+import { fillDepartment } from '@/test/build.ts';
 import type { BuildRequest, EnvelopeCheckResponse } from '@/lib/contracts.ts';
 import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -63,6 +64,7 @@ describe('the guided build', () => {
     countChecks('in_envelope');
     open();
 
+    await fillDepartment(user);
     await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
 
     expect(await screen.findByText('Check completed!')).toBeInTheDocument();
@@ -77,6 +79,7 @@ describe('the guided build', () => {
     const checks = countChecks('in_envelope');
     open();
 
+    await fillDepartment(user);
     await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
     await user.click(await screen.findByRole('button', { name: 'Assemble the JD →' }));
 
@@ -89,6 +92,7 @@ describe('the guided build', () => {
     const checks = countChecks('in_envelope', 'out_of_envelope');
     open();
 
+    await fillDepartment(user);
     await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
     await user.type(await screen.findByPlaceholderText('Add to preferred qualifications…'), 'Sets the unit budget{Enter}');
     await user.click(screen.getByRole('button', { name: 'Assemble the JD →' }));
@@ -108,6 +112,7 @@ describe('the guided build', () => {
     countChecks('in_envelope');
     open();
 
+    await fillDepartment(user);
     await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
     await user.click(await screen.findByRole('button', { name: 'Assemble the JD →' }));
 
@@ -125,6 +130,7 @@ describe('the guided build', () => {
     countChecks('borderline');
     open();
 
+    await fillDepartment(user);
     await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
 
     expect(await screen.findByText('Check completed!')).toBeInTheDocument();
@@ -137,6 +143,7 @@ describe('the guided build', () => {
     countChecks('out_of_envelope');
     open();
 
+    await fillDepartment(user);
     await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
 
     expect(await screen.findByText('Doesn’t fit class')).toBeInTheDocument();
@@ -167,6 +174,7 @@ describe('the guided build', () => {
     countChecks('in_envelope');
     open();
 
+    await fillDepartment(user);
     await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
     await screen.findByTestId('requirements-intro');
     expect(screen.queryByRole('button', { name: /Back to duties/ })).not.toBeInTheDocument();
@@ -183,6 +191,20 @@ describe('the guided build', () => {
     await screen.findByTestId('duties-intro');
     expect(screen.getByText(/^Built from \d+ job descriptions?$/)).toBeInTheDocument();
     expect(screen.queryByText('AI-synthesized')).not.toBeInTheDocument();
+  });
+
+  it('requires the department before the duties can be checked', async () => {
+    const user = userEvent.setup();
+    open();
+
+    const check = await screen.findByRole('button', { name: 'Check my duties →' });
+    expect(check).toBeDisabled();
+    expect(screen.getByTestId('build-gate-reason')).toHaveTextContent('Enter the department before continuing.');
+    expect(screen.getByLabelText(/^Department/)).toHaveAttribute('aria-required', 'true');
+
+    await fillDepartment(user);
+    expect(check).toBeEnabled();
+    expect(screen.queryByTestId('build-gate-reason')).not.toBeInTheDocument();
   });
 
   it('has a Home link in the top navigation', async () => {
