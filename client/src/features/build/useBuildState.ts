@@ -212,10 +212,18 @@ export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState |
     workingTitle,
   });
 
+  /**
+   * Everything the envelope check reads: the additions, the notes, and the position details. Two
+   * builds with the same key get the same verdict, so the requirements step skips a second check
+   * when nothing it reads has changed since the duties check.
+   */
+  const checkKey = JSON.stringify({ addedItems, department, notes, workingTitle });
+
   return {
     addedCount: addedItems.length,
     buildRequest,
     certs,
+    checkKey,
     customPct,
     department,
     dupNote,

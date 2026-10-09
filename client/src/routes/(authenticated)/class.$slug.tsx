@@ -1,4 +1,6 @@
-import { Badge, Card, Eyebrow, Fact, PageHeader } from '@/shared/ui/primitives.tsx';
+import { Badge, Card, PageHeader } from '@/shared/ui/primitives.tsx';
+import { StandardDetail } from '@/features/build/StandardDetail.tsx';
+import { useState } from 'react';
 import { BuildFlow } from '@/features/build/BuildFlow.tsx';
 import { asDraftState } from '@/features/build/useBuildState.ts';
 import { savedJdQueryOptions } from '@/queries/jds.ts';
@@ -6,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { classProfileQueryOptions, useClassProfile } from '@/queries/classes.ts';
 import { useIsAdmin } from '@/shared/ui/AppShell.tsx';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import type { Distribution, EnvelopeSource } from '@/lib/contracts.ts';
+import type { ClassProfileResponse, Distribution, EnvelopeSource } from '@/lib/contracts.ts';
 import type { RouterContext } from '@/main.tsx';
 
 // Route options must follow TanStack Router's order (search validation before loader deps
@@ -77,104 +79,7 @@ function ClassPage() {
 
   return (
     <>
-      <PageHeader
-        back={{ label: 'Back to start', to: '/' }}
-        eyebrow={`${profile.ctJobFamily} · ${profile.ctJobFunction} · ${profile.personnelProgram}`}
-        sub={`Standardized template for UC job code ${profile.ucJobCode}, learned from ${profile.corpusSize} existing job descriptions. Tailor it below.`}
-        title={profile.title}
-      />
-
-      {envelope ? (
-        <Card className="mb-5 p-5">
-          <div className="flex items-center justify-between gap-3">
-            <Eyebrow>The Job Envelope</Eyebrow>
-            <div className="flex items-center gap-2">
-              {/* "No standard" is the NORMAL state for roughly 46 of 65 classes — the
-                  workbooks only cover 19 families — so it is stated plainly, not as a
-                  warning. */}
-              <Badge tone={profile.standard ? 'teal' : 'muted'}>
-                {profile.standard ? 'standard linked' : 'no standard'}
-              </Badge>
-              <Badge tone={source.tone}>{source.label}</Badge>
-            </div>
-          </div>
-          <p className="mt-2.5 text-base leading-relaxed">{envelope.summary}</p>
-          <p className="mt-2 text-base leading-relaxed text-base-content/65">
-            {envelope.scopeStatement}
-          </p>
-          {/* The standard's detail page is part of the back end, so only admins get the link. */}
-          {profile.standard && isAdmin ? (
-            <Link
-              className="mt-3 inline-block text-base font-semibold text-info hover:underline"
-              params={{ slug: profile.slug }}
-              to="/backend/standard/$slug"
-            >
-              → Reference the official job standard ({profile.standard.longTitle})
-            </Link>
-          ) : null}
-          {envelope.outOfEnvelope.length > 0 ? (
-            <details className="mt-3">
-              <summary className="cursor-pointer text-sm font-semibold uppercase tracking-wide text-warning">
-                Outside this envelope → suggests a different class
-              </summary>
-              <ul className="mt-2 space-y-1">
-                {envelope.outOfEnvelope.map((o) => (
-                  <li className="flex gap-2 text-base text-base-content/65" key={o}>
-                    <span className="text-warning">⚠</span>
-                    <span>{o}</span>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          ) : null}
-        </Card>
-      ) : null}
-
-      <Card className="mb-6 p-5">
-        <Eyebrow>The standard for this class</Eyebrow>
-        <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4">
-          <Fact agreement={1} label="UC Job Code" value={profile.ucJobCode} />
-          <Fact
-            agreement={profile.salaryGrade.agreement}
-            label="Salary Grade"
-            value={profile.salaryGrade.consensus ?? '—'}
-          />
-          <Fact
-            agreement={profile.flsaStatus.agreement}
-            label="FLSA"
-            value={profile.flsaStatus.consensus ?? '—'}
-          />
-          <Fact
-            agreement={profile.unionCode.agreement}
-            label="Bargaining Unit"
-            value={profile.unionCode.consensus ?? '—'}
-          />
-          <Fact
-            agreement={profile.supervises.agreement}
-            label="Supervises"
-            value={triStateLabel(profile.supervises)}
-          />
-          <Fact
-            agreement={profile.leads.agreement}
-            label="Leads"
-            value={triStateLabel(profile.leads)}
-          />
-          <Fact
-            agreement={profile.worksOutdoorsOver50pct.agreement}
-            label="Outdoors >50%"
-            value={triStateLabel(profile.worksOutdoorsOver50pct)}
-          />
-          <Fact agreement={1} label="Corpus" value={`${profile.corpusSize} JDs`} />
-        </div>
-      </Card>
-
-      <div className="mb-3">
-        <div className="eyebrow">Build the job description</div>
-        <p className="mt-1 text-base text-base-content/65">
-          Keep what applies, drop what doesn&apos;t, add anything unit-specific — then
-          assemble.
-        </p>
-      </div>
+      <PageHeader back={{ label: 'Back to start', to: '/' }} title={profile.title} />
 
       {envelope ? (
         <BuildFlow
@@ -189,6 +94,7 @@ function ClassPage() {
             workExperience: envelope.workExperience,
           }}
           key={draft ? `draft-${draft.id}` : 'fresh'}
+          overview={<EnvelopeOverview isAdmin={isAdmin} profile={profile} source={source} />}
           slug={profile.slug}
           title={profile.title}
         />
@@ -203,3 +109,106 @@ function ClassPage() {
     </>
   );
 }
+
+/**
+ * The envelope at a glance, kept short so the duties start above the fold: one summary, the job
+ * standard and the out-of-envelope signals behind toggles, and the class facts in a compact row.
+ */
+const EnvelopeOverview = ({
+  isAdmin,
+  profile,
+  source,
+}: {
+  isAdmin: boolean;
+  profile: ClassProfileResponse;
+  source: ReturnType<typeof sourceBadge>;
+}) => {
+  const [showStandard, setShowStandard] = useState(false);
+  const [showOutside, setShowOutside] = useState(false);
+  const envelope = profile.envelope;
+  const outside = envelope?.outOfEnvelope ?? [];
+
+  return (
+    <Card className="p-5">
+      <p className="text-base leading-relaxed" data-testid="envelope-summary">
+        {envelope?.summary}
+      </p>
+
+      <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-base" data-testid="envelope-facts">
+        <FactChip label="UC job code" value={profile.ucJobCode} />
+        <FactChip label="Salary grade" value={profile.salaryGrade.consensus ?? '—'} />
+        <FactChip label="FLSA" value={profile.flsaStatus.consensus ?? '—'} />
+        <FactChip label="Bargaining unit" value={profile.unionCode.consensus ?? '—'} />
+        <FactChip label="Supervises" value={triStateLabel(profile.supervises)} />
+        <FactChip label="Leads" value={triStateLabel(profile.leads)} />
+        <FactChip label="Outdoors >50%" value={triStateLabel(profile.worksOutdoorsOver50pct)} />
+        <FactChip label="Learned from" value={`${profile.corpusSize} JDs`} />
+      </dl>
+
+      <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+        {profile.standard ? (
+          <label className="flex cursor-pointer items-center gap-2 text-base font-semibold">
+            <input
+              checked={showStandard}
+              className="toggle toggle-primary toggle-sm"
+              onChange={() => setShowStandard((v) => !v)}
+              type="checkbox"
+            />
+            Show the job standard
+          </label>
+        ) : null}
+        {outside.length > 0 ? (
+          <label className="flex cursor-pointer items-center gap-2 text-base font-semibold">
+            <input
+              checked={showOutside}
+              className="toggle toggle-warning toggle-sm"
+              onChange={() => setShowOutside((v) => !v)}
+              type="checkbox"
+            />
+            Show what&apos;s outside this envelope
+          </label>
+        ) : null}
+        <Badge tone={source.tone}>{source.label}</Badge>
+      </div>
+
+      {showStandard && profile.standard ? (
+        <div className="mt-4">
+          <StandardDetail standard={profile.standard} />
+          {/* The standard's detail page is part of the back end, so only admins get the link. */}
+          {isAdmin ? (
+            <Link
+              className="mt-2 inline-block text-base font-semibold text-info hover:underline"
+              params={{ slug: profile.slug }}
+              to="/backend/standard/$slug"
+            >
+              → Open the standard in the back end
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+
+      {showOutside ? (
+        <div className="mt-4 rounded-lg border border-warning/30 bg-warning/5 p-3.5" data-testid="outside-envelope">
+          <div className="text-sm font-semibold uppercase tracking-wide text-warning">
+            Not part of this class — work like this suggests a different class
+          </div>
+          <ul className="mt-2 space-y-1">
+            {outside.map((o) => (
+              <li className="flex gap-2 text-base text-base-content/75" key={o}>
+                <span className="text-warning">⚠</span>
+                <span>{o}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </Card>
+  );
+};
+
+const FactChip = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex gap-1.5">
+    <dt className="text-base-content/55">{label}</dt>
+    <dd className="font-semibold tnum">{value}</dd>
+  </div>
+);

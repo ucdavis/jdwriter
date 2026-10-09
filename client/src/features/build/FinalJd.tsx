@@ -13,15 +13,68 @@ import type { ReactNode } from 'react';
  * analyst can see that a duty was reworded and on whose authority. A silent rewrite of a
  * legal document would be the worst failure this app could have.
  */
-export const FinalJd = ({ result }: { result: AssembledJd }) => {
+export const FinalJd = ({
+  onEdit,
+  result,
+}: {
+  /**
+   * Set when the JD was just built: the screen opens with the outcome — passed, what's next,
+   * downloads, and a way back to make changes. Without it (a saved JD reopened), a plain header.
+   */
+  onEdit?: () => void;
+  result: AssembledJd;
+}) => {
   const { jd } = result;
   const totalPct = jd.keyResponsibilities.reduce((s, r) => s + r.pctTime, 0);
   // The server reports the shortfall and refuses to call such a JD publishable. If one
   // reaches this screen anyway, say so rather than offering a download that looks final.
   const publishable = result.unallocatedPct === 0;
+  const savedStatus = result.authoredJdId ? (
+    <span className="text-base text-base-content/65" data-testid="saved-status">
+      Saved as{' '}
+      <Badge tone={result.status === 'ready' ? 'green' : 'yellow'}>
+        {result.status === 'ready' ? 'Ready' : 'Draft'}
+      </Badge>{' '}
+      ·{' '}
+      <Link className="text-primary hover:underline" to="/jds">
+        My JDs
+      </Link>
+    </span>
+  ) : null;
+  const downloads = (
+    <div className="flex gap-2">
+      {/* Word comes from the saved record, so it needs one; every assembly is saved. */}
+      {publishable && result.authoredJdId ? (
+        <a
+          className="btn btn-outline btn-sm"
+          download
+          href={appUrl(`/api/jds/${result.authoredJdId}/docx`)}
+        >
+          ⤓ Download Word
+        </a>
+      ) : null}
+      <button
+        className="btn btn-primary btn-sm"
+        disabled={!publishable}
+        onClick={() => window.print()}
+        title={publishable ? undefined : 'Percent of time must total 100%'}
+        type="button"
+      >
+        ⤓ Download PDF
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
+      {onEdit ? (
+        <Outcome
+          downloads={downloads}
+          onEdit={onEdit}
+          passed={publishable && result.status === 'ready'}
+          savedStatus={savedStatus}
+        />
+      ) : null}
       {publishable ? null : (
         <Note tone="red">
           This job description accounts for only {100 - result.unallocatedPct}% of time —{' '}
@@ -49,44 +102,15 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
         )
       ) : null}
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Eyebrow>Finished job description</Eyebrow>
-          {result.authoredJdId ? (
-            <span className="text-base text-base-content/65" data-testid="saved-status">
-              Saved as{' '}
-              <Badge tone={result.status === 'ready' ? 'green' : 'yellow'}>
-                {result.status === 'ready' ? 'Ready' : 'Draft'}
-              </Badge>{' '}
-              ·{' '}
-              <Link className="text-primary hover:underline" to="/jds">
-                My JDs
-              </Link>
-            </span>
-          ) : null}
+      {onEdit ? null : (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Eyebrow>Finished job description</Eyebrow>
+            {savedStatus}
+          </div>
+          {downloads}
         </div>
-        <div className="flex gap-2">
-          {/* Word comes from the saved record, so it needs one; every assembly is saved. */}
-          {publishable && result.authoredJdId ? (
-            <a
-              className="btn btn-outline btn-sm"
-              download
-              href={appUrl(`/api/jds/${result.authoredJdId}/docx`)}
-            >
-              ⤓ Download Word
-            </a>
-          ) : null}
-          <button
-            className="btn btn-primary btn-sm"
-            disabled={!publishable}
-            onClick={() => window.print()}
-            title={publishable ? undefined : 'Percent of time must total 100%'}
-            type="button"
-          >
-            ⤓ Download PDF
-          </button>
-        </div>
-      </div>
+      )}
 
       {publishable && result.status === 'ready' ? <NextSteps result={result} /> : null}
 
@@ -188,6 +212,40 @@ export const FinalJd = ({ result }: { result: AssembledJd }) => {
     </div>
   );
 };
+
+/** The outcome of a build: passed (or not yet), downloads, and how to make changes. */
+const Outcome = ({
+  downloads,
+  onEdit,
+  passed,
+  savedStatus,
+}: {
+  downloads: ReactNode;
+  onEdit: () => void;
+  passed: boolean;
+  savedStatus: ReactNode;
+}) => (
+  <Card className={`p-5 ${passed ? 'border-success/40' : 'border-warning/50'}`}>
+    <h2 className="text-2xl font-bold" data-testid="build-outcome">
+      {passed ? '✓ Great! Your JD passed.' : 'Your JD isn’t ready yet.'}
+    </h2>
+    <p className="mt-2 text-base">
+      {passed
+        ? 'You can move on to the next steps below, or download your JD here:'
+        : 'It’s saved as a draft. Make the changes noted below, then assemble it again.'}
+    </p>
+    <div className="mt-3 flex flex-wrap items-center gap-3">
+      {downloads}
+      {savedStatus}
+    </div>
+    <div className="mt-4 border-t border-base-300 pt-3">
+      <p className="text-base text-base-content/65">Need to make changes?</p>
+      <button className="btn btn-outline btn-sm mt-2" onClick={onEdit} type="button">
+        Make changes
+      </button>
+    </div>
+  </Card>
+);
 
 const Section = ({ children, title }: { children: ReactNode; title: string }) => (
   <div className="mt-5 border-t border-base-300 pt-4">

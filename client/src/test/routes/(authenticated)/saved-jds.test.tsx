@@ -123,14 +123,14 @@ describe('saved JDs', () => {
     );
     renderRoute({ initialPath: '/class/009605-lab-ast-1' });
 
-    await user.click(await screen.findByRole('button', { name: /Review & continue/ }));
+    await user.click(await screen.findByRole('button', { name: /Check my duties/ }));
     await user.click(await screen.findByRole('button', { name: /Assemble the JD/ }));
     expect(await screen.findByTestId('saved-status')).toHaveTextContent('Saved as Ready');
     expect(screen.getByTestId('corpus-note')).toHaveTextContent(/Added to this class’s corpus/);
 
-    // Back to tailoring and assemble again: the second request names the saved record.
-    await user.click(screen.getByRole('button', { name: /Back to tailoring/ }));
-    await user.click(await screen.findByRole('button', { name: /Review & continue/ }));
+    // Make changes and assemble again: the second request names the saved record.
+    await user.click(screen.getByRole('button', { name: 'Make changes' }));
+    await user.click(await screen.findByRole('button', { name: /Check my duties/ }));
     await user.click(await screen.findByRole('button', { name: /Assemble the JD/ }));
     await waitFor(() => expect(sent).toEqual([null, 42]));
   });
@@ -211,7 +211,7 @@ describe('saved JDs', () => {
     );
     renderRoute({ initialPath: '/class/009605-lab-ast-1' });
 
-    await user.click(await screen.findByRole('button', { name: /Review & continue/ }));
+    await user.click(await screen.findByRole('button', { name: /Check my duties/ }));
     await user.click(await screen.findByRole('button', { name: /Assemble the JD/ }));
 
     expect(await screen.findByTestId('from-envelope')).toHaveTextContent(/no AI review was needed/);

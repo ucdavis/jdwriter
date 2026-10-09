@@ -106,15 +106,19 @@ describe('an author sees no back end', () => {
     testServer.use(author());
     renderRoute({ initialPath: '/class/009605-lab-ast-1' });
 
-    await screen.findByText('Build the job description');
-    expect(screen.getByText('standard linked')).toBeInTheDocument();
-    expect(screen.queryByText(/Reference the official job standard/)).not.toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(await screen.findByLabelText('Show the job standard'));
+    // The standard itself is for everyone; only the back-end view of it is not.
+    expect(await screen.findByText(/Authoritative baseline/)).toBeInTheDocument();
+    expect(screen.queryByText(/Open the standard in the back end/)).not.toBeInTheDocument();
   });
 
   it('while an admin does get that link', async () => {
     renderRoute({ initialPath: '/class/009605-lab-ast-1' });
 
-    await screen.findByText(/Reference the official job standard/);
+    const user = userEvent.setup();
+    await user.click(await screen.findByLabelText('Show the job standard'));
+    await screen.findByText(/Open the standard in the back end/);
   });
 
   it('settings page itself explains rather than failing', async () => {
