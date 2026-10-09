@@ -17,12 +17,6 @@ public sealed class BootstrapCandidate
     public string Function { get; set; } = "";
     public string Grade { get; set; } = "";
 
-    /// <summary>
-    /// The code is on UC Davis payroll, not merely a title UCD could use. Bulk creation takes only
-    /// these: browse and the classifier exclude matrix-only titles, and a class nobody holds is
-    /// one to create deliberately, if at all.
-    /// </summary>
-    public bool InUse { get; set; }
 }
 
 /// <summary>
@@ -54,9 +48,27 @@ public sealed class BootstrapMeta
 }
 
 /// <summary>Why a class was not created from its standard.</summary>
+/// <summary>
+/// The classes that can be bootstrapped, and how many standards were left out because their title is
+/// not on UC Davis payroll — those could never be used, however good their envelope.
+/// </summary>
+public sealed class BootstrapCandidates
+{
+    public List<BootstrapCandidate> Candidates { get; set; } = [];
+
+    /// <summary>Standards whose title is in the UC title matrix but not on UC Davis payroll.</summary>
+    public int NotOnPayroll { get; set; }
+
+    /// <summary>Standards whose title matches no UC job code at all.</summary>
+    public int NoCodeMatch { get; set; }
+}
+
 public enum BootstrapRefusal
 {
     NoStandard,
+
+    /// <summary>The standard's title is not on UC Davis payroll, so its class could not be used.</summary>
+    NotOnPayroll,
     Superseded,
     Exists,
 
@@ -78,7 +90,7 @@ public sealed class BootstrapRefusedException : InvalidOperationException
 
 public interface IBootstrapper
 {
-    Task<List<BootstrapCandidate>> GetCandidatesAsync(CancellationToken ct = default);
+    Task<BootstrapCandidates> GetCandidatesAsync(CancellationToken ct = default);
 
     Task<ClassProfile> BootstrapAsync(string title, CancellationToken ct = default);
 
@@ -127,7 +139,7 @@ public sealed class Bootstrapper : IBootstrapper
     /// Matched on the LOOSE key, because "does this class already have a profile?" is a
     /// same-class question and a variant suffix should not make a profile invisible.
     /// </summary>
-    public async Task<List<BootstrapCandidate>> GetCandidatesAsync(CancellationToken ct = default)
+    public async Task<BootstrapCandidates> GetCandidatesAsync(CancellationToken ct = default)
     {
         var standards = await _standards.GetIndexAsync(ct);
         var titleCodes = await _titleCodes.GetAsync(ct);
@@ -144,7 +156,7 @@ public sealed class Bootstrapper : IBootstrapper
             .Select(p => TitleNormalizer.TitleKey(p.Title))
             .ToHashSet(StringComparer.Ordinal);
 
-        var result = new List<BootstrapCandidate>();
+        var result = new BootstrapCandidates();
 
         foreach (var s in standards.All)
         {
@@ -166,18 +178,32 @@ public sealed class Bootstrapper : IBootstrapper
                 continue;
             }
 
-            result.Add(new BootstrapCandidate
+            // Only classes UC Davis can actually use: a title on its payroll. A matrix-only title, or
+            // one matching no code, would get an envelope nobody could ever write a JD against.
+            if (tc is null)
+            {
+                result.NoCodeMatch++;
+                continue;
+            }
+
+            if (!tc.IsInUse)
+            {
+                result.NotOnPayroll++;
+                continue;
+            }
+
+            result.Candidates.Add(new BootstrapCandidate
             {
                 Title = s.LongTitle,
-                Code = tc?.Code ?? "",
-                Family = tc?.Family ?? "",
-                Function = tc?.Function ?? "",
-                Grade = !string.IsNullOrEmpty(s.Grade) ? s.Grade : tc?.Grade ?? "",
-                InUse = tc?.IsInUse ?? false,
+                Code = tc.Code,
+                Family = tc.Family,
+                Function = tc.Function,
+                Grade = !string.IsNullOrEmpty(s.Grade) ? s.Grade : tc.Grade,
             });
         }
 
-        return result.OrderBy(c => c.Title, StringComparer.Ordinal).ToList();
+        result.Candidates = result.Candidates.OrderBy(c => c.Title, StringComparer.Ordinal).ToList();
+        return result;
     }
 
     /// <summary>
@@ -226,7 +252,18 @@ public sealed class Bootstrapper : IBootstrapper
                 $"{std.LongTitle} ({sup.FromCode}) is superseded by {sup.ToTitle} ({sup.ToCode}) — bootstrap that class instead.");
         }
 
-        var code = tc?.Code ?? "";
+        // The same rule as the candidate list, enforced where classes are made: hiding a class from a
+        // list is not enough when another path (one class at a time, or an envelope moved in from
+        // another environment) can still create it.
+        if (tc is null || !tc.IsInUse)
+        {
+            throw new BootstrapRefusedException(BootstrapRefusal.NotOnPayroll,
+                tc is null
+                    ? $"{std.LongTitle} doesn't match a UC job code, so its class couldn't be used."
+                    : $"{std.LongTitle} ({tc.Code}) isn't on UC Davis payroll, so its class couldn't be used.");
+        }
+
+        var code = tc.Code;
         if (expectedCode is not null && TitleCodeIndex.Pad(expectedCode) != TitleCodeIndex.Pad(code))
         {
             throw new BootstrapRefusedException(BootstrapRefusal.CodeMismatch,

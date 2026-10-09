@@ -768,10 +768,11 @@ export const handlers = [
           family: 'Student Services',
           function: 'Academic Advising',
           grade: 'Grade 20',
-          inUse: true,
           title: 'Academic Achievement Counselor 3',
         },
       ],
+      noCodeMatch: 0,
+      notOnPayroll: 0,
     });
   }),
 ];

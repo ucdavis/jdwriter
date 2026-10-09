@@ -21,7 +21,8 @@ namespace Server.Core.Ingest;
 ///    to more than one class, is reported and the document is not filed — evidence filed under the
 ///    wrong class would quietly skew that class's envelope, so this never guesses. It runs before
 ///    any model call, so an unusable file costs nothing.
-/// 2. A superseded code is remapped to its successor, as every other path that files a JD does.
+/// 2. A superseded code is remapped to its successor, as every other path that files a JD does,
+///    and the result must be on UC Davis payroll: a matrix-only class is one nobody could use.
 /// 3. The model distils the document into the corpus shape (functions, % time, duties,
 ///    qualifications) — the same distillation Classify uses, and the same record shape.
 /// 4. The JD is filed with <see cref="CorpusOrigin.Imported"/>, so it can always be told apart from
@@ -113,6 +114,17 @@ public sealed partial class CorpusDocuments
             return Failed(outcome, stated.Problem!);
         }
 
+        // Filed only under a class UC Davis can use. A title can resolve to a matrix-only code — one
+        // UC defines but UC Davis doesn't have on payroll — and a JD filed there would build a class
+        // nobody could write against. Checked before the model call, on the code the JD would be
+        // FILED under (after remapping).
+        var code = index.ResolveCode(stated.Code.Code);
+        var filedUnder = index.FindByCode(code);
+        if (filedUnder is null || !filedUnder.IsInUse)
+        {
+            return Failed(outcome, $"Its title matches {stated.Code.Title} ({code}), which isn't on UC Davis payroll, so it can't be used here.");
+        }
+
         if (!_llm.HasApiKey)
         {
             return Failed(outcome, "No AI provider is configured, so the document can't be read into the corpus.");
@@ -133,10 +145,9 @@ public sealed partial class CorpusDocuments
             return Failed(outcome, "No responsibilities were found in it — is it a complete job description?");
         }
 
-        var code = index.ResolveCode(stated.Code.Code);
         var record = ClassifySubmissions.ToJobDescription(distilled);
         record.UcJobCode = code;
-        record.UcJobTitle = index.FindByCode(code)?.Title ?? stated.Code.Title;
+        record.UcJobTitle = filedUnder.Title;
         record.OriginalUcJobCode = string.Equals(stated.Code.Code, code, StringComparison.Ordinal) ? null : stated.Code.Code;
         record.Origin = CorpusOrigin.Imported;
 

@@ -51,11 +51,11 @@ public class CorpusDocumentsTests
             throw new NotSupportedException();
     }
 
-    private static TitleCode Tc(string code, string title) => new()
+    private static TitleCode Tc(string code, string title, string source = "both") => new()
     {
         Code = code,
         Title = title,
-        Source = "both",
+        Source = source,
         TitleKey = TitleNormalizer.TitleKey(title),
         TitleCodeKey = TitleNormalizer.TitleCodeKey(title),
     };
@@ -84,7 +84,7 @@ public class CorpusDocumentsTests
             .UseInMemoryDatabase($"documents_{Guid.NewGuid():N}")
             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options);
-        var titles = new Titles(Tc("009605", "LAB AST 1"), Tc("004724", "FARM LABORER"));
+        var titles = new Titles(Tc("009605", "LAB AST 1"), Tc("004724", "FARM LABORER"), Tc("004017", "WRITER EDITOR 3", "matrix"));
         var distiller = new CannedDistiller(Distilled());
         var llm = new FakeStructuredLlm();
         return (db, new CorpusDocuments(db, titles, distiller, llm), distiller, llm);
@@ -211,6 +211,19 @@ public class CorpusDocumentsTests
         distiller.Calls.Should().Be(0);
         (await db.JobDescriptions.CountAsync()).Should().Be(0);
         (await db.CorpusUploads.CountAsync()).Should().Be(0, "a failed document is not stored, so a fixed copy can be added later");
+    }
+
+    [Fact]
+    public async Task A_title_that_is_not_on_UC_Davis_payroll_is_not_filed()
+    {
+        var (db, documents, distiller, _) = Harness();
+
+        var outcome = await documents.ImportAsync("w.txt", Text("Job Title: Writer Editor 3\nWrites."), "text/plain", userId: null);
+
+        outcome.Result.Should().Be("failed");
+        outcome.Error.Should().Contain("isn't on UC Davis payroll");
+        distiller.Calls.Should().Be(0, "refused before the model call");
+        (await db.JobDescriptions.CountAsync()).Should().Be(0);
     }
 
     [Fact]

@@ -387,8 +387,11 @@ public class AdminController : ApiControllerBase
     /// classification.
     /// </summary>
     [HttpGet("bootstrap/candidates")]
-    public async Task<IActionResult> Candidates(CancellationToken ct) =>
-        Ok(new { candidates = await _bootstrapper.GetCandidatesAsync(ct) });
+    public async Task<IActionResult> Candidates(CancellationToken ct)
+    {
+        var result = await _bootstrapper.GetCandidatesAsync(ct);
+        return Ok(new { candidates = result.Candidates, result.NotOnPayroll, result.NoCodeMatch });
+    }
 
     [HttpPost("bootstrap")]
     public async Task<IActionResult> Bootstrap(BootstrapRequest body, CancellationToken ct)
