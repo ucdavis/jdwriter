@@ -111,12 +111,16 @@ export type ClassSummary = {
 export type ClassSummaryResponse = { classes: ClassSummary[] };
 
 export type ClassProfileResponse = {
+  /** The bargaining unit to show: the title's union suffix (SV, CX…), else the corpus consensus. */
+  bargainingUnit?: string | null;
   corpusSize: number;
   ctJobFamily: string;
   ctJobFunction: string;
   envelope: JobEnvelope | null;
   envelopeSource: EnvelopeSource | null;
   flsaStatus: Distribution;
+  /** Union-represented: its positions may lead but may not supervise. */
+  isRepresented?: boolean;
   leads: Distribution;
   personnelProgram: string;
   salaryGrade: Distribution;
@@ -304,8 +308,13 @@ export type BuildRequest = {
   keptResponsibilities: KeyResponsibility[];
   keptWorkEnvironment: string[];
   keptWorkExperience: string[];
+  leads: boolean;
   notes: string;
   slug: string;
+  /** Never true for a union-represented class: the server refuses it. */
+  supervises: boolean;
+  /** How many people it supervises; required when `supervises`. */
+  supervisesCount: number | null;
   workingTitle: string;
 };
 
@@ -366,10 +375,15 @@ export type AssembledJd = {
     workEnvironment: string[];
     workExperience: string[];
   };
+  /** As the author stated it; null when not stated (JDs saved before it existed). */
+  leads?: boolean | null;
   salaryGrade: string | null;
   slug: string;
   /** Draft until the time totals exactly 100%. */
   status: JdStatus;
+  /** As the author stated it; null when not stated. */
+  supervises?: boolean | null;
+  supervisesCount?: number | null;
   title: string;
   ucJobCode: string;
   /**

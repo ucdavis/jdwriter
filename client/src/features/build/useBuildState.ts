@@ -50,15 +50,27 @@ export type DraftState = {
   certs: Item[];
   department: string;
   education: Item[];
+  /** Added after version 1 shipped; absent in older drafts, which take the role's defaults. */
+  leads?: YesNo;
   minKSA: Item[];
   notes: string;
   prefKSA: Item[];
   resps: RespState[];
+  supervises?: YesNo;
+  supervisesCount?: string;
   version: 1;
   workEnv: Item[];
   workExp: Item[];
   workingTitle: string;
 };
+
+export type YesNo = 'no' | 'yes';
+
+/**
+ * What the class implies about supervision. A supervisor or manager title starts at Yes; any other
+ * role starts at No until the author changes it. A union-represented class can't supervise at all.
+ */
+export type RoleDefaults = { represented: boolean; supervisory: boolean };
 
 /** A saved draft this hook can resume from; anything else starts from the envelope. */
 export const asDraftState = (value: unknown): DraftState | null =>
@@ -66,7 +78,22 @@ export const asDraftState = (value: unknown): DraftState | null =>
     ? (value as DraftState)
     : null;
 
-export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState | null) => {
+export const useBuildState = (
+  envelope: EnvelopeSections,
+  initial?: DraftState | null,
+  role: RoleDefaults = { represented: false, supervisory: false }
+) => {
+  const [supervisesChoice, setSupervises] = useState<YesNo>(
+    initial?.supervises ?? (role.supervisory && !role.represented ? 'yes' : 'no')
+  );
+  const [leads, setLeads] = useState<YesNo>(initial?.leads ?? (role.supervisory ? 'yes' : 'no'));
+  const [supervisesCount, setSupervisesCount] = useState(initial?.supervisesCount ?? '');
+  // A represented class can't supervise, whatever a draft or default says.
+  const supervises: YesNo = role.represented ? 'no' : supervisesChoice;
+  const count = Number.parseInt(supervisesCount, 10);
+  const supervisionReady =
+    supervises === 'no' || (Number.isInteger(count) && count >= 1 && count <= 10_000);
+
   const [workingTitle, setWorkingTitle] = useState(initial?.workingTitle ?? '');
   const [department, setDepartment] = useState(initial?.department ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
@@ -191,8 +218,11 @@ export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState |
       .filter((r) => r.duties.length > 0),
     keptWorkEnvironment: keptOf(workEnv),
     keptWorkExperience: keptOf(workExp),
+    leads: leads === 'yes',
     notes,
     slug,
+    supervises: supervises === 'yes',
+    supervisesCount: supervises === 'yes' && Number.isInteger(count) ? count : null,
     workingTitle,
   });
 
@@ -200,10 +230,13 @@ export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState |
     certs,
     department,
     education,
+    leads,
     minKSA,
     notes,
     prefKSA,
     resps,
+    supervises,
+    supervisesCount,
     version: 1,
     workEnv,
     workExp,
@@ -226,6 +259,7 @@ export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState |
     department,
     education,
     guardAdd,
+    leads,
     minKSA,
     notes,
     patchResp,
@@ -234,14 +268,20 @@ export const useBuildState = (envelope: EnvelopeSections, initial?: DraftState |
     setCerts,
     setDepartment,
     setEducation,
+    setLeads,
     setMinKSA,
     setNotes,
     setPrefKSA,
     setResps,
+    setSupervises,
+    setSupervisesCount,
     setWorkEnv,
     setWorkExp,
     setWorkingTitle,
     snapshot,
+    supervises,
+    supervisesCount,
+    supervisionReady,
     totalPct,
     workEnv,
     workExp,

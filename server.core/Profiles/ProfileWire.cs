@@ -1,4 +1,5 @@
 using Server.Core.Domain;
+using Server.Core.Titles;
 using Server.Core.Jd;
 using Server.Core.Standards;
 
@@ -127,6 +128,12 @@ public sealed class ClassProfileView
     public DistributionWire SalaryGrade { get; set; } = new();
     public DistributionWire FlsaStatus { get; set; } = new();
     public DistributionWire UnionCode { get; set; } = new();
+
+    /// <summary>The bargaining unit to show: the title's union suffix, else the corpus consensus.</summary>
+    public string? BargainingUnit { get; set; }
+
+    /// <summary>Union-represented: its positions may lead but may not supervise.</summary>
+    public bool IsRepresented { get; set; }
     public DistributionWire Supervises { get; set; } = new();
     public DistributionWire Leads { get; set; } = new();
     public DistributionWire WorksOutdoorsOver50pct { get; set; } = new();
@@ -160,6 +167,8 @@ public sealed class ClassProfileView
             SalaryGrade = Dist(DistributionField.SalaryGrade),
             FlsaStatus = Dist(DistributionField.FlsaStatus),
             UnionCode = Dist(DistributionField.UnionCode),
+            BargainingUnit = BargainingUnits.For(p),
+            IsRepresented = BargainingUnits.IsRepresented(p),
             Supervises = Dist(DistributionField.Supervises),
             Leads = Dist(DistributionField.Leads),
             WorksOutdoorsOver50pct = Dist(DistributionField.WorksOutdoorsOver50pct),

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Server.Core.Ai;
 using Server.Core.Data;
 using Server.Core.Domain;
+using Server.Core.Titles;
 using Server.Core.Jd;
 using Server.Core.Profiles;
 using Server.Helpers;
@@ -32,6 +33,9 @@ public sealed class BuildRequest
     public List<string> KeptWorkEnvironment { get; set; } = [];
     public List<string> AddedItems { get; set; } = [];
     public string Notes { get; set; } = "";
+    public bool? Supervises { get; set; }
+    public int? SupervisesCount { get; set; }
+    public bool? Leads { get; set; }
 
     /// <summary>
     /// The saved JD this build session already wrote, from a previous assemble's response. When
@@ -72,6 +76,9 @@ public sealed class BuildRequest
         KeptWorkEnvironment = KeptWorkEnvironment,
         AddedItems = AddedItems,
         Notes = Notes,
+        Supervises = Supervises,
+        SupervisesCount = SupervisesCount,
+        Leads = Leads,
     };
 }
 
@@ -231,6 +238,12 @@ public class BuildController : ApiControllerBase
         if (string.IsNullOrWhiteSpace(body.Department))
         {
             return BadRequest(new { message = "Department is required." });
+        }
+
+        var supervision = BargainingUnits.SupervisionProblem(profile, body.Supervises, body.SupervisesCount);
+        if (supervision is not null)
+        {
+            return BadRequest(new { message = supervision });
         }
 
         var inputs = Inputs(profile, body);

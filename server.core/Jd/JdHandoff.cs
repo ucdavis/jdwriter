@@ -60,6 +60,12 @@ public sealed class HandoffPosition
 {
     public string WorkingTitle { get; set; } = "";
     public string Department { get; set; } = "";
+
+    /// <summary>Null when not stated. Added in v1 (additive).</summary>
+    public bool? Supervises { get; set; }
+
+    public int? SupervisesCount { get; set; }
+    public bool? Leads { get; set; }
 }
 
 public sealed class HandoffDocuments
@@ -87,7 +93,14 @@ public static class JdHandoffBuilder
                 FlsaStatus = saved.FlsaStatus,
                 BargainingUnit = saved.BargainingUnit,
             },
-            Position = new HandoffPosition { WorkingTitle = saved.WorkingTitle, Department = saved.Department },
+            Position = new HandoffPosition
+            {
+                WorkingTitle = saved.WorkingTitle,
+                Department = saved.Department,
+                Supervises = saved.Supervises,
+                SupervisesCount = saved.SupervisesCount,
+                Leads = saved.Leads,
+            },
             Jd = saved.Jd,
             Documents = new HandoffDocuments
             {
@@ -135,6 +148,8 @@ public static class JdHandoffBuilder
             facts.Add($"Bargaining Unit: {saved.BargainingUnit}");
         }
 
+        facts.AddRange(SupervisionFacts(saved));
+
         if (facts.Count > 0)
         {
             md.AppendLine().AppendLine(string.Join(" · ", facts));
@@ -164,6 +179,22 @@ public static class JdHandoffBuilder
 
         // A file format, not console output: the same bytes whatever OS the server runs on.
         return md.ToString().ReplaceLineEndings("\n");
+    }
+
+    /// <summary>"Supervises: Yes (4)", "Leads: No" — only what the author stated.</summary>
+    public static IEnumerable<string> SupervisionFacts(SavedJd saved)
+    {
+        if (saved.Supervises is { } supervises)
+        {
+            yield return supervises && saved.SupervisesCount is { } n
+                ? $"Supervises: Yes ({n} {(n == 1 ? "person" : "people")})"
+                : $"Supervises: {(supervises ? "Yes" : "No")}";
+        }
+
+        if (saved.Leads is { } leads)
+        {
+            yield return $"Leads: {(leads ? "Yes" : "No")}";
+        }
     }
 
     private static void List(StringBuilder md, string heading, List<string> items)

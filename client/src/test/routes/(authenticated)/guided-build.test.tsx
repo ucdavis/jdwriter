@@ -5,6 +5,7 @@ import type { BuildRequest, EnvelopeCheckResponse } from '@/lib/contracts.ts';
 import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import profilesFixture from '@/mocks/profiles.json' with { type: 'json' };
 import { describe, expect, it } from 'vitest';
 
 const verdict = (v: EnvelopeCheckResponse['verdict']): EnvelopeCheckResponse => ({
@@ -30,6 +31,21 @@ const countChecks = (...verdicts: Array<EnvelopeCheckResponse['verdict']>) => {
 };
 
 const open = () => renderRoute({ initialPath: '/class/009605-lab-ast-1' });
+
+/** The default test class, retitled or marked represented. */
+const asClass = (over: Record<string, unknown>) => {
+  const base = (profilesFixture as Array<Record<string, unknown>>).find((p) => p.slug === '009605-lab-ast-1');
+  testServer.use(http.get('/api/classes/:slug', () => HttpResponse.json({ ...base, ...over })));
+};
+
+/** The build request the duties check sent. */
+const sentOnCheck = async (user: ReturnType<typeof userEvent.setup>) => {
+  const checks = countChecks('in_envelope');
+  await fillDepartment(user);
+  await user.click(screen.getByRole('button', { name: 'Check my duties →' }));
+  await screen.findByTestId('requirements-intro');
+  return checks[0];
+};
 
 describe('the guided build', () => {
   setupRouteTest();
@@ -205,6 +221,60 @@ describe('the guided build', () => {
     await fillDepartment(user);
     expect(check).toBeEnabled();
     expect(screen.queryByTestId('build-gate-reason')).not.toBeInTheDocument();
+  });
+
+  describe('supervision', () => {
+    it('starts a regular role at No for both, with no count asked', async () => {
+      const user = userEvent.setup();
+      open();
+
+      expect(await screen.findByLabelText('Supervises')).toHaveValue('no');
+      expect(screen.getByLabelText('Leads')).toHaveValue('no');
+      expect(screen.queryByLabelText(/How many people/)).not.toBeInTheDocument();
+
+      const sent = await sentOnCheck(user);
+      expect([sent.supervises, sent.supervisesCount, sent.leads]).toEqual([false, null, false]);
+    });
+
+    it('starts a supervisor role at Yes, and requires how many it supervises', async () => {
+      const user = userEvent.setup();
+      asClass({ isRepresented: false, title: 'Lab Supervisor 2' });
+      open();
+
+      expect(await screen.findByLabelText('Supervises')).toHaveValue('yes');
+      expect(screen.getByLabelText('Leads')).toHaveValue('yes');
+      await fillDepartment(user);
+      expect(screen.getByRole('button', { name: 'Check my duties →' })).toBeDisabled();
+      expect(screen.getByTestId('build-gate-reason')).toHaveTextContent('Enter how many people this position supervises.');
+
+      await user.type(screen.getByLabelText(/How many people/), '4');
+      const checks = countChecks('in_envelope');
+      await user.click(screen.getByRole('button', { name: 'Check my duties →' }));
+      await screen.findByTestId('requirements-intro');
+      expect([checks[0].supervises, checks[0].supervisesCount]).toEqual([true, 4]);
+    });
+
+    it('never lets a union-represented class supervise, but lets it lead', async () => {
+      const user = userEvent.setup();
+      asClass({ bargainingUnit: 'SV', isRepresented: true, title: 'Student Services Supervisor 2 SV' });
+      open();
+
+      const supervises = await screen.findByLabelText('Supervises');
+      expect(supervises).toHaveValue('no');
+      expect(supervises).toBeDisabled();
+      expect(screen.getByTestId('represented-note')).toHaveTextContent(/union-represented class \(SV\), so it can.t supervise\. It may lead\./);
+      expect(screen.getByLabelText('Leads')).toBeEnabled();
+
+      const sent = await sentOnCheck(user);
+      expect([sent.supervises, sent.leads]).toEqual([false, true]);
+    });
+
+    it('shows the bargaining unit from the title suffix', async () => {
+      asClass({ bargainingUnit: 'SV', isRepresented: true, title: 'Student Services Advisor 3 SV' });
+      open();
+
+      expect(await screen.findByTestId('envelope-facts')).toHaveTextContent('Bargaining unitSV');
+    });
   });
 
   it('has a Home link in the top navigation', async () => {

@@ -138,6 +138,15 @@ public sealed class AssembledJd
     public string? FlsaStatus { get; set; }
     public string? BargainingUnit { get; set; }
 
+    /// <summary>Whether the position supervises others. Null when not stated. Never true for a represented class.</summary>
+    public bool? Supervises { get; set; }
+
+    /// <summary>How many people it supervises, when it does.</summary>
+    public int? SupervisesCount { get; set; }
+
+    /// <summary>Whether the position leads others' work (without supervising them). Null when not stated.</summary>
+    public bool? Leads { get; set; }
+
     public Jd Jd { get; set; } = new();
 
     /// <summary>
@@ -209,6 +218,9 @@ public sealed class AssembledJd
             SalaryGrade = SalaryGrade,
             FlsaStatus = FlsaStatus,
             BargainingUnit = BargainingUnit,
+            Supervises = Supervises,
+            SupervisesCount = SupervisesCount,
+            Leads = Leads,
             JobSummary = Jd.JobSummary,
             CreatedByUserId = createdByUserId,
             CreatedAt = now,

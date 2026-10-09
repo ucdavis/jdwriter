@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Server.Core.Ai;
 using Server.Core.Domain;
+using Server.Core.Titles;
 using Server.Core.Profiles;
 
 namespace Server.Core.Jd;
@@ -33,6 +34,15 @@ public sealed class BuildInputs
     public List<string> AddedItems { get; set; } = [];
 
     public string Notes { get; set; } = "";
+
+    /// <summary>Whether the position supervises others. Null when not stated. Never true for a represented class.</summary>
+    public bool? Supervises { get; set; }
+
+    /// <summary>How many people it supervises, when it does.</summary>
+    public int? SupervisesCount { get; set; }
+
+    /// <summary>Whether the position leads others' work (without supervising them). Null when not stated.</summary>
+    public bool? Leads { get; set; }
 }
 
 public interface IJdAssembler
@@ -758,7 +768,10 @@ public sealed class JdAssembler : IJdAssembler
             UcJobCode = profile.UcJobCode,
             SalaryGrade = Consensus(profile, DistributionField.SalaryGrade),
             FlsaStatus = Consensus(profile, DistributionField.FlsaStatus),
-            BargainingUnit = Consensus(profile, DistributionField.UnionCode),
+            BargainingUnit = BargainingUnits.For(profile),
+            Supervises = inputs.Supervises,
+            SupervisesCount = inputs.Supervises == true ? inputs.SupervisesCount : null,
+            Leads = inputs.Leads,
             Jd = jd,
             UnallocatedPct = UnallocatedPct(jd.KeyResponsibilities),
             ComplianceEdits = edits,

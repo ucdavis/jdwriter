@@ -13,7 +13,13 @@ import {
   useSaveDraft,
 } from '@/queries/authoring.ts';
 import type { EnvelopeCheckResponse } from '@/lib/contracts.ts';
-import { type DraftState, type EnvelopeSections, useBuildState } from './useBuildState.ts';
+import {
+  type DraftState,
+  type EnvelopeSections,
+  type RoleDefaults,
+  useBuildState,
+  type YesNo,
+} from './useBuildState.ts';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 type Step = 'duties' | 'final' | 'requirements';
@@ -95,19 +101,25 @@ export const BuildFlow = ({
   draft,
   envelope,
   overview,
+  role,
   slug,
   title,
+  unit,
 }: {
   /** A saved JD to continue: its id and the build screen as it was left. */
   draft?: { id: number; state: DraftState | null } | null;
   envelope: EnvelopeSections;
   /** The class's envelope at a glance, shown above the duties step only. */
   overview?: ReactNode;
+  /** What the class implies about supervision: defaults, and whether it may supervise at all. */
+  role?: RoleDefaults;
   slug: string;
   title: string;
+  /** The class's bargaining unit, named when it rules out supervising. */
+  unit?: string | null;
 }) => {
   const [step, setStep] = useState<Step>('duties');
-  const state = useBuildState(envelope, draft?.state);
+  const state = useBuildState(envelope, draft?.state, role);
   const saveDraft = useSaveDraft();
   const check = useEnvelopeCheck();
   const betterFit = useBetterFit();
@@ -133,7 +145,7 @@ export const BuildFlow = ({
   const busy = check.isPending || assemble.isPending;
   const balanced = state.totalPct === 100;
   const hasDepartment = state.department.trim().length > 0;
-  const ready = balanced && hasDepartment;
+  const ready = balanced && hasDepartment && state.supervisionReady;
 
   const go = (next: Step) => {
     // A step change answers afresh; an earlier search described a different build.
@@ -185,7 +197,9 @@ export const BuildFlow = ({
   // Why the author can't continue yet, most fundamental first.
   const gateReason = !hasDepartment
     ? 'Enter the department before continuing.'
-    : balanced
+    : !state.supervisionReady
+      ? 'Enter how many people this position supervises.'
+      : balanced
       ? null
       : state.totalPct < 100
         ? `${100 - state.totalPct}% of time is unallocated — assign it before continuing.`
@@ -254,6 +268,39 @@ export const BuildFlow = ({
                 value={state.department}
               />
             </div>
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <YesNoField
+                disabled={role?.represented}
+                label="Supervises"
+                onChange={state.setSupervises}
+                value={state.supervises}
+              />
+              {state.supervises === 'yes' ? (
+                <label className="block">
+                  <span className="eyebrow">
+                    How many people<span aria-hidden className="text-error"> *</span>
+                  </span>
+                  <input
+                    aria-required
+                    className="input input-bordered mt-1 w-full text-base tnum"
+                    inputMode="numeric"
+                    max={10_000}
+                    min={1}
+                    onChange={(e) => state.setSupervisesCount(e.target.value)}
+                    placeholder="e.g. 4"
+                    type="number"
+                    value={state.supervisesCount}
+                  />
+                </label>
+              ) : null}
+              <YesNoField label="Leads" onChange={state.setLeads} value={state.leads} />
+            </div>
+            {role?.represented ? (
+              <p className="mt-2 text-base text-base-content/65" data-testid="represented-note">
+                This is a union-represented class{unit ? ` (${unit})` : ''}, so it can&apos;t
+                supervise. It may lead.
+              </p>
+            ) : null}
           </Card>
 
           <AllocationBar onRedistribute={state.setResps} resps={state.resps} totalPct={state.totalPct} />
@@ -379,3 +426,28 @@ const CustomizationNote = ({ state }: { state: ReturnType<typeof useBuildState> 
       {state.addedCount} added · target ≤10%
     </span>
   ) : null;
+
+const YesNoField = ({
+  disabled = false,
+  label,
+  onChange,
+  value,
+}: {
+  disabled?: boolean;
+  label: string;
+  onChange: (v: YesNo) => void;
+  value: YesNo;
+}) => (
+  <label className="block">
+    <span className="eyebrow">{label}</span>
+    <select
+      className="select select-bordered mt-1 w-full text-base"
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value as YesNo)}
+      value={value}
+    >
+      <option value="no">No</option>
+      <option value="yes">Yes</option>
+    </select>
+  </label>
+);
