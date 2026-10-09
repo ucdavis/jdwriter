@@ -562,6 +562,23 @@ export type SupersededProfile = {
 };
 
 /** Why an imported envelope did not become a class in this environment. */
+export type QualificationRulesSummary = {
+  applied: boolean;
+  changed: number;
+  envelopes: number;
+  equivalentAdded: number;
+  /** A sample of the changes, to check before applying. */
+  examples: Array<{
+    educationAfter: string[];
+    educationBefore: string[];
+    /** Preferred qualifications that are new (moved from education) or reworded. */
+    preferredChanged: string[];
+    slug: string;
+    title: string;
+  }>;
+  movedToPreferred: number;
+};
+
 export type EnvelopeImportRefusal =
   | 'codeMismatch'
   | 'exists'

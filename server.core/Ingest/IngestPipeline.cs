@@ -218,6 +218,12 @@ public sealed partial class IngestPipeline
             profile.EnvelopeSource = Domain.EnvelopeSource.Deterministic;
         }
 
+        // House rules for education, applied in code whatever wrote the envelope.
+        if (profile.Envelope is not null)
+        {
+            QualificationRules.Apply(profile.Envelope);
+        }
+
         // Backwards coverage needs the consolidated groups set above, so it runs last.
         profile.Coverage = CoverageCalculator.ComputeCoverage(profile, records);
         profile.LastIngestedAt = DateTimeOffset.UtcNow;

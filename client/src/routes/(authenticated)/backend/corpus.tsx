@@ -3,6 +3,7 @@ import {
   DocumentImportPanel,
   EnvelopeTransferPanel,
   IngestPanel,
+  QualificationRulesPanel,
   StandardsPanel,
   SupersessionPanel,
   UploadPanel,
@@ -44,6 +45,14 @@ function CorpusPage() {
         <SupersessionPanel />
         <BootstrapPanel />
         <EnvelopeTransferPanel />
+      </Section>
+
+      <Section
+        id="rules"
+        sub="House rules every envelope follows, whatever wrote it."
+        title="Envelope rules"
+      >
+        <QualificationRulesPanel />
       </Section>
     </AdminOnly>
   );

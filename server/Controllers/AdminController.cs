@@ -19,6 +19,8 @@ public sealed record AdminGrantRequest(string LoginId);
 public sealed record ApiKeyRequest(string Key);
 public sealed record UploadIngestRequest(string Code);
 
+public sealed record QualificationRulesRequest(bool Apply);
+
 /// <summary>
 /// Corpus and standards operations.
 ///
@@ -46,6 +48,7 @@ public class AdminController : ApiControllerBase
     private readonly ApiKeySettings _apiKey;
     private readonly CorpusUploads _uploads;
     private readonly CorpusDocuments _documents;
+    private readonly QualificationRulesPass _qualificationRules;
     private readonly DatabaseSecurity _security;
     private readonly Server.Core.Analytics.AdminAnalytics _analytics;
 
@@ -64,6 +67,7 @@ public class AdminController : ApiControllerBase
         ApiKeySettings apiKey,
         CorpusUploads uploads,
         CorpusDocuments documents,
+        QualificationRulesPass qualificationRules,
         DatabaseSecurity security,
         Server.Core.Analytics.AdminAnalytics analytics)
     {
@@ -81,6 +85,7 @@ public class AdminController : ApiControllerBase
         _apiKey = apiKey;
         _uploads = uploads;
         _documents = documents;
+        _qualificationRules = qualificationRules;
         _security = security;
         _analytics = analytics;
     }
@@ -150,6 +155,14 @@ public class AdminController : ApiControllerBase
             file.FileName, buffer.ToArray(), file.ContentType ?? "", await User.IdAsync(_db, ct), ct);
         return Ok(outcome);
     }
+
+    /// <summary>
+    /// Apply the education rules to every existing envelope: a preferred degree moves to preferred
+    /// qualifications, and a degree reads "or equivalent experience". <c>apply: false</c> previews.
+    /// </summary>
+    [HttpPost("envelopes/qualification-rules")]
+    public async Task<IActionResult> QualificationRules(QualificationRulesRequest body, CancellationToken ct) =>
+        Ok(await _qualificationRules.RunAsync(body.Apply, ct));
 
     [HttpGet("uploads/pending")]
     public async Task<IActionResult> UploadedPending(CancellationToken ct) =>
