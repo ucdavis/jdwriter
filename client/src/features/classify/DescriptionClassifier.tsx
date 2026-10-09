@@ -110,7 +110,7 @@ export const DescriptionClassifier = () => {
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             <Eyebrow>Existing description</Eyebrow>
-            <p className="mt-1 text-sm text-base-content/65">
+            <p className="mt-1 text-base text-base-content/65">
               Drop in an Excel Position Description, a Word file, or a PDF — or paste the
               text.
             </p>
@@ -164,7 +164,7 @@ export const DescriptionClassifier = () => {
         >
           <textarea
             aria-label="Job description text"
-            className="textarea textarea-bordered w-full resize-y font-mono text-sm"
+            className="textarea textarea-bordered w-full resize-y text-base"
             onChange={(e) => {
               setText(e.target.value);
               // Once edited, the file chip would otherwise claim credit for text the
@@ -177,7 +177,7 @@ export const DescriptionClassifier = () => {
           />
           {dragging || extract.isPending ? (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-primary/10">
-              <span className="text-sm font-semibold text-primary">
+              <span className="text-base font-semibold text-primary">
                 {extract.isPending
                   ? 'Reading the document…'
                   : 'Drop to read the document'}
@@ -189,11 +189,11 @@ export const DescriptionClassifier = () => {
         {file ? (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge tone="teal">{file.kind.toUpperCase()}</Badge>
-            <span className="text-sm font-medium">{file.filename}</span>
+            <span className="text-base font-semibold">{file.filename}</span>
             {file.note ? (
-              <span className="text-xs text-base-content/50">{file.note}</span>
+              <span className="text-sm text-base-content/50">{file.note}</span>
             ) : null}
-            <span className="text-xs text-base-content/50">
+            <span className="text-sm text-base-content/50">
               Check the text below before classifying — edit it if the layout came through
               wrong.
             </span>
@@ -222,7 +222,7 @@ export const DescriptionClassifier = () => {
           >
             {classify.isPending ? 'Classifying…' : 'Classify this description'}
           </button>
-          <span className="text-xs text-base-content/50">
+          <span className="text-sm text-base-content/50">
             {classify.isPending
               ? 'Reading the description, then comparing it against every ingested class.'
               : `${wordCount.toLocaleString()} words`}
@@ -247,15 +247,15 @@ export const DescriptionClassifier = () => {
                 <Badge tone="teal">HRTMS export parsed</Badge>
               ) : null}
             </div>
-            <p className="mt-2.5 text-sm">{result.verdictNote}</p>
+            <p className="mt-2.5 text-base">{result.verdictNote}</p>
             {result.filedUnder ? (
-              <p className="mt-2 text-xs text-base-content/55" data-testid="filed-under">
+              <p className="mt-2 text-sm text-base-content/55" data-testid="filed-under">
                 This description has been saved to the corpus for job code{' '}
                 <span className="tnum">{result.filedUnder}</span>, where it will inform that
                 class&apos;s envelope.
               </p>
             ) : null}
-            <p className="mt-1.5 text-sm text-base-content/50">
+            <p className="mt-1.5 text-base text-base-content/50">
               Read as {result.distilled.functions.length} responsibility function
               {result.distilled.functions.length === 1 ? '' : 's'}
               {result.distilled.workingTitle
@@ -315,7 +315,7 @@ const MatchCard = ({
         >
           {match.title}
         </Link>
-        <div className="mt-0.5 text-xs text-base-content/50 tnum">
+        <div className="mt-0.5 text-sm text-base-content/50 tnum">
           Job code {match.ucJobCode}
         </div>
       </div>
@@ -325,11 +325,11 @@ const MatchCard = ({
       </div>
     </div>
 
-    <p className="mt-2.5 text-sm text-base-content/65">{match.rationale}</p>
-    <p className="mt-1.5 text-sm text-base-content/65">{match.levelNote}</p>
+    <p className="mt-2.5 text-base text-base-content/65">{match.rationale}</p>
+    <p className="mt-1.5 text-base text-base-content/65">{match.levelNote}</p>
 
     <div className="mt-3.5">
-      <div className="mb-1 flex items-center justify-between text-xs text-base-content/50">
+      <div className="mb-1 flex items-center justify-between text-sm text-base-content/50">
         <span>Description covered by this class</span>
         <span className="font-semibold tnum">{match.coveredPct}%</span>
       </div>
@@ -352,7 +352,7 @@ const MatchCard = ({
       >
         {starting ? 'Starting your JD…' : 'Start a JD from this class →'}
       </button>
-      <span className="text-xs text-base-content/50">
+      <span className="text-sm text-base-content/50">
         Uses this class&apos;s standard and merges in your description&apos;s work. Opens as a
         draft you can edit.
       </span>
@@ -370,13 +370,13 @@ const FunctionList = ({
   tone: 'green' | 'orange';
 }) => (
   <div>
-    <div className="mb-1.5 text-xs font-semibold text-base-content/50">{label}</div>
+    <div className="mb-1.5 text-sm font-semibold text-base-content/50">{label}</div>
     {items.length === 0 ? (
-      <div className="text-sm text-base-content/50">—</div>
+      <div className="text-base text-base-content/50">—</div>
     ) : (
       <ul className="space-y-1">
         {items.map((f) => (
-          <li className="flex gap-1.5 text-sm text-base-content/65" key={f}>
+          <li className="flex gap-1.5 text-base text-base-content/65" key={f}>
             <span className={tone === 'green' ? 'text-success' : 'text-error'}>
               {tone === 'green' ? '✓' : '•'}
             </span>

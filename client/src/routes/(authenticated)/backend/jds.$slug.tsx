@@ -50,7 +50,7 @@ function CoverageContent() {
 
       {!coverage ? (
         <Card className="p-6">
-          <p className="text-sm text-base-content/65">
+          <p className="text-base text-base-content/65">
             No coverage report for this class — it has no ingested JDs yet.
           </p>
         </Card>
@@ -61,17 +61,17 @@ function CoverageContent() {
             <div className="mt-2 grid grid-cols-3 gap-4">
               <div>
                 <div className="text-3xl font-bold tnum">{coverage.n}</div>
-                <div className="text-sm text-base-content/65">JDs compared</div>
+                <div className="text-base text-base-content/65">JDs compared</div>
               </div>
               <div>
                 <div className="text-3xl font-bold tnum">{coverage.meanCoverage}%</div>
-                <div className="text-sm text-base-content/65">mean coverage</div>
+                <div className="text-base text-base-content/65">mean coverage</div>
               </div>
               <div>
                 <div className="text-3xl font-bold tnum">
                   {Math.round(coverage.wellCoveredPct * 100)}%
                 </div>
-                <div className="text-sm text-base-content/65">at ≥90% covered</div>
+                <div className="text-base text-base-content/65">at ≥90% covered</div>
               </div>
             </div>
           </Card>
@@ -81,7 +81,7 @@ function CoverageContent() {
             <ul className="mt-3 space-y-1.5">
               {coverage.perJd.map((j) => (
                 <li
-                  className="flex items-start justify-between gap-3 text-xs"
+                  className="flex items-start justify-between gap-3 text-sm"
                   key={j.sourceFile}
                 >
                   <span className="min-w-0 flex-1 truncate">

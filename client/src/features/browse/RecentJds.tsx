@@ -14,13 +14,13 @@ export const RecentJds = () => {
       <div className="flex items-center justify-between">
         <Eyebrow>Your recent JDs</Eyebrow>
         {recent.length > 0 ? (
-          <Link className="text-sm font-medium text-primary hover:underline" to="/jds">
+          <Link className="text-base font-semibold text-primary hover:underline" to="/jds">
             All my JDs →
           </Link>
         ) : null}
       </div>
       {isPending ? null : recent.length === 0 ? (
-        <p className="mt-2 text-sm text-base-content/65">
+        <p className="mt-2 text-base text-base-content/65">
           Job descriptions you build will appear here.
         </p>
       ) : (
@@ -33,10 +33,10 @@ export const RecentJds = () => {
                 to="/jds/$id"
               >
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">
+                  <span className="block truncate text-base font-semibold">
                     {j.workingTitle || j.title}
                   </span>
-                  <span className="text-xs text-base-content/65">
+                  <span className="text-sm text-base-content/65">
                     {j.title} · {new Date(j.createdAt).toLocaleDateString()}
                   </span>
                 </span>

@@ -55,13 +55,13 @@ function FitContent() {
           <Eyebrow>Summary</Eyebrow>
           <div className="mt-2 flex items-baseline gap-3">
             <span className="text-3xl font-bold tnum">{misfits.length}</span>
-            <span className="text-sm text-base-content/65">
+            <span className="text-base text-base-content/65">
               of {totalJds} JDs fit their assigned class below {threshold}% ·{' '}
               {Math.round((1 - misfits.length / (totalJds || 1)) * 100)}% fit well
             </span>
           </div>
           {misfits.length > CAP ? (
-            <p className="mt-1 text-xs text-base-content/50">
+            <p className="mt-1 text-sm text-base-content/50">
               Showing the {CAP} worst-fitting.
             </p>
           ) : null}
@@ -73,7 +73,7 @@ function FitContent() {
           ))}
           {misfits.length === 0 ? (
             <Card className="p-6">
-              <p className="text-sm text-base-content/65">
+              <p className="text-base text-base-content/65">
                 Every JD fits its class at ≥{threshold}%. No reclassification candidates.
               </p>
             </Card>
@@ -101,19 +101,19 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
           <div className="flex items-center gap-2">
             <Badge tone={tone}>{misfit.coveredPct}% fit</Badge>
             <Link
-              className="truncate text-sm font-medium text-primary hover:underline"
+              className="truncate text-base font-semibold text-primary hover:underline"
               params={{ _splat: misfit.sourceFile, slug: misfit.slug }}
               to="/backend/jd/$slug/$"
             >
               {misfit.sourceFile.replace(/\.html$/i, '')}
             </Link>
           </div>
-          <div className="mt-1 text-sm text-base-content/65">
-            Currently: <span className="font-medium text-base-content">{misfit.classTitle}</span>{' '}
+          <div className="mt-1 text-base text-base-content/65">
+            Currently: <span className="font-semibold text-base-content">{misfit.classTitle}</span>{' '}
             (code <span className="tnum">{misfit.ucJobCode}</span>)
           </div>
           {misfit.idiosyncratic.length > 0 ? (
-            <div className="mt-1 text-xs text-base-content/65">
+            <div className="mt-1 text-sm text-base-content/65">
               Idiosyncratic work:{' '}
               {misfit.idiosyncratic.map((u) => `${u.name} (${u.pct}%)`).join(', ')}
             </div>
@@ -121,7 +121,7 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
         </div>
         <div className="flex shrink-0 gap-1.5">
           <button
-            className="btn btn-outline btn-xs"
+            className="btn btn-outline btn-sm"
             disabled={suggest.isPending}
             onClick={() =>
               suggest.mutate({ slug: misfit.slug, sourceFile: misfit.sourceFile })
@@ -131,7 +131,7 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
             {suggest.isPending ? 'Matching…' : 'Suggest class'}
           </button>
           <button
-            className="btn btn-outline btn-xs"
+            className="btn btn-outline btn-sm"
             disabled={rewrite.isPending}
             onClick={() =>
               rewrite.mutate({ slug: misfit.slug, sourceFile: misfit.sourceFile })
@@ -161,13 +161,13 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
       {matches ? (
         <div className="mt-3 rounded-lg border border-base-300 bg-base-200 p-3">
           {bestIsCurrent ? (
-            <div className="text-sm text-base-content/65">
+            <div className="text-base text-base-content/65">
               Best fit is still{' '}
-              <span className="font-medium text-base-content">{misfit.classTitle}</span> —
+              <span className="font-semibold text-base-content">{misfit.classTitle}</span> —
               the low coverage is genuinely idiosyncratic work, not a wrong class.
             </div>
           ) : best ? (
-            <div className="text-sm">
+            <div className="text-base">
               Better match:{' '}
               <Link
                 className="font-semibold text-primary hover:underline"
@@ -178,7 +178,7 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
               </Link>{' '}
               <Badge tone="green">{best.confidence}%</Badge>
               <button
-                className="btn btn-primary btn-xs ml-2"
+                className="btn btn-primary btn-sm ml-2"
                 disabled={rewrite.isPending}
                 onClick={() =>
                   rewrite.mutate({
@@ -193,11 +193,11 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
                   ? 'Rewriting…'
                   : `Rewrite to fit ${best.title}`}
               </button>
-              <div className="mt-1 text-sm text-base-content/65">{best.rationale}</div>
+              <div className="mt-1 text-base text-base-content/65">{best.rationale}</div>
             </div>
           ) : null}
           {matches.length > 1 ? (
-            <div className="mt-2 text-xs text-base-content/50">
+            <div className="mt-2 text-sm text-base-content/50">
               Also:{' '}
               {matches
                 .slice(1, 3)
@@ -216,7 +216,7 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
  * carried-over duties go through the envelope check and assembly like any other.
  */
 const RewriteResult = ({ result }: { result: FitRewriteResponse }) => (
-  <div className="mt-3 rounded-lg border border-success/30 bg-success/5 p-3 text-sm">
+  <div className="mt-3 rounded-lg border border-success/30 bg-success/5 p-3 text-base">
     <div>
       Draft written for <span className="font-semibold">{result.title}</span>: {result.keptFunctions}{' '}
       function{result.keptFunctions === 1 ? '' : 's'} kept, {result.carriedDuties} of the
@@ -231,7 +231,7 @@ const RewriteResult = ({ result }: { result: FitRewriteResponse }) => (
       </Link>
     </div>
     {result.outside.length > 0 ? (
-      <div className="mt-2 text-sm text-base-content/65">
+      <div className="mt-2 text-base text-base-content/65">
         Left out — outside this class:
         <ul className="mt-1 list-disc pl-5">
           {result.outside.map((o) => (

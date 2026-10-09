@@ -29,13 +29,13 @@ const Tile = ({ label, note, value }: { label: string; note?: string; value: num
   <div className="rounded-lg border border-base-300 p-4">
     <Eyebrow>{label}</Eyebrow>
     <div className="mt-1 text-3xl font-bold leading-none tnum">{value}</div>
-    {note ? <div className="mt-1 text-xs text-base-content/55">{note}</div> : null}
+    {note ? <div className="mt-1 text-sm text-base-content/55">{note}</div> : null}
   </div>
 );
 
 const TableView = ({ children }: { children: ReactNode }) => (
   <details className="mt-3">
-    <summary className="cursor-pointer text-xs text-base-content/55">Show as table</summary>
+    <summary className="cursor-pointer text-sm text-base-content/55">Show as table</summary>
     <div className="mt-2 overflow-x-auto">{children}</div>
   </details>
 );
@@ -77,7 +77,7 @@ function AnalyticsContent() {
           <Tile label="Draft" value={usage.draft} />
         </div>
 
-        <h3 className="mt-6 text-sm font-semibold">JDs created per week</h3>
+        <h3 className="mt-6 text-base font-semibold">JDs created per week</h3>
         <ColumnChart data={weeks} label="JDs created per week, last 12 weeks" valueName="JDs" />
         <TableView>
           <table className="table table-xs">
@@ -103,9 +103,9 @@ function AnalyticsContent() {
         <Eyebrow>Classes</Eyebrow>
         <div className="mt-3 grid gap-6 md:grid-cols-2">
           <section>
-            <h3 className="text-sm font-semibold">Most-authored classes</h3>
+            <h3 className="text-base font-semibold">Most-authored classes</h3>
             {classes.mostAuthored.length === 0 ? (
-              <p className="mt-2 text-sm text-base-content/65">No JDs written yet.</p>
+              <p className="mt-2 text-base text-base-content/65">No JDs written yet.</p>
             ) : (
               <BarList
                 data={classes.mostAuthored.map((c) => ({ key: c.slug, label: c.title, value: c.count }))}
@@ -115,8 +115,8 @@ function AnalyticsContent() {
             )}
           </section>
           <section>
-            <h3 className="text-sm font-semibold">Envelope match across classes</h3>
-            <p className="mt-1 text-xs text-base-content/55">
+            <h3 className="text-base font-semibold">Envelope match across classes</h3>
+            <p className="mt-1 text-sm text-base-content/55">
               Classes by the share of their real JDs at least 90% covered by the envelope.
             </p>
             <BarList
@@ -129,7 +129,7 @@ function AnalyticsContent() {
 
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <section>
-            <h3 className="text-sm font-semibold">
+            <h3 className="text-base font-semibold">
               Lowest envelope match{' '}
               <span className="font-normal text-base-content/55">— where curation pays off first</span>
             </h3>
@@ -159,7 +159,7 @@ function AnalyticsContent() {
             </table>
           </section>
           <section>
-            <h3 className="text-sm font-semibold">
+            <h3 className="text-base font-semibold">
               Never used{' '}
               <span className="font-normal text-base-content/55">
                 — {classes.neverUsed.length} of {classes.totalClasses} classes have no JDs written yet

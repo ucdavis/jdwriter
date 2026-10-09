@@ -59,10 +59,10 @@ const Section = ({
   title: string;
 }) => (
   <section aria-labelledby={`${id}-heading`} className="mb-8">
-    <h2 className="text-lg font-bold" id={`${id}-heading`}>
+    <h2 className="text-xl font-bold" id={`${id}-heading`}>
       {title}
     </h2>
-    <p className="mb-3 mt-0.5 text-sm text-base-content/65">{sub}</p>
+    <p className="mb-3 mt-0.5 text-base text-base-content/65">{sub}</p>
     {children}
   </section>
 );

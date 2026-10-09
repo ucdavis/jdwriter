@@ -180,7 +180,7 @@ export const DataTable = <TData extends object>({
         {/* (Optional) Pagination controls */}
         <div className="flex justify-end space-x-2 py-2">
           <button
-            className="btn btn-xs"
+            className="btn btn-sm"
             disabled={!table.getCanPreviousPage()}
             onClick={() => table.previousPage()}
             type="button"
@@ -188,7 +188,7 @@ export const DataTable = <TData extends object>({
             Previous
           </button>
           <button
-            className="btn btn-xs"
+            className="btn btn-sm"
             disabled={!table.getCanNextPage()}
             onClick={() => table.nextPage()}
             type="button"

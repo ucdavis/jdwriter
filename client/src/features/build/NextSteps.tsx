@@ -32,7 +32,7 @@ export const NextSteps = ({ result }: { result: AssembledJd }) => {
       <h2 className="mt-1 text-base font-bold" id="next-steps-heading">
         Take this job description to the Workforce Management request
       </h2>
-      <ol className="mt-3 space-y-3 text-sm">
+      <ol className="mt-3 space-y-3 text-base">
         <Step done n={1} title="Job description">
           Finished and saved. Download it as Word or PDF for your records.
         </Step>
@@ -45,7 +45,7 @@ export const NextSteps = ({ result }: { result: AssembledJd }) => {
                 Begin working on the Workforce Management request →
               </a>
             ) : (
-              <span className="text-sm text-base-content/65">
+              <span className="text-base text-base-content/65">
                 The Workforce Management tool is not available yet. Until it is, keep the
                 downloads below with your request:{' '}
                 <a className="text-primary hover:underline" download href={appUrl(`/api/jds/${id}/markdown`)}>
@@ -90,7 +90,7 @@ const Step = ({
   <li className="flex gap-3">
     <span
       aria-hidden
-      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-base font-bold ${
         done ? 'bg-success text-success-content' : 'bg-primary/15 text-primary'
       }`}
     >

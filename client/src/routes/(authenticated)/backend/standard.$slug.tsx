@@ -39,7 +39,7 @@ function StandardPage() {
            families. That is a coverage fact about our sources, not a failure to match, so
            it reads as information rather than as an error. */
         <Card className="p-6">
-          <p className="text-sm text-base-content/65">
+          <p className="text-base text-base-content/65">
             No official standard is linked to this class. The job-standard workbooks cover
             19 of the families in the corpus, so most classes legitimately have none —
             ingest the family workbook on the back end if one exists.

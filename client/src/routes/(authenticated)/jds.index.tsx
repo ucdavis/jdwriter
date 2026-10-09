@@ -58,7 +58,7 @@ function SavedJdsPage() {
         ) : (
           <span />
         )}
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           Created
           <select
             aria-label="Sort by date created"
@@ -73,13 +73,13 @@ function SavedJdsPage() {
       </div>
 
       {remove.error ? (
-        <p className="mb-3 text-sm text-error">{remove.error.message}</p>
+        <p className="mb-3 text-base text-error">{remove.error.message}</p>
       ) : null}
 
       {!isPending && jds.length === 0 ? (
         <Card className="flex flex-col items-center p-8 text-center">
           <img alt="" className="mb-4 h-16 w-16 rounded-xl" src={asset('icon-192.png')} />
-          <p className="max-w-md text-sm text-base-content/65">
+          <p className="max-w-md text-base text-base-content/65">
             Nothing saved yet. Pick a class on the start page and build a job description — it
             is saved as soon as you assemble it.
           </p>
@@ -96,15 +96,15 @@ function SavedJdsPage() {
                   to="/jds/$id"
                 >
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold">{name}</div>
-                    <div className="text-sm text-base-content/65">
+                    <div className="truncate text-base font-semibold">{name}</div>
+                    <div className="text-base text-base-content/65">
                       {j.title} · code <span className="tnum">{j.ucJobCode}</span>
                       {j.department ? ` · ${j.department}` : ''}
                       {scope === 'all' && j.createdBy ? ` · by ${j.createdBy}` : ''}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
-                    <span className="text-sm text-base-content/50">
+                    <span className="text-base text-base-content/50">
                       Created {when(j.createdAt)}
                     </span>
                     <Badge tone={j.status === 'ready' ? 'green' : 'yellow'}>
@@ -118,7 +118,7 @@ function SavedJdsPage() {
                 </Link>
                 <button
                   aria-label={`Delete ${name}`}
-                  className="btn btn-ghost btn-xs text-error"
+                  className="btn btn-ghost btn-sm text-error"
                   disabled={remove.isPending}
                   onClick={() => confirmDelete(j.id, name)}
                   type="button"
