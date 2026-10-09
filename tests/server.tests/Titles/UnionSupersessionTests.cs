@@ -27,7 +27,8 @@ public class UnionSupersessionTests
         Unit("TX").Should().HaveCount(11, "RSCH AND DEV ENGR 4 is ambiguous, not paired");
         Unit("HX").Should().HaveCount(7);
         Unit("RX").Should().HaveCount(2);
-        Index.AllSupersessions().Should().HaveCount(73);
+        Unit("SV").Should().HaveCount(32, "44 SV titles; 12 have a side that isn't on UC Davis payroll");
+        Index.AllSupersessions().Should().HaveCount(105);
     }
 
     [Theory]
@@ -36,6 +37,8 @@ public class UnionSupersessionTests
     [InlineData("000520", "006375", "SYS ADM 4 TX")]
     [InlineData("009453", "005304", "ATH TRAINER 1 HX")]
     [InlineData("007146", "005303", "EHS SPEC 3 RX")]
+    [InlineData("004500", "004972", "ACAD ACHIEVEMENT CNSLR 2 SV")]
+    [InlineData("004545", "005141", "STDT ACAD ADVISOR 3 SV")]
     public void A_non_represented_code_is_retired_in_favour_of_its_union_successor(
         string from, string to, string toTitle)
     {
@@ -63,13 +66,23 @@ public class UnionSupersessionTests
     }
 
     [Fact]
-    public void Supervisor_and_per_diem_variants_are_never_successors()
+    public void Per_diem_and_non_exempt_variants_are_never_successors()
     {
+        // SV used to be listed here as a supervisor variant. It is the Student Services and Advising
+        // Professionals bargaining unit, and its codes do replace their predecessors (see above).
         Index.AllSupersessions()
-            .Where(s => s.ToTitle.EndsWith(" SV", StringComparison.Ordinal)
-                        || s.ToTitle.EndsWith(" PD", StringComparison.Ordinal)
+            .Where(s => s.ToTitle.EndsWith(" PD", StringComparison.Ordinal)
                         || s.ToTitle.EndsWith(" NEX", StringComparison.Ordinal))
             .Should().BeEmpty();
+    }
+
+    [Fact]
+    public void An_SV_title_is_not_paired_when_one_side_is_not_on_payroll()
+    {
+        // ADVOCATE 4 SV is matrix-only: UC Davis hasn't used it, so ADVOCATE 4 stays the live class.
+        Index.IsSuperseded("004019").Should().BeFalse();
+        // FINANCIAL AID OFCR 4 is itself matrix-only, so there is nothing on payroll to retire.
+        Index.IsSuperseded("004528").Should().BeFalse();
     }
 
     [Fact]
