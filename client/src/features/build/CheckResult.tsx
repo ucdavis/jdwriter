@@ -6,11 +6,8 @@ import { BetterFitPanel } from './BetterFitPanel.tsx';
 import type { useBetterFit } from '@/queries/authoring.ts';
 import type { ReactNode } from 'react';
 
-const verdictTone = (v: EnvelopeCheckResponse['verdict']) =>
-  v === 'in_envelope' ? 'green' : v === 'borderline' ? 'yellow' : 'red';
-
-const verdictLabel = (v: EnvelopeCheckResponse['verdict']) =>
-  v === 'in_envelope' ? 'fits this class' : v === 'borderline' ? 'borderline' : 'outside this class';
+/** Borderline still fits the class — it stretches it — so the author sees one of two answers. */
+const fits = (v: EnvelopeCheckResponse['verdict']) => v !== 'out_of_envelope';
 
 /**
  * The result of an envelope check, as a card the author can act on: the verdict and why, any
@@ -32,10 +29,12 @@ export const CheckResult = ({
   heading: string;
   onLookForBetterFit: () => void;
 }) => (
-  <Card className={`p-5 ${check.verdict === 'in_envelope' ? 'border-success/40' : 'border-warning/50'}`}>
+  <Card className={`p-5 ${fits(check.verdict) ? 'border-success/40' : 'border-warning/50'}`}>
     <div className="flex items-center justify-between gap-3">
       <h2 className="text-xl font-bold">{heading}</h2>
-      <Badge tone={verdictTone(check.verdict)}>{verdictLabel(check.verdict)}</Badge>
+      <Badge tone={fits(check.verdict) ? 'green' : 'red'}>
+        {fits(check.verdict) ? 'Fits class' : 'Doesn’t fit class'}
+      </Badge>
     </div>
     <p className="mt-2 text-base">{check.rationale}</p>
     {check.matchedSignals.length > 0 ? (
@@ -88,9 +87,9 @@ export const CheckResult = ({
     ) : null}
     <div className="mt-4 flex flex-wrap items-center gap-3">
       {children}
-      {/* Offered whatever the verdict — a build can fit its class and still fit another better —
-          unless this check already searched. */}
-      {check.betterFitChecked || betterFit.data ? null : (
+      {/* Only when the build doesn't fit and no better class was named: offered on a build that
+          fits, it reads as doubt about a passing check. */}
+      {fits(check.verdict) || check.suggestedClass || check.betterFitChecked || betterFit.data ? null : (
         <button
           className="btn btn-outline btn-sm"
           disabled={betterFit.isPending}

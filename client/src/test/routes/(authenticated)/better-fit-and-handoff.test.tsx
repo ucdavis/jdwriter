@@ -74,7 +74,8 @@ describe('look for a better fit', () => {
     let sent: BuildRequest | null = null;
     testServer.use(
       http.post('/api/build/check', () =>
-        HttpResponse.json(check({ rationale: 'Fits.', verdict: 'in_envelope' }))
+        // Doesn't fit, and the check named no better class: the one case the search is offered.
+        HttpResponse.json(check({ rationale: 'Budget work is outside this class.', verdict: 'out_of_envelope' }))
       ),
       http.post('/api/build/better-fit', async ({ request }) => {
         sent = (await request.json()) as BuildRequest;

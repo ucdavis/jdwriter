@@ -1,4 +1,4 @@
-import { Badge, Card, PageHeader } from '@/shared/ui/primitives.tsx';
+import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { StandardDetail } from '@/features/build/StandardDetail.tsx';
 import { useState } from 'react';
 import { BuildFlow } from '@/features/build/BuildFlow.tsx';
@@ -130,11 +130,15 @@ const EnvelopeOverview = ({
 
   return (
     <Card className="p-5">
-      <p className="text-base leading-relaxed" data-testid="envelope-summary">
+      <Eyebrow>Summary</Eyebrow>
+      <p className="mt-1 text-base leading-relaxed" data-testid="envelope-summary">
         {envelope?.summary}
       </p>
 
-      <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-base" data-testid="envelope-facts">
+      <div className="mt-4">
+        <Eyebrow>Class facts</Eyebrow>
+      </div>
+      <dl className="mt-1 flex flex-wrap gap-x-6 gap-y-2 text-base" data-testid="envelope-facts">
         <FactChip label="UC job code" value={profile.ucJobCode} />
         <FactChip label="Salary grade" value={profile.salaryGrade.consensus ?? '—'} />
         <FactChip label="FLSA" value={profile.flsaStatus.consensus ?? '—'} />
