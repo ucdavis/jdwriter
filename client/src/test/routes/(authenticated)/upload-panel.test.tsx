@@ -14,6 +14,7 @@ const pendingClass = (over: Partial<UploadedClass>): UploadedClass => ({
   newAuthored: 0,
   newClassified: 0,
   newFiles: 2,
+  replacesStarter: false,
   title: 'Farm Laborer',
   ...over,
 });
@@ -107,6 +108,28 @@ describe('upload JDs', () => {
 
     await screen.findByText(/2 written in the app · 1 from Classify · refreshes a class with 154 JDs/);
     expect(screen.getByText(/edited by hand — rebuilding replaces those edits/)).toBeInTheDocument();
+  });
+
+  it('says when real JDs replace a class bootstrapped from its standard', async () => {
+    testServer.use(
+      http.get('/api/admin/uploads/pending', () =>
+        HttpResponse.json({
+          classes: [
+            pendingClass({
+              code: '009605',
+              existingSlug: '009605-laboratory-assistant-1',
+              newFiles: 4,
+              replacesStarter: true,
+              title: 'Laboratory Assistant 1',
+            }),
+          ],
+        })
+      )
+    );
+    renderRoute({ initialPath: '/backend/corpus' });
+
+    await screen.findByText(/4 uploaded · replaces its starter envelope/);
+    expect(screen.queryByText(/refreshes a class/)).not.toBeInTheDocument();
   });
 
   it('hides the folder panel on a server with no export folder', async () => {
