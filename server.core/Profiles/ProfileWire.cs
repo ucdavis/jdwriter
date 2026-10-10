@@ -141,7 +141,7 @@ public sealed class ClassProfileView
     /// </summary>
     public string? CannotSupervise { get; set; }
 
-    /// <summary>A supervisor or manager class: the build starts Supervises and Leads at Yes.</summary>
+    /// <summary>A supervisor or manager class: the build starts Supervises at Yes (Leads stays No).</summary>
     public bool IsSupervisory { get; set; }
     public DistributionWire Supervises { get; set; } = new();
     public DistributionWire Leads { get; set; } = new();

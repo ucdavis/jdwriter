@@ -241,13 +241,15 @@ describe('the guided build', () => {
       expect([sent.supervises, sent.supervisesCount, sent.leads]).toEqual([false, null, false]);
     });
 
-    it('starts a supervisor role at Yes, and requires how many it supervises', async () => {
+    it('starts a supervisor role at Supervises: Yes and Leads: No, and requires how many it supervises', async () => {
       const user = userEvent.setup();
       asClass({ cannotSupervise: null, isSupervisory: true, title: 'Lab Supervisor 2' });
       open();
 
       expect(await screen.findByLabelText('Supervises')).toHaveValue('yes');
-      expect(screen.getByLabelText('Leads')).toHaveValue('yes');
+      // A supervisor may also lead, but rarely does.
+      expect(screen.getByLabelText('Leads')).toHaveValue('no');
+      expect(screen.getByLabelText('Leads')).toBeEnabled();
       await fillDepartment(user);
       expect(screen.getByRole('button', { name: 'Check my duties →' })).toBeDisabled();
       expect(screen.getByTestId('build-gate-reason')).toHaveTextContent('Enter how many people this position supervises.');
@@ -276,6 +278,7 @@ describe('the guided build', () => {
       expect(screen.getByTestId('cannot-supervise')).toHaveTextContent(/union-represented class \(SV\), so it can.t supervise\. It may lead\./);
       expect(screen.getByLabelText('Leads')).toBeEnabled();
 
+      await user.selectOptions(screen.getByLabelText('Leads'), 'yes');
       const sent = await sentOnCheck(user);
       expect([sent.supervises, sent.leads]).toEqual([false, true]);
     });

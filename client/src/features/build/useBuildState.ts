@@ -69,7 +69,8 @@ export type YesNo = 'no' | 'yes';
 /**
  * What the class implies about supervision. Only a supervisor or manager class that isn't
  * union-represented may supervise; `cannotSupervise` says why not otherwise, and locks it at No.
- * A supervisor or manager class starts at Yes; any other role at No until the author changes it.
+ * A supervisor or manager class starts at Supervises: Yes; every role starts at Leads: No — a
+ * supervisor may also lead, but rarely does — until the author changes it.
  */
 export type RoleDefaults = { cannotSupervise: string | null; supervisory: boolean };
 
@@ -87,7 +88,7 @@ export const useBuildState = (
   const [supervisesChoice, setSupervises] = useState<YesNo>(
     initial?.supervises ?? (role.supervisory && !role.cannotSupervise ? 'yes' : 'no')
   );
-  const [leads, setLeads] = useState<YesNo>(initial?.leads ?? (role.supervisory ? 'yes' : 'no'));
+  const [leads, setLeads] = useState<YesNo>(initial?.leads ?? 'no');
   const [supervisesCount, setSupervisesCount] = useState(initial?.supervisesCount ?? '');
   // A class that can't supervise doesn't, whatever a draft or default says.
   const supervises: YesNo = role.cannotSupervise ? 'no' : supervisesChoice;
