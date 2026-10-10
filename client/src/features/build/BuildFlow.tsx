@@ -104,7 +104,6 @@ export const BuildFlow = ({
   role,
   slug,
   title,
-  unit,
 }: {
   /** A saved JD to continue: its id and the build screen as it was left. */
   draft?: { id: number; state: DraftState | null } | null;
@@ -115,8 +114,7 @@ export const BuildFlow = ({
   role?: RoleDefaults;
   slug: string;
   title: string;
-  /** The class's bargaining unit, named when it rules out supervising. */
-  unit?: string | null;
+
 }) => {
   const [step, setStep] = useState<Step>('duties');
   const state = useBuildState(envelope, draft?.state, role);
@@ -270,7 +268,7 @@ export const BuildFlow = ({
             </div>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
               <YesNoField
-                disabled={role?.represented}
+                disabled={Boolean(role?.cannotSupervise)}
                 label="Supervises"
                 onChange={state.setSupervises}
                 value={state.supervises}
@@ -295,10 +293,9 @@ export const BuildFlow = ({
               ) : null}
               <YesNoField label="Leads" onChange={state.setLeads} value={state.leads} />
             </div>
-            {role?.represented ? (
-              <p className="mt-2 text-base text-base-content/65" data-testid="represented-note">
-                This is a union-represented class{unit ? ` (${unit})` : ''}, so it can&apos;t
-                supervise. It may lead.
+            {role?.cannotSupervise ? (
+              <p className="mt-2 text-base text-base-content/65" data-testid="cannot-supervise">
+                {role.cannotSupervise}
               </p>
             ) : null}
           </Card>

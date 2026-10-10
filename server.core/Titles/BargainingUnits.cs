@@ -56,26 +56,6 @@ public static partial class BargainingUnits
         return code != "99";
     }
 
-    /// <summary>
-    /// Why a build's supervision can't stand, or null when it can. Union-represented positions may
-    /// lead but may not supervise — a rule of the contracts, enforced on assembly so no client can
-    /// file a JD that breaks it. A supervising position says how many people it supervises.
-    /// </summary>
-    public static string? SupervisionProblem(ClassProfile profile, bool? supervises, int? count)
-    {
-        if (supervises != true)
-        {
-            return null;
-        }
-
-        if (IsRepresented(profile))
-        {
-            return $"{profile.Title} is a union-represented class ({For(profile)}), so it can't supervise. It may lead.";
-        }
-
-        return count is >= 1 and <= 10_000 ? null : "Enter how many people this position supervises.";
-    }
-
     private static string? Consensus(ClassProfile profile) =>
         profile.Distributions.FirstOrDefault(d => d.Field == DistributionField.UnionCode)?.Consensus;
 }

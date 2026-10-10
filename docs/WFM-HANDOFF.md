@@ -126,8 +126,8 @@ What the fields guarantee:
 - **`classification` is the UC job class.** `position.workingTitle` is the unit's name for the
   role.
 - **`position.supervises`, `supervisesCount` and `leads` are what the author stated** (added within
-  v1; absent or null on JDs saved before them). A union-represented class never has `supervises:
-  true` — JDWriter refuses to assemble one. `supervisesCount` is set only when `supervises` is true.
+  v1; absent or null on JDs saved before them). Only a supervisor or manager class that isn't
+  union-represented can have `supervises: true` — JDWriter refuses to assemble any other. `supervisesCount` is set only when `supervises` is true.
 - **`documents`** are the same JD as files, ready to attach to the HR package: Word (`docx`) and
   Markdown (`markdown`). Fetch them the same way as the handoff document.
 - **`source.url`** is the JD in JDWriter, for a person to open.
