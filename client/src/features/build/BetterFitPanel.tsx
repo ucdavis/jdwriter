@@ -1,4 +1,4 @@
-import { HealthCenterBadge, isHealthCenterTitle } from '@/shared/ui/HealthCenterNote.tsx';
+import { SiteBadge, siteOfTitle } from '@/shared/ui/SiteNote.tsx';
 import { Link } from '@tanstack/react-router';
 
 /**
@@ -22,9 +22,9 @@ export const BetterFitPanel = ({
       <div className="text-base">
         This position may fit <span className="font-semibold text-primary">{suggestedClass}</span>{' '}
         better than {currentTitle}.
-        {isHealthCenterTitle(suggestedClass) ? (
+        {siteOfTitle(suggestedClass) ? (
           <span className="ml-2">
-            <HealthCenterBadge />
+            <SiteBadge site={siteOfTitle(suggestedClass) ?? ''} />
           </span>
         ) : null}
       </div>

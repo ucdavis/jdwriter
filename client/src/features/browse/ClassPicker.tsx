@@ -1,6 +1,6 @@
 import { Badge } from '@/shared/ui/primitives.tsx';
 import { titleMatches } from '@/lib/titles.ts';
-import { HealthCenterBadge } from '@/shared/ui/HealthCenterNote.tsx';
+import { SiteBadge } from '@/shared/ui/SiteNote.tsx';
 import { useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import type { ClassListItem } from '@/lib/contracts.ts';
@@ -51,7 +51,7 @@ export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
             <span className="flex min-w-0 flex-col">
               <span className="flex items-center gap-2">
                 <span className="truncate text-base font-semibold">{c.title}</span>
-                {c.healthCenterOnly ? <HealthCenterBadge /> : null}
+                {c.site ? <SiteBadge site={c.site} /> : null}
               </span>
               <span className="text-sm text-base-content/65 tnum">
                 Code {c.ucJobCode}

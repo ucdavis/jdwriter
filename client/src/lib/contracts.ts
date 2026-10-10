@@ -11,7 +11,7 @@
 
 // ---------------------------------------------------------------- shared
 
-export type ClassMatch = HealthCenterInfo & {
+export type ClassMatch = SiteInfo & {
   confidence: number;
   rationale: string;
   slug: string;
@@ -63,21 +63,21 @@ export type ClassStandard = {
 
 // ---------------------------------------------------------------- reads
 
-/** The other version of a class: its Health Center (HC) code, or the regular one. */
-export type HealthCenterTwin = {
-  /** True when the twin is the Health Center version. */
-  healthCenter: boolean;
+/** A class's version at another site — Health Center (HC), Student Health Center (SHS) — or its regular one. */
+export type SiteTwin = {
+  /** The twin's site, or null for the regular class. */
+  site: string | null;
   /** The twin's class in JDWriter, when it has one. */
   slug: string | null;
   title: string;
   ucJobCode: string;
 };
 
-/** Health Center labelling, carried by every class and suggestion. */
-export type HealthCenterInfo = {
-  /** A Health Center (HC) class: for Health Center positions only. */
-  healthCenterOnly?: boolean;
-  healthCenterTwin?: HealthCenterTwin | null;
+/** Site labelling, carried by every class and suggestion. */
+export type SiteInfo = {
+  /** The site this class is only for ("Health Center", "Student Health Center"), or null. */
+  site?: string | null;
+  siteTwins?: SiteTwin[];
 };
 
 export type ClassListItem = {
@@ -85,9 +85,10 @@ export type ClassListItem = {
   corpusSize?: number;
   family?: string;
   grade?: string;
-  healthCenterOnly?: boolean;
   /** False for an in-use UC Davis title with no ingested profile yet. */
   ready: boolean;
+  /** The site this class is only for, or null. */
+  site?: string | null;
   slug: string;
   title: string;
   ucJobCode: string;
@@ -128,7 +129,7 @@ export type ClassSummary = {
 
 export type ClassSummaryResponse = { classes: ClassSummary[] };
 
-export type ClassProfileResponse = HealthCenterInfo & {
+export type ClassProfileResponse = SiteInfo & {
   /** The bargaining unit to show: the title's union suffix (SV, CX…), else the corpus consensus. */
   bargainingUnit?: string | null;
   /**
@@ -249,7 +250,7 @@ export type ExtractResponse = {
 
 export type LevelFit = 'above' | 'at' | 'below' | 'unclear';
 
-export type ClassifyMatch = HealthCenterInfo & {
+export type ClassifyMatch = SiteInfo & {
   confidence: number;
   coveredPct: number;
   inClass: string[];

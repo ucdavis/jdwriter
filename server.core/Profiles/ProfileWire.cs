@@ -147,11 +147,11 @@ public sealed class ClassProfileView
     public DistributionWire Leads { get; set; } = new();
     public DistributionWire WorksOutdoorsOver50pct { get; set; } = new();
 
-    /// <summary>A Health Center (HC) class: for Health Center positions only.</summary>
-    public bool HealthCenterOnly { get; set; }
+    /// <summary>The site this class is only for ("Health Center", "Student Health Center"), or null.</summary>
+    public string? Site { get; set; }
 
-    /// <summary>The class's other version — its HC code, or the regular one — when it has one.</summary>
-    public HealthCenterTwin? HealthCenterTwin { get; set; }
+    /// <summary>The class's versions at other sites — or its regular version — when it has them.</summary>
+    public List<SiteTwin> SiteTwins { get; set; } = [];
 
     /// <summary>How much an author may reasonably add, in percent: 30 for senior and supervisory classes, else 10.</summary>
     public int CustomizationTarget { get; set; } = 10;
@@ -160,7 +160,7 @@ public sealed class ClassProfileView
     public ClassStandardRecord? Standard { get; set; }
 
     public static ClassProfileView From(
-        ClassProfile p, ClassStandardRecord? standard, HealthCenterTwin? healthCenterTwin = null)
+        ClassProfile p, ClassStandardRecord? standard, List<SiteTwin>? siteTwins = null)
     {
         DistributionWire Dist(DistributionField field)
         {
@@ -191,8 +191,8 @@ public sealed class ClassProfileView
             IsRepresented = BargainingUnits.IsRepresented(p),
             CannotSupervise = Supervision.WhyNot(p),
             IsSupervisory = Supervision.IsSupervisory(p.Title),
-            HealthCenterOnly = HealthCenter.IsHealthCenter(p.Title),
-            HealthCenterTwin = healthCenterTwin,
+            Site = Sites.SiteOf(p.Title),
+            SiteTwins = siteTwins ?? [],
             CustomizationTarget = Customization.TargetPct(p.Title),
             Supervises = Dist(DistributionField.Supervises),
             Leads = Dist(DistributionField.Leads),

@@ -1,6 +1,6 @@
 import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { StandardDetail } from '@/features/build/StandardDetail.tsx';
-import { HealthCenterNote } from '@/shared/ui/HealthCenterNote.tsx';
+import { SiteNote } from '@/shared/ui/SiteNote.tsx';
 import { useState } from 'react';
 import { BuildFlow } from '@/features/build/BuildFlow.tsx';
 import { asDraftState } from '@/features/build/useBuildState.ts';
@@ -141,7 +141,7 @@ const EnvelopeOverview = ({
       <p className="mt-1 text-base leading-relaxed" data-testid="envelope-summary">
         {envelope?.summary}
       </p>
-      <HealthCenterNote healthCenterOnly={profile.healthCenterOnly} healthCenterTwin={profile.healthCenterTwin} />
+      <SiteNote site={profile.site} siteTwins={profile.siteTwins} />
 
       <div className="mt-4">
         <Eyebrow>Class facts</Eyebrow>

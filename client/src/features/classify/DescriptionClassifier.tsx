@@ -1,4 +1,4 @@
-import { HealthCenterNote } from '@/shared/ui/HealthCenterNote.tsx';
+import { SiteNote } from '@/shared/ui/SiteNote.tsx';
 import { Badge, Card, Eyebrow, Meter, Note } from '@/shared/ui/primitives.tsx';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
@@ -319,7 +319,7 @@ const MatchCard = ({
         <div className="mt-0.5 text-sm text-base-content/50 tnum">
           Job code {match.ucJobCode}
         </div>
-        <HealthCenterNote healthCenterOnly={match.healthCenterOnly} healthCenterTwin={match.healthCenterTwin} />
+        <SiteNote site={match.site} siteTwins={match.siteTwins} />
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <Badge tone={levelTone[match.levelFit]}>{levelLabel[match.levelFit]}</Badge>

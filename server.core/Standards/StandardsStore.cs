@@ -31,8 +31,8 @@ public sealed class StandardsIndex
         // the earliest record is the reference's choice.
         foreach (var s in _all)
         {
-            // HC-aware, so a Health Center class never falls back to the regular class's standard.
-            var loose = HealthCenter.ClassKey(s.LongTitle);
+            // Site-aware, so a Health Center or Student Health class never falls back to the regular class's standard.
+            var loose = Sites.ClassKey(s.LongTitle);
             _byKey.TryAdd(loose, s);
         }
 
@@ -65,7 +65,7 @@ public sealed class StandardsIndex
             return strict;
         }
 
-        return _byKey.TryGetValue(HealthCenter.ClassKey(title), out var loose) ? loose : null;
+        return _byKey.TryGetValue(Sites.ClassKey(title), out var loose) ? loose : null;
     }
 
     /// <summary>Find by job code, padded so unpadded form entries still resolve.</summary>
