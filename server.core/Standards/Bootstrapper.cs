@@ -154,14 +154,14 @@ public sealed class Bootstrapper : IBootstrapper
         // "Financial Anl 3" would otherwise hide "Financial Analyst 3 CX" from this list.
         var have = profiled
             .Where(p => !titleCodes.IsSuperseded(p.UcJobCode))
-            .Select(p => HealthCenter.ClassKey(p.Title))
+            .Select(p => Sites.ClassKey(p.Title))
             .ToHashSet(StringComparer.Ordinal);
 
         var result = new BootstrapCandidates();
 
         foreach (var s in standards.All)
         {
-            if (have.Contains(HealthCenter.ClassKey(s.LongTitle)))
+            if (have.Contains(Sites.ClassKey(s.LongTitle)))
             {
                 continue;
             }
@@ -340,11 +340,11 @@ public sealed class Bootstrapper : IBootstrapper
     private static ClassStandardRecord? FindStandard(StandardsIndex standards, string title)
     {
         var strict = TitleNormalizer.TitleCodeKey(title);
-        // HC-aware: a Health Center class is never built from the regular class's standard.
-        var loose = HealthCenter.ClassKey(title);
+        // Site-aware: a Health Center or Student Health class is never built from the regular class's standard.
+        var loose = Sites.ClassKey(title);
         return standards.All.FirstOrDefault(s => s.LongTitle == title)
                ?? standards.All.FirstOrDefault(s => TitleNormalizer.TitleCodeKey(s.LongTitle) == strict)
-               ?? standards.All.FirstOrDefault(s => HealthCenter.ClassKey(s.LongTitle) == loose);
+               ?? standards.All.FirstOrDefault(s => Sites.ClassKey(s.LongTitle) == loose);
     }
 
     /// <summary>
@@ -360,12 +360,12 @@ public sealed class Bootstrapper : IBootstrapper
             .Select(p => new { p.Slug, p.UcJobCode, p.Title })
             .ToListAsync(ct);
 
-        var key = HealthCenter.ClassKey(title);
+        var key = Sites.ClassKey(title);
         var hit = profiles.FirstOrDefault(p => p.Slug == slug)
                   ?? profiles.FirstOrDefault(p =>
                       !titleCodes.IsSuperseded(p.UcJobCode)
                       && ((code.Length > 0 && TitleCodeIndex.Pad(p.UcJobCode) == TitleCodeIndex.Pad(code))
-                          || HealthCenter.ClassKey(p.Title) == key));
+                          || Sites.ClassKey(p.Title) == key));
 
         if (hit is not null)
         {

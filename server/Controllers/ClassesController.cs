@@ -71,11 +71,11 @@ public class ClassesController : ApiControllerBase
         // failure, so null here is a normal state the UI renders calmly.
         var index = await _standards.GetIndexAsync(ct);
         var titles = await _titleCodes.GetAsync(ct);
-        var classes = HealthCenter.ClassesByCode((await _profiles.GetClassListAsync(ct))
+        var classes = Sites.ClassesByCode((await _profiles.GetClassListAsync(ct))
             .Where(c => c.Ready)
             .Select(c => (c.UcJobCode, c.Slug, c.Title)));
-        var twin = HealthCenter.TwinOf(profile.Title, profile.UcJobCode, titles, classes);
-        return Ok(ClassProfileView.From(profile, index.ForTitle(profile.Title), twin));
+        var twins = Sites.TwinsOf(profile.Title, profile.UcJobCode, titles, classes);
+        return Ok(ClassProfileView.From(profile, index.ForTitle(profile.Title), twins));
     }
 
     [HttpGet("{slug}/coverage")]

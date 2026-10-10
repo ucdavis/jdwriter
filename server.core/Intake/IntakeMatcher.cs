@@ -15,11 +15,11 @@ public sealed class ClassMatch
     public int Confidence { get; set; }
     public string Rationale { get; set; } = "";
 
-    /// <summary>A Health Center (HC) class: for Health Center positions only.</summary>
-    public bool HealthCenterOnly { get; set; }
+    /// <summary>The site this class is only for ("Health Center", "Student Health Center"), or null.</summary>
+    public string? Site { get; set; }
 
-    /// <summary>The class's other version — its HC code, or the regular one — when it has one.</summary>
-    public HealthCenterTwin? HealthCenterTwin { get; set; }
+    /// <summary>The class's versions at other sites — or its regular version — when it has them.</summary>
+    public List<SiteTwin> SiteTwins { get; set; } = [];
 }
 
 // ---------------------------------------------------------------- model response shapes
