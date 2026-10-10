@@ -3,6 +3,7 @@ import { messageOf } from '@/features/browse/NlIntake.tsx';
 import {
   useBootstrapCandidates,
   useBootstrapClass,
+  useCoverage,
   useIngestClass,
   useImportDocument,
   useQualificationRules,
@@ -16,8 +17,9 @@ import {
   useRetireSuperseded,
   useRetirementPreview,
 } from '@/queries/admin.ts';
-import type { EnvelopeImportRefusal, SupersededProfile } from '@/lib/contracts.ts';
+import type { CoverageRow, EnvelopeImportRefusal, SupersededProfile } from '@/lib/contracts.ts';
 import { appUrl } from '@/lib/basePath.ts';
+import { SiteBadge } from '@/shared/ui/SiteNote.tsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
@@ -717,6 +719,157 @@ const retireOutcome = (p: SupersededProfile) => {
  * RX, HX) has superseded. Supersession is derived from the title reference, so a class can
  * become dead after it was built; this retires it without losing its JDs or saved JDs.
  */
+/** How many rows the coverage list renders before asking for a filter. */
+const COVERAGE_LIMIT = 200;
+
+/**
+ * UC Davis jobs that have no class yet — no JDs ingested and nothing bootstrapped — so gaps in
+ * coverage are visible rather than silent. Active jobs (on payroll) by default; switch to jobs not
+ * active at UC Davis to look ahead. Any row with a standard can be bootstrapped from here — for a
+ * job not active at UC Davis, only by this explicit choice.
+ */
+export const CoveragePanel = () => {
+  const [active, setActive] = useState(true);
+  const [standard, setStandard] = useState<'all' | 'with' | 'without'>('all');
+  const [filter, setFilter] = useState('');
+  const coverage = useCoverage(active);
+  const create = useBootstrapClass();
+  const [created, setCreated] = useState<string | null>(null);
+
+  const rows = (coverage.data?.rows ?? [])
+    .filter((r) => (standard === 'with' ? r.standardTitle : standard === 'without' ? !r.standardTitle : true))
+    .filter((r) =>
+      filter
+        ? `${r.title} ${r.code} ${r.family ?? ''}`.toLowerCase().includes(filter.toLowerCase())
+        : true
+    );
+
+  const bootstrap = (r: CoverageRow) => {
+    if (
+      !active &&
+      !window.confirm(
+        `${r.title} (${r.code}) isn't active at UC Davis. Create a starter envelope from its standard anyway?`
+      )
+    ) {
+      return;
+    }
+    setCreated(null);
+    create.mutate(
+      { allowNotActive: !active, title: r.standardTitle ?? '' },
+      { onSuccess: (c) => setCreated(`Created ${c.title} (${c.ucJobCode}) from its standard.`) }
+    );
+  };
+
+  return (
+    <Card className="mb-5 p-5">
+      <Eyebrow>Jobs with no class yet</Eyebrow>
+      <p className="mt-1 text-base text-base-content/65">
+        UC Davis jobs with no JDs ingested and nothing bootstrapped. Those with an official
+        standard can be bootstrapped here; the rest need JDs (upload them above) or a standard.
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <select
+          aria-label="Which jobs"
+          className="select select-bordered select-sm"
+          onChange={(e) => setActive(e.target.value === 'active')}
+          value={active ? 'active' : 'inactive'}
+        >
+          <option value="active">Active at UC Davis</option>
+          <option value="inactive">Not active at UC Davis</option>
+        </select>
+        <select
+          aria-label="Standard"
+          className="select select-bordered select-sm"
+          onChange={(e) => setStandard(e.target.value as 'all' | 'with' | 'without')}
+          value={standard}
+        >
+          <option value="all">With or without a standard</option>
+          <option value="without">No standard</option>
+          <option value="with">Has a standard</option>
+        </select>
+        <input
+          aria-label="Filter jobs"
+          className="input input-sm input-bordered min-w-48 flex-1"
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Filter by title, code or family…"
+          value={filter}
+        />
+      </div>
+
+      {coverage.data ? (
+        <p className="mt-3 text-base" data-testid="coverage-summary">
+          {coverage.data.rows.length} {active ? 'active' : 'not-active'} job
+          {coverage.data.rows.length === 1 ? '' : 's'} with no class:{' '}
+          {coverage.data.withStandard} with a standard, {coverage.data.withoutStandard} with no
+          JDs or standard.
+        </p>
+      ) : coverage.isPending ? (
+        <p className="mt-3 text-base text-base-content/65">Loading…</p>
+      ) : null}
+      {coverage.error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(coverage.error)}</Note>
+        </div>
+      ) : null}
+      {create.error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(create.error)}</Note>
+        </div>
+      ) : null}
+      {created ? (
+        <div className="mt-3">
+          <Note tone="green">{created}</Note>
+        </div>
+      ) : null}
+
+      {rows.length > 0 ? (
+        <>
+          <ul className="mt-3 max-h-[420px] divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300" data-testid="coverage-list">
+            {rows.slice(0, COVERAGE_LIMIT).map((r) => (
+              <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={r.code}>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-base font-semibold">{r.title}</span>
+                    {r.site ? <SiteBadge site={r.site} /> : null}
+                  </div>
+                  <div className="text-sm text-base-content/65 tnum">
+                    Code {r.code}
+                    {r.family ? ` · ${r.family}` : ''}
+                    {r.grade ? ` · ${r.grade}` : ''}
+                    {r.standardTitle ? ` · standard: ${r.standardTitle}` : ''}
+                  </div>
+                </div>
+                {r.standardTitle ? (
+                  <button
+                    className="btn btn-primary btn-sm shrink-0"
+                    disabled={create.isPending}
+                    onClick={() => bootstrap(r)}
+                    type="button"
+                  >
+                    {create.isPending && typeof create.variables === 'object' && create.variables.title === r.standardTitle
+                      ? 'Creating…'
+                      : 'Bootstrap'}
+                  </button>
+                ) : (
+                  <Badge tone="muted">no standard</Badge>
+                )}
+              </li>
+            ))}
+          </ul>
+          {rows.length > COVERAGE_LIMIT ? (
+            <p className="mt-2 text-sm text-base-content/50">
+              Showing the first {COVERAGE_LIMIT} of {rows.length} — filter to narrow.
+            </p>
+          ) : null}
+        </>
+      ) : coverage.data ? (
+        <p className="mt-3 text-base text-base-content/65">No jobs match.</p>
+      ) : null}
+    </Card>
+  );
+};
+
 export const SupersessionPanel = () => {
   const preview = useRetirementPreview();
   const retire = useRetireSuperseded();

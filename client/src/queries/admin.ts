@@ -12,6 +12,7 @@ import type {
   AdminsResponse,
   BootstrapCreateResponse,
   BootstrapResponse,
+  CoverageResponse,
   EnvelopeImportResult,
   IngestScanResponse,
   RetirementResult,
@@ -72,15 +73,30 @@ export const useBootstrapCandidates = () =>
 export const useBootstrapClass = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (title: string) =>
+    /**
+     * `allowNotActive` builds a job not active at UC Davis — by an admin's explicit choice only;
+     * every list and bulk path leaves those out.
+     */
+    mutationFn: (title: string | { allowNotActive: boolean; title: string }) =>
       fetchJson<BootstrapCreateResponse>('/api/admin/bootstrap', {
-        body: JSON.stringify({ title }),
+        body: JSON.stringify(typeof title === 'string' ? { title } : title),
         method: 'POST',
       }),
-    // A new class appears in the class list and the analyst index.
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classes'] }),
+    // A new class appears in the class list, the analyst index and the coverage lists.
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['classes'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'coverage'] });
+    },
   });
 };
+
+/** UC Davis jobs with no class yet — active, or not active at UC Davis — and their standards. */
+export const coverageQueryOptions = (active: boolean) => ({
+  queryFn: () => fetchJson<CoverageResponse>(`/api/admin/coverage?active=${active}`),
+  queryKey: ['admin', 'coverage', active] as const,
+});
+
+export const useCoverage = (active: boolean) => useQuery(coverageQueryOptions(active));
 
 /** Profiles still filed under a code a union successor has superseded. Read-only. */
 export const useRetirementPreview = () =>
