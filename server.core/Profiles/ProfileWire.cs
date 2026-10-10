@@ -146,10 +146,21 @@ public sealed class ClassProfileView
     public DistributionWire Supervises { get; set; } = new();
     public DistributionWire Leads { get; set; } = new();
     public DistributionWire WorksOutdoorsOver50pct { get; set; } = new();
+
+    /// <summary>A Health Center (HC) class: for Health Center positions only.</summary>
+    public bool HealthCenterOnly { get; set; }
+
+    /// <summary>The class's other version — its HC code, or the regular one — when it has one.</summary>
+    public HealthCenterTwin? HealthCenterTwin { get; set; }
+
+    /// <summary>How much an author may reasonably add, in percent: 30 for senior and supervisory classes, else 10.</summary>
+    public int CustomizationTarget { get; set; } = 10;
+
     /// <summary>Null for most classes — a gap in standards coverage, not a matching failure.</summary>
     public ClassStandardRecord? Standard { get; set; }
 
-    public static ClassProfileView From(ClassProfile p, ClassStandardRecord? standard)
+    public static ClassProfileView From(
+        ClassProfile p, ClassStandardRecord? standard, HealthCenterTwin? healthCenterTwin = null)
     {
         DistributionWire Dist(DistributionField field)
         {
@@ -180,6 +191,9 @@ public sealed class ClassProfileView
             IsRepresented = BargainingUnits.IsRepresented(p),
             CannotSupervise = Supervision.WhyNot(p),
             IsSupervisory = Supervision.IsSupervisory(p.Title),
+            HealthCenterOnly = HealthCenter.IsHealthCenter(p.Title),
+            HealthCenterTwin = healthCenterTwin,
+            CustomizationTarget = Customization.TargetPct(p.Title),
             Supervises = Dist(DistributionField.Supervises),
             Leads = Dist(DistributionField.Leads),
             WorksOutdoorsOver50pct = Dist(DistributionField.WorksOutdoorsOver50pct),

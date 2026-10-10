@@ -19,6 +19,9 @@ public sealed class ClassListItem
     public string? BargainingUnit { get; set; }
     public string? Family { get; set; }
     public string? Grade { get; set; }
+
+    /// <summary>A Health Center (HC) class: for Health Center positions only.</summary>
+    public bool HealthCenterOnly { get; set; }
 }
 
 /// <summary>
@@ -221,12 +224,14 @@ public sealed class ClassProfileRepository : IClassProfileRepository
             Title = p.Title,
             UcJobCode = p.UcJobCode,
             Ready = true,
+            HealthCenterOnly = HealthCenter.IsHealthCenter(p.Title),
             CorpusSize = p.CorpusSize,
             BargainingUnit = p.Union,
         }).OrderBy(x => x.Title, StringComparer.Ordinal).ToList();
 
         var readyCodes = ready.Select(r => r.UcJobCode).ToHashSet(StringComparer.Ordinal);
-        var readyTitleKeys = profiles.Select(p => TitleNormalizer.TitleKey(p.Title))
+        // HC-aware: a Health Center class doesn't hide the regular one, nor the reverse.
+        var readyTitleKeys = profiles.Select(p => HealthCenter.ClassKey(p.Title))
             .ToHashSet(StringComparer.Ordinal);
 
         // Seeds are titles IN USE at UC Davis minus what is already ingested, matched by code OR by
@@ -234,13 +239,14 @@ public sealed class ClassProfileRepository : IClassProfileRepository
         var index = await _titleCodes.GetAsync(ct);
         var seeds = index.InUseTitleCodes()
             .Where(t => !readyCodes.Contains(t.Code)
-                        && !readyTitleKeys.Contains(TitleNormalizer.TitleKey(t.Title)))
+                        && !readyTitleKeys.Contains(HealthCenter.ClassKey(t.Title)))
             .Select(t => new ClassListItem
             {
                 Slug = $"seed-{t.Code}",
                 Title = Titleize(t.Title),
                 UcJobCode = t.Code,
                 Ready = false,
+                HealthCenterOnly = HealthCenter.IsHealthCenter(t.Title),
                 Family = string.IsNullOrEmpty(t.Family) ? null : t.Family,
                 Grade = string.IsNullOrEmpty(t.Grade) ? null : t.Grade,
             })

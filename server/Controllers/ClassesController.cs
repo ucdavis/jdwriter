@@ -4,6 +4,7 @@ using Server.Core.Domain;
 using Server.Core.Ingest;
 using Server.Core.Profiles;
 using Server.Core.Standards;
+using Server.Core.Titles;
 
 namespace Server.Controllers;
 
@@ -18,9 +19,11 @@ public class ClassesController : ApiControllerBase
 {
     private readonly IClassProfileRepository _profiles;
     private readonly IStandardsStore _standards;
+    private readonly ITitleCodeService _titleCodes;
 
-    public ClassesController(IClassProfileRepository profiles, IStandardsStore standards)
+    public ClassesController(IClassProfileRepository profiles, IStandardsStore standards, ITitleCodeService titleCodes)
     {
+        _titleCodes = titleCodes;
         _profiles = profiles;
         _standards = standards;
     }
@@ -67,7 +70,12 @@ public class ClassesController : ApiControllerBase
         // Roughly 19 of 65 classes have one — the gap is standards COVERAGE, not a matching
         // failure, so null here is a normal state the UI renders calmly.
         var index = await _standards.GetIndexAsync(ct);
-        return Ok(ClassProfileView.From(profile, index.ForTitle(profile.Title)));
+        var titles = await _titleCodes.GetAsync(ct);
+        var classes = HealthCenter.ClassesByCode((await _profiles.GetClassListAsync(ct))
+            .Where(c => c.Ready)
+            .Select(c => (c.UcJobCode, c.Slug, c.Title)));
+        var twin = HealthCenter.TwinOf(profile.Title, profile.UcJobCode, titles, classes);
+        return Ok(ClassProfileView.From(profile, index.ForTitle(profile.Title), twin));
     }
 
     [HttpGet("{slug}/coverage")]

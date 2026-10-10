@@ -98,6 +98,7 @@ const Progress = ({ onGo, step }: { onGo: (step: Step) => void; step: Step }) =>
  * drifting one JD at a time.
  */
 export const BuildFlow = ({
+  customizationTarget = 10,
   draft,
   envelope,
   overview,
@@ -105,6 +106,8 @@ export const BuildFlow = ({
   slug,
   title,
 }: {
+  /** How much the author may reasonably add, in percent: higher for senior and supervisory classes. */
+  customizationTarget?: number;
   /** A saved JD to continue: its id and the build screen as it was left. */
   draft?: { id: number; state: DraftState | null } | null;
   envelope: EnvelopeSections;
@@ -313,7 +316,7 @@ export const BuildFlow = ({
               {busy ? 'Checking…' : 'Check my duties →'}
             </button>
             {draftButton}
-            <CustomizationNote state={state} />
+            <CustomizationNote state={state} target={customizationTarget} />
             {gateReason ? (
               <span className="text-base text-warning" data-testid="build-gate-reason">
                 {gateReason}
@@ -415,12 +418,15 @@ export const BuildFlow = ({
   );
 };
 
-/** The customization meter: additions only, against a target of ≤10%. */
-const CustomizationNote = ({ state }: { state: ReturnType<typeof useBuildState> }) =>
+/**
+ * The customization meter: additions only, against the class's target — ≤10% for most classes,
+ * ≤30% for senior (level 4+) and supervisory ones, which shape their roles more.
+ */
+const CustomizationNote = ({ state, target }: { state: ReturnType<typeof useBuildState>; target: number }) =>
   state.addedCount > 0 ? (
-    <span className="flex items-center gap-2 text-base text-base-content/65">
-      <Badge tone={state.customPct <= 10 ? 'green' : 'yellow'}>Customization {state.customPct}%</Badge>
-      {state.addedCount} added · target ≤10%
+    <span className="flex items-center gap-2 text-base text-base-content/65" data-testid="customization">
+      <Badge tone={state.customPct <= target ? 'green' : 'yellow'}>Customization {state.customPct}%</Badge>
+      {state.addedCount} added · target ≤{target}%
     </span>
   ) : null;
 
