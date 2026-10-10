@@ -58,11 +58,36 @@ public class BargainingUnitsTests
     [Fact]
     public void A_represented_class_may_lead_but_not_supervise()
     {
-        var p = Profile("Student Academic Advisor 3 SV", null);
+        var p = Profile("Student Academic Advisor Supervisor 3 SV", null);
 
-        BargainingUnits.SupervisionProblem(p, supervises: true, count: 3).Should().Contain("can't supervise").And.Contain("It may lead");
-        BargainingUnits.SupervisionProblem(p, supervises: false, count: null).Should().BeNull();
-        BargainingUnits.SupervisionProblem(p, supervises: null, count: null).Should().BeNull();
+        Supervision.Problem(p, supervises: true, count: 3).Should().Contain("union-represented").And.Contain("It may lead");
+        Supervision.Problem(p, supervises: false, count: null).Should().BeNull();
+        Supervision.Problem(p, supervises: null, count: null).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("Admin Ofcr 3")]
+    [InlineData("Financial Analyst 3")]
+    [InlineData("Producer Dir Sr")]
+    public void Only_supervisor_and_manager_classes_may_supervise(string title)
+    {
+        var p = Profile(title, "99");
+
+        Supervision.WhyNot(p).Should().StartWith("Only supervisor and manager classes can supervise");
+        Supervision.Problem(p, true, 4).Should().Contain("Only supervisor and manager classes");
+    }
+
+    [Theory]
+    [InlineData("Acad Achievement Supv 2")]
+    [InlineData("Academic Achievement Supervisor 2")]
+    [InlineData("Admin Mgr 1")]
+    [InlineData("Administrative Manager 4")]
+    public void Supervisor_and_manager_classes_may(string title)
+    {
+        var p = Profile(title, "99 - Non-Represented (PPSM)");
+
+        Supervision.WhyNot(p).Should().BeNull();
+        Supervision.Problem(p, true, 4).Should().BeNull();
     }
 
     [Theory]
@@ -70,12 +95,8 @@ public class BargainingUnitsTests
     [InlineData(0)]
     [InlineData(10_001)]
     public void A_supervising_position_says_how_many(int? count) =>
-        BargainingUnits.SupervisionProblem(Profile("Admin Ofcr 3", "99"), true, count)
+        Supervision.Problem(Profile("Admin Mgr 1", "99"), true, count)
             .Should().Be("Enter how many people this position supervises.");
-
-    [Fact]
-    public void A_non_represented_supervisor_with_a_count_is_fine() =>
-        BargainingUnits.SupervisionProblem(Profile("Admin Ofcr 3", "99"), true, 4).Should().BeNull();
 
     [Fact]
     public void The_documents_state_supervision_as_given()

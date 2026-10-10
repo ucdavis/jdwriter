@@ -67,10 +67,11 @@ export type DraftState = {
 export type YesNo = 'no' | 'yes';
 
 /**
- * What the class implies about supervision. A supervisor or manager title starts at Yes; any other
- * role starts at No until the author changes it. A union-represented class can't supervise at all.
+ * What the class implies about supervision. Only a supervisor or manager class that isn't
+ * union-represented may supervise; `cannotSupervise` says why not otherwise, and locks it at No.
+ * A supervisor or manager class starts at Yes; any other role at No until the author changes it.
  */
-export type RoleDefaults = { represented: boolean; supervisory: boolean };
+export type RoleDefaults = { cannotSupervise: string | null; supervisory: boolean };
 
 /** A saved draft this hook can resume from; anything else starts from the envelope. */
 export const asDraftState = (value: unknown): DraftState | null =>
@@ -81,15 +82,15 @@ export const asDraftState = (value: unknown): DraftState | null =>
 export const useBuildState = (
   envelope: EnvelopeSections,
   initial?: DraftState | null,
-  role: RoleDefaults = { represented: false, supervisory: false }
+  role: RoleDefaults = { cannotSupervise: null, supervisory: false }
 ) => {
   const [supervisesChoice, setSupervises] = useState<YesNo>(
-    initial?.supervises ?? (role.supervisory && !role.represented ? 'yes' : 'no')
+    initial?.supervises ?? (role.supervisory && !role.cannotSupervise ? 'yes' : 'no')
   );
   const [leads, setLeads] = useState<YesNo>(initial?.leads ?? (role.supervisory ? 'yes' : 'no'));
   const [supervisesCount, setSupervisesCount] = useState(initial?.supervisesCount ?? '');
-  // A represented class can't supervise, whatever a draft or default says.
-  const supervises: YesNo = role.represented ? 'no' : supervisesChoice;
+  // A class that can't supervise doesn't, whatever a draft or default says.
+  const supervises: YesNo = role.cannotSupervise ? 'no' : supervisesChoice;
   const count = Number.parseInt(supervisesCount, 10);
   const supervisionReady =
     supervises === 'no' || (Number.isInteger(count) && count >= 1 && count <= 10_000);

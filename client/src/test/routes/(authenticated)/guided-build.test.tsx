@@ -224,11 +224,16 @@ describe('the guided build', () => {
   });
 
   describe('supervision', () => {
-    it('starts a regular role at No for both, with no count asked', async () => {
+    it('locks a non-supervisory role at No, and lets it lead', async () => {
       const user = userEvent.setup();
+      asClass({ cannotSupervise: 'Only supervisor and manager classes can supervise. This position may lead.', isSupervisory: false });
       open();
 
-      expect(await screen.findByLabelText('Supervises')).toHaveValue('no');
+      const supervises = await screen.findByLabelText('Supervises');
+      expect(supervises).toHaveValue('no');
+      expect(supervises).toBeDisabled();
+      expect(screen.getByTestId('cannot-supervise')).toHaveTextContent('Only supervisor and manager classes can supervise.');
+      expect(screen.getByLabelText('Leads')).toBeEnabled();
       expect(screen.getByLabelText('Leads')).toHaveValue('no');
       expect(screen.queryByLabelText(/How many people/)).not.toBeInTheDocument();
 
@@ -238,7 +243,7 @@ describe('the guided build', () => {
 
     it('starts a supervisor role at Yes, and requires how many it supervises', async () => {
       const user = userEvent.setup();
-      asClass({ isRepresented: false, title: 'Lab Supervisor 2' });
+      asClass({ cannotSupervise: null, isSupervisory: true, title: 'Lab Supervisor 2' });
       open();
 
       expect(await screen.findByLabelText('Supervises')).toHaveValue('yes');
@@ -256,13 +261,19 @@ describe('the guided build', () => {
 
     it('never lets a union-represented class supervise, but lets it lead', async () => {
       const user = userEvent.setup();
-      asClass({ bargainingUnit: 'SV', isRepresented: true, title: 'Student Services Supervisor 2 SV' });
+      asClass({
+        bargainingUnit: 'SV',
+        cannotSupervise: 'This is a union-represented class (SV), so it can’t supervise. It may lead.',
+        isRepresented: true,
+        isSupervisory: true,
+        title: 'Student Services Supervisor 2 SV',
+      });
       open();
 
       const supervises = await screen.findByLabelText('Supervises');
       expect(supervises).toHaveValue('no');
       expect(supervises).toBeDisabled();
-      expect(screen.getByTestId('represented-note')).toHaveTextContent(/union-represented class \(SV\), so it can.t supervise\. It may lead\./);
+      expect(screen.getByTestId('cannot-supervise')).toHaveTextContent(/union-represented class \(SV\), so it can.t supervise\. It may lead\./);
       expect(screen.getByLabelText('Leads')).toBeEnabled();
 
       const sent = await sentOnCheck(user);

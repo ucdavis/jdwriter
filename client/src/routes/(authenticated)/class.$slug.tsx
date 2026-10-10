@@ -62,9 +62,6 @@ const sourceBadge = (
   }
 };
 
-/** Supervisor and manager titles start with Supervises and Leads at Yes; other roles at No. */
-const SUPERVISORY = /\b(supv|supervisor|mgr|manager|director|dir)\b/i;
-
 function ClassPage() {
   const { slug } = Route.useParams();
   const { draft: draftId } = Route.useSearch();
@@ -102,10 +99,9 @@ function ClassPage() {
           }}
           key={draft ? `draft-${draft.id}` : 'fresh'}
           overview={<EnvelopeOverview isAdmin={isAdmin} profile={profile} source={source} />}
-          role={{ represented: profile.isRepresented ?? false, supervisory: SUPERVISORY.test(profile.title) }}
+          role={{ cannotSupervise: profile.cannotSupervise ?? null, supervisory: profile.isSupervisory ?? false }}
           slug={profile.slug}
           title={profile.title}
-          unit={profile.bargainingUnit}
         />
       ) : (
         <Card className="p-6">

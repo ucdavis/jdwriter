@@ -113,14 +113,21 @@ export type ClassSummaryResponse = { classes: ClassSummary[] };
 export type ClassProfileResponse = {
   /** The bargaining unit to show: the title's union suffix (SV, CX…), else the corpus consensus. */
   bargainingUnit?: string | null;
+  /**
+   * Why this class's positions can't supervise — not a supervisor or manager class, or union-
+   * represented — or null when they can.
+   */
+  cannotSupervise?: string | null;
   corpusSize: number;
   ctJobFamily: string;
   ctJobFunction: string;
   envelope: JobEnvelope | null;
   envelopeSource: EnvelopeSource | null;
   flsaStatus: Distribution;
-  /** Union-represented: its positions may lead but may not supervise. */
+  /** Union-represented. */
   isRepresented?: boolean;
+  /** A supervisor or manager class: the build starts Supervises and Leads at Yes. */
+  isSupervisory?: boolean;
   leads: Distribution;
   personnelProgram: string;
   salaryGrade: Distribution;

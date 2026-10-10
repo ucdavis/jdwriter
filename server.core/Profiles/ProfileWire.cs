@@ -132,8 +132,17 @@ public sealed class ClassProfileView
     /// <summary>The bargaining unit to show: the title's union suffix, else the corpus consensus.</summary>
     public string? BargainingUnit { get; set; }
 
-    /// <summary>Union-represented: its positions may lead but may not supervise.</summary>
+    /// <summary>Union-represented.</summary>
     public bool IsRepresented { get; set; }
+
+    /// <summary>
+    /// Why this class's positions can't supervise — not a supervisor or manager class, or union-
+    /// represented — or null when they can. The build locks Supervises at No when it is set.
+    /// </summary>
+    public string? CannotSupervise { get; set; }
+
+    /// <summary>A supervisor or manager class: the build starts Supervises and Leads at Yes.</summary>
+    public bool IsSupervisory { get; set; }
     public DistributionWire Supervises { get; set; } = new();
     public DistributionWire Leads { get; set; } = new();
     public DistributionWire WorksOutdoorsOver50pct { get; set; } = new();
@@ -169,6 +178,8 @@ public sealed class ClassProfileView
             UnionCode = Dist(DistributionField.UnionCode),
             BargainingUnit = BargainingUnits.For(p),
             IsRepresented = BargainingUnits.IsRepresented(p),
+            CannotSupervise = Supervision.WhyNot(p),
+            IsSupervisory = Supervision.IsSupervisory(p.Title),
             Supervises = Dist(DistributionField.Supervises),
             Leads = Dist(DistributionField.Leads),
             WorksOutdoorsOver50pct = Dist(DistributionField.WorksOutdoorsOver50pct),
