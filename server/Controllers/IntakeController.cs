@@ -5,6 +5,7 @@ using Server.Core.Ai;
 using Server.Core.Domain;
 using Server.Core.Intake;
 using Server.Core.Profiles;
+using Server.Core.Titles;
 
 namespace Server.Controllers;
 
@@ -22,10 +23,12 @@ public class IntakeController : ApiControllerBase
     private readonly IIntakeMatcher _matcher;
     private readonly IClassProfileRepository _profiles;
     private readonly IStructuredLlm _llm;
+    private readonly ITitleCodeService _titleCodes;
 
     public IntakeController(
-        IIntakeMatcher matcher, IClassProfileRepository profiles, IStructuredLlm llm)
+        IIntakeMatcher matcher, IClassProfileRepository profiles, IStructuredLlm llm, ITitleCodeService titleCodes)
     {
+        _titleCodes = titleCodes;
         _matcher = matcher;
         _profiles = profiles;
         _llm = llm;
@@ -54,6 +57,16 @@ public class IntakeController : ApiControllerBase
 
         var profiles = await _profiles.GetAllAsync(ct);
         var matches = await _matcher.MatchAsync(body.Request, profiles, ct);
+
+        // Health Center (HC) classes are labelled, and a match with an HC twin names it.
+        var titles = await _titleCodes.GetAsync(ct);
+        var classes = HealthCenter.ClassesByCode(profiles.Select(p => (p.UcJobCode, p.Slug, p.Title)));
+        foreach (var m in matches)
+        {
+            m.HealthCenterOnly = HealthCenter.IsHealthCenter(m.Title);
+            m.HealthCenterTwin = HealthCenter.TwinOf(m.Title, m.UcJobCode, titles, classes);
+        }
+
         return Ok(new { matches });
     }
 }

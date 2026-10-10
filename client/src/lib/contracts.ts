@@ -11,7 +11,7 @@
 
 // ---------------------------------------------------------------- shared
 
-export type ClassMatch = {
+export type ClassMatch = HealthCenterInfo & {
   confidence: number;
   rationale: string;
   slug: string;
@@ -63,11 +63,29 @@ export type ClassStandard = {
 
 // ---------------------------------------------------------------- reads
 
+/** The other version of a class: its Health Center (HC) code, or the regular one. */
+export type HealthCenterTwin = {
+  /** True when the twin is the Health Center version. */
+  healthCenter: boolean;
+  /** The twin's class in JDWriter, when it has one. */
+  slug: string | null;
+  title: string;
+  ucJobCode: string;
+};
+
+/** Health Center labelling, carried by every class and suggestion. */
+export type HealthCenterInfo = {
+  /** A Health Center (HC) class: for Health Center positions only. */
+  healthCenterOnly?: boolean;
+  healthCenterTwin?: HealthCenterTwin | null;
+};
+
 export type ClassListItem = {
   bargainingUnit?: string;
   corpusSize?: number;
   family?: string;
   grade?: string;
+  healthCenterOnly?: boolean;
   /** False for an in-use UC Davis title with no ingested profile yet. */
   ready: boolean;
   slug: string;
@@ -110,7 +128,7 @@ export type ClassSummary = {
 
 export type ClassSummaryResponse = { classes: ClassSummary[] };
 
-export type ClassProfileResponse = {
+export type ClassProfileResponse = HealthCenterInfo & {
   /** The bargaining unit to show: the title's union suffix (SV, CX…), else the corpus consensus. */
   bargainingUnit?: string | null;
   /**
@@ -121,6 +139,8 @@ export type ClassProfileResponse = {
   corpusSize: number;
   ctJobFamily: string;
   ctJobFunction: string;
+  /** How much an author may reasonably add, in percent: 30 for senior and supervisory classes, else 10. */
+  customizationTarget?: number;
   envelope: JobEnvelope | null;
   envelopeSource: EnvelopeSource | null;
   flsaStatus: Distribution;
@@ -229,7 +249,7 @@ export type ExtractResponse = {
 
 export type LevelFit = 'above' | 'at' | 'below' | 'unclear';
 
-export type ClassifyMatch = {
+export type ClassifyMatch = HealthCenterInfo & {
   confidence: number;
   coveredPct: number;
   inClass: string[];

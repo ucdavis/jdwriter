@@ -1,3 +1,4 @@
+import { HealthCenterNote } from '@/shared/ui/HealthCenterNote.tsx';
 import { Badge, Note } from '@/shared/ui/primitives.tsx';
 import { HttpError } from '@/lib/api.ts';
 import { useIntakeMatch } from '@/queries/authoring.ts';
@@ -89,6 +90,11 @@ export const NlIntake = () => {
                   <div className="mt-1 text-base text-base-content/65">
                     {m.rationale}
                   </div>
+                  <HealthCenterNote
+                    healthCenterOnly={m.healthCenterOnly}
+                    healthCenterTwin={m.healthCenterTwin}
+                    linked={false}
+                  />
                 </button>
               ))}
             </div>

@@ -89,6 +89,15 @@ public class ClassifyController : ApiControllerBase
         var profiles = await _profiles.GetAllAsync(ct);
         var result = await _classifier.ClassifyAsync(body.Description, profiles, body.ProposedCode, ct);
 
+        // Health Center (HC) classes are labelled, and a match with an HC twin names it.
+        var titles = await _titleCodes.GetAsync(ct);
+        var classes = HealthCenter.ClassesByCode(profiles.Select(p => (p.UcJobCode, p.Slug, p.Title)));
+        foreach (var m in result.Matches)
+        {
+            m.HealthCenterOnly = HealthCenter.IsHealthCenter(m.Title);
+            m.HealthCenterTwin = HealthCenter.TwinOf(m.Title, m.UcJobCode, titles, classes);
+        }
+
         // Every submission is filed into the corpus. Filing is bookkeeping, so it must never cost
         // the person their classification: a failure is logged and the result returned regardless.
         try

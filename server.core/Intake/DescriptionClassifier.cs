@@ -169,6 +169,12 @@ public sealed class ClassificationMatch
 
     public List<string> InClass { get; set; } = [];
     public List<string> OutOfClass { get; set; } = [];
+
+    /// <summary>A Health Center (HC) class: for Health Center positions only.</summary>
+    public bool HealthCenterOnly { get; set; }
+
+    /// <summary>The class's other version — its HC code, or the regular one — when it has one.</summary>
+    public HealthCenterTwin? HealthCenterTwin { get; set; }
 }
 
 public sealed class Classification

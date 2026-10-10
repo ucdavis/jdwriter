@@ -1,5 +1,6 @@
 import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { StandardDetail } from '@/features/build/StandardDetail.tsx';
+import { HealthCenterNote } from '@/shared/ui/HealthCenterNote.tsx';
 import { useState } from 'react';
 import { BuildFlow } from '@/features/build/BuildFlow.tsx';
 import { asDraftState } from '@/features/build/useBuildState.ts';
@@ -87,6 +88,7 @@ function ClassPage() {
 
       {envelope ? (
         <BuildFlow
+          customizationTarget={profile.customizationTarget ?? 10}
           draft={draft}
           envelope={{
             certs: envelope.requiredCertifications,
@@ -139,6 +141,7 @@ const EnvelopeOverview = ({
       <p className="mt-1 text-base leading-relaxed" data-testid="envelope-summary">
         {envelope?.summary}
       </p>
+      <HealthCenterNote healthCenterOnly={profile.healthCenterOnly} healthCenterTwin={profile.healthCenterTwin} />
 
       <div className="mt-4">
         <Eyebrow>Class facts</Eyebrow>

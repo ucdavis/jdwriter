@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Server.Core.Ai;
 using Server.Core.Domain;
 using Server.Core.Standards;
+using Server.Core.Titles;
 
 namespace Server.Core.Intake;
 
@@ -13,6 +14,12 @@ public sealed class ClassMatch
     public string UcJobCode { get; set; } = "";
     public int Confidence { get; set; }
     public string Rationale { get; set; } = "";
+
+    /// <summary>A Health Center (HC) class: for Health Center positions only.</summary>
+    public bool HealthCenterOnly { get; set; }
+
+    /// <summary>The class's other version — its HC code, or the regular one — when it has one.</summary>
+    public HealthCenterTwin? HealthCenterTwin { get; set; }
 }
 
 // ---------------------------------------------------------------- model response shapes
