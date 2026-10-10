@@ -146,7 +146,7 @@ export type ClassProfileResponse = HealthCenterInfo & {
   flsaStatus: Distribution;
   /** Union-represented. */
   isRepresented?: boolean;
-  /** A supervisor or manager class: the build starts Supervises and Leads at Yes. */
+  /** A supervisor or manager class: the build starts Supervises at Yes (Leads stays No). */
   isSupervisory?: boolean;
   leads: Distribution;
   personnelProgram: string;
