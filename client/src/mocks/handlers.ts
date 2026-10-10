@@ -14,6 +14,7 @@ import type {
   BootstrapCreateResponse,
   BetterFitResponse,
   BootstrapResponse,
+  CoverageResponse,
   ClassifyStartRequest,
   FitRewriteResponse,
   RetirementResult,
@@ -757,6 +758,23 @@ export const handlers = [
   http.post('/api/admin/supersessions/retire', async () => {
     await delay(700);
     return HttpResponse.json<RetirementResult>({ profiles: [], refiledJds: 0 });
+  }),
+
+  http.get('/api/admin/coverage', ({ request }) => {
+    const active = new URL(request.url).searchParams.get('active') !== 'false';
+    const rows: CoverageResponse['rows'] = active
+      ? [
+          { code: '004501', family: 'Student Services', grade: 'Grade 20', site: null, standardTitle: 'Academic Achievement Counselor 3', title: 'Acad Achievement Cnslr 3' },
+          { code: '009100', family: 'Research', grade: null, site: null, standardTitle: null, title: 'Synthetic Research Tech 2' },
+          { code: '006536', family: null, grade: null, site: 'Health Center', standardTitle: null, title: 'Social Work HC Supv 2' },
+        ]
+      : [{ code: '000685', family: 'Finance', grade: null, site: null, standardTitle: 'Accounting Manager 1', title: 'Accounting Mgr 1' }];
+    return HttpResponse.json<CoverageResponse>({
+      active,
+      rows,
+      withoutStandard: rows.filter((r) => !r.standardTitle).length,
+      withStandard: rows.filter((r) => r.standardTitle).length,
+    });
   }),
 
   http.get('/api/admin/bootstrap/candidates', async () => {

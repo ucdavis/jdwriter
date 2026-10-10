@@ -6,6 +6,21 @@ using Server.Core.Titles;
 
 namespace Server.Core.Standards;
 
+/// <summary>A UC Davis job with no class yet, and the standard it could be bootstrapped from, if any.</summary>
+public sealed class CoverageRow
+{
+    public string Code { get; set; } = "";
+    public string Title { get; set; } = "";
+    public string? Family { get; set; }
+    public string? Grade { get; set; }
+
+    /// <summary>The site the job is only for ("Health Center", "Student Health Center"), or null.</summary>
+    public string? Site { get; set; }
+
+    /// <summary>The standard to bootstrap from, by its title; null when there is none.</summary>
+    public string? StandardTitle { get; set; }
+}
+
 /// <summary>A class we hold a standard for but no JD corpus — a class we could bootstrap.</summary>
 public sealed class BootstrapCandidate
 {
@@ -94,6 +109,19 @@ public interface IBootstrapper
     Task<BootstrapCandidates> GetCandidatesAsync(CancellationToken ct = default);
 
     Task<ClassProfile> BootstrapAsync(string title, CancellationToken ct = default);
+
+    /// <summary>
+    /// Bootstrap a class that is NOT active at UC Davis (its code is in the UC title matrix but not
+    /// on payroll). Only when an admin asks for it by name — every list and bulk path still leaves
+    /// these out. A title matching no UC job code is still refused.
+    /// </summary>
+    Task<ClassProfile> BootstrapNotActiveAsync(string title, CancellationToken ct = default);
+
+    /// <summary>
+    /// UC Davis jobs with no class yet — active (on payroll) or not — and whether each has a standard
+    /// to bootstrap from. Superseded codes are left out: they are dead classifications.
+    /// </summary>
+    Task<List<CoverageRow>> GetCoverageAsync(bool active, CancellationToken ct = default);
 
     /// <summary>
     /// Create a class from its standard with an envelope made elsewhere — another environment's
@@ -214,6 +242,49 @@ public sealed class Bootstrapper : IBootstrapper
     public Task<ClassProfile> BootstrapAsync(string title, CancellationToken ct = default) =>
         CreateAsync(title, null, (std, meta) => _envelopes.BuildAsync(std, meta, ct), null, ct);
 
+    public Task<ClassProfile> BootstrapNotActiveAsync(string title, CancellationToken ct = default) =>
+        CreateAsync(title, null, (std, meta) => _envelopes.BuildAsync(std, meta, ct), null, ct, allowNotActive: true);
+
+    public async Task<List<CoverageRow>> GetCoverageAsync(bool active, CancellationToken ct = default)
+    {
+        var standards = await _standards.GetIndexAsync(ct);
+        var titleCodes = await _titleCodes.GetAsync(ct);
+
+        var classed = (await _db.ClassProfiles.AsNoTracking().Select(p => p.UcJobCode).ToListAsync(ct))
+            .Select(TitleCodeIndex.Pad)
+            .ToHashSet(StringComparer.Ordinal);
+
+        // Each standard under the code its title resolves to — the same resolution bootstrap uses.
+        var standardByCode = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var s in standards.All)
+        {
+            var tc = titleCodes.FindTitleCode(s.LongTitle);
+            if (tc is not null)
+            {
+                standardByCode.TryAdd(TitleCodeIndex.Pad(tc.Code), s.LongTitle);
+            }
+        }
+
+        var jobs = active
+            ? titleCodes.InUseTitleCodes()
+            : titleCodes.All.Where(t => !t.IsInUse && !titleCodes.IsSuperseded(t.Code)).ToList();
+
+        return jobs
+            .Where(t => !classed.Contains(TitleCodeIndex.Pad(t.Code)))
+            .DistinctBy(t => TitleCodeIndex.Pad(t.Code))
+            .Select(t => new CoverageRow
+            {
+                Code = t.Code,
+                Title = Profiles.ProfileAggregator.Titleize(t.Title),
+                Family = string.IsNullOrEmpty(t.Family) ? null : t.Family,
+                Grade = string.IsNullOrEmpty(t.Grade) ? null : t.Grade,
+                Site = Sites.SiteOf(t.Title),
+                StandardTitle = standardByCode.GetValueOrDefault(TitleCodeIndex.Pad(t.Code)),
+            })
+            .OrderBy(r => r.Title, StringComparer.Ordinal)
+            .ToList();
+    }
+
     public Task<ClassProfile> ImportAsync(
         string title, string expectedCode, JobEnvelope envelope, string note, CancellationToken ct = default)
     {
@@ -234,7 +305,8 @@ public sealed class Bootstrapper : IBootstrapper
         string? expectedCode,
         Func<ClassStandardRecord, BootstrapMeta, Task<JobEnvelope>> buildEnvelope,
         string? note,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool allowNotActive = false)
     {
         var standards = await _standards.GetIndexAsync(ct);
         var titleCodes = await _titleCodes.GetAsync(ct);
@@ -256,7 +328,7 @@ public sealed class Bootstrapper : IBootstrapper
         // The same rule as the candidate list, enforced where classes are made: hiding a class from a
         // list is not enough when another path (one class at a time, or an envelope moved in from
         // another environment) can still create it.
-        if (tc is null || !tc.IsInUse)
+        if (tc is null || (!tc.IsInUse && !allowNotActive))
         {
             throw new BootstrapRefusedException(BootstrapRefusal.NotOnPayroll,
                 tc is null

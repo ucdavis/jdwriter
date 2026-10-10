@@ -375,4 +375,46 @@ public class BootstrapperTests
     // UC-systemwide titles were still worth having. Reversed (2026-10-09): UC Davis can't use a class
     // that isn't on its payroll, so creation now refuses it — see
     // Creating_a_class_UC_Davis_cannot_use_is_refused.
+
+    // ------------------------------------------------------------------ coverage
+
+    [Fact]
+    public async Task Coverage_lists_active_jobs_with_no_class_and_whether_a_standard_covers_them()
+    {
+        var (boot, db, _) = Build(
+            [S("Widget Analyst 2"), S("Widget Analyst 4")],
+            [
+                Tc("111111", "Widget Analyst 2"),
+                Tc("111113", "Widget Analyst 3"),
+                Tc("111114", "Widget Analyst 4", source: "matrix"),
+                Tc("222222", "Gadget Planner 1"),
+            ]);
+        using var _db = db;
+        db.ClassProfiles.Add(new ClassProfile { Slug = "222222-gadget-planner-1", UcJobCode = "222222", Title = "Gadget Planner 1" });
+        await db.SaveChangesAsync();
+
+        var active = await boot.GetCoverageAsync(active: true);
+
+        active.Select(r => (r.Code, r.StandardTitle)).Should().Equal(("111111", "Widget Analyst 2"), ("111113", null));
+
+        var notActive = await boot.GetCoverageAsync(active: false);
+        notActive.Select(r => (r.Code, r.StandardTitle)).Should().Equal(("111114", "Widget Analyst 4"));
+    }
+
+    [Fact]
+    public async Task A_job_not_active_at_UC_Davis_is_bootstrapped_only_when_asked_for_by_name()
+    {
+        var (boot, db, _) = Build([S("Widget Analyst 4"), S("Gadget Planner 1")], [Tc("111114", "Widget Analyst 4", source: "matrix")]);
+        using var _db = db;
+
+        await FluentActions.Awaiting(() => boot.BootstrapAsync("Widget Analyst 4"))
+            .Should().ThrowAsync<BootstrapRefusedException>().Where(e => e.Reason == BootstrapRefusal.NotOnPayroll);
+
+        var profile = await boot.BootstrapNotActiveAsync("Widget Analyst 4");
+        profile.UcJobCode.Should().Be("111114");
+
+        // A title matching no UC job code is still refused: there is no classification to build.
+        await FluentActions.Awaiting(() => boot.BootstrapNotActiveAsync("Gadget Planner 1"))
+            .Should().ThrowAsync<BootstrapRefusedException>().Where(e => e.Reason == BootstrapRefusal.NotOnPayroll);
+    }
 }

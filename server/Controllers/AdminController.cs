@@ -14,7 +14,8 @@ using Server.Core.Titles;
 namespace Server.Controllers;
 
 public sealed record IngestClassRequest(string Code, string? CorpusDir);
-public sealed record BootstrapRequest(string Title);
+/// <summary>A class to bootstrap. <c>AllowNotActive</c> permits a job not active at UC Davis, by explicit choice only.</summary>
+public sealed record BootstrapRequest(string Title, bool AllowNotActive = false);
 public sealed record AdminGrantRequest(string LoginId);
 public sealed record ApiKeyRequest(string Key);
 public sealed record UploadIngestRequest(string Code);
@@ -406,6 +407,23 @@ public class AdminController : ApiControllerBase
         return Ok(new { candidates = result.Candidates, result.NotOnPayroll, result.NoCodeMatch });
     }
 
+    /// <summary>
+    /// UC Davis jobs with no class yet, and whether each has a standard to bootstrap from: active
+    /// (on payroll) by default, or not active at UC Davis with <c>?active=false</c>.
+    /// </summary>
+    [HttpGet("coverage")]
+    public async Task<IActionResult> Coverage([FromQuery] bool active = true, CancellationToken ct = default)
+    {
+        var rows = await _bootstrapper.GetCoverageAsync(active, ct);
+        return Ok(new
+        {
+            active,
+            rows,
+            withStandard = rows.Count(r => r.StandardTitle is not null),
+            withoutStandard = rows.Count(r => r.StandardTitle is null),
+        });
+    }
+
     [HttpPost("bootstrap")]
     public async Task<IActionResult> Bootstrap(BootstrapRequest body, CancellationToken ct)
     {
@@ -416,7 +434,9 @@ public class AdminController : ApiControllerBase
 
         try
         {
-            var profile = await _bootstrapper.BootstrapAsync(body.Title, ct);
+            var profile = body.AllowNotActive
+                ? await _bootstrapper.BootstrapNotActiveAsync(body.Title, ct)
+                : await _bootstrapper.BootstrapAsync(body.Title, ct);
             return Ok(new { profile.Slug, profile.Title, profile.UcJobCode, profile.EnvelopeSource });
         }
         catch (InvalidOperationException ex)

@@ -574,6 +574,25 @@ export type BootstrapResponse = {
   notOnPayroll: number;
 };
 
+/** A UC Davis job with no class yet, and the standard it could be bootstrapped from, if any. */
+export type CoverageRow = {
+  code: string;
+  family: string | null;
+  grade: string | null;
+  /** The site the job is only for, or null. */
+  site: string | null;
+  /** The standard to bootstrap from, by its title; null when there is none. */
+  standardTitle: string | null;
+  title: string;
+};
+
+export type CoverageResponse = {
+  active: boolean;
+  rows: CoverageRow[];
+  withoutStandard: number;
+  withStandard: number;
+};
+
 export type BootstrapCreateResponse = {
   envelopeSource: EnvelopeSource;
   slug: string;
