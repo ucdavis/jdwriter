@@ -14,7 +14,9 @@ import type {
   BootstrapCreateResponse,
   BetterFitResponse,
   BootstrapResponse,
-  CoverageResponse,
+  JobRow,
+  JobsResponse,
+  JobsScope,
   StandardMatchReview,
   ClassifyStartRequest,
   FitRewriteResponse,
@@ -774,20 +776,17 @@ export const handlers = [
     })
   ),
 
-  http.get('/api/admin/coverage', ({ request }) => {
-    const active = new URL(request.url).searchParams.get('active') !== 'false';
-    const rows: CoverageResponse['rows'] = active
-      ? [
-          { code: '004501', family: 'Student Services', grade: 'Grade 20', site: null, standardTitle: 'Academic Achievement Counselor 3', title: 'Acad Achievement Cnslr 3' },
-          { code: '009100', family: 'Research', grade: null, site: null, standardTitle: null, title: 'Synthetic Research Tech 2' },
-          { code: '006536', family: null, grade: null, site: 'Health Center', standardTitle: null, title: 'Social Work HC Supv 2' },
-        ]
-      : [{ code: '000685', family: 'Finance', grade: null, site: null, standardTitle: 'Accounting Manager 1', title: 'Accounting Mgr 1' }];
-    return HttpResponse.json<CoverageResponse>({
-      active,
-      rows,
-      withoutStandard: rows.filter((r) => !r.standardTitle).length,
-      withStandard: rows.filter((r) => r.standardTitle).length,
+  http.get('/api/admin/jobs', ({ request }) => {
+    const scope = (new URL(request.url).searchParams.get('scope') ?? 'active') as JobsScope;
+    const jobs: JobRow[] = [
+      { active: true, class: { corpusSize: 155, envelopeSource: 'claude', slug: '009605-lab-ast-1', title: 'Lab Ast 1' }, code: '009605', family: 'Research', grade: 'Grade 17', site: null, standard: null, supersededBy: null, title: 'Lab Ast 1' },
+      { active: true, class: null, code: '004501', family: 'Student Services', grade: 'Grade 20', site: null, standard: { how: 'title', title: 'Academic Achievement Counselor 3' }, supersededBy: null, title: 'Acad Achievement Cnslr 3' },
+      { active: true, class: null, code: '006536', family: null, grade: null, site: 'Health Center', standard: null, supersededBy: null, title: 'Social Work HC Supv 2' },
+      { active: false, class: null, code: '000685', family: 'Finance', grade: null, site: null, standard: { how: 'hand', title: 'Accounting Manager 1' }, supersededBy: null, title: 'Accounting Mgr 1' },
+    ];
+    return HttpResponse.json<JobsResponse>({
+      jobs: jobs.filter((j) => (scope === 'all' ? true : scope === 'active' ? j.active : !j.active)),
+      scope,
     });
   }),
 

@@ -12,7 +12,9 @@ import type {
   AdminsResponse,
   BootstrapCreateResponse,
   BootstrapResponse,
-  CoverageResponse,
+  JobsResponse,
+  JobsScope,
+  StandardDraft,
   StandardMatchReview,
   EnvelopeImportResult,
   IngestScanResponse,
@@ -83,21 +85,45 @@ export const useBootstrapClass = () => {
         body: JSON.stringify(typeof title === 'string' ? { title } : title),
         method: 'POST',
       }),
-    // A new class appears in the class list, the analyst index and the coverage lists.
+    // A new class appears in the class list, the analyst index and the jobs directory.
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'coverage'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'jobs'] });
     },
   });
 };
 
-/** UC Davis jobs with no class yet — active, or not active at UC Davis — and their standards. */
-export const coverageQueryOptions = (active: boolean) => ({
-  queryFn: () => fetchJson<CoverageResponse>(`/api/admin/coverage?active=${active}`),
-  queryKey: ['admin', 'coverage', active] as const,
+/** Every UC job code and what it is attached to: its class and its standard. */
+export const jobsQueryOptions = (scope: JobsScope) => ({
+  queryFn: () => fetchJson<JobsResponse>(`/api/admin/jobs?scope=${scope}`),
+  queryKey: ['admin', 'jobs', scope] as const,
 });
 
-export const useCoverage = (active: boolean) => useQuery(coverageQueryOptions(active));
+export const useJobs = (scope: JobsScope) => useQuery(jobsQueryOptions(scope));
+
+/** Read a Word (or PDF, or text) export of a job standard into its sections, for review. */
+export const useReadStandard = () =>
+  useMutation({
+    mutationFn: (file: File) => {
+      const body = new FormData();
+      body.append('file', file, file.name);
+      return fetchJson<StandardDraft>('/api/admin/standards/read', { body, method: 'POST' });
+    },
+  });
+
+/** Save a job's standard, entered or reviewed by hand. */
+export const useSaveManualStandard = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { standard: StandardDraft; ucJobCode: string }) =>
+      fetchJson<unknown>('/api/admin/standards/manual', { body: JSON.stringify(body), method: 'POST' }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'jobs'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'standard-matches'] });
+      void queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+};
 
 /** Profiles still filed under a code a union successor has superseded. Read-only. */
 export const useRetirementPreview = () =>
@@ -326,7 +352,7 @@ export const useStandardMatches = (includeNotActive: boolean) =>
 /** Everything a decided match changes: the review, coverage, bootstrap lists, standard links. */
 const refreshAfterMatch = (queryClient: ReturnType<typeof useQueryClient>) => {
   void queryClient.invalidateQueries({ queryKey: ['admin', 'standard-matches'] });
-  void queryClient.invalidateQueries({ queryKey: ['admin', 'coverage'] });
+  void queryClient.invalidateQueries({ queryKey: ['admin', 'jobs'] });
   void queryClient.invalidateQueries({ queryKey: ['classes'] });
 };
 
