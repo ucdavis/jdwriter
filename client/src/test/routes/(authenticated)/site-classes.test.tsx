@@ -82,6 +82,22 @@ describe('a regular class with a Student Health twin', () => {
   });
 });
 
+describe('a regular class with a veterinary hospital twin', () => {
+  setupRouteTest();
+
+  it('names the VMTH code', async () => {
+    asClass({
+      site: null,
+      siteTwins: [{ site: 'Veterinary Medical Teaching Hospital', slug: null, title: 'Anml Health Tchn 2 VMTH', ucJobCode: '004751' }],
+    });
+    renderRoute({ initialPath: '/class/009605-lab-ast-1' });
+
+    expect(await screen.findByTestId('site-note')).toHaveTextContent(
+      'At the Veterinary Medical Teaching Hospital? Use Anml Health Tchn 2 VMTH (004751) instead.'
+    );
+  });
+});
+
 describe('customization target', () => {
   setupRouteTest();
 

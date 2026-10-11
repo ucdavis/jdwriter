@@ -20,7 +20,8 @@ public sealed class SiteTwin
 }
 
 /// <summary>
-/// Site-specific classes: Health Center (HC) and Student Health Center (SHS) codes. Each is its own
+/// Site-specific classes: Health Center (HC), Student Health Center (SHS) and Veterinary Medical
+/// Teaching Hospital (VMTH) codes. Each is its own
 /// classification, used only at its site and often with different duties, so it is never the same
 /// class as the title without the site marker.
 ///
@@ -34,6 +35,7 @@ public static partial class Sites
 {
     public const string HealthCenter = "Health Center";
     public const string StudentHealth = "Student Health Center";
+    public const string VetMedHospital = "Veterinary Medical Teaching Hospital";
 
     [GeneratedRegex(@"\bHC\b", RegexOptions.IgnoreCase)]
     private static partial Regex HcToken();
@@ -41,14 +43,23 @@ public static partial class Sites
     [GeneratedRegex(@"\bSHS\b", RegexOptions.IgnoreCase)]
     private static partial Regex ShsToken();
 
-    [GeneratedRegex(@"\b(?:HC|SHS)\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\bVMTH\b", RegexOptions.IgnoreCase)]
+    private static partial Regex VmthToken();
+
+    [GeneratedRegex(@"\b(?:HC|SHS|VMTH)\b", RegexOptions.IgnoreCase)]
     private static partial Regex SiteTokens();
 
-    /// <summary>The site a class is for — Student Health Center, Health Center — or null for a regular class.</summary>
+    /// <summary>
+    /// The site a class is for — Student Health Center, Veterinary Medical Teaching Hospital, Health
+    /// Center — or null for a regular class. The most specific marker wins.
+    /// </summary>
     public static string? SiteOf(string title)
     {
         title ??= "";
-        return ShsToken().IsMatch(title) ? StudentHealth : HcToken().IsMatch(title) ? HealthCenter : null;
+        return ShsToken().IsMatch(title) ? StudentHealth
+            : VmthToken().IsMatch(title) ? VetMedHospital
+            : HcToken().IsMatch(title) ? HealthCenter
+            : null;
     }
 
     /// <summary>The loose key of the title without its site markers: what twins share.</summary>

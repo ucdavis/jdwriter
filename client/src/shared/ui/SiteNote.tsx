@@ -4,12 +4,19 @@ import type { ReactNode } from 'react';
 import { Badge } from './primitives.tsx';
 
 /**
- * The site a title is only for, read from its marker: SHS is the Student Health Center, HC the
- * Health Center. A title with both ("HC Adm SHS Mgr 1", HC as health care) is Student Health.
+ * The site a title is only for, read from its marker: SHS is the Student Health Center, VMTH the
+ * Veterinary Medical Teaching Hospital, HC the Health Center. The most specific marker wins
+ * ("HC Adm SHS Mgr 1", HC as health care, is Student Health).
  * Used where only a title is to hand; classes and matches carry the server's `site` instead.
  */
 export const siteOfTitle = (title: string): string | null =>
-  /\bshs\b/i.test(title) ? 'Student Health Center' : /\bhc\b/i.test(title) ? 'Health Center' : null;
+  /\bshs\b/i.test(title)
+    ? 'Student Health Center'
+    : /\bvmth\b/i.test(title)
+      ? 'Veterinary Medical Teaching Hospital'
+      : /\bhc\b/i.test(title)
+        ? 'Health Center'
+        : null;
 
 /** "Health Center only", "Student Health Center only". */
 export const SiteBadge = ({ site }: { site: string }) => <Badge tone="teal">{site} only</Badge>;
