@@ -1,6 +1,5 @@
 import {
   BootstrapPanel,
-  CoveragePanel,
   DocumentImportPanel,
   EnvelopeTransferPanel,
   IngestPanel,
@@ -40,14 +39,13 @@ function CorpusPage() {
 
       <Section
         id="standards"
-        sub="Load standards, retire classes a union title has superseded, create starter envelopes for classes with a standard but no JDs, see which jobs have no class yet, and move envelopes between environments."
+        sub="Load standards, match them to job codes, retire classes a union title has superseded, create starter envelopes for classes with a standard but no JDs, and move envelopes between environments. Every job, and what it's attached to, is on the Jobs page."
         title="Standards"
       >
         <StandardsPanel />
         <StandardMatchPanel />
         <SupersessionPanel />
         <BootstrapPanel />
-        <CoveragePanel />
         <EnvelopeTransferPanel />
       </Section>
 

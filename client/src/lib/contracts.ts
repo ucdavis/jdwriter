@@ -591,23 +591,41 @@ export type StandardMatchReview = {
   withoutSuggestion: number;
 };
 
-/** A UC Davis job with no class yet, and the standard it could be bootstrapped from, if any. */
-export type CoverageRow = {
+/** One UC job code, and what JDWriter has attached to it. */
+export type JobRow = {
+  /** On UC Davis payroll. */
+  active: boolean;
+  class: {
+    corpusSize: number;
+    envelopeSource: EnvelopeSource | null;
+    slug: string;
+    title: string;
+  } | null;
   code: string;
   family: string | null;
   grade: string | null;
   /** The site the job is only for, or null. */
   site: string | null;
-  /** The standard to bootstrap from, by its title; null when there is none. */
-  standardTitle: string | null;
+  /** "title": its title matches the job's; "hand": an admin matched or entered it. */
+  standard: { how: 'hand' | 'title'; title: string } | null;
+  /** The code a union successor replaced this one with. */
+  supersededBy: string | null;
   title: string;
 };
 
-export type CoverageResponse = {
-  active: boolean;
-  rows: CoverageRow[];
-  withoutStandard: number;
-  withStandard: number;
+export type JobsScope = 'active' | 'all' | 'inactive';
+
+export type JobsResponse = { jobs: JobRow[]; scope: JobsScope };
+
+/** A job standard as an admin enters it: read from a Word export, or typed. */
+export type StandardDraft = {
+  education: string[];
+  keyResponsibilities: string[];
+  ksa: string[];
+  licenses: string[];
+  scope: string;
+  specialConditions: string[];
+  title: string;
 };
 
 export type BootstrapCreateResponse = {
@@ -667,7 +685,11 @@ export type EnvelopeImportRefusal =
 
 export type EnvelopeImportResult = {
   created: Array<{ slug: string; title: string; ucJobCode: string }>;
+  /** Match decisions this environment didn't have. */
+  matchesAdded?: number;
   skipped: Array<{ message: string; reason: EnvelopeImportRefusal; title: string }>;
+  /** Standards this environment didn't have, added before the envelopes. */
+  standardsAdded?: number;
 };
 
 export type RetirementResult = {
