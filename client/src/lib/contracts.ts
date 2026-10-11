@@ -574,6 +574,23 @@ export type BootstrapResponse = {
   notOnPayroll: number;
 };
 
+/** A job code that may be a standard's. */
+export type CodeSuggestion = {
+  /** On UC Davis payroll. */
+  active: boolean;
+  /** 0–1: how alike the titles are, once abbreviations are expanded. */
+  score: number;
+  title: string;
+  ucJobCode: string;
+};
+
+export type StandardMatchReview = {
+  confirmed: Array<{ decidedAt: string; standardTitle: string; title: string; ucJobCode: string }>;
+  unmatched: Array<{ standardTitle: string; suggestions: CodeSuggestion[] }>;
+  /** Standards with no exact match and no suggestion worth showing. */
+  withoutSuggestion: number;
+};
+
 /** A UC Davis job with no class yet, and the standard it could be bootstrapped from, if any. */
 export type CoverageRow = {
   code: string;

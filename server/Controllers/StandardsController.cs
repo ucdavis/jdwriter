@@ -33,6 +33,6 @@ public class StandardsController : ApiControllerBase
         // Null is a NORMAL answer here, not an error: the workbooks cover 19 families, so most
         // classes legitimately have no published standard.
         var index = await _standards.GetIndexAsync(ct);
-        return Ok(index.ForTitle(profile.Title));
+        return Ok(index.For(profile.Title, profile.UcJobCode));
     }
 }

@@ -15,6 +15,7 @@ import type {
   BetterFitResponse,
   BootstrapResponse,
   CoverageResponse,
+  StandardMatchReview,
   ClassifyStartRequest,
   FitRewriteResponse,
   RetirementResult,
@@ -759,6 +760,19 @@ export const handlers = [
     await delay(700);
     return HttpResponse.json<RetirementResult>({ profiles: [], refiledJds: 0 });
   }),
+
+  http.get('/api/admin/standards/matches', () =>
+    HttpResponse.json<StandardMatchReview>({
+      confirmed: [],
+      unmatched: [
+        {
+          standardTitle: 'Admissions Reqruitment Supervisor 2',
+          suggestions: [{ active: true, score: 0.82, title: 'ADMISSIONS RECRMT SUPV 2', ucJobCode: '004512' }],
+        },
+      ],
+      withoutSuggestion: 0,
+    })
+  ),
 
   http.get('/api/admin/coverage', ({ request }) => {
     const active = new URL(request.url).searchParams.get('active') !== 'false';

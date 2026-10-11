@@ -136,6 +136,7 @@ try
     builder.Services.AddScoped<ClassifySubmissions>();
     builder.Services.AddScoped<CorpusDocuments>();
     builder.Services.AddScoped<QualificationRulesPass>();
+    builder.Services.AddScoped<StandardMatching>();
     builder.Services.AddScoped<DatabaseSecurity>();
     builder.Services.AddScoped<Server.Core.Analytics.AdminAnalytics>();
 

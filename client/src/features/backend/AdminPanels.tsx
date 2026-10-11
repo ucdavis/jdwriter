@@ -4,6 +4,9 @@ import {
   useBootstrapCandidates,
   useBootstrapClass,
   useCoverage,
+  useDecideStandardMatch,
+  useStandardMatches,
+  useUndoStandardMatch,
   useIngestClass,
   useImportDocument,
   useQualificationRules,
@@ -719,6 +722,182 @@ const retireOutcome = (p: SupersededProfile) => {
  * RX, HX) has superseded. Supersession is derived from the title reference, so a class can
  * become dead after it was built; this retires it without losing its JDs or saved JDs.
  */
+/** How many standards the match review renders before asking for a filter. */
+const MATCH_LIMIT = 100;
+
+/**
+ * Standards whose titles match no job code exactly — a spelling the matcher doesn't know, a typo,
+ * a reworded title — with up to three codes each might be, for an admin to confirm. Suggestions
+ * share the standard's level, union suffix and site, and are ranked by how alike the titles are;
+ * near titles can still be different jobs, so nothing is matched without a person. A confirmed
+ * match gives the standard its code everywhere and survives re-uploading the workbooks.
+ */
+export const StandardMatchPanel = () => {
+  const [includeNotActive, setIncludeNotActive] = useState(false);
+  const [filter, setFilter] = useState('');
+  const review = useStandardMatches(includeNotActive);
+  const decide = useDecideStandardMatch();
+  const undo = useUndoStandardMatch();
+  const [typed, setTyped] = useState<Record<string, string>>({});
+  const [rejecting, setRejecting] = useState<string | null>(null);
+
+  const unmatched = (review.data?.unmatched ?? []).filter((u) =>
+    filter ? u.standardTitle.toLowerCase().includes(filter.toLowerCase()) : true
+  );
+  const busy = decide.isPending || undo.isPending || rejecting !== null;
+
+  /** "None of these": reject each suggestion shown, so the standard isn't offered them again. */
+  const rejectAll = async (standardTitle: string, codes: string[]) => {
+    setRejecting(standardTitle);
+    try {
+      for (const ucJobCode of codes) {
+        await decide.mutateAsync({ match: false, standardTitle, ucJobCode });
+      }
+    } finally {
+      setRejecting(null);
+    }
+  };
+
+  return (
+    <Card className="mb-5 p-5">
+      <Eyebrow>Match standards to job codes</Eyebrow>
+      <p className="mt-1 text-base text-base-content/65">
+        These standards&apos; titles don&apos;t match any job code exactly. Each is shown with the
+        closest codes at the same level, union and site. Confirm the right one, reject them, or
+        type the right code. A confirmed match links the standard everywhere and survives
+        re-uploading the workbooks.
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <label className="flex cursor-pointer items-center gap-2 text-base">
+          <input
+            checked={includeNotActive}
+            className="checkbox checkbox-sm"
+            onChange={() => setIncludeNotActive((v) => !v)}
+            type="checkbox"
+          />
+          Also suggest jobs not active at UC Davis
+        </label>
+        <input
+          aria-label="Filter standards"
+          className="input input-sm input-bordered min-w-48 flex-1"
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Filter standards…"
+          value={filter}
+        />
+      </div>
+
+      {review.data ? (
+        <p className="mt-3 text-base" data-testid="match-summary">
+          {review.data.unmatched.length} standard{review.data.unmatched.length === 1 ? '' : 's'} to
+          review · {review.data.confirmed.length} matched by hand ·{' '}
+          {review.data.withoutSuggestion} with no close job code
+        </p>
+      ) : review.isPending ? (
+        <p className="mt-3 text-base text-base-content/65">Loading…</p>
+      ) : null}
+      {review.error || decide.error || undo.error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(review.error ?? decide.error ?? undo.error)}</Note>
+        </div>
+      ) : null}
+
+      {unmatched.length > 0 ? (
+        <ul className="mt-3 max-h-[560px] space-y-3 overflow-y-auto" data-testid="match-list">
+          {unmatched.slice(0, MATCH_LIMIT).map((u) => (
+            <li className="rounded-lg border border-base-300 p-3" key={u.standardTitle}>
+              <div className="text-base font-semibold">{u.standardTitle}</div>
+              <ul className="mt-2 space-y-1.5">
+                {u.suggestions.map((c) => (
+                  <li className="flex flex-wrap items-center justify-between gap-2" key={c.ucJobCode}>
+                    <span className="text-base">
+                      <span className="tnum">{c.ucJobCode}</span> {c.title}{' '}
+                      <Badge tone={c.active ? 'green' : 'muted'}>{c.active ? 'active' : 'not active'}</Badge>{' '}
+                      <span className="text-sm text-base-content/50 tnum">{Math.round(c.score * 100)}% alike</span>
+                    </span>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      disabled={busy}
+                      onClick={() => decide.mutate({ match: true, standardTitle: u.standardTitle, ucJobCode: c.ucJobCode })}
+                      type="button"
+                    >
+                      This is the one
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-base-300 pt-2.5">
+                <button
+                  className="btn btn-ghost btn-sm"
+                  disabled={busy}
+                  onClick={() => void rejectAll(u.standardTitle, u.suggestions.map((c) => c.ucJobCode))}
+                  type="button"
+                >
+                  {rejecting === u.standardTitle ? 'Rejecting…' : 'None of these'}
+                </button>
+                <input
+                  aria-label={`Job code for ${u.standardTitle}`}
+                  className="input input-sm input-bordered w-32 tnum"
+                  inputMode="numeric"
+                  onChange={(e) => setTyped((t) => ({ ...t, [u.standardTitle]: e.target.value }))}
+                  placeholder="Job code"
+                  value={typed[u.standardTitle] ?? ''}
+                />
+                <button
+                  className="btn btn-outline btn-sm"
+                  disabled={busy || !(typed[u.standardTitle] ?? '').trim()}
+                  onClick={() =>
+                    decide.mutate({
+                      match: true,
+                      standardTitle: u.standardTitle,
+                      ucJobCode: (typed[u.standardTitle] ?? '').trim(),
+                    })
+                  }
+                  type="button"
+                >
+                  Use this code
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : review.data ? (
+        <p className="mt-3 text-base text-base-content/65">Nothing to review.</p>
+      ) : null}
+      {unmatched.length > MATCH_LIMIT ? (
+        <p className="mt-2 text-sm text-base-content/50">
+          Showing the first {MATCH_LIMIT} of {unmatched.length} — filter to narrow.
+        </p>
+      ) : null}
+
+      {review.data && review.data.confirmed.length > 0 ? (
+        <details className="mt-4">
+          <summary className="cursor-pointer text-base font-semibold">
+            Matched by hand ({review.data.confirmed.length})
+          </summary>
+          <ul className="mt-2 divide-y divide-base-300 rounded-lg border border-base-300" data-testid="confirmed-list">
+            {review.data.confirmed.map((m) => (
+              <li className="flex items-center justify-between gap-3 px-3 py-2" key={m.standardTitle}>
+                <span className="text-base">
+                  {m.standardTitle} → <span className="tnum">{m.ucJobCode}</span> {m.title}
+                </span>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  disabled={busy}
+                  onClick={() => undo.mutate(m.standardTitle)}
+                  type="button"
+                >
+                  Undo
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+    </Card>
+  );
+};
+
 /** How many rows the coverage list renders before asking for a filter. */
 const COVERAGE_LIMIT = 200;
 

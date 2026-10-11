@@ -13,6 +13,7 @@ import type {
   BootstrapCreateResponse,
   BootstrapResponse,
   CoverageResponse,
+  StandardMatchReview,
   EnvelopeImportResult,
   IngestScanResponse,
   RetirementResult,
@@ -311,3 +312,43 @@ export const analyticsQueryOptions = () => ({
   queryFn: () => fetchJson<AnalyticsReport>('/api/admin/analytics'),
   queryKey: ['admin', 'analytics'] as const,
 });
+
+/** Standards whose titles match no job code exactly, with suggested codes, and confirmed matches. */
+export const standardMatchesQueryOptions = (includeNotActive: boolean) => ({
+  queryFn: () =>
+    fetchJson<StandardMatchReview>(`/api/admin/standards/matches?includeNotActive=${includeNotActive}`),
+  queryKey: ['admin', 'standard-matches', includeNotActive] as const,
+});
+
+export const useStandardMatches = (includeNotActive: boolean) =>
+  useQuery(standardMatchesQueryOptions(includeNotActive));
+
+/** Everything a decided match changes: the review, coverage, bootstrap lists, standard links. */
+const refreshAfterMatch = (queryClient: ReturnType<typeof useQueryClient>) => {
+  void queryClient.invalidateQueries({ queryKey: ['admin', 'standard-matches'] });
+  void queryClient.invalidateQueries({ queryKey: ['admin', 'coverage'] });
+  void queryClient.invalidateQueries({ queryKey: ['classes'] });
+};
+
+/** Confirm (`match`) or reject one standard–code pairing. */
+export const useDecideStandardMatch = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { match: boolean; standardTitle: string; ucJobCode: string }) =>
+      fetchJson<unknown>('/api/admin/standards/matches', { body: JSON.stringify(body), method: 'POST' }),
+    onSuccess: () => refreshAfterMatch(queryClient),
+  });
+};
+
+export const useUndoStandardMatch = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (standardTitle: string) =>
+      fetchJson<unknown>('/api/admin/standards/matches/undo', {
+        body: JSON.stringify({ standardTitle }),
+        method: 'POST',
+      }),
+    onSuccess: () => refreshAfterMatch(queryClient),
+  });
+};
+

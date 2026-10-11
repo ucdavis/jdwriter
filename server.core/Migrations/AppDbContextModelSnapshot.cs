@@ -1494,6 +1494,43 @@ namespace server.core.Migrations
                     b.ToTable("ProfileSourceFiles");
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.StandardMatchDecision", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("DecidedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("DecidedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsMatch")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("StandardTitle")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("UcJobCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecidedByUserId");
+
+                    b.HasIndex("StandardTitle", "UcJobCode")
+                        .IsUnique();
+
+                    b.ToTable("StandardMatchDecisions");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.StandardsWorkbook", b =>
                 {
                     b.Property<int>("Id")
@@ -2007,6 +2044,16 @@ namespace server.core.Migrations
                         .IsRequired();
 
                     b.Navigation("ClassProfile");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.StandardMatchDecision", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AppUser", "DecidedBy")
+                        .WithMany()
+                        .HasForeignKey("DecidedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("DecidedBy");
                 });
 
             modelBuilder.Entity("Server.Core.Domain.StandardsWorkbook", b =>

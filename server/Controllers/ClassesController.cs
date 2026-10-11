@@ -51,7 +51,7 @@ public class ClassesController : ApiControllerBase
         var index = await _standards.GetIndexAsync(ct);
         foreach (var s in summaries)
         {
-            s.StandardLinked = index.ForTitle(s.Title) != null;
+            s.StandardLinked = index.For(s.Title, s.UcJobCode) != null;
         }
 
         return Ok(new { classes = summaries });
@@ -75,7 +75,7 @@ public class ClassesController : ApiControllerBase
             .Where(c => c.Ready)
             .Select(c => (c.UcJobCode, c.Slug, c.Title)));
         var twins = Sites.TwinsOf(profile.Title, profile.UcJobCode, titles, classes);
-        return Ok(ClassProfileView.From(profile, index.ForTitle(profile.Title), twins));
+        return Ok(ClassProfileView.From(profile, index.For(profile.Title, profile.UcJobCode), twins));
     }
 
     [HttpGet("{slug}/coverage")]

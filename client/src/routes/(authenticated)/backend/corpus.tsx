@@ -5,6 +5,7 @@ import {
   EnvelopeTransferPanel,
   IngestPanel,
   QualificationRulesPanel,
+  StandardMatchPanel,
   StandardsPanel,
   SupersessionPanel,
   UploadPanel,
@@ -43,6 +44,7 @@ function CorpusPage() {
         title="Standards"
       >
         <StandardsPanel />
+        <StandardMatchPanel />
         <SupersessionPanel />
         <BootstrapPanel />
         <CoveragePanel />

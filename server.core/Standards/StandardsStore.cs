@@ -69,6 +69,13 @@ public sealed class StandardsIndex
     }
 
     /// <summary>Find by job code, padded so unpadded form entries still resolve.</summary>
+    /// <summary>
+    /// The standard for a class: by its title, or — when the title finds none — by its job code,
+    /// which reaches a standard an admin matched to the code by hand.
+    /// </summary>
+    public ClassStandardRecord? For(string title, string? code) =>
+        ForTitle(title) ?? (string.IsNullOrEmpty(code) ? null : ForCode(code));
+
     public ClassStandardRecord? ForCode(string code)
     {
         var padded = TitleCodeIndex.Pad(code);
@@ -108,7 +115,10 @@ public sealed class StandardsStore : IStandardsStore
         // which is what an import does. An in-place edit is not caught, hence Invalidate().
         var count = await _db.JobStandards.CountAsync(ct);
         var maxId = count == 0 ? 0 : await _db.JobStandards.MaxAsync(s => s.Id, ct);
-        var stamp = $"{count}:{maxId}";
+        // Confirmed matches change which code a standard has, so they are part of the stamp too.
+        var decisions = await _db.StandardMatchDecisions.CountAsync(ct);
+        var lastDecision = decisions == 0 ? 0 : await _db.StandardMatchDecisions.MaxAsync(d => d.Id, ct);
+        var stamp = $"{count}:{maxId}:{decisions}:{lastDecision}";
 
         if (_cache.TryGetValue(CacheKey, out Cached? cached) && cached is not null && cached.Stamp == stamp)
         {
@@ -120,7 +130,20 @@ public sealed class StandardsStore : IStandardsStore
             .OrderBy(s => s.Id)
             .ToListAsync(ct);
 
-        var index = new StandardsIndex(rows.Select(ToRecord));
+        // An admin's confirmed match gives a standard the code its title couldn't find.
+        var matched = (await _db.StandardMatchDecisions.AsNoTracking().Where(d => d.IsMatch).ToListAsync(ct))
+            .GroupBy(d => d.StandardTitle)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(d => d.DecidedAt).First().UcJobCode, StringComparer.Ordinal);
+        var records = rows.Select(ToRecord).ToList();
+        foreach (var r in records)
+        {
+            if (matched.TryGetValue(r.LongTitle, out var code))
+            {
+                r.Code = code;
+            }
+        }
+
+        var index = new StandardsIndex(records);
         _cache.Set(CacheKey, new Cached(stamp, index));
         return index;
     }
