@@ -417,4 +417,16 @@ public class BootstrapperTests
         await FluentActions.Awaiting(() => boot.BootstrapNotActiveAsync("Gadget Planner 1"))
             .Should().ThrowAsync<BootstrapRefusedException>().Where(e => e.Reason == BootstrapRefusal.NotOnPayroll);
     }
+
+    [Fact]
+    public async Task A_non_exempt_class_does_not_hide_the_exempt_standard()
+    {
+        // SRA 2 and SRA 2 NEX are both current classes; the loose key drops "nex".
+        var (boot, db, _) = Build([S("Staff Research Associate 2")], [Tc("009612", "SRA 2"), Tc("004780", "SRA 2 NEX")]);
+        using var _db = db;
+        db.ClassProfiles.Add(new ClassProfile { Slug = "004780-sra-2-nex", UcJobCode = "004780", Title = "Sra 2 Nex" });
+        await db.SaveChangesAsync();
+
+        (await boot.GetCandidatesAsync()).Candidates.Select(c => c.Code).Should().Equal("009612");
+    }
 }
