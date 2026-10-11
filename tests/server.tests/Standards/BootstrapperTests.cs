@@ -404,4 +404,23 @@ public class BootstrapperTests
 
         (await boot.GetCandidatesAsync()).Candidates.Select(c => c.Code).Should().Equal("009612");
     }
+
+    [Fact]
+    public async Task A_blank_standard_is_matched_but_never_bootstrapped()
+    {
+        // A title and a scope, nothing else: there is nothing to build an envelope from.
+        var blank = new ClassStandardRecord { LongTitle = "Widget Analyst 3", PersProg = "PSS", GenericScope = "Scope only." };
+        var (boot, db, _) = Build([S("Widget Analyst 2"), blank], [Tc("111111", "Widget Analyst 2"), Tc("111112", "Widget Analyst 3")]);
+        using var _db = db;
+
+        var result = await boot.GetCandidatesAsync();
+        result.Candidates.Select(c => c.Title).Should().Equal("Widget Analyst 2");
+        result.Blank.Should().Be(1);
+
+        var refused = await FluentActions.Awaiting(() => boot.BootstrapAsync("Widget Analyst 3"))
+            .Should().ThrowAsync<BootstrapRefusedException>();
+        refused.Which.Reason.Should().Be(BootstrapRefusal.BlankStandard);
+        await FluentActions.Awaiting(() => boot.BootstrapNotActiveAsync("Widget Analyst 3"))
+            .Should().ThrowAsync<BootstrapRefusedException>().Where(e => e.Reason == BootstrapRefusal.BlankStandard);
+    }
 }

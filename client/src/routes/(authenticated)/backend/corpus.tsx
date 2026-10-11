@@ -1,4 +1,5 @@
 import {
+  BlankStandardClassesPanel,
   BootstrapPanel,
   DocumentImportPanel,
   EnvelopeTransferPanel,
@@ -46,6 +47,7 @@ function CorpusPage() {
         <StandardMatchPanel />
         <SupersessionPanel />
         <BootstrapPanel />
+        <BlankStandardClassesPanel />
         <EnvelopeTransferPanel />
       </Section>
 

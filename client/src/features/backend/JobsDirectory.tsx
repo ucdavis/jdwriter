@@ -10,7 +10,7 @@ import { useState } from 'react';
 const LIMIT = 200;
 
 type ClassFilter = 'any' | 'none' | 'some';
-type StandardFilter = 'any' | 'hand' | 'none' | 'some';
+type StandardFilter = 'any' | 'blank' | 'hand' | 'none' | 'some';
 
 /**
  * Every UC job code and what it is attached to — its class and its standard — in one place. Each
@@ -33,7 +33,9 @@ export const JobsDirectory = () => {
           ? !j.standard
           : standardFilter === 'hand'
             ? j.standard?.how === 'hand'
-            : true
+            : standardFilter === 'blank'
+              ? j.standard?.blank
+              : true
     )
     .filter((j) =>
       query
@@ -79,6 +81,7 @@ export const JobsDirectory = () => {
             <option value="any">With or without a standard</option>
             <option value="some">Has a standard</option>
             <option value="hand">Standard linked by hand</option>
+            <option value="blank">Standard is blank</option>
             <option value="none">No standard</option>
           </select>
           <input
@@ -93,6 +96,9 @@ export const JobsDirectory = () => {
           <p className="mt-3 text-base" data-testid="jobs-summary">
             {shown.length} job{shown.length === 1 ? '' : 's'} · {shown.filter((j) => j.class).length} with a class ·{' '}
             {shown.filter((j) => j.standard).length} with a standard
+            {shown.some((j) => j.standard?.blank)
+              ? ` (${shown.filter((j) => j.standard?.blank).length} blank)`
+              : ''}
           </p>
         ) : jobs.isPending ? (
           <p className="mt-3 text-base text-base-content/65">Loading…</p>
@@ -135,6 +141,7 @@ export const JobsDirectory = () => {
                         <span className="text-sm text-base-content/65">
                           {j.class.corpusSize > 0 ? `${j.class.corpusSize} JDs` : 'starter envelope'}
                         </span>
+                        {j.class.fromBlankStandard ? <Badge tone="yellow">built from a blank standard</Badge> : null}
                       </>
                     ) : (
                       <span className="text-base-content/50">—</span>
@@ -144,7 +151,8 @@ export const JobsDirectory = () => {
                     {j.standard ? (
                       <>
                         <span className="block truncate">{j.standard.title}</span>
-                        {j.standard.how === 'hand' ? <Badge tone="teal">linked by hand</Badge> : null}
+                        {j.standard.how === 'hand' ? <Badge tone="teal">linked by hand</Badge> : null}{' '}
+                        {j.standard.blank ? <Badge tone="yellow">blank — no responsibilities</Badge> : null}
                       </>
                     ) : (
                       <span className="text-base-content/50">—</span>
@@ -238,6 +246,9 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
                     ? `Learned from ${job.class.corpusSize} JDs`
                     : 'Starter envelope from its standard'}
                 </div>
+                {job.class.fromBlankStandard ? (
+                  <p className="mt-1 text-warning">Built from a blank standard: little more than a title went into it.</p>
+                ) : null}
               </div>
             ) : (
               <p className="mt-1 text-base text-base-content/65">No class yet.</p>
@@ -251,6 +262,12 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
                 <div className="text-base-content/65">
                   {job.standard.how === 'hand' ? 'Linked by hand' : 'Its title matches the job'}
                 </div>
+                {job.standard.blank ? (
+                  <p className="mt-1 text-warning" data-testid="blank-standard">
+                    Blank: it has a title but no responsibilities, so it can&apos;t be used to build an
+                    envelope. Replace it with the full standard, or ingest JDs for this job.
+                  </p>
+                ) : null}
               </div>
             ) : (
               <p className="mt-1 text-base text-base-content/65">No standard yet.</p>
@@ -273,7 +290,7 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
           <StandardForm job={job} onDone={() => setEditing(false)} />
         ) : (
           <div className="mt-5 flex flex-wrap gap-2">
-            {job.standard && !job.class && !job.supersededBy ? (
+            {job.standard && !job.standard.blank && !job.class && !job.supersededBy ? (
               <button className="btn btn-primary btn-sm" disabled={create.isPending} onClick={bootstrap} type="button">
                 {create.isPending ? 'Creating…' : 'Bootstrap from its standard'}
               </button>

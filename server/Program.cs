@@ -139,6 +139,7 @@ try
     builder.Services.AddScoped<StandardMatching>();
     builder.Services.AddScoped<JobsDirectory>();
     builder.Services.AddScoped<ManualStandards>();
+    builder.Services.AddScoped<BlankStandardClasses>();
     builder.Services.AddScoped<DatabaseSecurity>();
     builder.Services.AddScoped<Server.Core.Analytics.AdminAnalytics>();
 

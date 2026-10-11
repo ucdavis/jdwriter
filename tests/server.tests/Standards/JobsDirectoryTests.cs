@@ -116,4 +116,52 @@ public class JobsDirectoryTests
         await FluentActions.Awaiting(() => manual.SaveAsync("009536", new StandardDraft { Title = " " }, null))
             .Should().ThrowAsync<ArgumentException>();
     }
+
+    [Fact]
+    public async Task A_blank_standard_is_called_out_and_so_is_a_class_built_from_one()
+    {
+        var (db, jobs, _) = Harness(Tc("009605", "LAB AST 1"), Tc("004724", "FARM LABORER"));
+        using var _db = db;
+        db.JobStandards.Add(StandardsStore.ToEntity(new ClassStandardRecord { LongTitle = "Farm Laborer", GenericScope = "Scope only." }));
+        db.JobStandards.Add(StandardsStore.ToEntity(new ClassStandardRecord { LongTitle = "Lab Ast 1", KeyResponsibilities = ["Does lab work."] }));
+        db.ClassProfiles.Add(new ClassProfile { Slug = "004724-farm-laborer", UcJobCode = "004724", Title = "Farm Laborer", EnvelopeSource = EnvelopeSource.Standard });
+        await db.SaveChangesAsync();
+
+        var all = await jobs.ListAsync("active");
+
+        var farm = all.Single(j => j.Code == "004724");
+        farm.Standard!.Blank.Should().BeTrue("matched, but with no responsibilities");
+        farm.Class!.FromBlankStandard.Should().BeTrue();
+        var lab = all.Single(j => j.Code == "009605");
+        lab.Standard!.Blank.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Classes_built_from_blank_standards_are_removed_unless_saved_JDs_hang_off_them()
+    {
+        var db = TestDbContextFactory.CreateInMemory();
+        using var _db = db;
+        var store = new StandardsStore(db, new MemoryCache(new MemoryCacheOptions()));
+        db.JobStandards.Add(StandardsStore.ToEntity(new ClassStandardRecord { LongTitle = "Farm Laborer", GenericScope = "Scope only." }));
+        db.JobStandards.Add(StandardsStore.ToEntity(new ClassStandardRecord { LongTitle = "Garden Worker", GenericScope = "Scope only." }));
+        db.JobStandards.Add(StandardsStore.ToEntity(new ClassStandardRecord { LongTitle = "Lab Ast 1", KeyResponsibilities = ["Does lab work."] }));
+        var blank = new ClassProfile { Slug = "004724-farm-laborer", UcJobCode = "004724", Title = "Farm Laborer", EnvelopeSource = EnvelopeSource.Standard };
+        var withJd = new ClassProfile { Slug = "004725-garden-worker", UcJobCode = "004725", Title = "Garden Worker", EnvelopeSource = EnvelopeSource.Standard };
+        var full = new ClassProfile { Slug = "009605-lab-ast-1", UcJobCode = "009605", Title = "Lab Ast 1", EnvelopeSource = EnvelopeSource.Standard };
+        var learned = new ClassProfile { Slug = "x-farm", UcJobCode = "004726", Title = "Farm Laborer", EnvelopeSource = EnvelopeSource.Claude, CorpusSize = 3 };
+        db.ClassProfiles.AddRange(blank, withJd, full, learned);
+        await db.SaveChangesAsync();
+        db.AuthoredJds.Add(new AuthoredJd { ClassProfileId = withJd.Id, Title = "Garden Worker", UcJobCode = "004725" });
+        await db.SaveChangesAsync();
+        var cleanup = new BlankStandardClasses(db, store);
+
+        (await cleanup.PreviewAsync()).Select(c => c.Slug).Should().Equal("004724-farm-laborer", "004725-garden-worker");
+
+        var result = await cleanup.RemoveAsync();
+
+        result.Removed.Select(c => c.Slug).Should().Equal("004724-farm-laborer");
+        result.Kept.Single().SavedJds.Should().Be(1);
+        db.ClassProfiles.Select(p => p.Slug).Should().BeEquivalentTo(["004725-garden-worker", "009605-lab-ast-1", "x-farm"]);
+        (await cleanup.RemoveAsync()).Removed.Should().BeEmpty("a second run finds nothing");
+    }
 }

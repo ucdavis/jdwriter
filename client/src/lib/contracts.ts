@@ -567,6 +567,8 @@ export type BootstrapCandidate = {
 
 /** Candidates are only classes on UC Davis payroll; the counts say how many standards were left out. */
 export type BootstrapResponse = {
+  /** Standards with no key responsibilities, which can't be bootstrapped. */
+  blank?: number;
   candidates: BootstrapCandidate[];
   /** Standards whose title matches no UC job code. */
   noCodeMatch: number;
@@ -591,6 +593,17 @@ export type StandardMatchReview = {
   withoutSuggestion: number;
 };
 
+/** A starter class bootstrapped from a blank standard. */
+export type BlankStandardClass = {
+  /** Saved JDs written against it; a class with any is kept. */
+  savedJds: number;
+  slug: string;
+  title: string;
+  ucJobCode: string;
+};
+
+export type BlankStandardCleanup = { kept: BlankStandardClass[]; removed: BlankStandardClass[] };
+
 /** One UC job code, and what JDWriter has attached to it. */
 export type JobRow = {
   /** On UC Davis payroll. */
@@ -598,6 +611,8 @@ export type JobRow = {
   class: {
     corpusSize: number;
     envelopeSource: EnvelopeSource | null;
+    /** A starter envelope built from a blank standard. */
+    fromBlankStandard?: boolean;
     slug: string;
     title: string;
   } | null;
@@ -607,7 +622,8 @@ export type JobRow = {
   /** The site the job is only for, or null. */
   site: string | null;
   /** "title": its title matches the job's; "hand": an admin matched or entered it. */
-  standard: { how: 'hand' | 'title'; title: string } | null;
+  /** `blank`: matched, but no responsibilities — it can't be bootstrapped. */
+  standard: { blank?: boolean; how: 'hand' | 'title'; title: string } | null;
   /** The code a union successor replaced this one with. */
   supersededBy: string | null;
   title: string;
@@ -676,6 +692,7 @@ export type QualificationRulesSummary = {
 };
 
 export type EnvelopeImportRefusal =
+  | 'blankStandard'
   | 'codeMismatch'
   | 'exists'
   | 'invalid'

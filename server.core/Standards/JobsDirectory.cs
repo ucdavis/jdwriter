@@ -15,6 +15,9 @@ public sealed class JobClass
     public string Title { get; set; } = "";
     public int CorpusSize { get; set; }
     public EnvelopeSource? EnvelopeSource { get; set; }
+
+    /// <summary>A starter envelope built from a blank standard: little more than a title went into it.</summary>
+    public bool FromBlankStandard { get; set; }
 }
 
 /// <summary>The standard a job is attached to, and how.</summary>
@@ -24,6 +27,9 @@ public sealed class JobStandardLink
 
     /// <summary>"title" — its title matches the job's; "hand" — an admin matched or entered it.</summary>
     public string How { get; set; } = "title";
+
+    /// <summary>Matched, but with no key responsibilities: it can't be bootstrapped until the full standard is added.</summary>
+    public bool Blank { get; set; }
 }
 
 /// <summary>One UC job code, and what JDWriter has attached to it.</summary>
@@ -88,6 +94,7 @@ public sealed class JobsDirectory
                 {
                     Title = s.LongTitle,
                     How = byHand.Contains(s.LongTitle) ? "hand" : "title",
+                    Blank = s.IsBlank,
                 });
             }
         }
@@ -106,6 +113,7 @@ public sealed class JobsDirectory
                 var successor = index.SupersededBy(t.Code)?.ToCode;
                 var cls = classes.GetValueOrDefault(code)
                           ?? (successor is null ? null : classes.GetValueOrDefault(TitleCodeIndex.Pad(successor)));
+                var standard = standardByCode.GetValueOrDefault(code);
                 return new JobRow
                 {
                     Code = t.Code,
@@ -117,8 +125,16 @@ public sealed class JobsDirectory
                     SupersededBy = successor,
                     Class = cls is null
                         ? null
-                        : new JobClass { Slug = cls.Slug, Title = cls.Title, CorpusSize = cls.CorpusSize, EnvelopeSource = cls.EnvelopeSource },
-                    Standard = standardByCode.GetValueOrDefault(code),
+                        : new JobClass
+                        {
+                            Slug = cls.Slug,
+                            Title = cls.Title,
+                            CorpusSize = cls.CorpusSize,
+                            EnvelopeSource = cls.EnvelopeSource,
+                            FromBlankStandard = cls.EnvelopeSource == EnvelopeSource.Standard && cls.CorpusSize == 0
+                                                && standards.For(cls.Title, cls.UcJobCode) is { IsBlank: true },
+                        },
+                    Standard = standard,
                 };
             })
             .OrderBy(r => r.Title, StringComparer.Ordinal)
