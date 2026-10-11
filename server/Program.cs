@@ -137,6 +137,8 @@ try
     builder.Services.AddScoped<CorpusDocuments>();
     builder.Services.AddScoped<QualificationRulesPass>();
     builder.Services.AddScoped<StandardMatching>();
+    builder.Services.AddScoped<JobsDirectory>();
+    builder.Services.AddScoped<ManualStandards>();
     builder.Services.AddScoped<DatabaseSecurity>();
     builder.Services.AddScoped<Server.Core.Analytics.AdminAnalytics>();
 
