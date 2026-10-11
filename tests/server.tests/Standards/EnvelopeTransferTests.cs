@@ -104,8 +104,9 @@ public class EnvelopeTransferTests
     {
         var db = TestDbContextFactory.CreateInMemory();
         var titleCodes = new StubTitleCodes(reference ?? Reference);
-        var boot = new Bootstrapper(db, new StubStandards(standards ?? Standards), titleCodes, model);
-        return (new EnvelopeTransfer(db, boot, titleCodes, NullLogger<EnvelopeTransfer>.Instance), boot, db);
+        var store = new StubStandards(standards ?? Standards);
+        var boot = new Bootstrapper(db, store, titleCodes, model);
+        return (new EnvelopeTransfer(db, boot, titleCodes, store, NullLogger<EnvelopeTransfer>.Instance), boot, db);
     }
 
     private static async Task<EnvelopeBundle> BootstrapLocallyAndExport(params string[] titles)
@@ -259,5 +260,33 @@ public class EnvelopeTransferTests
         var act = () => boot.BootstrapAsync("Financial Analyst 2 CX");
 
         (await act.Should().ThrowAsync<BootstrapRefusedException>()).Which.Reason.Should().Be(BootstrapRefusal.Exists);
+    }
+
+    [Fact]
+    public async Task Standards_and_match_decisions_travel_with_the_envelopes_and_never_overwrite()
+    {
+        var (local, boot, localDb) = Env(new FakeModel());
+        using var _local = localDb;
+        await boot.BootstrapAsync("Widget Analyst 2");
+        localDb.StandardMatchDecisions.Add(new StandardMatchDecision { StandardTitle = "Widget Analyst 2", UcJobCode = "111111", IsMatch = true });
+        localDb.StandardMatchDecisions.Add(new StandardMatchDecision { StandardTitle = "Gadget Planner 1", UcJobCode = "111111", IsMatch = false });
+        await localDb.SaveChangesAsync();
+
+        var bundle = await local.ExportAsync();
+        bundle.Standards.Select(x => x.LongTitle).Should().Equal("Widget Analyst 2");
+        bundle.StandardMatches.Should().HaveCount(2);
+
+        var (prod, _, prodDb) = Env(new FakeModel());
+        using var _prod = prodDb;
+        prodDb.StandardMatchDecisions.Add(new StandardMatchDecision { StandardTitle = "Widget Analyst 2", UcJobCode = "004767", IsMatch = true });
+        await prodDb.SaveChangesAsync();
+
+        var result = await prod.ImportAsync(bundle);
+
+        result.StandardsAdded.Should().Be(1);
+        prodDb.JobStandards.Select(x => x.LongTitle).Should().Equal("Widget Analyst 2");
+        // Production already matched that standard; its own match stands. The rejection is new.
+        result.MatchesAdded.Should().Be(1);
+        prodDb.StandardMatchDecisions.Where(d => d.IsMatch).Select(d => d.UcJobCode).Should().Equal("004767");
     }
 }

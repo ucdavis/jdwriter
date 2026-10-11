@@ -15,6 +15,11 @@ namespace Server.Core.Standards;
 /// the one part a model produced; every other field of the class is rebuilt by the receiving
 /// environment from its own standard and title reference, through the same create path and guards
 /// as a bootstrap there.
+///
+/// Two things travel with the envelopes because the receiving environment can't rebuild them: the
+/// admin's standard–code match decisions, and the standards the envelopes were built from — one
+/// entered by hand exists nowhere else. Both are added before the envelopes, and never overwrite
+/// what the receiving environment already has.
 /// </summary>
 public sealed class EnvelopeBundle
 {
@@ -24,6 +29,19 @@ public sealed class EnvelopeBundle
     public int Version { get; set; } = 1;
     public DateTimeOffset ExportedAt { get; set; }
     public List<BundledEnvelope> Envelopes { get; set; } = [];
+
+    /// <summary>The standards the envelopes were built from. Added within version 1.</summary>
+    public List<ClassStandardRecord> Standards { get; set; } = [];
+
+    /// <summary>Every standard–code match decision. Added within version 1.</summary>
+    public List<BundledMatchDecision> StandardMatches { get; set; } = [];
+}
+
+public sealed class BundledMatchDecision
+{
+    public string StandardTitle { get; set; } = "";
+    public string UcJobCode { get; set; } = "";
+    public bool IsMatch { get; set; }
 }
 
 public sealed class BundledEnvelope
@@ -55,6 +73,12 @@ public sealed class EnvelopeImportResult
 {
     public List<ImportedClass> Created { get; set; } = [];
     public List<SkippedEnvelope> Skipped { get; set; } = [];
+
+    /// <summary>Standards this environment didn't have, added before the envelopes.</summary>
+    public int StandardsAdded { get; set; }
+
+    /// <summary>Match decisions this environment didn't have.</summary>
+    public int MatchesAdded { get; set; }
 }
 
 public sealed class EnvelopeTransfer
@@ -62,12 +86,15 @@ public sealed class EnvelopeTransfer
     private readonly AppDbContext _db;
     private readonly IBootstrapper _bootstrapper;
     private readonly ITitleCodeService _titleCodes;
+    private readonly IStandardsStore _standards;
     private readonly ILogger<EnvelopeTransfer> _logger;
 
     public EnvelopeTransfer(
-        AppDbContext db, IBootstrapper bootstrapper, ITitleCodeService titleCodes, ILogger<EnvelopeTransfer> logger)
+        AppDbContext db, IBootstrapper bootstrapper, ITitleCodeService titleCodes, IStandardsStore standards,
+        ILogger<EnvelopeTransfer> logger)
     {
         _db = db;
+        _standards = standards;
         _bootstrapper = bootstrapper;
         _titleCodes = titleCodes;
         _logger = logger;
@@ -90,19 +117,86 @@ public sealed class EnvelopeTransfer
             .OrderBy(p => p.Title)
             .ToListAsync(ct);
 
+        var live = profiles.Where(p => !titleCodes.IsSuperseded(p.UcJobCode)).ToList();
+        var standards = await _standards.GetIndexAsync(ct);
+
         return new EnvelopeBundle
         {
             ExportedAt = DateTimeOffset.UtcNow,
             Envelopes =
             [
-                .. profiles.Where(p => !titleCodes.IsSuperseded(p.UcJobCode)).Select(p => new BundledEnvelope
+                .. live.Select(p => new BundledEnvelope
                 {
                     Title = p.Title,
                     UcJobCode = p.UcJobCode,
                     Envelope = EnvelopeWire.From(p.Envelope!),
                 }),
             ],
+            Standards =
+            [
+                .. live.Select(p => standards.For(p.Title, p.UcJobCode))
+                    .OfType<ClassStandardRecord>()
+                    .DistinctBy(s => s.LongTitle),
+            ],
+            StandardMatches =
+            [
+                .. await _db.StandardMatchDecisions.AsNoTracking()
+                    .OrderBy(d => d.Id)
+                    .Select(d => new BundledMatchDecision { StandardTitle = d.StandardTitle, UcJobCode = d.UcJobCode, IsMatch = d.IsMatch })
+                    .ToListAsync(ct),
+            ],
         };
+    }
+
+    /// <summary>Adds what this environment lacks; never replaces a standard or a decision it already has.</summary>
+    private async Task<(int Standards, int Matches)> AddStandardsAndMatchesAsync(EnvelopeBundle bundle, CancellationToken ct)
+    {
+        var haveTitles = (await _db.JobStandards.Select(s => s.LongTitle).ToListAsync(ct)).ToHashSet(StringComparer.Ordinal);
+        var standards = bundle.Standards.Where(s => !haveTitles.Contains(s.LongTitle)).DistinctBy(s => s.LongTitle).ToList();
+        _db.JobStandards.AddRange(standards.Select(StandardsStore.ToEntity));
+
+        var haveDecisions = (await _db.StandardMatchDecisions.Select(d => new { d.StandardTitle, d.UcJobCode }).ToListAsync(ct))
+            .Select(d => (d.StandardTitle, TitleCodeIndex.Pad(d.UcJobCode)))
+            .ToHashSet();
+        var haveMatch = (await _db.StandardMatchDecisions.Where(d => d.IsMatch).Select(d => d.StandardTitle).ToListAsync(ct))
+            .ToHashSet(StringComparer.Ordinal);
+        var added = 0;
+        foreach (var d in bundle.StandardMatches)
+        {
+            // One match per standard: a standard already matched here keeps its match.
+            if (haveDecisions.Contains((d.StandardTitle, TitleCodeIndex.Pad(d.UcJobCode))) || (d.IsMatch && haveMatch.Contains(d.StandardTitle)))
+            {
+                continue;
+            }
+
+            _db.StandardMatchDecisions.Add(new StandardMatchDecision
+            {
+                StandardTitle = d.StandardTitle,
+                UcJobCode = d.UcJobCode,
+                IsMatch = d.IsMatch,
+                DecidedAt = bundle.ExportedAt,
+            });
+            haveDecisions.Add((d.StandardTitle, TitleCodeIndex.Pad(d.UcJobCode)));
+            if (d.IsMatch)
+            {
+                haveMatch.Add(d.StandardTitle);
+            }
+
+            added++;
+        }
+
+        await _db.SaveChangesAsync(ct);
+        _db.ChangeTracker.Clear();
+        _standards.Invalidate();
+        return (standards.Count, added);
+    }
+
+    private static bool WithinBounds(ClassStandardRecord s)
+    {
+        var lists = new[] { s.KeyResponsibilities, s.Ksa, s.Education, s.Licenses, s.SpecialConditions };
+        return s.LongTitle.Length is > 0 and <= 300
+               && lists.All(l => l.Count <= 200)
+               && lists.SelectMany(l => l).Append(s.GenericScope).Append(s.CustomScope).All(t => (t ?? "").Length <= 8_000);
     }
 
     private static bool WithinBounds(BundledEnvelope e)
@@ -136,15 +230,21 @@ public sealed class EnvelopeTransfer
         }
 
         // Admin-only, but still a file from elsewhere: bounded before any of it is stored.
-        if (bundle.Envelopes.Count > 2_000 || bundle.Envelopes.Any(e => !WithinBounds(e)))
+        if (bundle.Envelopes.Count > 2_000 || bundle.Envelopes.Any(e => !WithinBounds(e))
+            || bundle.Standards.Count > 5_000 || bundle.Standards.Any(s => !WithinBounds(s))
+            || bundle.StandardMatches.Count > 20_000
+            || bundle.StandardMatches.Any(d => d.StandardTitle.Length is 0 or > 300 || d.UcJobCode.Length is 0 or > 20))
         {
             throw new InvalidOperationException("This export is larger than any real set of envelopes; it was not imported.");
         }
 
+        // Standards and match decisions first, so the envelopes find what they were built from.
+        var (standardsAdded, matchesAdded) = await AddStandardsAndMatchesAsync(bundle, ct);
+
         var note = $"Standard-derived — envelope generated in another environment (exported "
                    + $"{bundle.ExportedAt:yyyy-MM-dd}) and imported. Ingest JDs for this class to learn the real envelope.";
 
-        var result = new EnvelopeImportResult();
+        var result = new EnvelopeImportResult { StandardsAdded = standardsAdded, MatchesAdded = matchesAdded };
         foreach (var item in bundle.Envelopes)
         {
             try

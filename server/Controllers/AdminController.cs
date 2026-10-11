@@ -27,6 +27,8 @@ public sealed record StandardMatchRequest(string StandardTitle, string UcJobCode
 
 public sealed record StandardUnmatchRequest(string StandardTitle);
 
+public sealed record ManualStandardRequest(string UcJobCode, StandardDraft Standard);
+
 /// <summary>
 /// Corpus and standards operations.
 ///
@@ -56,6 +58,8 @@ public class AdminController : ApiControllerBase
     private readonly CorpusDocuments _documents;
     private readonly QualificationRulesPass _qualificationRules;
     private readonly StandardMatching _matching;
+    private readonly JobsDirectory _jobs;
+    private readonly ManualStandards _manualStandards;
     private readonly DatabaseSecurity _security;
     private readonly Server.Core.Analytics.AdminAnalytics _analytics;
 
@@ -76,6 +80,8 @@ public class AdminController : ApiControllerBase
         CorpusDocuments documents,
         QualificationRulesPass qualificationRules,
         StandardMatching matching,
+        JobsDirectory jobs,
+        ManualStandards manualStandards,
         DatabaseSecurity security,
         Server.Core.Analytics.AdminAnalytics analytics)
     {
@@ -95,6 +101,8 @@ public class AdminController : ApiControllerBase
         _documents = documents;
         _qualificationRules = qualificationRules;
         _matching = matching;
+        _jobs = jobs;
+        _manualStandards = manualStandards;
         _security = security;
         _analytics = analytics;
     }
@@ -416,51 +424,55 @@ public class AdminController : ApiControllerBase
     }
 
     /// <summary>
-    /// UC Davis jobs with no class yet, and whether each has a standard to bootstrap from: active
-    /// (on payroll) by default, or not active at UC Davis with <c>?active=false</c>.
+    /// Every UC job code and what it is attached to: its class, and its standard (by title or by
+    /// hand). <c>scope</c> is "active" (on payroll, the default), "inactive", or "all".
     /// </summary>
-    /// <summary>
-    /// Standards whose title matches no job code exactly, each with up to three codes it might be,
-    /// and the matches already confirmed by hand. Codes not active at UC Davis only on request.
-    /// </summary>
-    [HttpGet("standards/matches")]
-    public async Task<IActionResult> StandardMatches([FromQuery] bool includeNotActive = false, CancellationToken ct = default) =>
-        Ok(await _matching.ReviewAsync(includeNotActive, ct));
+    [HttpGet("jobs")]
+    public async Task<IActionResult> Jobs([FromQuery] string scope = "active", CancellationToken ct = default) =>
+        Ok(new { scope, jobs = await _jobs.ListAsync(scope, ct) });
 
-    /// <summary>Confirm or reject one standard–code pairing.</summary>
-    [HttpPost("standards/matches")]
-    public async Task<IActionResult> DecideStandardMatch(StandardMatchRequest body, CancellationToken ct)
+    /// <summary>Read a Word (or PDF, or text) export of a job standard into its sections, for review.</summary>
+    [HttpPost("standards/read")]
+    [RequestSizeLimit(MaxDocumentBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxDocumentBytes)]
+    public async Task<IActionResult> ReadStandard(IFormFile? file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Choose the standard's Word document." });
+        }
+
+        if (!_manualStandards.CanRead)
+        {
+            return StatusCode(503, new { message = "Reading a standard is unavailable — no AI provider is configured." });
+        }
+
+        using var buffer = new MemoryStream();
+        await file.CopyToAsync(buffer, ct);
+        try
+        {
+            var text = TextExtractor.Extract(buffer.ToArray(), file.FileName, file.ContentType ?? "").Text;
+            return Ok(await _manualStandards.ReadAsync(text, ct));
+        }
+        catch (ExtractionException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Save a standard for a job, entered or reviewed by hand; it is linked to the job's code.</summary>
+    [HttpPost("standards/manual")]
+    public async Task<IActionResult> SaveManualStandard(ManualStandardRequest body, CancellationToken ct)
     {
         try
         {
-            await _matching.DecideAsync(body.StandardTitle, body.UcJobCode, body.Match, await User.IdAsync(_db, ct), ct);
+            await _manualStandards.SaveAsync(body.UcJobCode, body.Standard, await User.IdAsync(_db, ct), ct);
             return Ok(new { ok = true });
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
         }
-    }
-
-    /// <summary>Undo a confirmed match; the standard returns to the review.</summary>
-    [HttpPost("standards/matches/undo")]
-    public async Task<IActionResult> UndoStandardMatch(StandardUnmatchRequest body, CancellationToken ct)
-    {
-        await _matching.UnmatchAsync(body.StandardTitle, ct);
-        return Ok(new { ok = true });
-    }
-
-    [HttpGet("coverage")]
-    public async Task<IActionResult> Coverage([FromQuery] bool active = true, CancellationToken ct = default)
-    {
-        var rows = await _bootstrapper.GetCoverageAsync(active, ct);
-        return Ok(new
-        {
-            active,
-            rows,
-            withStandard = rows.Count(r => r.StandardTitle is not null),
-            withoutStandard = rows.Count(r => r.StandardTitle is null),
-        });
     }
 
     [HttpPost("bootstrap")]
