@@ -74,6 +74,7 @@ public class EnvelopeTransferTests
         Flsa = "Exempt",
         Union = "CX",
         GenericScope = $"Scope for {title}.",
+        KeyResponsibilities = [$"Does {title} work."],
         Ksa = ["Knows the subject."],
         Education = ["Bachelor's degree."],
     };

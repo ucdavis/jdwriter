@@ -62,11 +62,17 @@ public sealed class BootstrapCandidates
 
     /// <summary>Standards whose title matches no UC job code at all.</summary>
     public int NoCodeMatch { get; set; }
+
+    /// <summary>Standards with no key responsibilities, which can't be bootstrapped.</summary>
+    public int Blank { get; set; }
 }
 
 public enum BootstrapRefusal
 {
     NoStandard,
+
+    /// <summary>The standard has no key responsibilities: nothing to build an envelope from.</summary>
+    BlankStandard,
 
     /// <summary>The standard's title is not on UC Davis payroll, so its class could not be used.</summary>
     NotOnPayroll,
@@ -174,6 +180,13 @@ public sealed class Bootstrapper : IBootstrapper
                 continue;
             }
 
+            // A blank standard matches its job but has nothing to build from: never offered.
+            if (s.IsBlank)
+            {
+                result.Blank++;
+                continue;
+            }
+
             var tc = StandardCodes.For(s, titleCodes);
 
             // A standard for a SUPERSEDED code must not be offered: bootstrapping it would recreate
@@ -254,6 +267,12 @@ public sealed class Bootstrapper : IBootstrapper
 
         var std = FindStandard(standards, title)
                   ?? throw new BootstrapRefusedException(BootstrapRefusal.NoStandard, $"No standard found for \"{title}\"");
+
+        if (std.IsBlank)
+        {
+            throw new BootstrapRefusedException(BootstrapRefusal.BlankStandard,
+                $"The standard for {std.LongTitle} has no responsibilities, so there is nothing to build an envelope from. Add the full standard first.");
+        }
 
         var tc = StandardCodes.For(std, titleCodes);
 

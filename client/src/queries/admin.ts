@@ -12,6 +12,8 @@ import type {
   AdminsResponse,
   BootstrapCreateResponse,
   BootstrapResponse,
+  BlankStandardClass,
+  BlankStandardCleanup,
   JobsResponse,
   JobsScope,
   StandardDraft,
@@ -375,6 +377,26 @@ export const useUndoStandardMatch = () => {
         method: 'POST',
       }),
     onSuccess: () => refreshAfterMatch(queryClient),
+  });
+};
+
+/** Starter classes built from blank standards. Read on demand, so a mutation. */
+export const useBlankStandardClasses = () =>
+  useMutation({
+    mutationFn: () =>
+      fetchJson<{ classes: BlankStandardClass[] }>('/api/admin/standards/blank-classes'),
+  });
+
+/** Remove them; any with saved JDs are kept and reported. */
+export const useRemoveBlankStandardClasses = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      fetchJson<BlankStandardCleanup>('/api/admin/standards/blank-classes/remove', { method: 'POST' }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['classes'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'jobs'] });
+    },
   });
 };
 

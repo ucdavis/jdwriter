@@ -8,6 +8,14 @@ namespace Server.Core.Standards;
 /// <summary>A parsed official UC job standard for one classification.</summary>
 public sealed class ClassStandardRecord
 {
+    /// <summary>
+    /// A standard with a title (and perhaps a scope) but no key responsibilities — 963 of the first
+    /// 2,954 loaded were such shells. It still matches its job, but there is nothing to build an
+    /// envelope from, so it is never bootstrapped.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsBlank => KeyResponsibilities.Count == 0;
+
     public string LongTitle { get; set; } = "";
 
     /// <summary>

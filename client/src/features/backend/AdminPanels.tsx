@@ -2,6 +2,7 @@ import { Badge, Card, Eyebrow, Note } from '@/shared/ui/primitives.tsx';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import {
   useBootstrapCandidates,
+  useBlankStandardClasses,
   useBootstrapClass,
   useDecideStandardMatch,
   useStandardMatches,
@@ -16,6 +17,7 @@ import {
   useIngestScan,
   useImportEnvelopes,
   useIngestStandards,
+  useRemoveBlankStandardClasses,
   useRetireSuperseded,
   useRetirementPreview,
 } from '@/queries/admin.ts';
@@ -896,6 +898,91 @@ export const StandardMatchPanel = () => {
   );
 };
 
+/**
+ * Starter classes bootstrapped from blank standards — a title, no responsibilities — before blank
+ * standards were refused. They aren't usable classes, so they are removed and the job waits for
+ * real JDs or the full standard. A class with saved JDs against it is kept and listed.
+ */
+export const BlankStandardClassesPanel = () => {
+  const preview = useBlankStandardClasses();
+  const remove = useRemoveBlankStandardClasses();
+  const classes = preview.data?.classes;
+  const removable = (classes ?? []).filter((c) => c.savedJds === 0);
+
+  const run = () => {
+    if (
+      window.confirm(
+        `Remove ${removable.length} starter class${removable.length === 1 ? '' : 'es'} built from blank standards? ` +
+          'Their jobs stay listed, waiting for JDs or the full standard.'
+      )
+    ) {
+      remove.mutate(undefined, { onSuccess: () => preview.reset() });
+    }
+  };
+
+  return (
+    <Card className="mb-5 p-5">
+      <Eyebrow>Classes built from blank standards</Eyebrow>
+      <p className="mt-1 text-base text-base-content/65">
+        A blank standard has a title but no responsibilities, so a class bootstrapped from one is
+        little more than a title. These are removed; the job waits for real JDs or the full
+        standard. Any with saved JDs are kept.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          className="btn btn-outline btn-sm"
+          disabled={preview.isPending || remove.isPending}
+          onClick={() => preview.mutate()}
+          type="button"
+        >
+          {preview.isPending ? 'Checking…' : 'Find them'}
+        </button>
+        {removable.length > 0 ? (
+          <button className="btn btn-primary btn-sm" disabled={remove.isPending} onClick={run} type="button">
+            {remove.isPending ? 'Removing…' : `Remove ${removable.length}`}
+          </button>
+        ) : null}
+      </div>
+      {preview.error || remove.error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(preview.error ?? remove.error)}</Note>
+        </div>
+      ) : null}
+      {remove.data ? (
+        <div className="mt-3" data-testid="blank-cleanup-result">
+          <Note tone="green">
+            Removed {remove.data.removed.length} class{remove.data.removed.length === 1 ? '' : 'es'}
+            {remove.data.kept.length > 0
+              ? `; kept ${remove.data.kept.length} with saved JDs (${remove.data.kept.map((k) => k.title).join(', ')})`
+              : ''}
+            .
+          </Note>
+        </div>
+      ) : null}
+      {classes ? (
+        classes.length === 0 ? (
+          <p className="mt-3 text-base text-base-content/65">None — no class was built from a blank standard.</p>
+        ) : (
+          <ul className="mt-3 max-h-80 divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300" data-testid="blank-classes">
+            {classes.map((c) => (
+              <li className="flex items-center justify-between gap-3 px-3 py-2" key={c.slug}>
+                <span className="text-base">
+                  {c.title} <span className="text-sm text-base-content/50 tnum">{c.ucJobCode}</span>
+                </span>
+                {c.savedJds > 0 ? (
+                  <Badge tone="yellow">
+                    kept — {c.savedJds} saved JD{c.savedJds === 1 ? '' : 's'}
+                  </Badge>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )
+      ) : null}
+    </Card>
+  );
+};
+
 export const SupersessionPanel = () => {
   const preview = useRetirementPreview();
   const retire = useRetireSuperseded();
@@ -1178,6 +1265,13 @@ export const BootstrapPanel = () => {
           an envelope for them could never be used.
         </p>
       ) : null}
+      {bootstrap.data?.blank ? (
+        <p className="mt-2 text-base text-base-content/65" data-testid="bootstrap-blank">
+          {bootstrap.data.blank} more {bootstrap.data.blank === 1 ? 'is' : 'are'} blank — a title
+          but no responsibilities — so there&apos;s nothing to build from. Add the full standard on
+          the Jobs page, or ingest JDs for the class.
+        </p>
+      ) : null}
       {candidates ? (
         candidates.length === 0 ? (
           <p className="mt-3 text-base text-base-content/65">
@@ -1236,6 +1330,7 @@ export const BootstrapPanel = () => {
 };
 
 const refusalLabel: Record<EnvelopeImportRefusal, string> = {
+  blankStandard: 'blank standard (no responsibilities)',
   codeMismatch: 'different job code here',
   exists: 'already has a class',
   invalid: 'invalid envelope',

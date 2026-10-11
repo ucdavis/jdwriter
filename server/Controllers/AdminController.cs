@@ -60,6 +60,7 @@ public class AdminController : ApiControllerBase
     private readonly StandardMatching _matching;
     private readonly JobsDirectory _jobs;
     private readonly ManualStandards _manualStandards;
+    private readonly BlankStandardClasses _blankClasses;
     private readonly DatabaseSecurity _security;
     private readonly Server.Core.Analytics.AdminAnalytics _analytics;
 
@@ -82,6 +83,7 @@ public class AdminController : ApiControllerBase
         StandardMatching matching,
         JobsDirectory jobs,
         ManualStandards manualStandards,
+        BlankStandardClasses blankClasses,
         DatabaseSecurity security,
         Server.Core.Analytics.AdminAnalytics analytics)
     {
@@ -103,6 +105,7 @@ public class AdminController : ApiControllerBase
         _matching = matching;
         _jobs = jobs;
         _manualStandards = manualStandards;
+        _blankClasses = blankClasses;
         _security = security;
         _analytics = analytics;
     }
@@ -420,7 +423,7 @@ public class AdminController : ApiControllerBase
     public async Task<IActionResult> Candidates(CancellationToken ct)
     {
         var result = await _bootstrapper.GetCandidatesAsync(ct);
-        return Ok(new { candidates = result.Candidates, result.NotOnPayroll, result.NoCodeMatch });
+        return Ok(new { candidates = result.Candidates, result.NotOnPayroll, result.NoCodeMatch, result.Blank });
     }
 
     /// <summary>
@@ -430,6 +433,16 @@ public class AdminController : ApiControllerBase
     [HttpGet("jobs")]
     public async Task<IActionResult> Jobs([FromQuery] string scope = "active", CancellationToken ct = default) =>
         Ok(new { scope, jobs = await _jobs.ListAsync(scope, ct) });
+
+    /// <summary>Starter classes built from blank standards, with any saved JDs against them. Read-only.</summary>
+    [HttpGet("standards/blank-classes")]
+    public async Task<IActionResult> BlankStandardClassesPreview(CancellationToken ct) =>
+        Ok(new { classes = await _blankClasses.PreviewAsync(ct) });
+
+    /// <summary>Remove starter classes built from blank standards; any with saved JDs are kept and reported.</summary>
+    [HttpPost("standards/blank-classes/remove")]
+    public async Task<IActionResult> RemoveBlankStandardClasses(CancellationToken ct) =>
+        Ok(await _blankClasses.RemoveAsync(ct));
 
     /// <summary>Read a Word (or PDF, or text) export of a job standard into its sections, for review.</summary>
     [HttpPost("standards/read")]
