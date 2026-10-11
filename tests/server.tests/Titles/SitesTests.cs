@@ -57,6 +57,14 @@ public class SitesTests
     }
 
     [Fact]
+    public void Exempt_and_non_exempt_versions_are_separate_classes_but_not_sites()
+    {
+        Sites.ClassKey("Sra 2").Should().NotBe(Sites.ClassKey("Sra 2 Nex"));
+        Sites.ClassKey("Staff Research Associate 2").Should().Be(Sites.ClassKey("SRA 2"));
+        Sites.SiteOf("Sra 2 Nex").Should().BeNull("NEX is an FLSA status, not a site");
+    }
+
+    [Fact]
     public void A_regular_class_names_its_site_twins_and_the_reverse()
     {
         var known = Sites.ClassesByCode([("004845", "004845-accounting-manager-2-hc", "Accounting Manager 2 HC")]);

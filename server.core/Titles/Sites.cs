@@ -49,6 +49,10 @@ public static partial class Sites
     [GeneratedRegex(@"\b(?:HC|SHS|VMTH)\b", RegexOptions.IgnoreCase)]
     private static partial Regex SiteTokens();
 
+    /// <summary>Non-exempt: "SRA 2" and "SRA 2 NEX" are both current, separate classes.</summary>
+    [GeneratedRegex(@"\bNEX\b", RegexOptions.IgnoreCase)]
+    private static partial Regex NexToken();
+
     /// <summary>
     /// The site a class is for — Student Health Center, Veterinary Medical Teaching Hospital, Health
     /// Center — or null for a regular class. The most specific marker wins.
@@ -65,8 +69,15 @@ public static partial class Sites
     /// <summary>The loose key of the title without its site markers: what twins share.</summary>
     private static string BaseKey(string title) => TitleNormalizer.TitleKey(SiteTokens().Replace(title ?? "", " "));
 
-    /// <summary>What two titles must share to be the same class: the base key, and the site.</summary>
-    public static string ClassKey(string title) => BaseKey(title) + (SiteOf(title) is { } site ? $" |{site}" : "");
+    /// <summary>
+    /// What two titles must share to be the same class: the base key, the site, and whether it is the
+    /// non-exempt (NEX) version. The loose key drops "nex" too, but exempt and non-exempt SRAs are both
+    /// current classes, so one must never hide the other. (NEX is not a site: no label, no twin note.)
+    /// </summary>
+    public static string ClassKey(string title) =>
+        BaseKey(title)
+        + (SiteOf(title) is { } site ? $" |{site}" : "")
+        + (NexToken().IsMatch(title ?? "") ? " |nex" : "");
 
     /// <summary>
     /// The class's versions at other sites, among in-use codes. A regular class lists each site
