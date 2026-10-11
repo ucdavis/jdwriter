@@ -12,6 +12,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // ---- official standards
     public DbSet<JobStandard> JobStandards => Set<JobStandard>();
+    public DbSet<StandardMatchDecision> StandardMatchDecisions => Set<StandardMatchDecision>();
     public DbSet<JobStandardItem> JobStandardItems => Set<JobStandardItem>();
 
     // ---- JD corpus
@@ -124,6 +125,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         });
 
         // ---------------------------------------------------------------- standards
+        b.Entity<StandardMatchDecision>(e =>
+        {
+            e.Property(x => x.StandardTitle).HasMaxLength(TitleLen);
+            e.Property(x => x.UcJobCode).HasMaxLength(20);
+            e.HasIndex(x => new { x.StandardTitle, x.UcJobCode }).IsUnique();
+            e.HasOne(x => x.DecidedBy).WithMany().HasForeignKey(x => x.DecidedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
         b.Entity<JobStandard>(e =>
         {
             e.Property(x => x.LongTitle).HasMaxLength(TitleLen);

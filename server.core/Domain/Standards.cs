@@ -83,3 +83,28 @@ public class StandardsWorkbook
     public AppUser? UploadedBy { get; set; }
     public DateTimeOffset UploadedAt { get; set; }
 }
+
+/// <summary>
+/// An admin's decision on whether a standard is a given job code, for standards whose title doesn't
+/// match any code exactly ("Public Events Manager Assistant" is PUBL EVENTS MGR AST). Kept apart
+/// from the standard itself so it survives re-uploading the workbooks, which replaces standards by
+/// title. A match sets the standard's code wherever standards are read; a rejection keeps that
+/// pairing from being suggested again.
+/// </summary>
+public class StandardMatchDecision
+{
+    public int Id { get; set; }
+
+    /// <summary>The standard's long title, exactly as the workbook states it.</summary>
+    public string StandardTitle { get; set; } = "";
+
+    public string UcJobCode { get; set; } = "";
+
+    /// <summary>True: this is the standard's code. False: it is not.</summary>
+    public bool IsMatch { get; set; }
+
+    public int? DecidedByUserId { get; set; }
+    public AppUser? DecidedBy { get; set; }
+    public DateTimeOffset DecidedAt { get; set; }
+}
+

@@ -607,7 +607,7 @@ public sealed partial class DescriptionClassifier : IDescriptionClassifier
         DistilledJd distilled, string request, List<ClassProfile> candidates, StandardsIndex standards)
     {
         var catalog = string.Join("\n\n", candidates.Select((p, i) =>
-            $"{IntakeMatcher.DetailedEntry(p, i, standards.ForTitle(p.Title))}\n{LevelFacts(p)}"));
+            $"{IntakeMatcher.DetailedEntry(p, i, standards.For(p.Title, p.UcJobCode))}\n{LevelFacts(p)}"));
 
         var fnBlock = distilled.Functions.Count > 0
             ? string.Join("\n", distilled.Functions.Select((f, i) =>

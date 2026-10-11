@@ -423,7 +423,7 @@ public sealed class EnvelopeSynthesizer
     /// </summary>
     public async Task<JobEnvelope> SynthesizeAsync(ClassProfile p, CancellationToken ct = default)
     {
-        var standard = await _standards.ForTitleAsync(p.Title, ct);
+        var standard = await _standards.ForClassAsync(p.Title, p.UcJobCode, ct);
 
         var raw = await _llm.StructuredAsync<EnvelopeShape>(new StructuredRequest
         {

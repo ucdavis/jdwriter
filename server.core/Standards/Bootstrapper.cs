@@ -194,7 +194,7 @@ public sealed class Bootstrapper : IBootstrapper
                 continue;
             }
 
-            var tc = titleCodes.FindTitleCode(s.LongTitle);
+            var tc = StandardCodes.For(s, titleCodes);
 
             // A standard for a SUPERSEDED code must not be offered: bootstrapping it would recreate
             // a class that browse and the classifier deliberately hide. Nothing is lost — the RP
@@ -258,7 +258,7 @@ public sealed class Bootstrapper : IBootstrapper
         var standardByCode = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var s in standards.All)
         {
-            var tc = titleCodes.FindTitleCode(s.LongTitle);
+            var tc = StandardCodes.For(s, titleCodes);
             if (tc is not null)
             {
                 standardByCode.TryAdd(TitleCodeIndex.Pad(tc.Code), s.LongTitle);
@@ -314,7 +314,7 @@ public sealed class Bootstrapper : IBootstrapper
         var std = FindStandard(standards, title)
                   ?? throw new BootstrapRefusedException(BootstrapRefusal.NoStandard, $"No standard found for \"{title}\"");
 
-        var tc = titleCodes.FindTitleCode(std.LongTitle);
+        var tc = StandardCodes.For(std, titleCodes);
 
         // Refuse rather than silently building the class under the successor's code: the two
         // standards differ, and the successor's own standard is the right source to build from.

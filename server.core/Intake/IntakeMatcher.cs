@@ -259,7 +259,7 @@ public sealed class IntakeMatcher : IIntakeMatcher
     public static string BuildRankUser(string request, List<ClassProfile> candidates, StandardsIndex standards)
     {
         var catalog = string.Join("\n\n",
-            candidates.Select((p, i) => DetailedEntry(p, i, standards.ForTitle(p.Title))));
+            candidates.Select((p, i) => DetailedEntry(p, i, standards.For(p.Title, p.UcJobCode))));
         return $"CANDIDATE JOB CLASSES:\n{catalog}\n\nHIRING MANAGER'S REQUEST:\n{request}\n\nReturn the best-matching classes, most confident first.";
     }
 

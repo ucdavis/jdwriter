@@ -16,6 +16,10 @@ namespace Server.Core.Profiles;
 public interface IStandardLookup
 {
     Task<ClassStandardRecord?> ForTitleAsync(string title, CancellationToken ct = default);
+
+    /// <summary>The standard for a class, by title or else by job code (a hand-confirmed match).</summary>
+    Task<ClassStandardRecord?> ForClassAsync(string title, string? code, CancellationToken ct = default) =>
+        ForTitleAsync(title, ct);
 }
 
 /// <summary>

@@ -277,7 +277,7 @@ public sealed class SupersessionReconciler : ISupersessionReconciler
         {
             var std = standards.All.FirstOrDefault(s =>
             {
-                var code = index.FindTitleCode(s.LongTitle)?.Code;
+                var code = Standards.StandardCodes.For(s, index)?.Code;
                 return code != null && TitleCodeIndex.Pad(code) == TitleCodeIndex.Pad(sup.ToCode);
             });
             if (std is not null)

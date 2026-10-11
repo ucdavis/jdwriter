@@ -29,4 +29,10 @@ public sealed class StandardsStoreLookup : IStandardLookup
         var index = await _store.GetIndexAsync(ct);
         return index.ForTitle(title);
     }
+
+    public async Task<ClassStandardRecord?> ForClassAsync(string title, string? code, CancellationToken ct = default)
+    {
+        var index = await _store.GetIndexAsync(ct);
+        return index.For(title, code);
+    }
 }

@@ -22,6 +22,11 @@ public sealed record UploadIngestRequest(string Code);
 
 public sealed record QualificationRulesRequest(bool Apply);
 
+/// <summary>Whether a standard is a job code: <c>Match</c> true confirms it, false rejects the pairing.</summary>
+public sealed record StandardMatchRequest(string StandardTitle, string UcJobCode, bool Match);
+
+public sealed record StandardUnmatchRequest(string StandardTitle);
+
 /// <summary>
 /// Corpus and standards operations.
 ///
@@ -50,6 +55,7 @@ public class AdminController : ApiControllerBase
     private readonly CorpusUploads _uploads;
     private readonly CorpusDocuments _documents;
     private readonly QualificationRulesPass _qualificationRules;
+    private readonly StandardMatching _matching;
     private readonly DatabaseSecurity _security;
     private readonly Server.Core.Analytics.AdminAnalytics _analytics;
 
@@ -69,6 +75,7 @@ public class AdminController : ApiControllerBase
         CorpusUploads uploads,
         CorpusDocuments documents,
         QualificationRulesPass qualificationRules,
+        StandardMatching matching,
         DatabaseSecurity security,
         Server.Core.Analytics.AdminAnalytics analytics)
     {
@@ -87,6 +94,7 @@ public class AdminController : ApiControllerBase
         _uploads = uploads;
         _documents = documents;
         _qualificationRules = qualificationRules;
+        _matching = matching;
         _security = security;
         _analytics = analytics;
     }
@@ -352,7 +360,7 @@ public class AdminController : ApiControllerBase
             report.Updated,
             report.Total,
             UncodedSample = report.Uncoded.Take(8),
-            LinkedCount = classes.Count(c => index.ForTitle(c.Title) != null),
+            LinkedCount = classes.Count(c => index.For(c.Title, c.UcJobCode) != null),
             TotalClasses = classes.Count,
         });
     }
@@ -378,7 +386,7 @@ public class AdminController : ApiControllerBase
         var report = await _standardsImporter.ImportAsync(dir, ct);
         var index = await _standards.GetIndexAsync(ct);
         var classes = await _profiles.GetDescriptorsAsync(ct: ct);
-        var linked = classes.Where(c => index.ForTitle(c.Title) != null).ToList();
+        var linked = classes.Where(c => index.For(c.Title, c.UcJobCode) != null).ToList();
 
         return Ok(new
         {
@@ -411,6 +419,37 @@ public class AdminController : ApiControllerBase
     /// UC Davis jobs with no class yet, and whether each has a standard to bootstrap from: active
     /// (on payroll) by default, or not active at UC Davis with <c>?active=false</c>.
     /// </summary>
+    /// <summary>
+    /// Standards whose title matches no job code exactly, each with up to three codes it might be,
+    /// and the matches already confirmed by hand. Codes not active at UC Davis only on request.
+    /// </summary>
+    [HttpGet("standards/matches")]
+    public async Task<IActionResult> StandardMatches([FromQuery] bool includeNotActive = false, CancellationToken ct = default) =>
+        Ok(await _matching.ReviewAsync(includeNotActive, ct));
+
+    /// <summary>Confirm or reject one standard–code pairing.</summary>
+    [HttpPost("standards/matches")]
+    public async Task<IActionResult> DecideStandardMatch(StandardMatchRequest body, CancellationToken ct)
+    {
+        try
+        {
+            await _matching.DecideAsync(body.StandardTitle, body.UcJobCode, body.Match, await User.IdAsync(_db, ct), ct);
+            return Ok(new { ok = true });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Undo a confirmed match; the standard returns to the review.</summary>
+    [HttpPost("standards/matches/undo")]
+    public async Task<IActionResult> UndoStandardMatch(StandardUnmatchRequest body, CancellationToken ct)
+    {
+        await _matching.UnmatchAsync(body.StandardTitle, ct);
+        return Ok(new { ok = true });
+    }
+
     [HttpGet("coverage")]
     public async Task<IActionResult> Coverage([FromQuery] bool active = true, CancellationToken ct = default)
     {
