@@ -3,6 +3,7 @@ import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { useBootstrapClass, useJobs, useReadStandard, useSaveManualStandard } from '@/queries/admin.ts';
 import { SiteBadge } from '@/shared/ui/SiteNote.tsx';
 import { Badge, Card, Eyebrow, Note } from '@/shared/ui/primitives.tsx';
+import { downloadExcelCsv, toExcelCsv } from '@/lib/csv.ts';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -10,6 +11,19 @@ import { useState } from 'react';
 const LIMIT = 200;
 
 type ClassFilter = 'any' | 'none' | 'some';
+
+/**
+ * What a job with no class needs before authors can use it, or null when it has one. A superseded
+ * job needs nothing: its JDs go to its successor.
+ */
+export const needsOf = (j: JobRow): string | null =>
+  j.class || j.supersededBy
+    ? null
+    : j.standard && !j.standard.blank
+      ? 'Ready to bootstrap'
+      : j.standard
+        ? 'JDs, or the full standard (its standard is blank)'
+        : 'JDs, or a standard';
 type StandardFilter = 'any' | 'blank' | 'hand' | 'none' | 'some';
 
 /**
@@ -25,7 +39,7 @@ export const JobsDirectory = () => {
   const jobs = useJobs(scope);
 
   const shown = (jobs.data?.jobs ?? [])
-    .filter((j) => (classFilter === 'some' ? j.class : classFilter === 'none' ? !j.class : true))
+    .filter((j) => (classFilter === 'some' ? j.class : classFilter === 'none' ? needsOf(j) : true))
     .filter((j) =>
       standardFilter === 'some'
         ? j.standard
@@ -70,7 +84,7 @@ export const JobsDirectory = () => {
           >
             <option value="any">With or without a class</option>
             <option value="some">Has a class</option>
-            <option value="none">No class</option>
+            <option value="none">No class — waiting</option>
           </select>
           <select
             aria-label="Standard"
@@ -84,6 +98,17 @@ export const JobsDirectory = () => {
             <option value="blank">Standard is blank</option>
             <option value="none">No standard</option>
           </select>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              setScope('active');
+              setClassFilter('none');
+              setStandardFilter('any');
+            }}
+            type="button"
+          >
+            Waiting for a class
+          </button>
           <input
             aria-label="Search jobs"
             className="input input-sm input-bordered min-w-48 flex-1"
@@ -92,6 +117,13 @@ export const JobsDirectory = () => {
             value={query}
           />
         </div>
+        {jobs.data && classFilter === 'none' && shown.length > 0 ? (
+          <p className="mt-2 text-base text-base-content/65" data-testid="jobs-needs">
+            Needed: {shown.filter((j) => needsOf(j) === 'Ready to bootstrap').length} ready to bootstrap ·{' '}
+            {shown.filter((j) => j.standard?.blank).length} JDs or the full standard (blank standard) ·{' '}
+            {shown.filter((j) => !j.standard).length} JDs or a standard
+          </p>
+        ) : null}
         {jobs.data ? (
           <p className="mt-3 text-base" data-testid="jobs-summary">
             {shown.length} job{shown.length === 1 ? '' : 's'} · {shown.filter((j) => j.class).length} with a class ·{' '}
@@ -107,6 +139,11 @@ export const JobsDirectory = () => {
           <div className="mt-3">
             <Note tone="red">{messageOf(jobs.error)}</Note>
           </div>
+        ) : null}
+        {shown.length > 0 ? (
+          <button className="btn btn-outline btn-sm mt-3" onClick={() => downloadJobs(shown)} type="button">
+            ⤓ Download these {shown.length} as CSV
+          </button>
         ) : null}
       </Card>
 
@@ -143,6 +180,11 @@ export const JobsDirectory = () => {
                         </span>
                         {j.class.fromBlankStandard ? <Badge tone="yellow">built from a blank standard</Badge> : null}
                       </>
+                    ) : needsOf(j) ? (
+                      <>
+                        <span className="block text-base-content/50">—</span>
+                        <span className="text-sm text-base-content/65">Needs: {needsOf(j)}</span>
+                      </>
                     ) : (
                       <span className="text-base-content/50">—</span>
                     )}
@@ -153,6 +195,7 @@ export const JobsDirectory = () => {
                         <span className="block truncate">{j.standard.title}</span>
                         {j.standard.how === 'hand' ? <Badge tone="teal">linked by hand</Badge> : null}{' '}
                         {j.standard.blank ? <Badge tone="yellow">blank — no responsibilities</Badge> : null}
+                        {j.standard.fromSuccessor ? <Badge tone="muted">successor&apos;s</Badge> : null}
                       </>
                     ) : (
                       <span className="text-base-content/50">—</span>
@@ -176,6 +219,40 @@ export const JobsDirectory = () => {
     </>
   );
 };
+
+/** The jobs shown, as a spreadsheet to work from: what each is attached to, and what it needs. */
+const downloadJobs = (rows: JobRow[]) =>
+  downloadExcelCsv(
+    toExcelCsv(
+      rows.map((j) => ({
+        active: j.active ? 'yes' : 'no',
+        class: j.class?.title ?? '',
+        code: j.code,
+        family: j.family ?? '',
+        grade: j.grade ?? '',
+        jds: j.class?.corpusSize ?? '',
+        needs: needsOf(j) ?? '',
+        site: j.site ?? '',
+        standard: j.standard ? `${j.standard.title}${j.standard.blank ? ' (blank)' : ''}` : '',
+        supersededBy: j.supersededBy ?? '',
+        title: j.title,
+      })),
+      [
+        { header: 'Job code', key: 'code' },
+        { header: 'Title', key: 'title' },
+        { header: 'Active at UC Davis', key: 'active' },
+        { header: 'Family', key: 'family' },
+        { header: 'Grade', key: 'grade' },
+        { header: 'Site', key: 'site' },
+        { header: 'Class', key: 'class' },
+        { header: 'JDs', key: 'jds' },
+        { header: 'Standard', key: 'standard' },
+        { header: 'Needs', key: 'needs' },
+        { header: 'Superseded by', key: 'supersededBy' },
+      ]
+    ),
+    'jdwriter-jobs.csv'
+  );
 
 const emptyDraft = (title: string): StandardDraft => ({
   education: [],
@@ -260,7 +337,11 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
               <div className="mt-1 text-base">
                 <div className="font-semibold">{job.standard.title}</div>
                 <div className="text-base-content/65">
-                  {job.standard.how === 'hand' ? 'Linked by hand' : 'Its title matches the job'}
+                  {job.standard.fromSuccessor
+                    ? `Its successor's (${job.supersededBy}) — where its JDs now go`
+                    : job.standard.how === 'hand'
+                      ? 'Linked by hand'
+                      : 'Its title matches the job'}
                 </div>
                 {job.standard.blank ? (
                   <p className="mt-1 text-warning" data-testid="blank-standard">

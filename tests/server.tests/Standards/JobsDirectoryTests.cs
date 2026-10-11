@@ -71,12 +71,15 @@ public class JobsDirectoryTests
         var (db, jobs, _) = Harness(Tc("007709", "FINANCIAL ANL 3"), Tc("005183", "FINANCIAL ANL 3 CX"));
         using var _db = db;
         db.ClassProfiles.Add(new ClassProfile { Slug = "005183-financial-analyst-3-cx", UcJobCode = "005183", Title = "Financial Analyst 3 CX" });
+        db.JobStandards.Add(StandardsStore.ToEntity(new ClassStandardRecord { LongTitle = "Financial Analyst 3 CX", KeyResponsibilities = ["Analyzes."] }));
         await db.SaveChangesAsync();
 
         var old = (await jobs.ListAsync("all")).Single(j => j.Code == "007709");
 
         old.SupersededBy.Should().Be("005183");
         old.Class!.Slug.Should().Be("005183-financial-analyst-3-cx");
+        old.Standard!.Title.Should().Be("Financial Analyst 3 CX", "tied to its successor's standard, as to its class");
+        old.Standard.FromSuccessor.Should().BeTrue();
     }
 
     [Fact]

@@ -623,7 +623,13 @@ export type JobRow = {
   site: string | null;
   /** "title": its title matches the job's; "hand": an admin matched or entered it. */
   /** `blank`: matched, but no responsibilities — it can't be bootstrapped. */
-  standard: { blank?: boolean; how: 'hand' | 'title'; title: string } | null;
+  standard: {
+    blank?: boolean;
+    /** A superseded job, tied to its successor's standard. */
+    fromSuccessor?: boolean;
+    how: 'hand' | 'title';
+    title: string;
+  } | null;
   /** The code a union successor replaced this one with. */
   supersededBy: string | null;
   title: string;
