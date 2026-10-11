@@ -434,6 +434,37 @@ public class AdminController : ApiControllerBase
     public async Task<IActionResult> Jobs([FromQuery] string scope = "active", CancellationToken ct = default) =>
         Ok(new { scope, jobs = await _jobs.ListAsync(scope, ct) });
 
+    /// <summary>
+    /// Standards whose title matches no job code exactly, each with up to three codes it might be,
+    /// and the matches already confirmed by hand. Codes not active at UC Davis only on request.
+    /// </summary>
+    [HttpGet("standards/matches")]
+    public async Task<IActionResult> StandardMatches([FromQuery] bool includeNotActive = false, CancellationToken ct = default) =>
+        Ok(await _matching.ReviewAsync(includeNotActive, ct));
+
+    /// <summary>Confirm or reject one standard–code pairing.</summary>
+    [HttpPost("standards/matches")]
+    public async Task<IActionResult> DecideStandardMatch(StandardMatchRequest body, CancellationToken ct)
+    {
+        try
+        {
+            await _matching.DecideAsync(body.StandardTitle, body.UcJobCode, body.Match, await User.IdAsync(_db, ct), ct);
+            return Ok(new { ok = true });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Undo a confirmed match; the standard returns to the review.</summary>
+    [HttpPost("standards/matches/undo")]
+    public async Task<IActionResult> UndoStandardMatch(StandardUnmatchRequest body, CancellationToken ct)
+    {
+        await _matching.UnmatchAsync(body.StandardTitle, ct);
+        return Ok(new { ok = true });
+    }
+
     /// <summary>Starter classes built from blank standards, with any saved JDs against them. Read-only.</summary>
     [HttpGet("standards/blank-classes")]
     public async Task<IActionResult> BlankStandardClassesPreview(CancellationToken ct) =>

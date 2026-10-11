@@ -137,7 +137,7 @@ public sealed class StandardMatching
                     UcJobCode = c.Code.Code,
                     Title = c.Code.Title,
                     Active = c.Code.IsInUse,
-                    Score = Math.Round(Similarity(key, c.Key), 2),
+                    Score = Math.Round(Similarity(key, c.Key, s.LongTitle), 2),
                 })
                 .Where(c => c.Score >= MinScore)
                 .OrderByDescending(c => c.Score)
@@ -229,13 +229,21 @@ public sealed class StandardMatching
         return words.Contains("ex") || words.Contains("exempt") ? "ex" : null;
     }
 
-    /// <summary>Half shared words (Jaccard), half spelling (character-bigram Dice), on expanded keys.</summary>
-    internal static double Similarity(string a, string b)
+    /// <summary>
+    /// Half shared words, half spelling (character-bigram Dice), on expanded keys. Words are compared
+    /// the way payroll abbreviates: a code's word matches a standard's when they are equal, when one
+    /// begins the other ("ambul" / "ambulatory"), or when it keeps the other's letters in order
+    /// ("admstn" / "administration"). The standard's own spelling is tried as well as its normalized
+    /// key, because the normalizer rewrites words ("administration" becomes "administrator").
+    /// This only ranks suggestions; nothing is matched without an admin.
+    /// </summary>
+    internal static double Similarity(string standardKey, string codeKey, string? standardTitle = null)
     {
-        static HashSet<string> Words(string k) =>
+        static List<string> Words(string k) =>
             k.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                 .Where(w => !w.All(char.IsDigit) && !Units.Contains(w) && !SiteMarkers.Contains(w) && !FlsaWords.Contains(w))
-                .ToHashSet(StringComparer.Ordinal);
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
 
         static List<string> Bigrams(string k)
         {
@@ -243,12 +251,29 @@ public sealed class StandardMatching
             return Enumerable.Range(0, Math.Max(0, s.Length - 1)).Select(i => s.Substring(i, 2)).ToList();
         }
 
-        var wa = Words(a);
-        var wb = Words(b);
-        var jaccard = wa.Count + wb.Count == 0 ? 0 : (double)wa.Intersect(wb).Count() / wa.Union(wb).Count();
+        var standardWords = Words(standardKey);
+        var forms = standardWords
+            .Concat(Words(new string((standardTitle ?? "").ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : ' ').ToArray())))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        var codeWords = Words(codeKey);
 
-        var ba = Bigrams(a);
-        var bb = Bigrams(b);
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        var matched = 0;
+        foreach (var w in codeWords)
+        {
+            var hit = forms.FirstOrDefault(f => !used.Contains(f) && Corresponds(w, f));
+            if (hit is not null)
+            {
+                used.Add(hit);
+                matched++;
+            }
+        }
+
+        var words = standardWords.Count + codeWords.Count == 0 ? 0 : 2.0 * matched / (standardWords.Count + codeWords.Count);
+
+        var ba = Bigrams(standardKey);
+        var bb = Bigrams(codeKey);
         var pool = bb.GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count());
         var shared = 0;
         foreach (var g in ba)
@@ -261,6 +286,37 @@ public sealed class StandardMatching
         }
 
         var dice = ba.Count + bb.Count == 0 ? 0 : 2.0 * shared / (ba.Count + bb.Count);
-        return (jaccard + dice) / 2;
+        return Math.Min(1, (words + dice) / 2);
+    }
+
+    /// <summary>Equal, one begins the other, or the shorter keeps the longer's letters in order (same first letter).</summary>
+    internal static bool Corresponds(string a, string b)
+    {
+        if (a == b)
+        {
+            return true;
+        }
+
+        var (shorter, longer) = a.Length <= b.Length ? (a, b) : (b, a);
+        if (shorter.Length < 3 || shorter[0] != longer[0])
+        {
+            return false;
+        }
+
+        if (longer.StartsWith(shorter, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        var i = 0;
+        foreach (var c in longer)
+        {
+            if (i < shorter.Length && shorter[i] == c)
+            {
+                i++;
+            }
+        }
+
+        return i == shorter.Length;
     }
 }

@@ -187,4 +187,32 @@ public class StandardMatchingTests
     [InlineData("patient support call center manager 1", "x", "1|||manager")]
     public void The_shape_is_level_union_and_site(string key, string _, string shape) =>
         StandardMatching.Shape(key).Should().Be(shape);
+
+    [Fact]
+    public async Task Payroll_abbreviations_are_suggested_but_never_matched_without_a_person()
+    {
+        // "AMBUL CARE ADMSTN CRD 3": ambul(atory), adm(ini)st(ratio)n — beyond the normalizer's list.
+        var (db, matching, store, titles) = Harness(
+            ["Ambulatory Care Administration Coordinator 3 CX"],
+            Tc("004478", "AMBUL CARE ADMSTN CRD 3 CX"));
+        using var _db = db;
+
+        var suggestion = (await matching.ReviewAsync(false)).Unmatched.Single().Suggestions.Single();
+
+        suggestion.UcJobCode.Should().Be("004478");
+        suggestion.Score.Should().BeGreaterThan(0.75);
+        StandardCodes.For((await store.GetIndexAsync()).All.Single(), await titles.GetAsync())
+            .Should().BeNull("a suggestion is only a suggestion");
+    }
+
+    [Theory]
+    [InlineData("ambul", "ambulatory", true)]
+    [InlineData("admstn", "administration", true)]
+    [InlineData("crd", "coordinator", true)]
+    [InlineData("care", "care", true)]
+    [InlineData("adm", "manager", false)]
+    [InlineData("sr", "senior", false)]
+    [InlineData("tech", "chemistry", false)]
+    public void A_payroll_abbreviation_corresponds_to_its_word(string a, string b, bool corresponds) =>
+        StandardMatching.Corresponds(a, b).Should().Be(corresponds);
 }
