@@ -30,6 +30,8 @@ public class SitesTests
         Tc("006569", "CLIN LAB SUPV 2"),
         Tc("009367", "CLIN LAB SHS SUPV 2"),
         Tc("005680", "HC ADM SHS MGR 1"),
+        Tc("009536", "ANML HEALTH TCHN 2"),
+        Tc("004751", "ANML HEALTH TCHN 2 VMTH"),
     ]);
 
     private static readonly Dictionary<string, ClassRef> None = new();
@@ -39,6 +41,7 @@ public class SitesTests
     [InlineData("Social Work HC Supervisor 2", Sites.HealthCenter)]
     [InlineData("Clin Lab SHS Supv 2", Sites.StudentHealth)]
     [InlineData("HC ADM SHS MGR 1", Sites.StudentHealth)]
+    [InlineData("Animal Health Technician 2 VMTH", Sites.VetMedHospital)]
     [InlineData("Accounting Manager 2", null)]
     public void A_site_marker_names_the_site(string title, string? site) =>
         Sites.SiteOf(title).Should().Be(site);
@@ -78,6 +81,17 @@ public class SitesTests
         shs.Title.Should().Be("Clin Lab SHS Supv 2");
 
         Sites.TwinsOf("Clin Lab SHS Supv 2", "009367", Index, None).Single().UcJobCode.Should().Be("006569");
+    }
+
+    [Fact]
+    public void Veterinary_hospital_classes_pair_the_same_way()
+    {
+        var known = Sites.ClassesByCode([("004751", "004751-animal-health-technician-2-vmth", "Animal Health Technician 2 VMTH")]);
+        var vmth = Sites.TwinsOf("Animal Health Technician 2", "009536", Index, known).Should().ContainSingle().Subject;
+        vmth.Site.Should().Be(Sites.VetMedHospital);
+        vmth.Title.Should().Be("Animal Health Technician 2 VMTH");
+
+        Sites.TwinsOf("Anml Health Tchn 2 VMTH", "004751", Index, None).Single().Title.Should().Be("Anml Health Tchn 2");
     }
 
     [Fact]
