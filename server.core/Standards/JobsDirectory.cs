@@ -30,6 +30,9 @@ public sealed class JobStandardLink
 
     /// <summary>Matched, but with no key responsibilities: it can't be bootstrapped until the full standard is added.</summary>
     public bool Blank { get; set; }
+
+    /// <summary>The job is superseded, and this is its successor's standard — where its JDs now go.</summary>
+    public bool FromSuccessor { get; set; }
 }
 
 /// <summary>One UC job code, and what JDWriter has attached to it.</summary>
@@ -113,7 +116,14 @@ public sealed class JobsDirectory
                 var successor = index.SupersededBy(t.Code)?.ToCode;
                 var cls = classes.GetValueOrDefault(code)
                           ?? (successor is null ? null : classes.GetValueOrDefault(TitleCodeIndex.Pad(successor)));
+                // A superseded job is tied to its successor's standard, as it is to its successor's class.
                 var standard = standardByCode.GetValueOrDefault(code);
+                if (standard is null && successor is not null
+                    && standardByCode.GetValueOrDefault(TitleCodeIndex.Pad(successor)) is { } next)
+                {
+                    standard = new JobStandardLink { Title = next.Title, How = next.How, Blank = next.Blank, FromSuccessor = true };
+                }
+
                 return new JobRow
                 {
                     Code = t.Code,

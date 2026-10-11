@@ -98,6 +98,40 @@ describe('the jobs directory', () => {
     });
   });
 
+  it('shows what each job without a class needs, and gathers them with "Waiting for a class"', async () => {
+    const user = userEvent.setup();
+    renderRoute({ initialPath: '/backend/jobs' });
+
+    await screen.findByTestId('jobs-list');
+    expect(screen.getByText('Acad Achievement Cnslr 3').closest('button')).toHaveTextContent('Needs: Ready to bootstrap');
+    expect(screen.getByText('Social Work HC Supv 2').closest('button')).toHaveTextContent('Needs: JDs, or a standard');
+
+    await user.click(screen.getByRole('button', { name: 'Waiting for a class' }));
+
+    expect(screen.getByLabelText('Class')).toHaveValue('none');
+    expect(screen.getByTestId('jobs-needs')).toHaveTextContent('1 ready to bootstrap');
+    expect(within(screen.getByTestId('jobs-list')).queryByText('Lab Ast 1')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Download these 2 as CSV/ })).toBeInTheDocument();
+  });
+
+  it('ties a superseded job to its successor\'s standard', async () => {
+    testServer.use(
+      http.get('/api/admin/jobs', () =>
+        HttpResponse.json({
+          jobs: [
+            { active: true, class: { corpusSize: 30, envelopeSource: 'claude', slug: '005183-fa-3-cx', title: 'Financial Analyst 3 CX' }, code: '007709', family: null, grade: null, site: null, standard: { fromSuccessor: true, how: 'title', title: 'Financial Analyst 3 CX' }, supersededBy: '005183', title: 'Financial Anl 3' },
+          ],
+          scope: 'active',
+        })
+      )
+    );
+    renderRoute({ initialPath: '/backend/jobs' });
+
+    const row = (await screen.findByText('Financial Anl 3')).closest('button') as HTMLElement;
+    expect(row).toHaveTextContent("successor's");
+    expect(row).not.toHaveTextContent('Needs:');
+  });
+
   it('is in the back-end navigation', async () => {
     renderRoute({ initialPath: '/backend/corpus' });
 

@@ -15,7 +15,6 @@ export const Route = createFileRoute('/(authenticated)/')({
 function Home() {
   const { data } = useClassList();
   const classes = data?.classes ?? [];
-  const ready = classes.filter((c) => c.ready);
 
   return (
     <>
@@ -40,8 +39,7 @@ function Home() {
         <Card className="p-5">
           <Eyebrow>Browse job classes</Eyebrow>
           <p className="mb-3 mt-1 text-base text-base-content/65">
-            {ready.length} class{ready.length === 1 ? '' : 'es'} ingested and ready ·{' '}
-            {classes.length - ready.length} known titles awaiting ingestion.
+            Select the job class below to start.
           </p>
           <ClassPicker classes={classes} />
         </Card>

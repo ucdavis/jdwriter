@@ -22,6 +22,7 @@ export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
   }, [query, classes]);
 
   const shown = filtered.slice(0, CAP);
+  const available = classes.filter((c) => c.ready).length;
   const hidden = filtered.length - shown.length;
 
   return (
@@ -67,7 +68,7 @@ export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
             {c.ready ? (
               <Badge tone="green">{c.corpusSize} JDs · ready</Badge>
             ) : (
-              <Badge tone="muted">not yet ingested</Badge>
+              <Badge tone="muted">not available yet</Badge>
             )}
           </button>
         ))}
@@ -83,6 +84,9 @@ export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
           </div>
         ) : null}
       </div>
+      <p className="mt-2 text-sm text-base-content/65 tnum" data-testid="classes-available">
+        {available.toLocaleString()} class{available === 1 ? '' : 'es'} available
+      </p>
     </div>
   );
 };
