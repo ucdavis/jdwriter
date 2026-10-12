@@ -787,22 +787,28 @@ export type QualificationRulesSummary = {
   movedToPreferred: number;
 };
 
-export type EnvelopeImportRefusal =
-  | 'blankStandard'
-  | 'codeMismatch'
-  | 'exists'
-  | 'invalid'
-  | 'noStandard'
-  | 'notOnPayroll'
-  | 'superseded';
+/** What importing an environment package does with one kind of record. */
+export type PackageSection = {
+  added: number;
+  keptHere: number;
+  keptHereItems: string[];
+  name: string;
+  onlyHere: number;
+  onlyHereItems: string[];
+  same: number;
+  skipped: number;
+  skippedItems: string[];
+  updated: number;
+  updatedItems: string[];
+};
 
-export type EnvelopeImportResult = {
-  created: Array<{ slug: string; title: string; ucJobCode: string }>;
-  /** Match decisions this environment didn't have. */
-  matchesAdded?: number;
-  skipped: Array<{ message: string; reason: EnvelopeImportRefusal; title: string }>;
-  /** Standards this environment didn't have, added before the envelopes. */
-  standardsAdded?: number;
+/** What an import would do (a preview), or did. */
+export type PackagePlan = {
+  applied: boolean;
+  counts: Record<string, number>;
+  exportedAt: string;
+  scrubbed: boolean;
+  sections: PackageSection[];
 };
 
 export type RetirementResult = {

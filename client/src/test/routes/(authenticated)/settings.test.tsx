@@ -27,6 +27,22 @@ const author = () =>
     })
   );
 
+const section = (over: object) => ({
+  added: 0, keptHere: 0, keptHereItems: [], name: '', onlyHere: 0, onlyHereItems: [], same: 0,
+  skipped: 0, skippedItems: [], updated: 0, updatedItems: [], ...over,
+});
+
+const plan = (applied: boolean) => ({
+  applied,
+  counts: {},
+  exportedAt: '2026-10-12T20:00:00Z',
+  scrubbed: false,
+  sections: [
+    section({ added: 3, name: 'Classes', onlyHere: 1, onlyHereItems: ['Farm Laborer (004724)'], updated: 2, updatedItems: ['Lab Ast 1 (009605)', 'Lab Ast 2 (009606)'] }),
+    section({ name: 'Job descriptions', same: 10 }),
+  ],
+});
+
 describe('settings: admin whitelist', () => {
   setupRouteTest();
 
@@ -87,6 +103,38 @@ describe('settings: admin whitelist', () => {
     await user.click(screen.getByRole('button', { name: 'Add admin' }));
 
     await screen.findByText(/is not a UC Davis login ID/);
+  });
+
+  it('previews a package import, then imports exactly that file on confirmation', async () => {
+    const user = userEvent.setup();
+    const sent: string[] = [];
+    testServer.use(
+      // Parts are counted, not parsed: Node's multipart reader rejects jsdom's File (see upload tests).
+      http.post('/api/admin/package/preview', async ({ request }) => {
+        sent.push(`preview:${((await request.text()).match(/name="file"/g) ?? []).length}`);
+        return HttpResponse.json(plan(false));
+      }),
+      http.post('/api/admin/package/apply', async ({ request }) => {
+        sent.push(`apply:${((await request.text()).match(/name="file"/g) ?? []).length}`);
+        return HttpResponse.json(plan(true));
+      })
+    );
+    renderRoute({ initialPath: '/backend/settings' });
+
+    await user.upload(
+      await screen.findByLabelText('Choose a package to import'),
+      new File(['x'], 'pkg.jdwpkg.json.gz', { type: 'application/gzip' })
+    );
+
+    const planEl = await screen.findByTestId('package-plan');
+    expect(planEl).toHaveTextContent('Nothing has changed yet');
+    expect(within(planEl).getByText(/Classes: 2 updated from the file · 1 only here \(not removed\)/)).toBeInTheDocument();
+
+    await user.click(within(planEl).getByRole('button', { name: 'Import 5 changes' }));
+
+    await waitFor(() => expect(within(screen.getByTestId('package-plan')).getByText(/Done\./)).toBeInTheDocument());
+    // The same file, sent again to import: the server holds nothing between preview and import.
+    expect(sent).toEqual(['preview:1', 'apply:1']);
   });
 
   it('offers the one environment package export', async () => {

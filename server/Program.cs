@@ -141,6 +141,7 @@ try
     builder.Services.AddScoped<StandardsDirectory>();
     builder.Services.AddScoped<CodeActivity>();
     builder.Services.AddScoped<Server.Core.Package.EnvironmentPackages>();
+    builder.Services.AddScoped<Server.Core.Package.PackageImporter>();
     builder.Services.AddScoped<CorpusDirectory>();
     builder.Services.AddScoped<ManualStandards>();
     builder.Services.AddScoped<BlankStandardClasses>();
@@ -159,7 +160,6 @@ try
     builder.Services.AddScoped<IStandardEnvelopeBuilder, SynthesizedEnvelopeBuilder>();
     builder.Services.AddScoped<IBootstrapper, Bootstrapper>();
     builder.Services.AddScoped<ISupersessionReconciler, SupersessionReconciler>();
-    builder.Services.AddScoped<EnvelopeTransfer>();
     // add auth policies here
 
     // add db context (check secrets first, then config, then default)

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AnalyticsReport,
   ClassStandard,
+  PackagePlan,
   CodeActivityResult,
   CorpusJdDetail,
   CorpusJdRow,
@@ -23,7 +24,6 @@ import type {
   JobsScope,
   StandardDraft,
   StandardMatchReview,
-  EnvelopeImportResult,
   RetirementResult,
   StandardsIngestResponse,
 } from '../lib/contracts.ts';
@@ -287,32 +287,6 @@ export const useUploadStandards = () => {
   });
 };
 
-/**
- * Load an envelope export from another environment. The file is sent as it was downloaded;
- * the server rebuilds each class from its own standard and never overwrites an existing one.
- */
-export const useImportEnvelopes = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (file: File) => {
-      // Read first, parse second: only a parse failure means "not JSON".
-      const text = await file.text();
-      let bundle: unknown;
-      try {
-        bundle = JSON.parse(text);
-      } catch {
-        throw new Error(`${file.name} is not an envelope export (it is not JSON).`);
-      }
-      return fetchJson<EnvelopeImportResult>('/api/admin/envelopes/import', {
-        body: JSON.stringify(bundle),
-        method: 'POST',
-      });
-    },
-    // New classes appear in the class list.
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['classes'] }),
-  });
-};
-
 export const analyticsQueryOptions = () => ({
   queryFn: () => fetchJson<AnalyticsReport>('/api/admin/analytics'),
   queryKey: ['admin', 'analytics'] as const,
@@ -419,4 +393,24 @@ export const useStandardByTitle = (title: string | null) =>
       fetchJson<ClassStandard>(`/api/standards/by-title?title=${encodeURIComponent(title ?? '')}`),
     queryKey: ['admin', 'standards', 'by-title', title] as const,
   });
+
+const sendPackage = (path: string, file: File) => {
+  const body = new FormData();
+  body.append('file', file, file.name);
+  return fetchJson<PackagePlan>(path, { body, method: 'POST' });
+};
+
+/** What importing an environment package would do here. Writes nothing. */
+export const usePackagePreview = () =>
+  useMutation({ mutationFn: (file: File) => sendPackage('/api/admin/package/preview', file) });
+
+/** Import an environment package, as previewed. The file is sent again: the server holds nothing between. */
+export const usePackageApply = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => sendPackage('/api/admin/package/apply', file),
+    // Everything an admin sees may have changed.
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+};
 

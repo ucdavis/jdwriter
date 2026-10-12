@@ -6,6 +6,8 @@ import {
   apiKeyQueryOptions,
   useAdmins,
   useApiKeyStatus,
+  usePackageApply,
+  usePackagePreview,
   useClearApiKey,
   useGrantAdmin,
   useRevokeAdmin,
@@ -17,7 +19,7 @@ import { appUrl } from '@/lib/basePath.ts';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import type { RouterContext } from '@/main.tsx';
-import type { LlmProvider } from '@/lib/contracts.ts';
+import type { LlmProvider, PackageSection } from '@/lib/contracts.ts';
 
 export const Route = createFileRoute('/(authenticated)/backend/settings')({
   component: SettingsPage,
@@ -49,9 +51,16 @@ function SettingsPage() {
 
 /**
  * Everything this environment has built, in one file, to carry to another — from a laptop to the
- * server, and back. The one place to move work between environments.
+ * server, and back. The one place to move work between environments: export here, import there,
+ * with a preview of exactly what will change before anything does.
  */
 function PackagePanel() {
+  const preview = usePackagePreview();
+  const apply = usePackageApply();
+  const [file, setFile] = useState<File | null>(null);
+  const plan = apply.data ?? preview.data;
+  const changes = plan ? plan.sections.reduce((n, s) => n + s.added + s.updated, 0) : 0;
+
   return (
     <Card className="mt-5 p-5">
       <Eyebrow>Environment package</Eyebrow>
@@ -61,14 +70,145 @@ function PackagePanel() {
         read from, and the envelope rules. Accounts, admins, the API key and authors&apos; saved JDs
         stay behind. It holds real job descriptions, so keep the file somewhere protected.
       </p>
-      <div className="mt-3">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <a className="btn btn-primary btn-sm" download href={appUrl('/api/admin/package/export')}>
           Export package
         </a>
+        <label className="btn btn-outline btn-sm">
+          Import a package…
+          <input
+            accept=".gz,application/gzip"
+            aria-label="Choose a package to import"
+            className="hidden"
+            disabled={preview.isPending || apply.isPending}
+            onChange={(e) => {
+              const chosen = e.target.files?.[0] ?? null;
+              e.target.value = '';
+              if (chosen) {
+                setFile(chosen);
+                apply.reset();
+                preview.mutate(chosen);
+              }
+            }}
+            type="file"
+          />
+        </label>
+        {preview.isPending ? <span className="text-base text-base-content/65">Comparing with what&apos;s here…</span> : null}
       </div>
+
+      {preview.error || apply.error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(apply.error ?? preview.error)}</Note>
+        </div>
+      ) : null}
+
+      {plan && file ? (
+        <div className="mt-4" data-testid="package-plan">
+          <p className="text-base">
+            {plan.applied ? 'Imported' : 'Importing'} <strong>{file.name}</strong>, exported{' '}
+            {new Date(plan.exportedAt).toLocaleString()}.{' '}
+            {plan.applied
+              ? 'Done.'
+              : changes === 0
+                ? 'Everything in it is already here: there is nothing to import.'
+                : 'Nothing has changed yet. Where both have a record, the more recently changed one is kept; nothing here is removed.'}
+          </p>
+          <div className="mt-2 overflow-x-auto">
+            <table className="table table-sm">
+              <thead>
+                <tr>
+                  <th>Records</th>
+                  <th className="text-right">Added</th>
+                  <th className="text-right">Updated (newer in file)</th>
+                  <th className="text-right">Unchanged</th>
+                  <th className="text-right">Kept here (newer here)</th>
+                  <th className="text-right">Skipped</th>
+                  <th className="text-right">Only here</th>
+                </tr>
+              </thead>
+              <tbody className="tnum">
+                {plan.sections.map((s) => (
+                  <tr key={s.name}>
+                    <td>{s.name}</td>
+                    <td className="text-right">{s.added}</td>
+                    <td className="text-right">{s.updated}</td>
+                    <td className="text-right">{s.same}</td>
+                    <td className="text-right">{s.keptHere}</td>
+                    <td className="text-right">{s.skipped}</td>
+                    <td className="text-right">{s.onlyHere}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {plan.sections.map((s) => (
+            <SectionDetails key={s.name} section={s} />
+          ))}
+          {!plan.applied && changes > 0 ? (
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                className="btn btn-primary btn-sm"
+                disabled={apply.isPending}
+                onClick={() => apply.mutate(file)}
+                type="button"
+              >
+                {apply.isPending ? 'Importing…' : `Import ${changes} change${changes === 1 ? '' : 's'}`}
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                disabled={apply.isPending}
+                onClick={() => {
+                  setFile(null);
+                  preview.reset();
+                }}
+                type="button"
+              >
+                Cancel
+              </button>
+              {apply.isPending ? (
+                <span className="text-base text-base-content/65">A whole environment can take a minute.</span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </Card>
   );
 }
+
+/** The records an import updates, keeps, skips or leaves here, by name — the counts alone don't say which. */
+const SectionDetails = ({ section }: { section: PackageSection }) => {
+  const lists = [
+    { items: section.updatedItems, label: 'updated from the file', n: section.updated },
+    { items: section.keptHereItems, label: 'kept here (changed more recently here)', n: section.keptHere },
+    { items: section.skippedItems, label: 'skipped', n: section.skipped },
+    { items: section.onlyHereItems, label: 'only here (not removed)', n: section.onlyHere },
+  ].filter((l) => l.n > 0);
+  if (lists.length === 0) {
+    return null;
+  }
+
+  return (
+    <details className="mt-2">
+      <summary className="cursor-pointer text-base">
+        {section.name}: {lists.map((l) => `${l.n} ${l.label}`).join(' · ')}
+      </summary>
+      {lists.map((l) => (
+        <div className="mt-1 pl-4" key={l.label}>
+          <div className="text-sm font-semibold text-base-content/65">
+            {l.label}
+            {l.items.length < l.n ? ` (first ${l.items.length} of ${l.n})` : ''}
+          </div>
+          <ul className="max-h-48 list-disc overflow-y-auto pl-5 text-sm">
+            {l.items.map((i) => (
+              <li key={i}>{i}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </details>
+  );
+};
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : null);
 
