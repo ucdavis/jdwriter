@@ -19,6 +19,9 @@ public sealed class UploadOutcome
     public string? UcJobCode { get; set; }
     public string? Title { get; set; }
     public string? Error { get; set; }
+
+    /// <summary>For a document: "parsed" (read straight from its layout) or "ai" (an unrecognized layout, read by the model).</summary>
+    public string? ReadBy { get; set; }
 }
 
 /// <summary>A class with uploaded exports waiting to be ingested.</summary>

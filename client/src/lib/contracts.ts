@@ -500,9 +500,19 @@ export type IngestScanResponse = { configured: boolean; pending: PendingClass[] 
 export type UploadOutcome = {
   error: string | null;
   fileName: string;
+  /** For a document: read straight from its layout, or (an unrecognized layout) by the AI. */
+  readBy?: 'ai' | 'parsed' | null;
   result: 'added' | 'duplicate' | 'failed';
   title: string | null;
   ucJobCode: string | null;
+};
+
+/** A re-read of the imported Word documents with the layout parser. */
+export type ReparseSummary = {
+  discarded: Array<{ fileName: string; reason: string }>;
+  refiled: Array<{ fileName: string; reason: string }>;
+  reparsed: number;
+  unrecognized: number;
 };
 
 export type UploadResponse = { files: UploadOutcome[] };

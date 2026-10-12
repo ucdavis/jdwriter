@@ -4,7 +4,7 @@ import type { UploadOutcome } from '@/lib/contracts.ts';
 import { screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 const outcome = (over: Partial<UploadOutcome>): UploadOutcome => ({
   error: null,
@@ -60,9 +60,35 @@ describe('add JDs from other units', () => {
     expect(maxInFlight).toBe(1);
 
     const rows = screen.getAllByRole('listitem').filter((li) => /greenhouse|whisperer/.test(li.textContent ?? ''));
-    expect(within(rows[0]).getByText('LAB AST 1 (009605)')).toBeInTheDocument();
+    expect(within(rows[0]).getByText(/^LAB AST 1 \(009605\)/)).toBeInTheDocument();
     expect(within(rows[1]).getByText('Already added')).toBeInTheDocument();
     expect(within(rows[2]).getByText(/doesn’t match a UC job title/)).toBeInTheDocument();
+  });
+
+  it('says a document was parsed, and re-reads earlier imports on request', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    testServer.use(
+      http.post('/api/admin/uploads/documents', () =>
+        HttpResponse.json(outcome({ readBy: 'parsed', title: 'LAB AST 1', ucJobCode: '009605' }))
+      ),
+      http.post('/api/admin/uploads/documents/reparse', () =>
+        HttpResponse.json({
+          discarded: [{ fileName: 'posting.docx', reason: 'Incomplete, so not added: It lists no duties.' }],
+          refiled: [],
+          reparsed: 12,
+          unrecognized: 0,
+        })
+      )
+    );
+    renderRoute({ initialPath: '/backend/corpus' });
+
+    await user.upload(await screen.findByLabelText('Add job description documents'), new File(['a'], 'jd.docx'));
+    expect(await screen.findByText('LAB AST 1 (009605) · parsed')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Re-read imported documents' }));
+    expect(await screen.findByTestId('reparse-summary')).toHaveTextContent('Re-read 12 · discarded 1 incomplete');
+    vi.restoreAllMocks();
   });
 
   it('shows imported JDs in the rebuild queue', async () => {

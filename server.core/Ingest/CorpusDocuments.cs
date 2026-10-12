@@ -30,6 +30,28 @@ namespace Server.Core.Ingest;
 ///
 /// Filed JDs count at the class's next rebuild, where the admin queue lists them.
 /// </summary>
+/// <summary>One document's result in a re-read: why it was discarded, or where it moved.</summary>
+public sealed class ReparsedDocument
+{
+    public string FileName { get; set; } = "";
+    public string Reason { get; set; } = "";
+}
+
+public sealed class ReparseSummary
+{
+    /// <summary>Re-read from their layout into verbatim records.</summary>
+    public int Reparsed { get; set; }
+
+    /// <summary>Incomplete — no responsibilities, or no duties — and removed from the corpus.</summary>
+    public List<ReparsedDocument> Discarded { get; set; } = [];
+
+    /// <summary>Filed under a different class than before: the code the document states.</summary>
+    public List<ReparsedDocument> Refiled { get; set; } = [];
+
+    /// <summary>Layouts the parser doesn't recognize, left as they were.</summary>
+    public int Unrecognized { get; set; }
+}
+
 public sealed partial class CorpusDocuments
 {
     /// <summary>How far into a document its title is looked for: it is stated at the top.</summary>
@@ -108,6 +130,14 @@ public sealed partial class CorpusDocuments
         }
 
         var index = await _titleCodes.GetAsync(ct);
+
+        // A recognized layout — an HRTMS export saved as Word — is parsed straight from the
+        // document, wording and all, into the same record an in-unit export makes. No model.
+        if (kind == DocKind.Docx && WordJobDescriptions.TryParse(bytes, name) is { } parsed)
+        {
+            return await FileParsedAsync(outcome, parsed, name, bytes, sha, index, userId, ct);
+        }
+
         var stated = StatedTitle(extraction.Text, index);
         if (stated.Code is null)
         {
@@ -178,7 +208,155 @@ public sealed partial class CorpusDocuments
         outcome.Result = "added";
         outcome.UcJobCode = record.UcJobCode;
         outcome.Title = record.UcJobTitle;
+        outcome.ReadBy = "ai";
         return outcome;
+    }
+
+    /// <summary>
+    /// File a JD parsed from its Word layout, as an in-unit export is filed: under the job code it
+    /// states (an export is authoritative about its own class), remapped if superseded, and only on
+    /// UC Davis payroll. A newer export of the same position replaces the earlier import of it.
+    /// </summary>
+    private async Task<UploadOutcome> FileParsedAsync(
+        UploadOutcome outcome, HrtmsRecord parsed, string name, byte[] bytes, string sha,
+        TitleCodeIndex index, int? userId, CancellationToken ct)
+    {
+        outcome.ReadBy = "parsed";
+        var (record, problem) = Entity(parsed, index);
+        if (record is null)
+        {
+            return Failed(outcome, problem!);
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var original = new CorpusUpload
+        {
+            FileName = name,
+            Sha256 = sha,
+            Content = bytes,
+            SizeBytes = bytes.Length,
+            Source = CorpusUploadSource.Document,
+            Status = CorpusUploadStatus.Filed,
+            UcJobCode = record.UcJobCode,
+            UcJobTitle = record.UcJobTitle,
+            OriginalUcJobCode = record.OriginalUcJobCode,
+            UploadedByUserId = userId,
+            UploadedAt = now,
+        };
+        _db.CorpusUploads.Add(original);
+        await _db.SaveChangesAsync(ct); // assigns the original's id, which names the corpus record
+
+        await ReplaceSamePositionAsync(record, ct);
+        record.SourceFile = $"import/document-{original.Id}";
+        record.AddedAt = now;
+        _db.JobDescriptions.Add(record);
+        await _db.SaveChangesAsync(ct);
+
+        outcome.Result = "added";
+        outcome.UcJobCode = record.UcJobCode;
+        outcome.Title = record.UcJobTitle;
+        return outcome;
+    }
+
+    /// <summary>A parsed JD as a corpus record, or why it can't be one.</summary>
+    private static (JobDescription? Record, string? Problem) Entity(HrtmsRecord parsed, TitleCodeIndex index)
+    {
+        if (WordJobDescriptions.Incomplete(parsed) is { } incomplete)
+        {
+            return (null, $"Incomplete, so not added: {incomplete}");
+        }
+
+        if (index.FindByCode(parsed.UcJobCode) is null)
+        {
+            return (null, $"Its job code {parsed.UcJobCode} isn't in the title reference.");
+        }
+
+        var code = index.ResolveCode(parsed.UcJobCode);
+        if (index.FindByCode(code) is not { IsInUse: true })
+        {
+            return (null, $"Its job code {code} isn't on UC Davis payroll, so it can't be used here.");
+        }
+
+        var record = parsed.ToEntity(code);
+        record.Origin = CorpusOrigin.Imported;
+        return (record, null);
+    }
+
+    /// <summary>A newer export of a position replaces the earlier import of it, as in-unit re-exports do.</summary>
+    private async Task ReplaceSamePositionAsync(JobDescription record, CancellationToken ct)
+    {
+        if (!string.IsNullOrEmpty(record.UcPathPositionNumber))
+        {
+            _db.JobDescriptions.RemoveRange(await _db.JobDescriptions
+                .Where(j => j.Origin == CorpusOrigin.Imported
+                            && j.UcJobCode == record.UcJobCode
+                            && j.UcPathPositionNumber == record.UcPathPositionNumber)
+                .ToListAsync(ct));
+        }
+    }
+
+    /// <summary>
+    /// Re-read every imported Word document from its stored original with the layout parser, so JDs
+    /// imported before it existed — condensed by a model — become the same verbatim records an
+    /// in-unit export makes. An incomplete one is discarded; an unrecognized layout is left as it was.
+    /// Re-read JDs count at their class's next rebuild.
+    /// </summary>
+    public async Task<ReparseSummary> ReparseAsync(CancellationToken ct = default)
+    {
+        var index = await _titleCodes.GetAsync(ct);
+        var uploads = await _db.CorpusUploads
+            .Where(u => u.Source == CorpusUploadSource.Document && u.Status == CorpusUploadStatus.Filed)
+            .OrderBy(u => u.Id)
+            .ToListAsync(ct);
+
+        var summary = new ReparseSummary();
+        var now = DateTimeOffset.UtcNow;
+        foreach (var upload in uploads)
+        {
+            var sourceFile = $"import/document-{upload.Id}";
+            var parsed = upload.FileName.EndsWith(".docx", StringComparison.OrdinalIgnoreCase)
+                ? WordJobDescriptions.TryParse(upload.Content, upload.FileName)
+                : null;
+            if (parsed is null)
+            {
+                summary.Unrecognized++;
+                continue;
+            }
+
+            var existing = await _db.JobDescriptions.Where(j => j.SourceFile == sourceFile).ToListAsync(ct);
+            _db.JobDescriptions.RemoveRange(existing);
+
+            var (record, problem) = Entity(parsed, index);
+            if (record is null)
+            {
+                upload.Status = CorpusUploadStatus.Failed;
+                upload.Error = problem;
+                summary.Discarded.Add(new ReparsedDocument { FileName = upload.FileName, Reason = problem! });
+                await _db.SaveChangesAsync(ct);
+                continue;
+            }
+
+            if (existing.Count > 0 && existing[0].UcJobCode != record.UcJobCode)
+            {
+                summary.Refiled.Add(new ReparsedDocument
+                {
+                    FileName = upload.FileName,
+                    Reason = $"{existing[0].UcJobCode} → {record.UcJobCode} (the code it states)",
+                });
+            }
+
+            await ReplaceSamePositionAsync(record, ct);
+            record.SourceFile = sourceFile;
+            record.AddedAt = now;
+            _db.JobDescriptions.Add(record);
+            upload.UcJobCode = record.UcJobCode;
+            upload.UcJobTitle = record.UcJobTitle;
+            upload.OriginalUcJobCode = record.OriginalUcJobCode;
+            summary.Reparsed++;
+            await _db.SaveChangesAsync(ct);
+        }
+
+        return summary;
     }
 
     /// <summary>

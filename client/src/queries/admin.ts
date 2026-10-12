@@ -6,6 +6,7 @@ import type {
   SecurityStatus,
   UploadedPendingResponse,
   QualificationRulesSummary,
+  ReparseSummary,
   UploadOutcome,
   UploadResponse,
   ApiKeyStatus,
@@ -397,6 +398,15 @@ export const useRemoveBlankStandardClasses = () => {
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'jobs'] });
     },
+  });
+};
+
+/** Re-read every imported Word document with the layout parser. */
+export const useReparseDocuments = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => fetchJson<ReparseSummary>('/api/admin/uploads/documents/reparse', { method: 'POST' }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] }),
   });
 };
 
