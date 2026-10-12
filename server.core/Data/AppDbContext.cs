@@ -4,7 +4,7 @@ using Server.Core.Domain;
 
 namespace Server.Core.Data;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     // ---- reference / catalog
     public DbSet<TitleCode> TitleCodes => Set<TitleCode>();

@@ -214,7 +214,7 @@ public sealed class AuthoredJdStore
         _db.JobDescriptions.RemoveRange(previous);
         if (exclusion == null)
         {
-            _db.JobDescriptions.Add(CorpusContribution.ToCorpusRecord(assembled, authoredJdId));
+            _db.JobDescriptions.Add(CorpusContribution.ToCorpusRecord(assembled, authoredJdId, jd.CorpusKey));
         }
 
         jd.EnvelopeVerdict = verdict;

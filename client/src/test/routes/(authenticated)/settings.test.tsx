@@ -88,6 +88,15 @@ describe('settings: admin whitelist', () => {
 
     await screen.findByText(/is not a UC Davis login ID/);
   });
+
+  it('offers the one environment package export', async () => {
+    renderRoute({ initialPath: '/backend/settings' });
+
+    expect(await screen.findByRole('link', { name: 'Export package' })).toHaveAttribute(
+      'href',
+      '/api/admin/package/export'
+    );
+  });
 });
 
 describe('an author sees no back end', () => {

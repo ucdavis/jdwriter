@@ -128,9 +128,12 @@ public class CorpusContributionTests
     [Fact]
     public void The_corpus_record_is_the_finished_text_and_carries_no_position()
     {
-        var record = CorpusContribution.ToCorpusRecord(Assembled(), authoredJdId: 7);
+        var key = Guid.NewGuid();
+        var record = CorpusContribution.ToCorpusRecord(Assembled(), authoredJdId: 7, key);
 
         record.Origin.Should().Be(CorpusOrigin.Authored);
+        // Named by the draft's permanent key, not its row id, so it is the same JD in every environment.
+        record.SourceFile.Should().Be($"authored/{key:N}");
         record.AuthoredJdId.Should().Be(7);
         record.UcJobCode.Should().Be("009605");
         record.UcPathPositionNumber.Should().BeEmpty();

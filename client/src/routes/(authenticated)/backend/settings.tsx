@@ -13,6 +13,7 @@ import {
   useSetApiKey,
 } from '@/queries/admin.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
+import { appUrl } from '@/lib/basePath.ts';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import type { RouterContext } from '@/main.tsx';
@@ -35,13 +36,37 @@ function SettingsPage() {
     <AdminOnly>
       <PageHeader
         eyebrow="Back end · settings"
-        sub="Who can reach the back end, and the API key the app uses. Everyone who signs in can author and classify."
+        sub="Who can reach the back end, the API key the app uses, and moving everything between environments. Everyone who signs in can author and classify."
         title="Settings"
       />
       <AdminsPanel />
       <ApiKeyPanel />
+      <PackagePanel />
       <DataProtectionPanel />
     </AdminOnly>
+  );
+}
+
+/**
+ * Everything this environment has built, in one file, to carry to another — from a laptop to the
+ * server, and back. The one place to move work between environments.
+ */
+function PackagePanel() {
+  return (
+    <Card className="mt-5 p-5">
+      <Eyebrow>Environment package</Eyebrow>
+      <p className="mt-1 text-base text-base-content/65">
+        Everything built here, in one file: every envelope and class in full, the job codes and which
+        are active, the standards and match decisions, every job description with the original it was
+        read from, and the envelope rules. Accounts, admins, the API key and authors&apos; saved JDs
+        stay behind. It holds real job descriptions, so keep the file somewhere protected.
+      </p>
+      <div className="mt-3">
+        <a className="btn btn-primary btn-sm" download href={appUrl('/api/admin/package/export')}>
+          Export package
+        </a>
+      </div>
+    </Card>
   );
 }
 

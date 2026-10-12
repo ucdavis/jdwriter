@@ -225,12 +225,12 @@ public class WordJobDescriptionsTests
         {
             db.CorpusUploads.Add(new CorpusUpload
             {
-                Id = id, FileName = $"doc{id}.docx", Sha256 = $"sha{id}", Content = bytes, SizeBytes = bytes.Length,
+                Id = id, FileName = $"doc{id}.docx", Sha256 = $"sha{id}".PadRight(16, '0'), Content = bytes, SizeBytes = bytes.Length,
                 Source = CorpusUploadSource.Document, Status = CorpusUploadStatus.Filed, UcJobCode = "009605",
             });
             db.JobDescriptions.Add(new JobDescription
             {
-                SourceFile = $"import/document-{id}", UcJobCode = "009605", Origin = CorpusOrigin.Imported,
+                SourceFile = CorpusNames.Imported($"sha{id}".PadRight(16, '0')), UcJobCode = "009605", Origin = CorpusOrigin.Imported,
                 Responsibilities = [new JdResponsibility { FunctionName = "Condensed", Pct = 100 }],
             });
         }

@@ -1,4 +1,5 @@
 using Server.Core.Domain;
+using Server.Core.Ingest;
 using Server.Core.Profiles;
 
 namespace Server.Core.Jd;
@@ -80,12 +81,12 @@ public static class CorpusContribution
     }
 
     /// <summary>The finished JD — after compliance edits — as a corpus record.</summary>
-    public static JobDescription ToCorpusRecord(AssembledJd a, int authoredJdId)
+    public static JobDescription ToCorpusRecord(AssembledJd a, int authoredJdId, Guid corpusKey)
     {
         var jd = new JobDescription
         {
             // No HRTMS file exists for an authored JD; the name identifies the source, not a position.
-            SourceFile = $"authored/JD-{authoredJdId}",
+            SourceFile = CorpusNames.Authored(corpusKey),
             Origin = CorpusOrigin.Authored,
             AuthoredJdId = authoredJdId,
             AddedAt = DateTimeOffset.UtcNow,

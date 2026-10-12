@@ -189,6 +189,9 @@ namespace server.core.Migrations
                     b.Property<int>("ClassProfileId")
                         .HasColumnType("int");
 
+                    b.Property<Guid>("CorpusKey")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CorpusNote")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -418,6 +421,9 @@ namespace server.core.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Slug")
@@ -530,6 +536,9 @@ namespace server.core.Migrations
                     b.Property<string>("Replacement")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
@@ -1269,6 +1278,9 @@ namespace server.core.Migrations
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 

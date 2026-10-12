@@ -166,7 +166,7 @@ public class AuthoredJdStoreTests
         var store = new AuthoredJdStore(db);
         var assembled = Assembled("Greenhouse Tech", ("A", 100));
         var id = await store.SaveAsync(assembled, Kept(("A", 100)), profile, alice, null);
-        db.JobDescriptions.Add(CorpusContribution.ToCorpusRecord(assembled, id));
+        db.JobDescriptions.Add(CorpusContribution.ToCorpusRecord(assembled, id, Guid.NewGuid()));
         await db.SaveChangesAsync();
 
         await store.SaveDraftAsync(Kept(("A", 60)), profile, alice, id, State);
