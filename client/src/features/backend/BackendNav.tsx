@@ -23,9 +23,12 @@ export const BackendNav = () => {
   }
 
   return (
+    // Scrolls sideways on a narrow screen, never up and down. The rule under the tabs is an inset
+    // shadow, not a border, so the active tab's underline can cover it without hanging 1px below
+    // the bar — an overhang that made the bar scroll vertically.
     <nav
       aria-label="Back end"
-      className="-mx-1 mb-6 flex gap-1 overflow-x-auto border-b border-base-300"
+      className="-mx-1 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_var(--color-base-300)]"
     >
       {tabs.map((t) => (
         <Link
@@ -34,7 +37,7 @@ export const BackendNav = () => {
             'aria-current': 'page',
             className: 'border-primary text-primary',
           }}
-          className="-mb-px whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-base font-semibold text-base-content/65 hover:text-base-content"
+          className="whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-base font-semibold text-base-content/65 hover:text-base-content"
           key={t.to}
           to={t.to}
         >
