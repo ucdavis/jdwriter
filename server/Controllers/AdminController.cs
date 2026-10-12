@@ -184,6 +184,14 @@ public class AdminController : ApiControllerBase
     public async Task<IActionResult> QualificationRules(QualificationRulesRequest body, CancellationToken ct) =>
         Ok(await _qualificationRules.RunAsync(body.Apply, ct));
 
+    /// <summary>
+    /// Re-read every imported Word document with the layout parser: verbatim records like in-unit
+    /// exports; incomplete ones discarded; unrecognized layouts left as they were.
+    /// </summary>
+    [HttpPost("uploads/documents/reparse")]
+    public async Task<IActionResult> ReparseDocuments(CancellationToken ct) =>
+        Ok(await _documents.ReparseAsync(ct));
+
     [HttpGet("uploads/pending")]
     public async Task<IActionResult> UploadedPending(CancellationToken ct) =>
         Ok(new { classes = await _uploads.PendingAsync(ct) });

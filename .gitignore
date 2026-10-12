@@ -67,3 +67,7 @@ jdwriter-standard-envelopes-*.json
 # Built client output copied in by publish; only the placeholder is tracked.
 server/wwwroot/*
 !server/wwwroot/.gitkeep
+
+# Real JD exports (HRTMS, JDX/Word) for local parsing and testing. They carry department names,
+# position numbers and reporting lines for real employees: never committed (see AGENTS.md).
+JDs/

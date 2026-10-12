@@ -10,6 +10,7 @@ import {
   useIngestClass,
   useImportDocument,
   useQualificationRules,
+  useReparseDocuments,
   useIngestUploaded,
   useUploadStandards,
   useUploadedPending,
@@ -351,6 +352,7 @@ type DocumentRow = {
  */
 export const DocumentImportPanel = () => {
   const importDocument = useImportDocument();
+  const reparse = useReparseDocuments();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<DocumentRow[]>([]);
   const [skipped, setSkipped] = useState(0);
@@ -382,7 +384,9 @@ export const DocumentImportPanel = () => {
         update(i, {
           detail:
             outcome.result === 'added'
-              ? `${outcome.title ?? ''} (${outcome.ucJobCode ?? ''})`
+              ? `${outcome.title ?? ''} (${outcome.ucJobCode ?? ''}) · ${
+                  outcome.readBy === 'ai' ? 'read by AI (unrecognized layout)' : 'parsed'
+                }`
               : outcome.result === 'duplicate'
                 ? 'Already added'
                 : outcome.error,
@@ -406,12 +410,57 @@ export const DocumentImportPanel = () => {
     <Card className="mb-5 p-5">
       <Eyebrow>Add JDs from other units</Eyebrow>
       <p className="mt-1 text-base text-base-content/65">
-        For job descriptions that can&apos;t be exported from HRTMS, such as copies out of JDX.
-        Save each from Word as a Word Document (.docx); PDF and text files work too. Add files or a
-        whole folder: each is filed under the UC job title it states, and the AI reads its
-        responsibilities, % time and qualifications. A document whose title doesn&apos;t match a
-        single UC title is listed, not guessed at. Added JDs appear above, ready to build in.
+        For job descriptions from other units: JD exports copied out of JDX into Word (.docx). Each
+        is parsed straight from its layout — no AI, wording kept exactly — and filed under the job
+        code it states, the same as an export from within the unit, for envelopes and coverage
+        alike. A document with no responsibilities or no duties (a job posting, for one) is
+        incomplete and not added. Only a layout the parser doesn&apos;t recognize is read by the AI.
+        Added JDs appear above, ready to build in.
       </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          className="btn btn-ghost btn-sm"
+          disabled={reparse.isPending || running}
+          onClick={() => {
+            if (
+              window.confirm(
+                'Re-read every imported Word document with the parser? Earlier imports read by the AI become verbatim records; incomplete ones (no duties) are removed from the corpus.'
+              )
+            ) {
+              reparse.mutate();
+            }
+          }}
+          type="button"
+        >
+          {reparse.isPending ? 'Re-reading…' : 'Re-read imported documents'}
+        </button>
+      </div>
+      {reparse.error ? (
+        <div className="mt-2">
+          <Note tone="red">{messageOf(reparse.error)}</Note>
+        </div>
+      ) : null}
+      {reparse.data ? (
+        <div className="mt-2" data-testid="reparse-summary">
+          <Note tone="green">
+            Re-read {reparse.data.reparsed} · discarded {reparse.data.discarded.length} incomplete
+            {reparse.data.refiled.length > 0 ? ` · ${reparse.data.refiled.length} moved to the class their code states` : ''}
+            {reparse.data.unrecognized > 0 ? ` · ${reparse.data.unrecognized} not recognized, left as they were` : ''}.
+          </Note>
+          {reparse.data.discarded.length > 0 ? (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-base">Discarded ({reparse.data.discarded.length})</summary>
+              <ul className="mt-1 max-h-60 list-disc overflow-y-auto pl-5 text-sm text-base-content/75">
+                {reparse.data.discarded.map((d) => (
+                  <li key={d.fileName}>
+                    {d.fileName}: {d.reason}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <label className="btn btn-outline btn-sm">
