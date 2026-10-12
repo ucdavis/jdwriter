@@ -1,5 +1,4 @@
 import {
-  EnvelopeTransferPanel,
   PendingRebuildsPanel,
   QualificationRulesPanel,
 } from '@/features/backend/AdminPanels.tsx';
@@ -139,11 +138,10 @@ function EnvelopeIndex() {
 
       <details className="mb-5 rounded-box border border-base-300 bg-base-100">
         <summary className="cursor-pointer px-5 py-3 text-base font-semibold">
-          Envelope rules · move envelopes between environments
+          Envelope rules
         </summary>
         <div className="px-5 pb-1">
           <QualificationRulesPanel />
-          <EnvelopeTransferPanel />
         </div>
       </details>
 
