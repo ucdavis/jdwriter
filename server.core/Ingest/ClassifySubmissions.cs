@@ -75,7 +75,7 @@ public sealed partial class ClassifySubmissions
         record.AddedAt = now;
         if (string.IsNullOrEmpty(record.SourceFile) || record.SourceFile == "pasted")
         {
-            record.SourceFile = $"classify/submission-{original.Id}";
+            record.SourceFile = CorpusNames.Classified(sha);
         }
 
         // A re-submitted export of the same position replaces the earlier SUBMISSION — and only that.

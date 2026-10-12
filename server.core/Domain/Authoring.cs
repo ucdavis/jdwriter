@@ -38,6 +38,12 @@ public class AuthoredJd
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 
+    /// <summary>
+    /// Names this JD's corpus copy in every environment (<see cref="Ingest.CorpusNames.Authored"/>),
+    /// so the copy keeps its identity when it travels in an environment package; the row id doesn't.
+    /// </summary>
+    public Guid CorpusKey { get; set; } = Guid.NewGuid();
+
     /// <summary>Ready only when the time is fully allocated. See <see cref="AuthoredJdStatus"/>.</summary>
     public AuthoredJdStatus Status { get; set; }
 
@@ -165,4 +171,7 @@ public class ComplianceRule
     public string Replacement { get; set; } = "";
     public string Reason { get; set; } = "";
     public bool Enabled { get; set; } = true;
+
+    /// <summary>When the rule last changed; stamped on save. Newer wins in a package.</summary>
+    public DateTimeOffset? UpdatedAt { get; set; }
 }

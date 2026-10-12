@@ -11,6 +11,9 @@ namespace Server.Core.Domain;
 /// </summary>
 public class JobStandard
 {
+    /// <summary>When the standard or any of its items last changed; stamped on save. Newer wins in a package.</summary>
+    public DateTimeOffset? UpdatedAt { get; set; }
+
     public int Id { get; set; }
 
     public string LongTitle { get; set; } = "";

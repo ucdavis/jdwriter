@@ -43,6 +43,13 @@ public class ClassProfile
     /// <summary>When the class was last built or rebuilt from its corpus. Null for the CLI load.</summary>
     public DateTimeOffset? LastIngestedAt { get; set; }
 
+    /// <summary>
+    /// When anything in the class last changed — rebuilt, bootstrapped, its envelope edited, its
+    /// coverage recomputed. Stamped by the context on save (<see cref="Data.AppDbContext"/>), never by
+    /// hand; an environment package keeps the newer of two versions of a class by it.
+    /// </summary>
+    public DateTimeOffset? UpdatedAt { get; set; }
+
     public JobEnvelope? Envelope { get; set; }
     public CoverageReport? Coverage { get; set; }
 

@@ -201,7 +201,7 @@ public sealed partial class CorpusDocuments
         _db.CorpusUploads.Add(original);
         await _db.SaveChangesAsync(ct); // assigns the original's id, which names the corpus record
 
-        record.SourceFile = $"import/document-{original.Id}";
+        record.SourceFile = CorpusNames.Imported(sha);
         _db.JobDescriptions.Add(record);
         await _db.SaveChangesAsync(ct);
 
@@ -247,7 +247,7 @@ public sealed partial class CorpusDocuments
         await _db.SaveChangesAsync(ct); // assigns the original's id, which names the corpus record
 
         await ReplaceSamePositionAsync(record, ct);
-        record.SourceFile = $"import/document-{original.Id}";
+        record.SourceFile = CorpusNames.Imported(sha);
         record.AddedAt = now;
         _db.JobDescriptions.Add(record);
         await _db.SaveChangesAsync(ct);
@@ -313,7 +313,7 @@ public sealed partial class CorpusDocuments
         var now = DateTimeOffset.UtcNow;
         foreach (var upload in uploads)
         {
-            var sourceFile = $"import/document-{upload.Id}";
+            var sourceFile = CorpusNames.Imported(upload.Sha256);
             var parsed = upload.FileName.EndsWith(".docx", StringComparison.OrdinalIgnoreCase)
                 ? WordJobDescriptions.TryParse(upload.Content, upload.FileName)
                 : null;

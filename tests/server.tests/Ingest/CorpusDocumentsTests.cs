@@ -164,9 +164,9 @@ public class CorpusDocumentsTests
         jd.UcJobCode.Should().Be("009605");
         jd.AddedAt.Should().NotBeNull();
         jd.Responsibilities.Select(r => (r.FunctionName, r.Pct)).Should().Equal(("Plant care", 60), ("Records", 40));
-        jd.SourceFile.Should().StartWith("import/document-");
-
         var original = await db.CorpusUploads.SingleAsync();
+        // Named by the hash of its words, so the same document is the same JD in every environment.
+        jd.SourceFile.Should().Be($"import/{original.Sha256[..16]}");
         original.Source.Should().Be(CorpusUploadSource.Document);
         original.Status.Should().Be(CorpusUploadStatus.Filed);
         original.Content.Should().Equal(Text("Job Title: LAB AST 1\nSupports plant research."), "the original is kept, byte for byte");
