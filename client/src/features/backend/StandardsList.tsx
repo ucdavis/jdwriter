@@ -17,12 +17,12 @@ const shows: Record<Show, { label: string; test: (s: StandardRow) => boolean }> 
 const PAGE = 100;
 
 /** Every job standard, what it is attached to, and the standard itself on request. */
-export const StandardsList = () => {
+export const StandardsList = ({ initialOpen, initialQuery }: { initialOpen?: string; initialQuery?: string }) => {
   const { data, error, isLoading } = useStandardsList();
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState(initialQuery ?? '');
   const [show, setShow] = useState<Show>('all');
   const [limit, setLimit] = useState(PAGE);
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useState<string | null>(initialOpen ?? null);
 
   const standards = useMemo(() => data?.standards ?? [], [data]);
   const searched = useMemo(() => {
@@ -94,21 +94,14 @@ export const StandardsList = () => {
                     <div className="mt-0.5 text-base text-base-content/65">
                       {s.code ? (
                         <>
-                          {s.jobTitle} · code <span className="tnum">{s.code}</span>
-                          {s.classSlug ? (
-                            <>
-                              {' · '}
-                              <Link
-                                className="text-primary hover:underline"
-                                params={{ slug: s.classSlug }}
-                                to="/backend/edit/$slug"
-                              >
-                                {s.classTitle} envelope
-                              </Link>
-                            </>
-                          ) : (
-                            ' · no class yet'
-                          )}
+                          <Link
+                            className="text-primary hover:underline"
+                            search={{ code: s.code }}
+                            to="/backend/codes"
+                          >
+                            {s.jobTitle} · code <span className="tnum">{s.code}</span> →
+                          </Link>
+                          {s.classSlug ? null : ' · no class yet'}
                         </>
                       ) : (
                         'Not attached to a job code'

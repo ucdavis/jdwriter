@@ -23,9 +23,9 @@ const showLabels: Record<Show, string> = {
 const PAGE = 100;
 
 /** Every job description in the corpus, newest first, searchable, each one viewable whole. */
-export const JobDescriptionList = () => {
+export const JobDescriptionList = ({ initialQuery }: { initialQuery?: string }) => {
   const { data, error, isLoading } = useCorpusJds();
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState(initialQuery ?? '');
   const [show, setShow] = useState<Show>('all');
   const [limit, setLimit] = useState(PAGE);
 
@@ -100,9 +100,14 @@ export const JobDescriptionList = () => {
                     {j.pending ? <Badge tone="yellow">not yet in an envelope</Badge> : null}
                   </div>
                   <div className="mt-0.5 text-base text-base-content/65">
-                    {[j.classTitle ?? j.ucJobTitle, `code ${j.ucJobCode}`, j.departmentName || null]
-                      .filter(Boolean)
-                      .join(' · ')}
+                    <Link
+                      className="hover:text-primary hover:underline"
+                      search={{ code: j.ucJobCode }}
+                      to="/backend/codes"
+                    >
+                      {j.classTitle ?? j.ucJobTitle} · code <span className="tnum">{j.ucJobCode}</span>
+                    </Link>
+                    {j.departmentName ? ` · ${j.departmentName}` : ''}
                   </div>
                   <div className="text-sm text-base-content/50 tnum">
                     {j.functions} function{j.functions === 1 ? '' : 's'} · {j.duties} dut
@@ -113,7 +118,7 @@ export const JobDescriptionList = () => {
                 <Link
                   className="whitespace-nowrap text-base font-semibold text-primary hover:underline"
                   params={{ id: String(j.id) }}
-                  to="/backend/job-descriptions/$id"
+                  to="/backend/descriptions/$id"
                 >
                   View →
                 </Link>

@@ -30,12 +30,16 @@ type StandardFilter = 'any' | 'blank' | 'hand' | 'none' | 'some';
  * Every UC job code and what it is attached to — its class and its standard — in one place. Each
  * job opens a dialog to bootstrap it, or to add or replace its standard by hand.
  */
-export const JobsDirectory = () => {
-  const [scope, setScope] = useState<JobsScope>('active');
+/**
+ * `initialCode` opens that job's pop-up, as a link from another page does (a standard's job, a JD's
+ * code). It may be a job not active at UC Davis, so the list starts on all jobs, searched to it.
+ */
+export const JobsDirectory = ({ initialCode }: { initialCode?: string }) => {
+  const [scope, setScope] = useState<JobsScope>(initialCode ? 'all' : 'active');
   const [classFilter, setClassFilter] = useState<ClassFilter>('any');
   const [standardFilter, setStandardFilter] = useState<StandardFilter>('any');
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState<JobRow | null>(null);
+  const [query, setQuery] = useState(initialCode ?? '');
+  const [open, setOpen] = useState<Pick<JobRow, 'code'> | null>(initialCode ? { code: initialCode } : null);
   const jobs = useJobs(scope);
 
   const shown = (jobs.data?.jobs ?? [])
@@ -60,7 +64,7 @@ export const JobsDirectory = () => {
     );
 
   // The dialog shows the job as the list now has it, so a save or bootstrap shows at once.
-  const current = open ? (jobs.data?.jobs.find((j) => j.code === open.code) ?? open) : null;
+  const current = open ? (jobs.data?.jobs.find((j) => j.code === open.code) ?? null) : null;
 
   return (
     <>
@@ -319,9 +323,17 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
                   {job.class.title}
                 </Link>
                 <div className="text-base-content/65">
-                  {job.class.corpusSize > 0
-                    ? `Learned from ${job.class.corpusSize} JDs`
-                    : 'Starter envelope from its standard'}
+                  {job.class.corpusSize > 0 ? (
+                    <Link
+                      className="text-primary hover:underline"
+                      search={{ q: job.supersededBy ?? job.code }}
+                      to="/backend/descriptions"
+                    >
+                      Learned from {job.class.corpusSize} JDs →
+                    </Link>
+                  ) : (
+                    'Starter envelope from its standard'
+                  )}
                 </div>
                 {job.class.fromBlankStandard ? (
                   <p className="mt-1 text-warning">Built from a blank standard: little more than a title went into it.</p>
@@ -335,7 +347,13 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
             <Eyebrow>Standard</Eyebrow>
             {job.standard ? (
               <div className="mt-1 text-base">
-                <div className="font-semibold">{job.standard.title}</div>
+                <Link
+                  className="font-semibold text-primary hover:underline"
+                  search={{ open: job.standard.title, q: job.standard.title }}
+                  to="/backend/standards"
+                >
+                  {job.standard.title}
+                </Link>
                 <div className="text-base-content/65">
                   {job.standard.fromSuccessor
                     ? `Its successor's (${job.supersededBy}) — where its JDs now go`

@@ -5,17 +5,24 @@ import { PageHeader } from '@/shared/ui/primitives.tsx';
 import { createFileRoute } from '@tanstack/react-router';
 import { Section } from '@/features/backend/Section.tsx';
 
-export const Route = createFileRoute('/(authenticated)/backend/job-descriptions/')({
+// Route options must follow TanStack Router's order (search validation first) for its type inference.
+/* eslint-disable perfectionist/sort-objects */
+export const Route = createFileRoute('/(authenticated)/backend/descriptions/')({
+  validateSearch: (search: Record<string, unknown>): { q?: string } => ({
+    q: typeof search.q === 'string' && search.q ? search.q : undefined,
+  }),
   component: JobDescriptionsPage,
 });
+/* eslint-enable perfectionist/sort-objects */
 
 function JobDescriptionsPage() {
+  const { q } = Route.useSearch();
   return (
     <AdminOnly>
       <PageHeader
         eyebrow="Back end · inputs"
         sub="The real job descriptions every envelope is built from: add them, re-ingest the classes they change, and read any one of them."
-        title="Job descriptions"
+        title="Descriptions"
       />
       <Section
         id="add"
@@ -30,7 +37,7 @@ function JobDescriptionsPage() {
         sub="Every job description in the corpus, newest first, whatever brought it in."
         title="All job descriptions"
       >
-        <JobDescriptionList />
+        <JobDescriptionList initialQuery={q} key={q ?? ''} />
       </Section>
     </AdminOnly>
   );
