@@ -138,6 +138,8 @@ try
     builder.Services.AddScoped<QualificationRulesPass>();
     builder.Services.AddScoped<StandardMatching>();
     builder.Services.AddScoped<JobsDirectory>();
+    builder.Services.AddScoped<StandardsDirectory>();
+    builder.Services.AddScoped<CorpusDirectory>();
     builder.Services.AddScoped<ManualStandards>();
     builder.Services.AddScoped<BlankStandardClasses>();
     builder.Services.AddScoped<DatabaseSecurity>();

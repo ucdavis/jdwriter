@@ -1,3 +1,9 @@
+import {
+  EnvelopeTransferPanel,
+  PendingRebuildsPanel,
+  QualificationRulesPanel,
+} from '@/features/backend/AdminPanels.tsx';
+import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
 import { Badge, Card, PageHeader } from '@/shared/ui/primitives.tsx';
 import type { Tone } from '@/shared/ui/primitives.tsx';
@@ -6,8 +12,9 @@ import {
   useClassSummary,
 } from '@/queries/classes.ts';
 import { isAdmin } from '@/queries/user.ts';
+import { useIngestUploaded, useUploadedPending } from '@/queries/admin.ts';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import type { ClassSummary, EnvelopeSource } from '@/lib/contracts.ts';
+import type { ClassSummary, EnvelopeSource, UploadedClass } from '@/lib/contracts.ts';
 import type { RouterContext } from '@/main.tsx';
 
 const SHOWS = ['all', 'attention', 'standard', 'jds'] as const;
@@ -80,6 +87,10 @@ const compare: Record<Sort, (a: ClassSummary, b: ClassSummary) => number> = {
   title: (a, b) => a.title.localeCompare(b.title),
 };
 
+/** New JDs waiting for a class's next re-ingest, by padded job code. */
+const pad = (code: string) => code.padStart(6, '0');
+const newJds = (c: UploadedClass) => c.newFiles + c.newAuthored + c.newClassified + c.newImported;
+
 const matches = (c: ClassSummary, q: string) => {
   const needle = q.trim().toLowerCase();
   return (
@@ -101,6 +112,10 @@ function BackendPage() {
 // Inside the gate so the admin-only query never fires for an Author.
 function EnvelopeIndex() {
   const { data } = useClassSummary();
+  const pendingQuery = useUploadedPending();
+  const waiting = new Map(
+    (pendingQuery.data?.classes ?? []).map((c) => [pad(c.code), newJds(c)])
+  );
   const search: EnvelopeSearch = Route.useSearch();
   const { q = '', show = 'all', sort = 'title' } = search;
   const navigate = Route.useNavigate();
@@ -116,9 +131,21 @@ function EnvelopeIndex() {
     <>
       <PageHeader
         eyebrow="Back end · averaging engine"
-        sub="Every class the engine has built, with its computed envelope and provenance. Add JDs or create classes from standards under Corpus & standards."
+        sub="Every class the engine has built, with its computed envelope and provenance. Add JDs under Job descriptions; create classes from standards under Job standards."
         title="Job Envelopes"
       />
+
+      <PendingRebuildsPanel hideWhenEmpty />
+
+      <details className="mb-5 rounded-box border border-base-300 bg-base-100">
+        <summary className="cursor-pointer px-5 py-3 text-base font-semibold">
+          Envelope rules · move envelopes between environments
+        </summary>
+        <div className="px-5 pb-1">
+          <QualificationRulesPanel />
+          <EnvelopeTransferPanel />
+        </div>
+      </details>
 
       {classes.length === 0 ? (
         <Card className="p-6">
@@ -126,9 +153,9 @@ function EnvelopeIndex() {
             No envelopes yet.{' '}
             <Link
               className="font-semibold text-primary hover:underline"
-              to="/backend/corpus"
+              to="/backend/job-descriptions"
             >
-              Add JDs or create classes from standards
+              Add job descriptions
             </Link>{' '}
             to build one.
           </p>
@@ -203,7 +230,7 @@ function EnvelopeIndex() {
             <Card>
               <ul className="divide-y divide-base-300">
                 {shown.map((c) => (
-                  <SummaryRow c={c} key={c.slug} />
+                  <SummaryRow c={c} key={c.slug} newJds={waiting.get(pad(c.ucJobCode)) ?? 0} />
                 ))}
               </ul>
             </Card>
@@ -214,9 +241,10 @@ function EnvelopeIndex() {
   );
 }
 
-function SummaryRow({ c }: { c: ClassSummary }) {
+function SummaryRow({ c, newJds }: { c: ClassSummary; newJds: number }) {
   const source = c.envelopeSource ? sourceBadge[c.envelopeSource] : null;
   const hasJds = c.corpusSize > 0;
+  const reingest = useIngestUploaded();
 
   return (
     <li className="px-5 py-3.5">
@@ -245,6 +273,11 @@ function SummaryRow({ c }: { c: ClassSummary }) {
             {hasJds && c.consolidatedFunctions === 0 ? (
               <Badge tone="muted">not consolidated</Badge>
             ) : null}
+            {newJds > 0 ? (
+              <Badge tone="yellow">
+                {newJds} new JD{newJds === 1 ? '' : 's'} to re-ingest
+              </Badge>
+            ) : null}
           </div>
           <div className="mt-0.5 text-base text-base-content/65">
             {[c.ctJobFamily, c.ctJobFunction, c.personnelProgram]
@@ -253,6 +286,17 @@ function SummaryRow({ c }: { c: ClassSummary }) {
           </div>
         </div>
         <div className="flex items-center gap-3 whitespace-nowrap">
+          {hasJds || newJds > 0 ? (
+            <button
+              className={`btn btn-sm ${newJds > 0 ? 'btn-primary' : 'btn-outline'}`}
+              disabled={reingest.isPending}
+              onClick={() => reingest.mutate(c.ucJobCode)}
+              title="Rebuild this envelope from all of the class's JDs"
+              type="button"
+            >
+              {reingest.isPending ? 'Re-ingesting…' : 'Re-ingest'}
+            </button>
+          ) : null}
           <Link
             className="text-base font-semibold text-primary hover:underline"
             params={{ slug: c.slug }}
@@ -269,6 +313,12 @@ function SummaryRow({ c }: { c: ClassSummary }) {
           </Link>
         </div>
       </div>
+
+      {reingest.error ? (
+        <p className="mt-1 text-base text-error">{messageOf(reingest.error)}</p>
+      ) : reingest.isSuccess ? (
+        <p className="mt-1 text-base text-success">Re-ingested from all of its JDs.</p>
+      ) : null}
 
       <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-base">
         <Fact label="Corpus" value={`${c.corpusSize} JDs`} />

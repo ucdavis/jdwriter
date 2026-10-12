@@ -39,7 +39,7 @@ describe('education rules', () => {
         return HttpResponse.json(summary(apply));
       })
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend' });
 
     await user.click(await screen.findByRole('button', { name: 'Preview' }));
 

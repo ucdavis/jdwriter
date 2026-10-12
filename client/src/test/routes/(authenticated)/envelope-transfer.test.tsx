@@ -22,7 +22,7 @@ describe('move envelopes between environments', () => {
   setupRouteTest();
 
   it('offers the export as a download', async () => {
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend' });
 
     const link = await screen.findByRole('link', { name: 'Download envelopes' });
     expect(link).toHaveAttribute('href', '/api/admin/envelopes/export');
@@ -44,7 +44,7 @@ describe('move envelopes between environments', () => {
         });
       })
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend' });
 
     await user.upload(
       await screen.findByLabelText('Import an envelope export'),
@@ -70,7 +70,7 @@ describe('move envelopes between environments', () => {
         return HttpResponse.json({ created: [], skipped: [] });
       })
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend' });
 
     await user.upload(
       await screen.findByLabelText('Import an envelope export'),

@@ -226,10 +226,13 @@ describe('analyst index', () => {
       within(nav).getByRole('link', { name: 'Envelopes' })
     ).toHaveAttribute('aria-current', 'page');
     expect(
-      within(nav).getByRole('link', { name: 'Corpus & standards' })
-    ).toHaveAttribute('href', '/backend/corpus');
+      within(nav).getByRole('link', { name: 'Job descriptions' })
+    ).toHaveAttribute('href', '/backend/job-descriptions');
     expect(
-      within(nav).getByRole('link', { name: 'Corpus & standards' })
+      within(nav).getByRole('link', { name: 'Job standards' })
+    ).toHaveAttribute('href', '/backend/standards');
+    expect(
+      within(nav).getByRole('link', { name: 'Job descriptions' })
     ).not.toHaveAttribute('aria-current');
     for (const name of ['Reclassification review', 'Analytics', 'Settings']) {
       expect(within(nav).getByRole('link', { name })).toBeInTheDocument();

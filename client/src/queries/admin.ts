@@ -2,13 +2,16 @@ import { fetchJson } from '../lib/api.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AnalyticsReport,
+  ClassStandard,
+  CorpusJdDetail,
+  CorpusJdRow,
+  StandardRow,
   StandardsUploadResponse,
   SecurityStatus,
   UploadedPendingResponse,
   QualificationRulesSummary,
   ReparseSummary,
   UploadOutcome,
-  UploadResponse,
   ApiKeyStatus,
   AdminsResponse,
   BootstrapCreateResponse,
@@ -20,38 +23,9 @@ import type {
   StandardDraft,
   StandardMatchReview,
   EnvelopeImportResult,
-  IngestScanResponse,
   RetirementResult,
   StandardsIngestResponse,
 } from '../lib/contracts.ts';
-
-export const ingestScanQueryOptions = () => ({
-  queryFn: () => fetchJson<IngestScanResponse>('/api/admin/ingest/pending'),
-  queryKey: ['admin', 'ingest', 'pending'] as const,
-  // A scan walks the corpus directory; never serve a cached answer for it.
-  staleTime: 0,
-});
-
-export const useIngestScan = () => useQuery(ingestScanQueryOptions());
-
-/**
- * Ingest ONE class per request. A large class takes a minute or two on its own, so
- * batching them into a single call would let one slow class time out the whole run.
- */
-export const useIngestClass = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (code: string) =>
-      fetchJson<unknown>('/api/admin/ingest/class', {
-        body: JSON.stringify({ code }),
-        method: 'POST',
-      }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['classes'] });
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'ingest', 'pending'] });
-    },
-  });
-};
 
 export const useIngestStandards = () => {
   const queryClient = useQueryClient();
@@ -219,23 +193,6 @@ export const uploadedPendingQueryOptions = () => ({
 
 export const useUploadedPending = () => useQuery(uploadedPendingQueryOptions());
 
-/** Upload HRTMS exports. Each file comes back with its own verdict. */
-export const useUploadExports = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (files: File[]) => {
-      const body = new FormData();
-      for (const file of files) {
-        // A folder pick supplies the relative path, which keeps the class folder in the name.
-        body.append('files', file, file.webkitRelativePath || file.name);
-      }
-      return fetchJson<UploadResponse>('/api/admin/uploads', { body, method: 'POST' });
-    },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] }),
-  });
-};
-
 /**
  * Add ONE JD from a unit outside the college (a Word, PDF or text copy). One document per request:
  * each is a model call, so a folder is sent file by file and each verdict shows as it lands. The
@@ -281,6 +238,7 @@ export const useIngestUploaded = () => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'corpus'] });
     },
   });
 };
@@ -406,7 +364,41 @@ export const useReparseDocuments = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => fetchJson<ReparseSummary>('/api/admin/uploads/documents/reparse', { method: 'POST' }),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'corpus'] });
+    },
   });
 };
+
+/** Every job description in the corpus, whatever brought it in. */
+export const corpusJdsQueryOptions = () => ({
+  queryFn: () => fetchJson<{ jds: CorpusJdRow[] }>('/api/admin/corpus/jds'),
+  queryKey: ['admin', 'corpus', 'jds'] as const,
+});
+
+export const useCorpusJds = () => useQuery(corpusJdsQueryOptions());
+
+/** One job description, whole. */
+export const corpusJdQueryOptions = (id: number) => ({
+  queryFn: () => fetchJson<CorpusJdDetail>(`/api/admin/corpus/jds/${id}`),
+  queryKey: ['admin', 'corpus', 'jds', id] as const,
+});
+
+/** Every job standard, with the job code and class each is attached to. */
+export const standardsListQueryOptions = () => ({
+  queryFn: () => fetchJson<{ standards: StandardRow[] }>('/api/standards'),
+  queryKey: ['admin', 'standards', 'list'] as const,
+});
+
+export const useStandardsList = () => useQuery(standardsListQueryOptions());
+
+/** One standard, whole, by its title. */
+export const useStandardByTitle = (title: string | null) =>
+  useQuery({
+    enabled: title !== null,
+    queryFn: () =>
+      fetchJson<ClassStandard>(`/api/standards/by-title?title=${encodeURIComponent(title ?? '')}`),
+    queryKey: ['admin', 'standards', 'by-title', title] as const,
+  });
 

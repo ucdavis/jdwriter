@@ -39,7 +39,7 @@ describe('matching standards to job codes', () => {
 
   it('shows each unmatched standard with its suggested codes', async () => {
     serve(review());
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/standards' });
 
     expect(await screen.findByTestId('match-summary')).toHaveTextContent(
       '1 standard to review · 0 matched by hand · 12 with no close job code'
@@ -52,7 +52,7 @@ describe('matching standards to job codes', () => {
   it('confirms the right code', async () => {
     const user = userEvent.setup();
     const decisions = serve(review());
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/standards' });
 
     const row = (await screen.findByText(/SYS ADM SUPV 1/)).closest('li') as HTMLElement;
     await user.click(within(row).getByRole('button', { name: 'This is the one' }));
@@ -63,7 +63,7 @@ describe('matching standards to job codes', () => {
   it('rejects every suggestion with "None of these"', async () => {
     const user = userEvent.setup();
     const decisions = serve(review());
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/standards' });
 
     await user.click(await screen.findByRole('button', { name: 'None of these' }));
 
@@ -77,7 +77,7 @@ describe('matching standards to job codes', () => {
   it('takes a code typed by hand', async () => {
     const user = userEvent.setup();
     const decisions = serve(review());
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/standards' });
 
     await user.type(await screen.findByLabelText('Job code for Systems Administration Supervisor 1'), '007000');
     await user.click(screen.getByRole('button', { name: 'Use this code' }));
@@ -95,7 +95,7 @@ describe('matching standards to job codes', () => {
         return HttpResponse.json({ ok: true });
       })
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/standards' });
 
     await user.click(await screen.findByText('Matched by hand (1)'));
     const confirmed = screen.getByTestId('confirmed-list');

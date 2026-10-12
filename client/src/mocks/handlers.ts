@@ -5,7 +5,6 @@ import type {
   StandardsUploadResponse,
   SecurityStatus,
   UploadedPendingResponse,
-  UploadResponse,
   SavedJd,
   SavedJdListResponse,
   ApiKeyStatus,
@@ -16,6 +15,9 @@ import type {
   BootstrapResponse,
   JobRow,
   JobsResponse,
+  CorpusJdDetail,
+  CorpusJdRow,
+  StandardRow,
   JobsScope,
   StandardMatchReview,
   ClassifyStartRequest,
@@ -306,6 +308,23 @@ export const handlers = [
       },
     });
   }),
+
+  // Every standard, and one by title. Registered before :slug, which would otherwise match them.
+  http.get('/api/standards', () =>
+    HttpResponse.json<{ standards: StandardRow[] }>({
+      standards: [
+        { blank: false, classSlug: '009605-lab-ast-1', classTitle: 'Lab Ast 1', code: '009605', flsa: 'Non-Exempt', grade: 'Grade 19', how: 'title', jobTitle: 'Lab Ast 1', keyResponsibilities: 4, onPayroll: true, title: sampleStandard.longTitle, union: 'TX' },
+        { blank: true, classSlug: null, classTitle: null, code: '004501', flsa: 'Exempt', grade: 'Grade 20', how: 'hand', jobTitle: 'Acad Achievement Cnslr 3', keyResponsibilities: 0, onPayroll: true, title: 'Academic Achievement Counselor 3', union: '' },
+        { blank: false, classSlug: null, classTitle: null, code: null, flsa: '', grade: '', how: null, jobTitle: null, keyResponsibilities: 3, onPayroll: false, title: 'Systemwide Academic Personnel Analyst 3', union: '' },
+      ],
+    })
+  ),
+
+  http.get('/api/standards/by-title', ({ request }) =>
+    new URL(request.url).searchParams.get('title') === sampleStandard.longTitle
+      ? HttpResponse.json(sampleStandard)
+      : HttpResponse.json({ message: 'No standard by that title.' }, { status: 404 })
+  ),
 
   http.get('/api/standards/:slug', ({ params }) =>
     HttpResponse.json(String(params.slug) === STANDARD_SLUG ? sampleStandard : null)
@@ -619,8 +638,6 @@ export const handlers = [
     HttpResponse.json<UploadedPendingResponse>({ classes: [] })
   ),
 
-  http.post('/api/admin/uploads', () => HttpResponse.json<UploadResponse>({ files: [] })),
-
   http.post('/api/admin/uploads/ingest', async () => {
     await delay(900);
     return HttpResponse.json({ ok: true });
@@ -773,6 +790,54 @@ export const handlers = [
         },
       ],
       withoutSuggestion: 0,
+    })
+  ),
+
+  // Synthetic job descriptions: the shape of corpus records, none of their content.
+  http.get('/api/admin/corpus/jds', () =>
+    HttpResponse.json<{ jds: CorpusJdRow[] }>({
+      jds: [
+        { addedAt: '2026-10-12T17:00:00Z', classSlug: '009605-lab-ast-1', classTitle: 'Lab Ast 1', departmentName: 'Plant Sciences', duties: 9, functions: 3, id: 2, origin: 'imported', pctTotal: 100, pending: true, sourceFile: 'import/document-2', ucJobCode: '009605', ucJobTitle: 'LAB AST 1', workingTitle: 'Greenhouse Technician' },
+        { addedAt: null, classSlug: '009605-lab-ast-1', classTitle: 'Lab Ast 1', departmentName: 'Animal Science', duties: 12, functions: 4, id: 1, origin: 'export', pctTotal: 100, pending: false, sourceFile: 'Sample Class/JD-001.HTML', ucJobCode: '009605', ucJobTitle: 'LAB AST 1', workingTitle: 'Laboratory Assistant' },
+      ],
+    })
+  ),
+
+  http.get('/api/admin/corpus/jds/:id', ({ params }) =>
+    HttpResponse.json<CorpusJdDetail>({
+      addedAt: '2026-10-12T17:00:00Z',
+      classSlug: '009605-lab-ast-1',
+      classTitle: 'Lab Ast 1',
+      id: Number(params.id),
+      origin: 'imported',
+      pending: true,
+      record: {
+        conditionsOfEmployment: ['Must pass a background check.'],
+        departmentName: 'Plant Sciences',
+        division: 'College',
+        flsaStatus: 'Non-Exempt',
+        jobSummary: 'Supports plant research in the greenhouse.',
+        leads: false,
+        qualifications: {
+          education: '',
+          ksaMin: ['Experience caring for plants.'],
+          ksaPref: ['Pesticide applicator certificate.'],
+          licenses: [],
+          minExperience: [],
+        },
+        responsibilities: [
+          { duties: ['Waters and feeds plants daily.', 'Records growth measurements.'], functionName: 'PLANT CARE', pct: 60 },
+          { duties: ['Keeps the greenhouse log.'], functionName: 'RECORDS', pct: 40 },
+        ],
+        salaryGrade: 'Grade 17',
+        sourceFile: 'import/document-2',
+        supervises: false,
+        ucJobCode: '009605',
+        ucJobTitle: 'LAB AST 1',
+        unionCode: 'TX',
+        workEnvironment: [],
+        workingTitle: 'Greenhouse Technician',
+      },
     })
   ),
 

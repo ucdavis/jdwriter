@@ -17,13 +17,16 @@ import { Route as authenticatedJdsIndexRouteImport } from './routes/(authenticat
 import { Route as authenticatedBackendIndexRouteImport } from './routes/(authenticated)/backend/index'
 import { Route as authenticatedJdsIdRouteImport } from './routes/(authenticated)/jds.$id'
 import { Route as authenticatedClassSlugRouteImport } from './routes/(authenticated)/class.$slug'
+import { Route as authenticatedBackendStandardsRouteImport } from './routes/(authenticated)/backend/standards'
 import { Route as authenticatedBackendSettingsRouteImport } from './routes/(authenticated)/backend/settings'
 import { Route as authenticatedBackendJobsRouteImport } from './routes/(authenticated)/backend/jobs'
 import { Route as authenticatedBackendFitRouteImport } from './routes/(authenticated)/backend/fit'
 import { Route as authenticatedBackendCorpusRouteImport } from './routes/(authenticated)/backend/corpus'
 import { Route as authenticatedBackendAnalyticsRouteImport } from './routes/(authenticated)/backend/analytics'
+import { Route as authenticatedBackendJobDescriptionsIndexRouteImport } from './routes/(authenticated)/backend/job-descriptions.index'
 import { Route as authenticatedClassSlugBuildRouteImport } from './routes/(authenticated)/class.$slug.build'
 import { Route as authenticatedBackendStandardSlugRouteImport } from './routes/(authenticated)/backend/standard.$slug'
+import { Route as authenticatedBackendJobDescriptionsIdRouteImport } from './routes/(authenticated)/backend/job-descriptions.$id'
 import { Route as authenticatedBackendJdsSlugRouteImport } from './routes/(authenticated)/backend/jds.$slug'
 import { Route as authenticatedBackendEditSlugRouteImport } from './routes/(authenticated)/backend/edit.$slug'
 import { Route as authenticatedBackendJdSlugSplatRouteImport } from './routes/(authenticated)/backend/jd.$slug.$'
@@ -69,6 +72,12 @@ const authenticatedClassSlugRoute = authenticatedClassSlugRouteImport.update({
   path: '/class/$slug',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
+const authenticatedBackendStandardsRoute =
+  authenticatedBackendStandardsRouteImport.update({
+    id: '/standards',
+    path: '/standards',
+    getParentRoute: () => authenticatedBackendRouteRoute,
+  } as any)
 const authenticatedBackendSettingsRoute =
   authenticatedBackendSettingsRouteImport.update({
     id: '/settings',
@@ -98,6 +107,12 @@ const authenticatedBackendAnalyticsRoute =
     path: '/analytics',
     getParentRoute: () => authenticatedBackendRouteRoute,
   } as any)
+const authenticatedBackendJobDescriptionsIndexRoute =
+  authenticatedBackendJobDescriptionsIndexRouteImport.update({
+    id: '/job-descriptions/',
+    path: '/job-descriptions/',
+    getParentRoute: () => authenticatedBackendRouteRoute,
+  } as any)
 const authenticatedClassSlugBuildRoute =
   authenticatedClassSlugBuildRouteImport.update({
     id: '/build',
@@ -108,6 +123,12 @@ const authenticatedBackendStandardSlugRoute =
   authenticatedBackendStandardSlugRouteImport.update({
     id: '/standard/$slug',
     path: '/standard/$slug',
+    getParentRoute: () => authenticatedBackendRouteRoute,
+  } as any)
+const authenticatedBackendJobDescriptionsIdRoute =
+  authenticatedBackendJobDescriptionsIdRouteImport.update({
+    id: '/job-descriptions/$id',
+    path: '/job-descriptions/$id',
     getParentRoute: () => authenticatedBackendRouteRoute,
   } as any)
 const authenticatedBackendJdsSlugRoute =
@@ -138,14 +159,17 @@ export interface FileRoutesByFullPath {
   '/backend/fit': typeof authenticatedBackendFitRoute
   '/backend/jobs': typeof authenticatedBackendJobsRoute
   '/backend/settings': typeof authenticatedBackendSettingsRoute
+  '/backend/standards': typeof authenticatedBackendStandardsRoute
   '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
   '/jds/$id': typeof authenticatedJdsIdRoute
   '/backend/': typeof authenticatedBackendIndexRoute
   '/jds': typeof authenticatedJdsIndexRoute
   '/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
   '/backend/jds/$slug': typeof authenticatedBackendJdsSlugRoute
+  '/backend/job-descriptions/$id': typeof authenticatedBackendJobDescriptionsIdRoute
   '/backend/standard/$slug': typeof authenticatedBackendStandardSlugRoute
   '/class/$slug/build': typeof authenticatedClassSlugBuildRoute
+  '/backend/job-descriptions': typeof authenticatedBackendJobDescriptionsIndexRoute
   '/backend/jd/$slug/$': typeof authenticatedBackendJdSlugSplatRoute
 }
 export interface FileRoutesByTo {
@@ -156,14 +180,17 @@ export interface FileRoutesByTo {
   '/backend/fit': typeof authenticatedBackendFitRoute
   '/backend/jobs': typeof authenticatedBackendJobsRoute
   '/backend/settings': typeof authenticatedBackendSettingsRoute
+  '/backend/standards': typeof authenticatedBackendStandardsRoute
   '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
   '/jds/$id': typeof authenticatedJdsIdRoute
   '/backend': typeof authenticatedBackendIndexRoute
   '/jds': typeof authenticatedJdsIndexRoute
   '/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
   '/backend/jds/$slug': typeof authenticatedBackendJdsSlugRoute
+  '/backend/job-descriptions/$id': typeof authenticatedBackendJobDescriptionsIdRoute
   '/backend/standard/$slug': typeof authenticatedBackendStandardSlugRoute
   '/class/$slug/build': typeof authenticatedClassSlugBuildRoute
+  '/backend/job-descriptions': typeof authenticatedBackendJobDescriptionsIndexRoute
   '/backend/jd/$slug/$': typeof authenticatedBackendJdSlugSplatRoute
 }
 export interface FileRoutesById {
@@ -177,14 +204,17 @@ export interface FileRoutesById {
   '/(authenticated)/backend/fit': typeof authenticatedBackendFitRoute
   '/(authenticated)/backend/jobs': typeof authenticatedBackendJobsRoute
   '/(authenticated)/backend/settings': typeof authenticatedBackendSettingsRoute
+  '/(authenticated)/backend/standards': typeof authenticatedBackendStandardsRoute
   '/(authenticated)/class/$slug': typeof authenticatedClassSlugRouteWithChildren
   '/(authenticated)/jds/$id': typeof authenticatedJdsIdRoute
   '/(authenticated)/backend/': typeof authenticatedBackendIndexRoute
   '/(authenticated)/jds/': typeof authenticatedJdsIndexRoute
   '/(authenticated)/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
   '/(authenticated)/backend/jds/$slug': typeof authenticatedBackendJdsSlugRoute
+  '/(authenticated)/backend/job-descriptions/$id': typeof authenticatedBackendJobDescriptionsIdRoute
   '/(authenticated)/backend/standard/$slug': typeof authenticatedBackendStandardSlugRoute
   '/(authenticated)/class/$slug/build': typeof authenticatedClassSlugBuildRoute
+  '/(authenticated)/backend/job-descriptions/': typeof authenticatedBackendJobDescriptionsIndexRoute
   '/(authenticated)/backend/jd/$slug/$': typeof authenticatedBackendJdSlugSplatRoute
 }
 export interface FileRouteTypes {
@@ -198,14 +228,17 @@ export interface FileRouteTypes {
     | '/backend/fit'
     | '/backend/jobs'
     | '/backend/settings'
+    | '/backend/standards'
     | '/class/$slug'
     | '/jds/$id'
     | '/backend/'
     | '/jds'
     | '/backend/edit/$slug'
     | '/backend/jds/$slug'
+    | '/backend/job-descriptions/$id'
     | '/backend/standard/$slug'
     | '/class/$slug/build'
+    | '/backend/job-descriptions'
     | '/backend/jd/$slug/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -216,14 +249,17 @@ export interface FileRouteTypes {
     | '/backend/fit'
     | '/backend/jobs'
     | '/backend/settings'
+    | '/backend/standards'
     | '/class/$slug'
     | '/jds/$id'
     | '/backend'
     | '/jds'
     | '/backend/edit/$slug'
     | '/backend/jds/$slug'
+    | '/backend/job-descriptions/$id'
     | '/backend/standard/$slug'
     | '/class/$slug/build'
+    | '/backend/job-descriptions'
     | '/backend/jd/$slug/$'
   id:
     | '__root__'
@@ -236,14 +272,17 @@ export interface FileRouteTypes {
     | '/(authenticated)/backend/fit'
     | '/(authenticated)/backend/jobs'
     | '/(authenticated)/backend/settings'
+    | '/(authenticated)/backend/standards'
     | '/(authenticated)/class/$slug'
     | '/(authenticated)/jds/$id'
     | '/(authenticated)/backend/'
     | '/(authenticated)/jds/'
     | '/(authenticated)/backend/edit/$slug'
     | '/(authenticated)/backend/jds/$slug'
+    | '/(authenticated)/backend/job-descriptions/$id'
     | '/(authenticated)/backend/standard/$slug'
     | '/(authenticated)/class/$slug/build'
+    | '/(authenticated)/backend/job-descriptions/'
     | '/(authenticated)/backend/jd/$slug/$'
   fileRoutesById: FileRoutesById
 }
@@ -309,6 +348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedClassSlugRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
+    '/(authenticated)/backend/standards': {
+      id: '/(authenticated)/backend/standards'
+      path: '/standards'
+      fullPath: '/backend/standards'
+      preLoaderRoute: typeof authenticatedBackendStandardsRouteImport
+      parentRoute: typeof authenticatedBackendRouteRoute
+    }
     '/(authenticated)/backend/settings': {
       id: '/(authenticated)/backend/settings'
       path: '/settings'
@@ -344,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedBackendAnalyticsRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
     }
+    '/(authenticated)/backend/job-descriptions/': {
+      id: '/(authenticated)/backend/job-descriptions/'
+      path: '/job-descriptions'
+      fullPath: '/backend/job-descriptions'
+      preLoaderRoute: typeof authenticatedBackendJobDescriptionsIndexRouteImport
+      parentRoute: typeof authenticatedBackendRouteRoute
+    }
     '/(authenticated)/class/$slug/build': {
       id: '/(authenticated)/class/$slug/build'
       path: '/build'
@@ -356,6 +409,13 @@ declare module '@tanstack/react-router' {
       path: '/standard/$slug'
       fullPath: '/backend/standard/$slug'
       preLoaderRoute: typeof authenticatedBackendStandardSlugRouteImport
+      parentRoute: typeof authenticatedBackendRouteRoute
+    }
+    '/(authenticated)/backend/job-descriptions/$id': {
+      id: '/(authenticated)/backend/job-descriptions/$id'
+      path: '/job-descriptions/$id'
+      fullPath: '/backend/job-descriptions/$id'
+      preLoaderRoute: typeof authenticatedBackendJobDescriptionsIdRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
     }
     '/(authenticated)/backend/jds/$slug': {
@@ -388,10 +448,13 @@ interface authenticatedBackendRouteRouteChildren {
   authenticatedBackendFitRoute: typeof authenticatedBackendFitRoute
   authenticatedBackendJobsRoute: typeof authenticatedBackendJobsRoute
   authenticatedBackendSettingsRoute: typeof authenticatedBackendSettingsRoute
+  authenticatedBackendStandardsRoute: typeof authenticatedBackendStandardsRoute
   authenticatedBackendIndexRoute: typeof authenticatedBackendIndexRoute
   authenticatedBackendEditSlugRoute: typeof authenticatedBackendEditSlugRoute
   authenticatedBackendJdsSlugRoute: typeof authenticatedBackendJdsSlugRoute
+  authenticatedBackendJobDescriptionsIdRoute: typeof authenticatedBackendJobDescriptionsIdRoute
   authenticatedBackendStandardSlugRoute: typeof authenticatedBackendStandardSlugRoute
+  authenticatedBackendJobDescriptionsIndexRoute: typeof authenticatedBackendJobDescriptionsIndexRoute
   authenticatedBackendJdSlugSplatRoute: typeof authenticatedBackendJdSlugSplatRoute
 }
 
@@ -402,11 +465,16 @@ const authenticatedBackendRouteRouteChildren: authenticatedBackendRouteRouteChil
     authenticatedBackendFitRoute: authenticatedBackendFitRoute,
     authenticatedBackendJobsRoute: authenticatedBackendJobsRoute,
     authenticatedBackendSettingsRoute: authenticatedBackendSettingsRoute,
+    authenticatedBackendStandardsRoute: authenticatedBackendStandardsRoute,
     authenticatedBackendIndexRoute: authenticatedBackendIndexRoute,
     authenticatedBackendEditSlugRoute: authenticatedBackendEditSlugRoute,
     authenticatedBackendJdsSlugRoute: authenticatedBackendJdsSlugRoute,
+    authenticatedBackendJobDescriptionsIdRoute:
+      authenticatedBackendJobDescriptionsIdRoute,
     authenticatedBackendStandardSlugRoute:
       authenticatedBackendStandardSlugRoute,
+    authenticatedBackendJobDescriptionsIndexRoute:
+      authenticatedBackendJobDescriptionsIndexRoute,
     authenticatedBackendJdSlugSplatRoute: authenticatedBackendJdSlugSplatRoute,
   }
 
