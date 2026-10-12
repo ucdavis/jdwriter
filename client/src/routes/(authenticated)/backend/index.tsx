@@ -131,8 +131,8 @@ function EnvelopeIndex() {
     <>
       <PageHeader
         eyebrow="Back end · averaging engine"
-        sub="Every class the engine has built, with its computed envelope and provenance. Add JDs under Job descriptions; create classes from standards under Job standards."
-        title="Job Envelopes"
+        sub="Every class the engine has built, with its computed envelope and provenance. Add JDs under Descriptions; create classes from standards under Standards."
+        title="Envelopes"
       />
 
       <PendingRebuildsPanel hideWhenEmpty />
@@ -153,7 +153,7 @@ function EnvelopeIndex() {
             No envelopes yet.{' '}
             <Link
               className="font-semibold text-primary hover:underline"
-              to="/backend/job-descriptions"
+              to="/backend/descriptions"
             >
               Add job descriptions
             </Link>{' '}

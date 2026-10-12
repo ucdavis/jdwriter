@@ -23,8 +23,8 @@ const ADMIN_ONLY = [
 
 const pages = [
   { name: 'envelope index', path: '/backend' },
-  { name: 'job descriptions', path: '/backend/job-descriptions' },
-  { name: 'a job description', path: '/backend/job-descriptions/1' },
+  { name: 'job descriptions', path: '/backend/descriptions' },
+  { name: 'a job description', path: '/backend/descriptions/1' },
   { name: 'job standards', path: '/backend/standards' },
   { name: 'reclassification review', path: '/backend/fit' },
   { name: 'backwards coverage', path: '/backend/jds/009605-lab-ast-1' },

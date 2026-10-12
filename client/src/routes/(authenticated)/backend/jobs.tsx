@@ -1,21 +1,14 @@
-import { JobsDirectory } from '@/features/backend/JobsDirectory.tsx';
-import { AdminOnly } from '@/shared/ui/AppShell.tsx';
-import { PageHeader } from '@/shared/ui/primitives.tsx';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
+/** The page this was ("Jobs"), renamed Codes. A link to one job keeps its code. */
+// Route options must follow TanStack Router's order (search validation first) for its type inference.
+/* eslint-disable perfectionist/sort-objects */
 export const Route = createFileRoute('/(authenticated)/backend/jobs')({
-  component: JobsPage,
+  validateSearch: (search: Record<string, unknown>): { code?: string } => ({
+    code: typeof search.code === 'string' && search.code ? search.code : undefined,
+  }),
+  beforeLoad: ({ search }) => {
+    throw redirect({ replace: true, search: { code: search.code }, to: '/backend/codes' });
+  },
 });
-
-function JobsPage() {
-  return (
-    <AdminOnly>
-      <PageHeader
-        eyebrow="Back end · inputs"
-        sub="Every UC job code, and what it's attached to: its class and its standard. Open a job to bootstrap it, or to add its standard by hand."
-        title="Jobs"
-      />
-      <JobsDirectory />
-    </AdminOnly>
-  );
-}
+/* eslint-enable perfectionist/sort-objects */

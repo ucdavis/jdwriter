@@ -1153,7 +1153,7 @@ export const BootstrapPanel = () => {
         <p className="mt-2 text-base text-base-content/65" data-testid="bootstrap-blank">
           {bootstrap.data.blank} more {bootstrap.data.blank === 1 ? 'is' : 'are'} blank — a title
           but no responsibilities — so there&apos;s nothing to build from. Add the full standard on
-          the Jobs page, or ingest JDs for the class.
+          the Codes page, or ingest JDs for the class.
         </p>
       ) : null}
       {candidates ? (

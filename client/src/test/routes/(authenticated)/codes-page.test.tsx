@@ -10,7 +10,7 @@ describe('the jobs directory', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('lists every active job with its class and standard', async () => {
-    renderRoute({ initialPath: '/backend/jobs' });
+    renderRoute({ initialPath: '/backend/codes' });
 
     expect(await screen.findByTestId('jobs-summary')).toHaveTextContent('3 jobs · 1 with a class · 1 with a standard');
     // The job and its class share a title here: the row is the button around both.
@@ -22,7 +22,7 @@ describe('the jobs directory', () => {
 
   it('filters to jobs with no class and no standard', async () => {
     const user = userEvent.setup();
-    renderRoute({ initialPath: '/backend/jobs' });
+    renderRoute({ initialPath: '/backend/codes' });
 
     await screen.findByTestId('jobs-list');
     await user.selectOptions(screen.getByLabelText('Class'), 'none');
@@ -43,7 +43,7 @@ describe('the jobs directory', () => {
         return HttpResponse.json({ envelopeSource: 'standard', slug: '000685-accounting-manager-1', title: 'Accounting Manager 1', ucJobCode: '000685' });
       })
     );
-    renderRoute({ initialPath: '/backend/jobs' });
+    renderRoute({ initialPath: '/backend/codes' });
 
     await screen.findByTestId('jobs-list');
     await user.selectOptions(screen.getByLabelText('Which jobs'), 'inactive');
@@ -77,7 +77,7 @@ describe('the jobs directory', () => {
         return HttpResponse.json({ ok: true });
       })
     );
-    renderRoute({ initialPath: '/backend/jobs' });
+    renderRoute({ initialPath: '/backend/codes' });
 
     await user.click(await screen.findByText('Social Work HC Supv 2'));
     const dialog = screen.getByRole('dialog');
@@ -100,7 +100,7 @@ describe('the jobs directory', () => {
 
   it('shows what each job without a class needs, and gathers them with "Waiting for a class"', async () => {
     const user = userEvent.setup();
-    renderRoute({ initialPath: '/backend/jobs' });
+    renderRoute({ initialPath: '/backend/codes' });
 
     await screen.findByTestId('jobs-list');
     expect(screen.getByText('Acad Achievement Cnslr 3').closest('button')).toHaveTextContent('Needs: Ready to bootstrap');
@@ -125,7 +125,7 @@ describe('the jobs directory', () => {
         })
       )
     );
-    renderRoute({ initialPath: '/backend/jobs' });
+    renderRoute({ initialPath: '/backend/codes' });
 
     const row = (await screen.findByText('Financial Anl 3')).closest('button') as HTMLElement;
     expect(row).toHaveTextContent("successor's");
@@ -135,6 +135,6 @@ describe('the jobs directory', () => {
   it('is in the back-end navigation', async () => {
     renderRoute({ initialPath: '/backend/standards' });
 
-    expect(await screen.findByRole('link', { name: 'Jobs' })).toHaveAttribute('href', '/backend/jobs');
+    expect(await screen.findByRole('link', { name: 'Codes' })).toHaveAttribute('href', '/backend/codes');
   });
 });

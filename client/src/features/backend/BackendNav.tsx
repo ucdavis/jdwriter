@@ -3,10 +3,10 @@ import { Link } from '@tanstack/react-router';
 
 const tabs = [
   { exact: true, label: 'Envelopes', to: '/backend' },
-  { exact: false, label: 'Job descriptions', to: '/backend/job-descriptions' },
-  { exact: false, label: 'Job standards', to: '/backend/standards' },
-  { exact: false, label: 'Jobs', to: '/backend/jobs' },
-  { exact: false, label: 'Reclassification review', to: '/backend/fit' },
+  { exact: false, label: 'Codes', to: '/backend/codes' },
+  { exact: false, label: 'Standards', to: '/backend/standards' },
+  { exact: false, label: 'Descriptions', to: '/backend/descriptions' },
+  { exact: false, label: 'Reclassification', to: '/backend/fit' },
   { exact: false, label: 'Analytics', to: '/backend/analytics' },
   { exact: false, label: 'Settings', to: '/backend/settings' },
 ] as const;

@@ -24,7 +24,7 @@ const pendingClass = (over: Partial<UploadedClass>): UploadedClass => ({
 describe('re-ingesting classes with new JDs', () => {
   setupRouteTest();
 
-  it('re-ingests waiting classes one at a time from the Job descriptions page', async () => {
+  it('re-ingests waiting classes one at a time from the Descriptions page', async () => {
     const user = userEvent.setup();
     const ingested: string[] = [];
     let remaining = [
@@ -40,7 +40,7 @@ describe('re-ingesting classes with new JDs', () => {
         return HttpResponse.json({ ok: true });
       })
     );
-    renderRoute({ initialPath: '/backend/job-descriptions' });
+    renderRoute({ initialPath: '/backend/descriptions' });
 
     await screen.findByText(/3 new JDs · 157 JDs in all/);
     expect(screen.getByText(/2 new JDs · new class/)).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('re-ingesting classes with new JDs', () => {
         })
       )
     );
-    renderRoute({ initialPath: '/backend/job-descriptions' });
+    renderRoute({ initialPath: '/backend/descriptions' });
 
     await screen.findByText(/2 written in the app · 1 from Classify/);
     expect(screen.getByText(/edited by hand — re-ingesting replaces those edits/)).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('re-ingesting classes with new JDs', () => {
         })
       )
     );
-    renderRoute({ initialPath: '/backend/job-descriptions' });
+    renderRoute({ initialPath: '/backend/descriptions' });
 
     await screen.findByText(/4 new JDs · replaces its starter envelope/);
   });
@@ -109,11 +109,11 @@ describe('re-ingesting classes with new JDs', () => {
     useContractHandlers();
     renderRoute({ initialPath: '/backend' });
 
-    await screen.findByRole('heading', { name: 'Job Envelopes' });
+    await screen.findByRole('heading', { level: 1, name: 'Envelopes' });
     await waitFor(() => expect(screen.queryByText('Waiting to be re-ingested')).not.toBeInTheDocument());
   });
 
-  it('uploads standards workbooks on the Job standards page and reports what merged', async () => {
+  it('uploads standards workbooks on the Standards page and reports what merged', async () => {
     const user = userEvent.setup();
     testServer.use(
       http.post('/api/admin/standards/upload', () =>

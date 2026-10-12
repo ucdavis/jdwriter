@@ -41,7 +41,7 @@ describe('add job descriptions', () => {
         return HttpResponse.json(verdict);
       })
     );
-    renderRoute({ initialPath: '/backend/job-descriptions' });
+    renderRoute({ initialPath: '/backend/descriptions' });
 
     const input = await screen.findByLabelText('Add a folder of job description documents');
     await user.upload(input, [
@@ -81,7 +81,7 @@ describe('add job descriptions', () => {
         })
       )
     );
-    renderRoute({ initialPath: '/backend/job-descriptions' });
+    renderRoute({ initialPath: '/backend/descriptions' });
 
     await user.upload(await screen.findByLabelText('Add job description documents'), new File(['a'], 'jd.docx'));
     expect(await screen.findByText('LAB AST 1 (009605) · parsed')).toBeInTheDocument();
@@ -112,7 +112,7 @@ describe('add job descriptions', () => {
         })
       )
     );
-    renderRoute({ initialPath: '/backend/job-descriptions' });
+    renderRoute({ initialPath: '/backend/descriptions' });
 
     expect(await screen.findByText(/4 new JDs · 12 JDs in all/)).toBeInTheDocument();
   });

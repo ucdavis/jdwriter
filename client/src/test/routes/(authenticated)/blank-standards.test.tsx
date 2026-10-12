@@ -56,7 +56,7 @@ describe('blank standards', () => {
         })
       )
     );
-    renderRoute({ initialPath: '/backend/jobs' });
+    renderRoute({ initialPath: '/backend/codes' });
 
     const row = (await screen.findByText('Med Ofc Svc Crd 3')).closest('button') as HTMLElement;
     expect(row).toHaveTextContent('blank — no responsibilities');

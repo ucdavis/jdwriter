@@ -7,7 +7,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import type { RouterContext } from '@/main.tsx';
 
-export const Route = createFileRoute('/(authenticated)/backend/job-descriptions/$id')({
+export const Route = createFileRoute('/(authenticated)/backend/descriptions/$id')({
   component: JobDescriptionPage,
   loader: async ({ context, params }: { context: RouterContext; params: { id: string } }) => {
     if (await isAdmin(context.queryClient)) {
@@ -44,7 +44,7 @@ function JobDescriptionContent() {
   return (
     <>
       <PageHeader
-        back={{ label: 'Back to job descriptions', to: '/backend/job-descriptions' }}
+        back={{ label: 'Back to job descriptions', to: '/backend/descriptions' }}
         eyebrow={`${record.ucJobTitle} · code ${record.ucJobCode}`}
         title={record.workingTitle || record.ucJobTitle}
       />
@@ -61,6 +61,13 @@ function JobDescriptionContent() {
           </div>
           {meta ? <div className="mt-0.5 text-base text-base-content/65">{meta}</div> : null}
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+            <Link
+              className="text-base font-semibold text-primary hover:underline"
+              search={{ code: record.ucJobCode }}
+              to="/backend/codes"
+            >
+              Job code {record.ucJobCode} →
+            </Link>
             {data.classSlug ? (
               <>
                 <Link
