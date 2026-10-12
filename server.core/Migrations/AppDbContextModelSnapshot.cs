@@ -428,6 +428,38 @@ namespace server.core.Migrations
                     b.ToTable("ClassProfiles");
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.CodeActiveOverride", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("DecidedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("DecidedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UcJobCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecidedByUserId");
+
+                    b.HasIndex("UcJobCode")
+                        .IsUnique();
+
+                    b.ToTable("CodeActiveOverrides");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.ComplianceEdit", b =>
                 {
                     b.Property<int>("Id")
@@ -1749,6 +1781,16 @@ namespace server.core.Migrations
                         .IsRequired();
 
                     b.Navigation("AuthoredJd");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.CodeActiveOverride", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AppUser", "DecidedBy")
+                        .WithMany()
+                        .HasForeignKey("DecidedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("DecidedBy");
                 });
 
             modelBuilder.Entity("Server.Core.Domain.ComplianceEdit", b =>

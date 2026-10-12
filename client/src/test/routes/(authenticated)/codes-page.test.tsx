@@ -1,6 +1,7 @@
 import { renderRoute, setupRouteTest } from '@/test/renderRoute.tsx';
 import { testServer } from '@/test/mswUtils.ts';
-import { screen, within } from '@testing-library/react';
+import { useContractHandlers } from '@/test/mswHandlers.ts';
+import { screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -136,5 +137,30 @@ describe('the jobs directory', () => {
     renderRoute({ initialPath: '/backend/standards' });
 
     expect(await screen.findByRole('link', { name: 'Codes' })).toHaveAttribute('href', '/backend/codes');
+  });
+
+  it('marks a code active at UC Davis or not, saying when payroll disagrees', async () => {
+    useContractHandlers();
+    const user = userEvent.setup();
+    let sent: unknown = null;
+    testServer.use(
+      http.post('/api/admin/codes/:code/active', async ({ params, request }) => {
+        sent = { code: params.code, ...((await request.json()) as object) };
+        return HttpResponse.json({
+          active: false,
+          code: '009605',
+          onPayroll: true,
+          supersessionChanges: ['Lab Ast 1 (009605) is no longer superseded by Lab Ast 1 TX (009606).'],
+        });
+      })
+    );
+    renderRoute({ initialPath: '/backend/codes?code=009605' });
+
+    const box = await within(await screen.findByRole('dialog')).findByRole('checkbox', { name: /Active at UC Davis/ });
+    expect(box).toBeChecked();
+    await user.click(box);
+
+    await waitFor(() => expect(sent).toEqual({ active: false, code: '009605' }));
+    expect(await screen.findByText(/no longer superseded/)).toBeInTheDocument();
   });
 });

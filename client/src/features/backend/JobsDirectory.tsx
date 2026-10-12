@@ -1,6 +1,12 @@
 import type { JobRow, JobsScope, StandardDraft } from '@/lib/contracts.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
-import { useBootstrapClass, useJobs, useReadStandard, useSaveManualStandard } from '@/queries/admin.ts';
+import {
+  useBootstrapClass,
+  useJobs,
+  useReadStandard,
+  useSaveManualStandard,
+  useSetCodeActive,
+} from '@/queries/admin.ts';
 import { SiteBadge } from '@/shared/ui/SiteNote.tsx';
 import { Badge, Card, Eyebrow, Note } from '@/shared/ui/primitives.tsx';
 import { downloadExcelCsv, toExcelCsv } from '@/lib/csv.ts';
@@ -268,6 +274,41 @@ const emptyDraft = (title: string): StandardDraft => ({
   title,
 });
 
+/**
+ * Whether the code is active at UC Davis: from the payroll reference, changeable by hand. Being
+ * active decides whether a code can be bootstrapped, take imported JDs, or be matched to a standard,
+ * and which codes a union successor supersedes, so a change that moves a supersession says so.
+ */
+const ActiveCheckbox = ({ job }: { job: JobRow }) => {
+  const setActive = useSetCodeActive();
+  const byHand = job.active !== job.onPayroll;
+  return (
+    <span className="flex flex-col">
+      <label className="flex cursor-pointer items-center gap-2 text-base text-base-content">
+        <input
+          checked={job.active}
+          className="checkbox checkbox-sm checkbox-primary"
+          disabled={setActive.isPending}
+          onChange={(e) => setActive.mutate({ active: e.target.checked, code: job.code })}
+          type="checkbox"
+        />
+        Active at UC Davis
+        {byHand ? (
+          <Badge tone="teal">
+            set by hand · payroll says {job.onPayroll ? 'active' : 'not active'}
+          </Badge>
+        ) : null}
+      </label>
+      {setActive.error ? <span className="text-sm text-error">{messageOf(setActive.error)}</span> : null}
+      {setActive.data?.supersessionChanges.map((c) => (
+        <span className="text-sm text-warning" key={c}>
+          {c}
+        </span>
+      ))}
+    </span>
+  );
+};
+
 /** One job: what it's attached to, and what can be done about it. */
 const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
   const [editing, setEditing] = useState(false);
@@ -302,8 +343,10 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
               {job.code}
               {job.family ? ` · ${job.family}` : ''}
               {job.grade ? ` · ${job.grade}` : ''}
-              <Badge tone={job.active ? 'green' : 'muted'}>{job.active ? 'active at UC Davis' : 'not active at UC Davis'}</Badge>
               {job.site ? <SiteBadge site={job.site} /> : null}
+            </div>
+            <div className="mt-2">
+              <ActiveCheckbox job={job} />
             </div>
             {job.supersededBy ? (
               <p className="mt-1 text-base text-warning">Superseded by {job.supersededBy}: its JDs go to that class.</p>

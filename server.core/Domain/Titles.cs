@@ -41,12 +41,37 @@ public class TitleCode
     /// </summary>
     public string Source { get; set; } = "";
 
+    /// <summary>Seen on UC Davis payroll, as the reference records it.</summary>
+    public bool OnPayroll => Source == "both" || Source == "payroll_list";
+
     /// <summary>
-    /// A title actually in use at UC Davis, as opposed to merely possible. Matrix-only titles
-    /// are excluded from browse and from classification: authoring against one would produce a
-    /// JD under a classification nobody holds.
+    /// An admin's call on whether the code is active at UC Davis, overriding the reference
+    /// (<see cref="CodeActiveOverride"/>). Applied when the index loads; not stored on the row,
+    /// which a reference import replaces.
     /// </summary>
-    public bool IsInUse => Source == "both" || Source == "payroll_list";
+    public bool? ActiveOverride { get; set; }
+
+    /// <summary>
+    /// A title actually in use at UC Davis, as opposed to merely possible: on payroll, unless an
+    /// admin has said otherwise. Matrix-only titles are excluded from browse and from
+    /// classification: authoring against one would produce a JD under a classification nobody holds.
+    /// </summary>
+    public bool IsInUse => ActiveOverride ?? OnPayroll;
+}
+
+/// <summary>
+/// An admin's call that a job code is, or is not, active at UC Davis, whatever the payroll
+/// reference says. One per code; kept apart from <see cref="TitleCode"/> so a reference import
+/// doesn't erase it. Deleted when it would agree with the reference.
+/// </summary>
+public class CodeActiveOverride
+{
+    public int Id { get; set; }
+    public string UcJobCode { get; set; } = "";
+    public bool IsActive { get; set; }
+    public int? DecidedByUserId { get; set; }
+    public AppUser? DecidedBy { get; set; }
+    public DateTimeOffset DecidedAt { get; set; }
 }
 
 /// <summary>

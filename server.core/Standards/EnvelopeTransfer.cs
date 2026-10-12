@@ -35,6 +35,15 @@ public sealed class EnvelopeBundle
 
     /// <summary>Every standard–code match decision. Added within version 1.</summary>
     public List<BundledMatchDecision> StandardMatches { get; set; } = [];
+
+    /// <summary>Codes an admin marked active or not at UC Davis, over the payroll reference. Added within version 1.</summary>
+    public List<BundledCodeActivity> ActiveCodes { get; set; } = [];
+}
+
+public sealed class BundledCodeActivity
+{
+    public string UcJobCode { get; set; } = "";
+    public bool IsActive { get; set; }
 }
 
 public sealed class BundledMatchDecision
@@ -145,6 +154,13 @@ public sealed class EnvelopeTransfer
                     .Select(d => new BundledMatchDecision { StandardTitle = d.StandardTitle, UcJobCode = d.UcJobCode, IsMatch = d.IsMatch })
                     .ToListAsync(ct),
             ],
+            ActiveCodes =
+            [
+                .. await _db.CodeActiveOverrides.AsNoTracking()
+                    .OrderBy(o => o.Id)
+                    .Select(o => new BundledCodeActivity { UcJobCode = o.UcJobCode, IsActive = o.IsActive })
+                    .ToListAsync(ct),
+            ],
         };
     }
 
@@ -185,9 +201,24 @@ public sealed class EnvelopeTransfer
             added++;
         }
 
+        // Codes marked active or not by hand, so an envelope for a code active only by an admin's
+        // call isn't refused here as not on payroll. A code this environment has already decided keeps
+        // its decision.
+        var haveActivity = (await _db.CodeActiveOverrides.Select(o => o.UcJobCode).ToListAsync(ct))
+            .Select(TitleCodeIndex.Pad)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var a in bundle.ActiveCodes.DistinctBy(a => TitleCodeIndex.Pad(a.UcJobCode)))
+        {
+            if (haveActivity.Add(TitleCodeIndex.Pad(a.UcJobCode)))
+            {
+                _db.CodeActiveOverrides.Add(new CodeActiveOverride { UcJobCode = a.UcJobCode, IsActive = a.IsActive, DecidedAt = bundle.ExportedAt });
+            }
+        }
+
         await _db.SaveChangesAsync(ct);
         _db.ChangeTracker.Clear();
         _standards.Invalidate();
+        _titleCodes.Invalidate();
         return (standards.Count, added);
     }
 
@@ -233,7 +264,9 @@ public sealed class EnvelopeTransfer
         if (bundle.Envelopes.Count > 2_000 || bundle.Envelopes.Any(e => !WithinBounds(e))
             || bundle.Standards.Count > 5_000 || bundle.Standards.Any(s => !WithinBounds(s))
             || bundle.StandardMatches.Count > 20_000
-            || bundle.StandardMatches.Any(d => d.StandardTitle.Length is 0 or > 300 || d.UcJobCode.Length is 0 or > 20))
+            || bundle.StandardMatches.Any(d => d.StandardTitle.Length is 0 or > 300 || d.UcJobCode.Length is 0 or > 20)
+            || bundle.ActiveCodes.Count > 10_000
+            || bundle.ActiveCodes.Any(a => a.UcJobCode.Length is 0 or > 20))
         {
             throw new InvalidOperationException("This export is larger than any real set of envelopes; it was not imported.");
         }

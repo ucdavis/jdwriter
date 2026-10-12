@@ -507,6 +507,15 @@ export type UploadOutcome = {
   ucJobCode: string | null;
 };
 
+/** What marking a code active or not changed. */
+export type CodeActivityResult = {
+  active: boolean;
+  code: string;
+  onPayroll: boolean;
+  /** Union supersessions that began or ended: they follow which codes are active. */
+  supersessionChanges: string[];
+};
+
 /** One job description in the corpus, as the list of them shows it. */
 export type CorpusJdRow = {
   addedAt: string | null;
@@ -685,7 +694,7 @@ export type BlankStandardCleanup = { kept: BlankStandardClass[]; removed: BlankS
 
 /** One UC job code, and what JDWriter has attached to it. */
 export type JobRow = {
-  /** On UC Davis payroll. */
+  /** Active at UC Davis: on payroll, unless an admin has said otherwise. */
   active: boolean;
   class: {
     corpusSize: number;
@@ -698,6 +707,8 @@ export type JobRow = {
   code: string;
   family: string | null;
   grade: string | null;
+  /** What the payroll reference says; `active` departs from it when set by hand. */
+  onPayroll: boolean;
   /** The site the job is only for, or null. */
   site: string | null;
   /** "title": its title matches the job's; "hand": an admin matched or entered it. */

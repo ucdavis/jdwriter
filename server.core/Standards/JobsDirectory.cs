@@ -41,8 +41,11 @@ public sealed class JobRow
     public string Code { get; set; } = "";
     public string Title { get; set; } = "";
 
-    /// <summary>On UC Davis payroll.</summary>
+    /// <summary>Active at UC Davis: on payroll, unless an admin has said otherwise.</summary>
     public bool Active { get; set; }
+
+    /// <summary>What the payroll reference says, which <see cref="Active"/> departs from when set by hand.</summary>
+    public bool OnPayroll { get; set; }
 
     public string? Family { get; set; }
     public string? Grade { get; set; }
@@ -102,6 +105,10 @@ public sealed class JobsDirectory
             }
         }
 
+        var onPayroll = index.All
+            .GroupBy(t => TitleCodeIndex.Pad(t.Code))
+            .ToDictionary(g => g.Key, g => g.Any(t => t.OnPayroll), StringComparer.Ordinal);
+
         return index.All
             .Where(t => scope switch
             {
@@ -129,6 +136,7 @@ public sealed class JobsDirectory
                     Code = t.Code,
                     Title = ProfileAggregator.Titleize(t.Title),
                     Active = t.IsInUse,
+                    OnPayroll = onPayroll[code],
                     Family = string.IsNullOrEmpty(t.Family) ? null : t.Family,
                     Grade = string.IsNullOrEmpty(t.Grade) ? null : t.Grade,
                     Site = Sites.SiteOf(t.Title),

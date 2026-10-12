@@ -47,7 +47,13 @@ public class TitleCodeService : ITitleCodeService
         // Invalidate() exists and why the importer must call it.
         var count = await _db.TitleCodes.CountAsync(ct);
         var maxId = count == 0 ? 0 : await _db.TitleCodes.MaxAsync(t => t.Id, ct);
-        var stamp = $"{count}:{maxId}";
+        var overrides = await _db.CodeActiveOverrides.AsNoTracking()
+            .Select(o => new { o.UcJobCode, o.IsActive, o.DecidedAt })
+            .ToListAsync(ct);
+        // Overrides are changed in place, so their stamp is their content, not a count.
+        var stamp = $"{count}:{maxId}:" + string.Join(",", overrides
+            .OrderBy(o => o.UcJobCode, StringComparer.Ordinal)
+            .Select(o => $"{o.UcJobCode}={o.IsActive}@{o.DecidedAt.UtcTicks}"));
 
         if (_cache.TryGetValue(CacheKey, out CachedIndex? cached)
             && cached is not null
@@ -57,6 +63,12 @@ public class TitleCodeService : ITitleCodeService
         }
 
         var rows = await _db.TitleCodes.AsNoTracking().OrderBy(t => t.Id).ToListAsync(ct);
+        var active = overrides.ToDictionary(o => TitleCodeIndex.Pad(o.UcJobCode), o => o.IsActive, StringComparer.Ordinal);
+        foreach (var row in rows)
+        {
+            row.ActiveOverride = active.TryGetValue(TitleCodeIndex.Pad(row.Code), out var a) ? a : null;
+        }
+
         var index = new TitleCodeIndex(rows);
 
         // No expiry: the reference changes only on an explicit import, and the stamp above
