@@ -30,7 +30,7 @@ describe('blank standards', () => {
         });
       })
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/standards' });
 
     await user.click(await screen.findByRole('button', { name: 'Find them' }));
     const list = await screen.findByTestId('blank-classes');

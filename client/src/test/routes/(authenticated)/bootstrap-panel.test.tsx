@@ -39,7 +39,7 @@ describe('bootstrap from a standard', () => {
         });
       })
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/standards' });
 
     await user.click(await screen.findByRole('button', { name: 'Find candidates' }));
     await screen.findByText('2 of 2');
@@ -71,7 +71,7 @@ describe('bootstrap from a standard', () => {
         )
       )
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/standards' });
 
     await user.click(await screen.findByRole('button', { name: 'Find candidates' }));
     await user.click(await screen.findByRole('button', { name: 'Create envelope' }));
@@ -133,7 +133,7 @@ describe('bootstrap from a standard', () => {
           });
         })
       );
-      renderRoute({ initialPath: '/backend/corpus' });
+      renderRoute({ initialPath: '/backend/standards' });
 
       await user.click(
         await screen.findByRole('button', { name: 'Find candidates' })
@@ -192,7 +192,7 @@ describe('bootstrap from a standard', () => {
           });
         })
       );
-      renderRoute({ initialPath: '/backend/corpus' });
+      renderRoute({ initialPath: '/backend/standards' });
 
       await user.click(
         await screen.findByRole('button', { name: 'Find candidates' })
@@ -219,7 +219,7 @@ describe('bootstrap from a standard', () => {
           })
         )
       );
-      renderRoute({ initialPath: '/backend/corpus' });
+      renderRoute({ initialPath: '/backend/standards' });
 
       await user.click(
         await screen.findByRole('button', { name: 'Find candidates' })
@@ -247,7 +247,7 @@ describe('bootstrap from a standard', () => {
           })
         )
       );
-      renderRoute({ initialPath: '/backend/corpus' });
+      renderRoute({ initialPath: '/backend/standards' });
 
       await user.click(
         await screen.findByRole('button', { name: 'Find candidates' })
@@ -289,7 +289,7 @@ describe('superseded classes', () => {
         HttpResponse.json({ profiles: [profile], refiledJds: 7 })
       )
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/standards' });
 
     await user.click(await screen.findByRole('button', { name: 'Check' }));
     await screen.findByText('Financial Anl 3 (007709)');

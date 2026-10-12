@@ -507,6 +507,75 @@ export type UploadOutcome = {
   ucJobCode: string | null;
 };
 
+/** One job description in the corpus, as the list of them shows it. */
+export type CorpusJdRow = {
+  addedAt: string | null;
+  classSlug: string | null;
+  classTitle: string | null;
+  departmentName: string;
+  duties: number;
+  functions: number;
+  id: number;
+  origin: 'authored' | 'classify' | 'export' | 'imported';
+  pctTotal: number;
+  /** Added since its class was last built, so not yet in the envelope. */
+  pending: boolean;
+  sourceFile: string;
+  ucJobCode: string;
+  ucJobTitle: string;
+  workingTitle: string;
+};
+
+/** One job description, whole: the parsed record and the class it's filed under. */
+export type CorpusJdDetail = {
+  addedAt: string | null;
+  classSlug: string | null;
+  classTitle: string | null;
+  id: number;
+  origin: CorpusJdRow['origin'];
+  pending: boolean;
+  record: {
+    conditionsOfEmployment: string[];
+    departmentName: string;
+    division: string;
+    flsaStatus: string;
+    jobSummary: string;
+    leads: boolean | null;
+    qualifications: {
+      education: string;
+      ksaMin: string[];
+      ksaPref: string[];
+      licenses: string[];
+      minExperience: string[];
+    };
+    responsibilities: Array<{ duties: string[]; functionName: string; pct: number | null }>;
+    salaryGrade: string;
+    sourceFile: string;
+    supervises: boolean | null;
+    ucJobCode: string;
+    ucJobTitle: string;
+    unionCode: string;
+    workEnvironment: string[];
+    workingTitle: string;
+  };
+};
+
+/** One job standard, and the job and class it is attached to. */
+export type StandardRow = {
+  blank: boolean;
+  classSlug: string | null;
+  classTitle: string | null;
+  code: string | null;
+  flsa: string;
+  grade: string;
+  how: 'hand' | 'title' | null;
+  jobTitle: string | null;
+  keyResponsibilities: number;
+  onPayroll: boolean;
+  title: string;
+  union: string;
+};
+
 /** A re-read of the imported Word documents with the layout parser. */
 export type ReparseSummary = {
   discarded: Array<{ fileName: string; reason: string }>;

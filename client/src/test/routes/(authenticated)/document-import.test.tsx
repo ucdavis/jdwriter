@@ -15,7 +15,7 @@ const outcome = (over: Partial<UploadOutcome>): UploadOutcome => ({
   ...over,
 });
 
-describe('add JDs from other units', () => {
+describe('add job descriptions', () => {
   setupRouteTest();
 
   it('reads a folder one document at a time, skipping files that are not documents', async () => {
@@ -41,7 +41,7 @@ describe('add JDs from other units', () => {
         return HttpResponse.json(verdict);
       })
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/job-descriptions' });
 
     const input = await screen.findByLabelText('Add a folder of job description documents');
     await user.upload(input, [
@@ -81,7 +81,7 @@ describe('add JDs from other units', () => {
         })
       )
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/job-descriptions' });
 
     await user.upload(await screen.findByLabelText('Add job description documents'), new File(['a'], 'jd.docx'));
     expect(await screen.findByText('LAB AST 1 (009605) · parsed')).toBeInTheDocument();
@@ -112,8 +112,8 @@ describe('add JDs from other units', () => {
         })
       )
     );
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/job-descriptions' });
 
-    expect(await screen.findByText(/4 from other units · refreshes a class with 12 JDs/)).toBeInTheDocument();
+    expect(await screen.findByText(/4 new JDs · 12 JDs in all/)).toBeInTheDocument();
   });
 });

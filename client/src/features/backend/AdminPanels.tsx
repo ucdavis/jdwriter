@@ -7,15 +7,12 @@ import {
   useDecideStandardMatch,
   useStandardMatches,
   useUndoStandardMatch,
-  useIngestClass,
   useImportDocument,
   useQualificationRules,
   useReparseDocuments,
   useIngestUploaded,
   useUploadStandards,
   useUploadedPending,
-  useUploadExports,
-  useIngestScan,
   useImportEnvelopes,
   useIngestStandards,
   useRemoveBlankStandardClasses,
@@ -49,119 +46,15 @@ const statusBadge = (
 };
 
 /**
- * Detects classes dropped into the corpus and ingests them.
+ * Classes with JDs added since they were last built, waiting to be re-ingested: new documents,
+ * JDs written in the app, Classify submissions. Re-ingesting rebuilds the class's envelope from all
+ * of its JDs.
  *
- * ONE CLASS PER REQUEST, sequentially. A large class takes a minute or two to parse,
- * consolidate and synthesize, so batching them would let one slow class time out the
- * whole run and leave the operator unable to tell which ones landed.
+ * ONE CLASS PER REQUEST, sequentially. A large class takes a minute or two to consolidate and
+ * synthesize, so batching them would let one slow class time out the whole run and leave the
+ * operator unable to tell which ones landed.
  */
-export const IngestPanel = () => {
-  const scan = useIngestScan();
-  const ingest = useIngestClass();
-  const [status, setStatus] = useState<Record<string, RowStatus>>({});
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const pending = scan.data?.pending ?? [];
-
-  const ingestAll = async () => {
-    setRunning(true);
-    setError(null);
-    for (const c of pending) {
-      setStatus((s) => ({ ...s, [c.code]: 'running' }));
-      try {
-        await ingest.mutateAsync(c.code);
-        setStatus((s) => ({ ...s, [c.code]: 'done' }));
-      } catch (error_) {
-        setStatus((s) => ({ ...s, [c.code]: 'error' }));
-        setError(`${c.title}: ${messageOf(error_)}`);
-      }
-    }
-    setRunning(false);
-  };
-
-  // No export directory on this server — the normal case when deployed. Uploads are the
-  // path there, so this panel steps aside rather than showing an error.
-  if (scan.data && !scan.data.configured) {
-    return null;
-  }
-
-  return (
-    <Card className="mb-5 p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <Eyebrow>New JDs from the corpus folder</Eyebrow>
-          <p className="mt-1 text-base text-base-content/65">
-            {scan.isFetching
-              ? 'Scanning the corpus for new classes…'
-              : pending.length === 0
-                ? 'No new classes detected — every class in the corpus is ingested.'
-                : `${pending.length} new class${pending.length === 1 ? '' : 'es'} detected.`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            className="btn btn-outline btn-sm"
-            disabled={scan.isFetching || running}
-            onClick={() => void scan.refetch()}
-            type="button"
-          >
-            {scan.isFetching ? 'Checking…' : 'Check for new JDs'}
-          </button>
-          {pending.length > 0 ? (
-            <button
-              className="btn btn-primary btn-sm"
-              disabled={running}
-              onClick={() => void ingestAll()}
-              type="button"
-            >
-              {running ? 'Ingesting…' : `Review & ingest ${pending.length}`}
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      {error ? (
-        <div className="mt-3">
-          <Note tone="red">{error}</Note>
-        </div>
-      ) : null}
-
-      {pending.length > 0 ? (
-        <ul className="mt-3 divide-y divide-base-300 rounded-lg border border-base-300">
-          {pending.map((c) => (
-            <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.code}>
-              <span className="flex flex-col">
-                <span className="text-base font-semibold">{c.title}</span>
-                <span className="text-sm text-base-content/65 tnum">
-                  Code {c.code} · {c.fileCount} JD{c.fileCount === 1 ? '' : 's'}
-                  {c.replacesStarter ? ' · replaces its starter envelope' : ''}
-                </span>
-              </span>
-              {statusBadge(status[c.code])}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {running ? (
-        <p className="mt-2 text-sm text-base-content/50">
-          Each class is parsed, consolidated and synthesized — a large class can take a
-          minute or two.
-        </p>
-      ) : null}
-    </Card>
-  );
-};
-
-/**
- * Upload HRTMS exports and ingest them, for servers with no export directory — every
- * deployed one. Uploaded files are stored in the database (encrypted at rest), never on
- * disk, because the exports carry position numbers and reporting lines.
- *
- * Like the folder panel, classes are ingested ONE PER REQUEST, in sequence.
- */
-export const UploadPanel = () => {
-  const upload = useUploadExports();
+export const PendingRebuildsPanel = ({ hideWhenEmpty = false }: { hideWhenEmpty?: boolean }) => {
   const pending = useUploadedPending();
   const ingest = useIngestUploaded();
   const [status, setStatus] = useState<Record<string, RowStatus>>({});
@@ -169,20 +62,14 @@ export const UploadPanel = () => {
   const [error, setError] = useState<string | null>(null);
 
   const classes = pending.data?.classes ?? [];
-  const outcomes = upload.data?.files ?? [];
-  const count = (r: string) => outcomes.filter((o) => o.result === r).length;
-  const failed = outcomes.filter((o) => o.result === 'failed');
-
-  const send = (list: FileList | null) => {
-    if (list && list.length > 0) {
-      setStatus({});
-      upload.mutate([...list]);
-    }
-  };
+  // Rows stay while a run is under way, so each shows how it went.
+  const [shown, setShown] = useState<typeof classes | null>(null);
+  const list = shown ?? classes;
 
   const ingestAll = async () => {
     setRunning(true);
     setError(null);
+    setShown(classes);
     for (const c of classes) {
       setStatus((s) => ({ ...s, [c.code]: 'running' }));
       try {
@@ -196,120 +83,69 @@ export const UploadPanel = () => {
     setRunning(false);
   };
 
+  if (hideWhenEmpty && list.length === 0) {
+    return null;
+  }
+
   return (
     <Card className="mb-5 p-5">
-      <Eyebrow>Upload JDs</Eyebrow>
-      <p className="mt-1 text-base text-base-content/65">
-        Add HRTMS job description exports (.html) — individual files or a whole folder. New
-        classes get an envelope; existing classes are refreshed with the added JDs, and a newer
-        export of the same position replaces the old one. Hand-edited envelopes are kept.
-      </p>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <label className="btn btn-outline btn-sm">
-          Choose files
-          <input
-            accept=".html,.htm"
-            aria-label="Upload HRTMS export files"
-            className="hidden"
-            disabled={upload.isPending}
-            multiple
-            onChange={(e) => {
-              send(e.target.files);
-              e.target.value = '';
-            }}
-            type="file"
-          />
-        </label>
-        <label className="btn btn-outline btn-sm">
-          Choose a folder
-          <input
-            aria-label="Upload a folder of HRTMS exports"
-            className="hidden"
-            disabled={upload.isPending}
-            multiple
-            onChange={(e) => {
-              send(e.target.files);
-              e.target.value = '';
-            }}
-            type="file"
-            {...{ webkitdirectory: '' }}
-          />
-        </label>
-        {upload.isPending ? (
-          <span className="text-base text-base-content/65">Uploading…</span>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <Eyebrow>Waiting to be re-ingested</Eyebrow>
+          <p className="mt-1 text-base text-base-content/65">
+            {pending.isLoading
+              ? 'Checking for new JDs…'
+              : list.length === 0
+                ? 'Every class is up to date with its JDs.'
+                : `${list.length} class${list.length === 1 ? ' has' : 'es have'} new JDs not yet in ${
+                    list.length === 1 ? 'its' : 'their'
+                  } envelope. Re-ingesting rebuilds each envelope from all of its JDs.`}
+          </p>
+        </div>
+        {classes.length > 0 ? (
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={running}
+            onClick={() => void ingestAll()}
+            type="button"
+          >
+            {running ? 'Re-ingesting…' : `Re-ingest ${classes.length}`}
+          </button>
         ) : null}
       </div>
 
-      {upload.error ? (
-        <div className="mt-3">
-          <Note tone="red">{messageOf(upload.error)}</Note>
-        </div>
-      ) : null}
-
-      {outcomes.length > 0 ? (
-        <div className="mt-3 text-base" data-testid="upload-summary">
-          {count('added')} added · {count('duplicate')} already uploaded · {failed.length} not
-          usable
-          {failed.length > 0 ? (
-            <ul className="mt-1 list-disc pl-5 text-error">
-              {failed.map((f) => (
-                <li key={f.fileName}>
-                  {f.fileName}: {f.error}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
-
-      {classes.length > 0 ? (
-        <>
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <span className="text-base font-semibold">
-              {classes.length} class{classes.length === 1 ? '' : 'es'} with new JDs to build in
-            </span>
-            <button
-              className="btn btn-primary btn-sm"
-              disabled={running}
-              onClick={() => void ingestAll()}
-              type="button"
-            >
-              {running ? 'Ingesting…' : `Ingest ${classes.length}`}
-            </button>
-          </div>
-          <ul className="mt-2 divide-y divide-base-300 rounded-lg border border-base-300">
-            {classes.map((c) => (
-              <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.code}>
-                <span className="flex flex-col">
-                  <span className="text-base font-semibold">{c.title}</span>
-                  <span className="text-sm text-base-content/65 tnum">
-                    Code {c.code} ·{' '}
-                    {[
-                      c.newFiles > 0 ? `${c.newFiles} uploaded` : null,
-                      c.newAuthored > 0 ? `${c.newAuthored} written in the app` : null,
-                      c.newClassified > 0 ? `${c.newClassified} from Classify` : null,
-                      c.newImported > 0 ? `${c.newImported} from other units` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                    {c.replacesStarter
-                      ? ' · replaces its starter envelope'
-                      : c.existingSlug
-                        ? ` · refreshes a class with ${c.corpusJds} JDs`
-                        : ' · new class'}
-                  </span>
-                  {c.hasManualEnvelope ? (
-                    <span className="text-sm text-warning">
-                      This class&apos;s envelope was edited by hand — rebuilding replaces those edits.
-                    </span>
-                  ) : null}
+      {list.length > 0 ? (
+        <ul className="mt-3 max-h-96 divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300">
+          {list.map((c) => (
+            <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.code}>
+              <span className="flex flex-col">
+                <span className="text-base font-semibold">{c.title}</span>
+                <span className="text-sm text-base-content/65 tnum">
+                  Code {c.code} ·{' '}
+                  {[
+                    c.newImported > 0 ? `${c.newImported} new JD${c.newImported === 1 ? '' : 's'}` : null,
+                    c.newFiles > 0 ? `${c.newFiles} uploaded` : null,
+                    c.newAuthored > 0 ? `${c.newAuthored} written in the app` : null,
+                    c.newClassified > 0 ? `${c.newClassified} from Classify` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  {c.replacesStarter
+                    ? ' · replaces its starter envelope'
+                    : c.existingSlug
+                      ? ` · ${c.corpusJds} JDs in all`
+                      : ' · new class'}
                 </span>
-                {statusBadge(status[c.code])}
-              </li>
-            ))}
-          </ul>
-        </>
+                {c.hasManualEnvelope ? (
+                  <span className="text-sm text-warning">
+                    This class&apos;s envelope was edited by hand — re-ingesting replaces those edits.
+                  </span>
+                ) : null}
+              </span>
+              {statusBadge(status[c.code], { done: 're-ingested', running: 're-ingesting…' })}
+            </li>
+          ))}
+        </ul>
       ) : null}
 
       {error ? (
@@ -343,12 +179,11 @@ type DocumentRow = {
 };
 
 /**
- * JDs from units outside the college. Those can't be exported from HRTMS; they arrive as copies out
- * of JDX, saved from Word. Each document is filed under the UC job title it states, and the AI reads
- * its responsibilities, % time and qualifications into the corpus.
+ * How job descriptions come in: JD exports copied out of JDX into Word. Each is parsed from its
+ * layout, verbatim, and filed under the job code it states; only an unrecognized layout goes to the AI.
  *
- * ONE DOCUMENT PER REQUEST, sequentially, as the ingest panels do: each is a model call, and a
- * folder of them sent as one request would let one slow file time out the lot.
+ * ONE DOCUMENT PER REQUEST, sequentially: a folder sent as one request would let one slow file
+ * (an AI read) time out the lot, and each row reports its own result.
  */
 export const DocumentImportPanel = () => {
   const importDocument = useImportDocument();
@@ -399,6 +234,7 @@ export const DocumentImportPanel = () => {
 
     setRunning(false);
     void queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] });
+    void queryClient.invalidateQueries({ queryKey: ['admin', 'corpus'] });
   };
 
   const done = rows.filter((r) => r.status !== 'waiting' && r.status !== 'running').length;
@@ -408,14 +244,13 @@ export const DocumentImportPanel = () => {
 
   return (
     <Card className="mb-5 p-5">
-      <Eyebrow>Add JDs from other units</Eyebrow>
+      <Eyebrow>Add job descriptions</Eyebrow>
       <p className="mt-1 text-base text-base-content/65">
-        For job descriptions from other units: JD exports copied out of JDX into Word (.docx). Each
-        is parsed straight from its layout — no AI, wording kept exactly — and filed under the job
-        code it states, the same as an export from within the unit, for envelopes and coverage
-        alike. A document with no responsibilities or no duties (a job posting, for one) is
+        JD exports copied out of JDX into Word (.docx) — files or a whole folder. Each is parsed
+        straight from its layout — no AI, wording kept exactly — and filed under the job code it
+        states. A document with no responsibilities or no duties (a job posting, for one) is
         incomplete and not added. Only a layout the parser doesn&apos;t recognize is read by the AI.
-        Added JDs appear above, ready to build in.
+        Added JDs wait below until their class is re-ingested.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button

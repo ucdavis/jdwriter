@@ -14,11 +14,26 @@ public class StandardsController : ApiControllerBase
 {
     private readonly IStandardsStore _standards;
     private readonly IClassProfileRepository _profiles;
+    private readonly StandardsDirectory _directory;
 
-    public StandardsController(IStandardsStore standards, IClassProfileRepository profiles)
+    public StandardsController(IStandardsStore standards, IClassProfileRepository profiles, StandardsDirectory directory)
     {
         _standards = standards;
         _profiles = profiles;
+        _directory = directory;
+    }
+
+    /// <summary>Every job standard, with the job code and class each is attached to.</summary>
+    [HttpGet]
+    public async Task<IActionResult> List(CancellationToken ct) =>
+        Ok(new { standards = await _directory.ListAsync(ct) });
+
+    /// <summary>One standard, whole, by its title.</summary>
+    [HttpGet("by-title")]
+    public async Task<IActionResult> ByTitle([FromQuery] string title, CancellationToken ct)
+    {
+        var standard = await _directory.GetAsync(title, ct);
+        return standard is null ? NotFound(new { message = $"No standard titled “{title}”." }) : Ok(standard);
     }
 
     [HttpGet("{slug}")]

@@ -133,7 +133,7 @@ describe('the jobs directory', () => {
   });
 
   it('is in the back-end navigation', async () => {
-    renderRoute({ initialPath: '/backend/corpus' });
+    renderRoute({ initialPath: '/backend/standards' });
 
     expect(await screen.findByRole('link', { name: 'Jobs' })).toHaveAttribute('href', '/backend/jobs');
   });

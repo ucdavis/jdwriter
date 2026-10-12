@@ -106,7 +106,7 @@ public sealed partial class CorpusDocuments
             // The extractor passes HTML through untouched, for the HRTMS parser. A Word-saved web
             // page is mostly markup, so it is turned away with the fix rather than read badly.
             return Failed(outcome,
-                "HTML isn't read here. Save it from Word as a Word Document (.docx) — or, if it is an HRTMS export, add it under “Upload JDs” above.");
+                "HTML isn't read here. Open it in Word and save it as a Word Document (.docx).");
         }
 
         Extraction extraction;

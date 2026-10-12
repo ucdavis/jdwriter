@@ -1,83 +1,8 @@
-import {
-  BlankStandardClassesPanel,
-  BootstrapPanel,
-  DocumentImportPanel,
-  EnvelopeTransferPanel,
-  IngestPanel,
-  QualificationRulesPanel,
-  StandardMatchPanel,
-  StandardsPanel,
-  SupersessionPanel,
-  UploadPanel,
-} from '@/features/backend/AdminPanels.tsx';
-import { AdminOnly } from '@/shared/ui/AppShell.tsx';
-import { PageHeader } from '@/shared/ui/primitives.tsx';
-import { createFileRoute } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
+/** The page this was ("Corpus & standards") split into Job descriptions and Job standards. */
 export const Route = createFileRoute('/(authenticated)/backend/corpus')({
-  component: CorpusPage,
+  beforeLoad: () => {
+    throw redirect({ replace: true, to: '/backend/job-descriptions' });
+  },
 });
-
-function CorpusPage() {
-  return (
-    <AdminOnly>
-      <PageHeader
-        eyebrow="Back end · inputs"
-        sub="Everything the envelopes are built from: real job descriptions, and the official UC job standards that cover classes with no JDs yet."
-        title="Corpus & standards"
-      />
-
-      <Section
-        id="jds"
-        sub="Upload HRTMS exports, add JDs from other units as Word documents, or ingest new classes from the corpus folder. Each class is rebuilt from its JDs."
-        title="Add job descriptions"
-      >
-        <UploadPanel />
-        <DocumentImportPanel />
-        <IngestPanel />
-      </Section>
-
-      <Section
-        id="standards"
-        sub="Load standards, match them to job codes, retire classes a union title has superseded, create starter envelopes for classes with a standard but no JDs, and move envelopes between environments. Every job, and what it's attached to, is on the Jobs page."
-        title="Standards"
-      >
-        <StandardsPanel />
-        <StandardMatchPanel />
-        <SupersessionPanel />
-        <BootstrapPanel />
-        <BlankStandardClassesPanel />
-        <EnvelopeTransferPanel />
-      </Section>
-
-      <Section
-        id="rules"
-        sub="House rules every envelope follows, whatever wrote it."
-        title="Envelope rules"
-      >
-        <QualificationRulesPanel />
-      </Section>
-    </AdminOnly>
-  );
-}
-
-const Section = ({
-  children,
-  id,
-  sub,
-  title,
-}: {
-  children: ReactNode;
-  id: string;
-  sub: string;
-  title: string;
-}) => (
-  <section aria-labelledby={`${id}-heading`} className="mb-8">
-    <h2 className="text-xl font-bold" id={`${id}-heading`}>
-      {title}
-    </h2>
-    <p className="mb-3 mt-0.5 text-base text-base-content/65">{sub}</p>
-    {children}
-  </section>
-);
