@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // ---- reference / catalog
     public DbSet<TitleCode> TitleCodes => Set<TitleCode>();
     public DbSet<Supersession> Supersessions => Set<Supersession>();
+    public DbSet<CodeActiveOverride> CodeActiveOverrides => Set<CodeActiveOverride>();
 
     // ---- official standards
     public DbSet<JobStandard> JobStandards => Set<JobStandard>();
@@ -106,6 +107,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Family).HasMaxLength(TitleLen);
             e.Property(x => x.Source).HasMaxLength(40);
             e.Ignore(x => x.IsInUse);
+            e.Ignore(x => x.OnPayroll);
+            e.Ignore(x => x.ActiveOverride);
 
             // Code is NOT unique: the reference lists some titles twice, once as possible at UCD
             // and once as observed on payroll.
@@ -122,6 +125,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.ToTitle).HasMaxLength(TitleLen);
             // One successor per retired code, or the remap is not a function.
             e.HasIndex(x => x.FromCode).IsUnique();
+        });
+
+        b.Entity<CodeActiveOverride>(e =>
+        {
+            e.Property(x => x.UcJobCode).HasMaxLength(20);
+            e.HasIndex(x => x.UcJobCode).IsUnique();
+            e.HasOne(x => x.DecidedBy).WithMany().HasForeignKey(x => x.DecidedByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         // ---------------------------------------------------------------- standards

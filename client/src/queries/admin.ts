@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AnalyticsReport,
   ClassStandard,
+  CodeActivityResult,
   CorpusJdDetail,
   CorpusJdRow,
   StandardRow,
@@ -97,6 +98,23 @@ export const useSaveManualStandard = () => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'jobs'] });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'standard-matches'] });
+      void queryClient.invalidateQueries({ queryKey: ['classes'] });
+    },
+  });
+};
+
+/** Mark a code active at UC Davis or not, over the payroll reference. */
+export const useSetCodeActive = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ active, code }: { active: boolean; code: string }) =>
+      fetchJson<CodeActivityResult>(`/api/admin/codes/${encodeURIComponent(code)}/active`, {
+        body: JSON.stringify({ active }),
+        method: 'POST',
+      }),
+    // Being active decides what can be bootstrapped, imported and matched, and which codes supersede.
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin'] });
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
     },
   });
