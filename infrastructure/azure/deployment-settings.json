@@ -112,7 +112,7 @@
       "appServiceName": "Auth__ClientSecret",
       "classification": "secret",
       "valueType": "string",
-      "requiredWhen": "never",
+      "requiredWhen": "deploy_infra",
       "description": "Entra confidential web app credential for the authorization-code sign-in callback. Store in the GitHub Environment secret; rotate before expiration."
     }
   ]

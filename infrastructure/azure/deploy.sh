@@ -134,6 +134,9 @@ require_command az
 if is_true "$DEPLOY_INFRA"; then
   [[ -n "${ADMIN_BOOTSTRAP_LOGIN_IDS:-}" ]] || die "ADMIN_BOOTSTRAP_LOGIN_IDS is required when DEPLOY_INFRA=true."
 fi
+if is_true "$DEPLOY_INFRA"; then
+  [[ -n "${AUTH_CLIENT_SECRET:-}" ]] || die "AUTH_CLIENT_SECRET is required when DEPLOY_INFRA=true."
+fi
 # </deployment-settings:deploy-sh-required-checks>
 
 if is_true "$DEPLOY_INFRA"; then

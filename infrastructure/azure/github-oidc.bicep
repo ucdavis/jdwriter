@@ -6,6 +6,9 @@ param appName string = 'webapp'
 @description('GitHub repository in owner/name format.')
 param repository string = 'owner/repository'
 
+@description('GitHub OIDC subject prefix from the repository OIDC customization API. Set this for immutable subjects containing organization and repository IDs. Defaults to the legacy name-only subject.')
+param githubSubjectPrefix string = 'repo:${repository}'
+
 @description('Azure region for the environment resource group.')
 param location string = deployment().location
 
@@ -49,7 +52,7 @@ var repositoryParts = split(repository, '/')
 var repositoryIsConfigured = length(repositoryParts) == 2 && !empty(repositoryParts[0]) && !empty(repositoryParts[1]) && repository != 'owner/repository'
 var deploymentGuardPassed = !empty(expectedSubscriptionId) && repositoryIsConfigured && normalizedCurrentSubscriptionId == normalizedExpectedSubscriptionId && endsWith(normalizedResourceGroupName, expectedResourceGroupSuffix)
 var federatedCredentialName = 'github-environment-${env}'
-var federatedCredentialSubject = 'repo:${repository}:environment:${env}'
+var federatedCredentialSubject = '${githubSubjectPrefix}:environment:${env}'
 
 resource environmentResourceGroup 'Microsoft.Resources/resourceGroups@2024-03-01' = if (deploymentGuardPassed) {
   name: resourceGroupName

@@ -114,6 +114,11 @@ jobs:
             echo "ADMIN_BOOTSTRAP_LOGIN_IDS must be configured as a GitHub Environment variable when configuring Azure."
             exit 1
           fi
+
+          if [[ -z "$AUTH_CLIENT_SECRET" ]]; then
+            echo "AUTH_CLIENT_SECRET must be configured as a GitHub Environment secret when configuring Azure."
+            exit 1
+          fi
           # </deployment-settings:workflow-required-checks>
 
           if [[ -n "$WEB_PLAN_NAME" && -z "$WEB_PLAN_RESOURCE_GROUP" ]] ||

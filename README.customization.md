@@ -195,6 +195,17 @@ This bootstrap is only for deployment authentication from GitHub Actions to Azur
 
 The managed identity lives in the resource group where it receives Contributor, matching the KOI deployment pattern. It can therefore manage its own managed-identity resource and federated credentials, but Contributor does not allow it to create, change, or delete Azure RBAC assignments.
 
+Read the repository's OIDC subject prefix before bootstrapping. GitHub may use immutable organization
+and repository IDs; a name-only Azure trust will not match those tokens.
+
+```bash
+repository="ucdavis/jdwriter"
+github_subject_prefix="$(gh api "repos/$repository/actions/oidc/customization/sub" --jq '.sub_claim_prefix // empty')"
+if [[ -z "$github_subject_prefix" ]]; then
+  github_subject_prefix="repo:$repository"
+fi
+```
+
 Validate the bootstrap for `test` before applying it:
 
 ```bash
@@ -208,7 +219,8 @@ az deployment sub validate \
   --template-file infrastructure/azure/github-oidc.bicep \
   --parameters \
     appName="<app-name>" \
-    repository="<owner>/<repo>" \
+    repository="$repository" \
+    githubSubjectPrefix="$github_subject_prefix" \
     env="test" \
     expectedSubscriptionId="<subscription-id>" \
     resourceGroupName="rg-<app-name>-test" \
@@ -228,7 +240,8 @@ az deployment sub create \
   --template-file infrastructure/azure/github-oidc.bicep \
   --parameters \
     appName="<app-name>" \
-    repository="<owner>/<repo>" \
+    repository="$repository" \
+    githubSubjectPrefix="$github_subject_prefix" \
     env="test" \
     expectedSubscriptionId="<subscription-id>" \
     resourceGroupName="rg-<app-name>-test" \

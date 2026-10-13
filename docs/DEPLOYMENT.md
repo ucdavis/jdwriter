@@ -11,7 +11,7 @@ Besides the template's `AZURE_*` variables and `SQL_ADMIN_PASSWORD`:
 
 | Name | Kind | Value |
 |---|---|---|
-| `AUTH_CLIENT_SECRET` | **secret** | Production credential for the existing Entra web app. Add the Azure hostname plus `/signin-oidc` to its redirect URIs. |
+| `AUTH_CLIENT_SECRET` | **secret** | **Required when configuring Azure.** Production credential for the existing Entra web app. Add the Azure hostname plus `/signin-oidc` to its redirect URIs. |
 | `ADMIN_BOOTSTRAP_LOGIN_IDS` | variable | Comma-separated UC Davis login IDs that are always admins, e.g. `rsmith`. **Required** — Configure Azure refuses to run without it, because an app with no admin cannot be administered. These admins cannot be removed from the app; further admins are added on `/backend/settings`. |
 | `LLM_PROVIDER` | variable | `anthropic` (default), `azure-openai`, or `openai-compatible`. Which provider receives JD text is decided here, per environment — never in the app. |
 | `LLM_MODEL` | variable | Azure OpenAI **deployment name**, or model id. Optional for Anthropic. |
@@ -68,7 +68,10 @@ automatic deployments and restore Validate on pushes to `main`.
 Production uses `rg-jdwriter-prod` in the UC Davis CAES Production subscription and the shared
 `Nibbler` Linux plan in `service-plans-linux`, West US 2. Start on the App Service Azure hostname
 with `APP_PATH_BASE` unset; the CAES People routing below is a separate setup step.
-The `prod` GitHub Environment allows deployment from `main` only.
+The `prod` GitHub Environment allows deployment from `main` only. Its deployment identity trusts
+`repo:ucdavis@573450/jdwriter@1400585641:environment:prod`, the repository's immutable GitHub
+subject. When rerunning the OIDC bootstrap, pass
+`githubSubjectPrefix=repo:ucdavis@573450/jdwriter@1400585641` as described in the template guide.
 
 ## 3. Load data
 
