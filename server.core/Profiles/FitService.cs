@@ -28,6 +28,16 @@ public sealed class Misfit
 
     /// <summary>The work this JD does that its class envelope does not account for.</summary>
     public List<IdiosyncraticFunction> Idiosyncratic { get; set; } = [];
+
+    /// <summary>Set when an admin has reviewed it and found it belongs in this class.</summary>
+    public FitReviewInfo? Reviewed { get; set; }
+}
+
+public sealed class FitReviewInfo
+{
+    public string? By { get; set; }
+    public DateTimeOffset At { get; set; }
+    public string? Note { get; set; }
 }
 
 public sealed class FitSummary
@@ -53,16 +63,23 @@ public interface IFitService
 public sealed class FitService : IFitService
 {
     private readonly IClassProfileRepository _profiles;
+    private readonly Data.AppDbContext? _db;
 
-    public FitService(IClassProfileRepository profiles)
+    /// <param name="db">Where reviews are kept; without it no misfit shows as reviewed.</param>
+    public FitService(IClassProfileRepository profiles, Data.AppDbContext? db = null)
     {
         _profiles = profiles;
+        _db = db;
     }
 
     public async Task<FitSummary> GetMisfitsAsync(int threshold = 90, CancellationToken ct = default)
     {
         var misfits = new List<Misfit>();
         var totalJds = 0;
+        var reviews = _db is null
+            ? []
+            : await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(_db.JdFitReviews, ct);
+        var reviewed = reviews.ToDictionary(r => r.SourceFile, StringComparer.Ordinal);
 
         foreach (var p in await _profiles.GetAllAsync(ct))
         {
@@ -93,6 +110,11 @@ public sealed class FitService : IFitService
                         .OrderBy(u => u.Ordinal)
                         .Select(u => new IdiosyncraticFunction { Name = u.Name, Pct = u.Pct })
                         .ToList(),
+                    // A review holds for the class it was made in only.
+                    Reviewed = reviewed.TryGetValue(jd.SourceFile, out var r)
+                               && Titles.TitleCodeIndex.Pad(r.UcJobCode) == Titles.TitleCodeIndex.Pad(p.UcJobCode)
+                        ? new FitReviewInfo { By = r.ReviewedByName, At = r.ReviewedAt, Note = r.Note }
+                        : null,
                 });
             }
         }

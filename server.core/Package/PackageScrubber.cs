@@ -101,6 +101,12 @@ public sealed partial class PackageScrubber(byte[] key)
             }
         }
 
+        foreach (var r in package.FitReviews)
+        {
+            r.SourceFile = SourceFile(r.SourceFile);
+            r.Note = r.Note is null ? null : Text(r.Note);
+        }
+
         foreach (var p in package.Classes)
         {
             foreach (var f in p.SourceFiles)

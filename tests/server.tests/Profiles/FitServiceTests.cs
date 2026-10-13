@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Server.Core.Domain;
 using Server.Core.Profiles;
 
@@ -182,5 +183,30 @@ public class FitServiceTests
         await new FitService(repo).GetMisfitsAsync();
 
         repo.GetAllCalls.Should().Be(1, "one pass over the profiles, no corpus scan");
+    }
+
+    [Fact]
+    public async Task A_reviewed_JD_shows_as_reviewed_but_only_in_the_class_it_was_reviewed_in()
+    {
+        var repo = new FakeRepo
+        {
+            Profiles =
+            [
+                Profile("s1", "Farm Laborer", "008543", ("a.HTML", 40, []), ("b.HTML", 50, [])),
+            ],
+        };
+        await using var db = new Server.Core.Data.AppDbContext(
+            new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<Server.Core.Data.AppDbContext>()
+                .UseInMemoryDatabase($"fit_{Guid.NewGuid():N}").Options);
+        db.JdFitReviews.AddRange(
+            new JdFitReview { SourceFile = "a.HTML", UcJobCode = "8543", ReviewedByName = "An Admin", ReviewedAt = DateTimeOffset.UtcNow, Note = "Specialized, but this class." },
+            // Reviewed in another class: it has moved since, so it's up for review again.
+            new JdFitReview { SourceFile = "b.HTML", UcJobCode = "004724", ReviewedAt = DateTimeOffset.UtcNow });
+        await db.SaveChangesAsync();
+
+        var summary = await new FitService(repo, db).GetMisfitsAsync();
+
+        summary.Misfits.Single(m => m.SourceFile == "a.HTML").Reviewed.Should().BeEquivalentTo(new { By = "An Admin", Note = "Specialized, but this class." });
+        summary.Misfits.Single(m => m.SourceFile == "b.HTML").Reviewed.Should().BeNull();
     }
 }

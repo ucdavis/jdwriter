@@ -11,6 +11,7 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
     public DbSet<Supersession> Supersessions => Set<Supersession>();
     public DbSet<CodeActiveOverride> CodeActiveOverrides => Set<CodeActiveOverride>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+    public DbSet<JdFitReview> JdFitReviews => Set<JdFitReview>();
 
     // ---- official standards
     public DbSet<JobStandard> JobStandards => Set<JobStandard>();
@@ -126,6 +127,16 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
             e.Property(x => x.ToTitle).HasMaxLength(TitleLen);
             // One successor per retired code, or the remap is not a function.
             e.HasIndex(x => x.FromCode).IsUnique();
+        });
+
+        b.Entity<JdFitReview>(e =>
+        {
+            e.Property(x => x.SourceFile).HasMaxLength(PathLen);
+            e.Property(x => x.UcJobCode).HasMaxLength(20);
+            e.Property(x => x.Note).HasMaxLength(2000);
+            e.Property(x => x.ReviewedByName).HasMaxLength(200);
+            e.HasIndex(x => x.SourceFile).IsUnique();
+            e.HasOne(x => x.ReviewedBy).WithMany().HasForeignKey(x => x.ReviewedByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<AppSetting>(e =>

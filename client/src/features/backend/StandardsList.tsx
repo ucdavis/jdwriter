@@ -1,4 +1,5 @@
 import { Badge, Card } from '@/shared/ui/primitives.tsx';
+import { downloadExcelCsv, toExcelCsv } from '@/lib/csv.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { StandardDetail } from '@/features/build/StandardDetail.tsx';
 import { useStandardByTitle, useStandardsList } from '@/queries/admin.ts';
@@ -6,13 +7,32 @@ import type { StandardRow } from '@/lib/contracts.ts';
 import { Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
-const SHOWS = ['all', 'attached', 'unattached', 'blank'] as const;
-type Show = (typeof SHOWS)[number];
-const shows: Record<Show, { label: string; test: (s: StandardRow) => boolean }> = {
-  all: { label: 'All', test: () => true },
-  attached: { label: 'Attached to a job', test: (s) => s.code !== null },
-  blank: { label: 'Blank', test: (s) => s.blank },
-  unattached: { label: 'No job', test: (s) => s.code === null },
+/** The same kinds of filter as the Codes page, so the two read alike. */
+type CodeFilter = 'active' | 'all' | 'inactive' | 'none';
+type ClassFilter = 'any' | 'none' | 'some';
+type ContentFilter = 'any' | 'blank' | 'full';
+type MatchFilter = 'any' | 'hand' | 'title';
+
+const byCode: Record<CodeFilter, (s: StandardRow) => boolean> = {
+  active: (s) => s.code !== null && s.onPayroll,
+  all: () => true,
+  inactive: (s) => s.code !== null && !s.onPayroll,
+  none: (s) => s.code === null,
+};
+const byClass: Record<ClassFilter, (s: StandardRow) => boolean> = {
+  any: () => true,
+  none: (s) => s.classSlug === null,
+  some: (s) => s.classSlug !== null,
+};
+const byContent: Record<ContentFilter, (s: StandardRow) => boolean> = {
+  any: () => true,
+  blank: (s) => s.blank,
+  full: (s) => !s.blank,
+};
+const byMatch: Record<MatchFilter, (s: StandardRow) => boolean> = {
+  any: () => true,
+  hand: (s) => s.how === 'hand',
+  title: (s) => s.how === 'title',
 };
 const PAGE = 100;
 
@@ -20,7 +40,10 @@ const PAGE = 100;
 export const StandardsList = ({ initialOpen, initialQuery }: { initialOpen?: string; initialQuery?: string }) => {
   const { data, error, isLoading } = useStandardsList();
   const [q, setQ] = useState(initialQuery ?? '');
-  const [show, setShow] = useState<Show>('all');
+  const [codeFilter, setCodeFilter] = useState<CodeFilter>('all');
+  const [classFilter, setClassFilter] = useState<ClassFilter>('any');
+  const [contentFilter, setContentFilter] = useState<ContentFilter>('any');
+  const [matchFilter, setMatchFilter] = useState<MatchFilter>('any');
   const [limit, setLimit] = useState(PAGE);
   const [open, setOpen] = useState<string | null>(initialOpen ?? null);
 
@@ -33,7 +56,12 @@ export const StandardsList = ({ initialOpen, initialQuery }: { initialOpen?: str
         )
       : standards;
   }, [standards, q]);
-  const shown = searched.filter(shows[show].test);
+  const shown = searched
+    .filter(byCode[codeFilter])
+    .filter(byClass[classFilter])
+    .filter(byContent[contentFilter])
+    .filter(byMatch[matchFilter]);
+  const reset = () => setLimit(PAGE);
 
   if (error) {
     return <p className="text-base text-error">{messageOf(error)}</p>;
@@ -41,36 +69,87 @@ export const StandardsList = ({ initialOpen, initialQuery }: { initialOpen?: str
 
   return (
     <>
-      <div className="mb-3 flex flex-wrap items-center gap-3">
-        <input
-          aria-label="Search standards"
-          className="input input-sm input-bordered w-full sm:w-72"
-          onChange={(e) => {
-            setQ(e.target.value);
-            setLimit(PAGE);
-          }}
-          placeholder="Search title or code…"
-          type="search"
-          value={q}
-        />
-        <div aria-label="Show" className="flex flex-wrap gap-1" role="group">
-          {SHOWS.map((s) => (
-            <button
-              aria-pressed={show === s}
-              className={`btn btn-sm ${show === s ? 'btn-primary' : 'btn-ghost'}`}
-              key={s}
-              onClick={() => {
-                setShow(s);
-                setLimit(PAGE);
-              }}
-              type="button"
-            >
-              {shows[s].label}
-              <span className="tnum opacity-70">{searched.filter(shows[s].test).length}</span>
-            </button>
-          ))}
+      <Card className="mb-3 p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            aria-label="Job code"
+            className="select select-bordered select-sm"
+            onChange={(e) => {
+              setCodeFilter(e.target.value as CodeFilter);
+              reset();
+            }}
+            value={codeFilter}
+          >
+            <option value="all">Every standard</option>
+            <option value="active">Job active at UC Davis</option>
+            <option value="inactive">Job not active at UC Davis</option>
+            <option value="none">Not attached to a job code</option>
+          </select>
+          <select
+            aria-label="Class"
+            className="select select-bordered select-sm"
+            onChange={(e) => {
+              setClassFilter(e.target.value as ClassFilter);
+              reset();
+            }}
+            value={classFilter}
+          >
+            <option value="any">With or without a class</option>
+            <option value="some">Has a class</option>
+            <option value="none">No class</option>
+          </select>
+          <select
+            aria-label="Content"
+            className="select select-bordered select-sm"
+            onChange={(e) => {
+              setContentFilter(e.target.value as ContentFilter);
+              reset();
+            }}
+            value={contentFilter}
+          >
+            <option value="any">Blank or not</option>
+            <option value="full">Has key responsibilities</option>
+            <option value="blank">Blank (no responsibilities)</option>
+          </select>
+          <select
+            aria-label="Match"
+            className="select select-bordered select-sm"
+            onChange={(e) => {
+              setMatchFilter(e.target.value as MatchFilter);
+              reset();
+            }}
+            value={matchFilter}
+          >
+            <option value="any">However matched</option>
+            <option value="title">Matched by title</option>
+            <option value="hand">Matched by hand</option>
+          </select>
+          <input
+            aria-label="Search standards"
+            className="input input-sm input-bordered min-w-48 flex-1"
+            onChange={(e) => {
+              setQ(e.target.value);
+              reset();
+            }}
+            placeholder="Search title, code or job…"
+            type="search"
+            value={q}
+          />
         </div>
-      </div>
+        {data ? (
+          <p className="mt-3 text-base" data-testid="standards-summary">
+            {shown.length} standard{shown.length === 1 ? '' : 's'} ·{' '}
+            {shown.filter((s) => s.code !== null).length} attached to a job code ·{' '}
+            {shown.filter((s) => s.classSlug !== null).length} with a class ·{' '}
+            {shown.filter((s) => s.blank).length} blank
+          </p>
+        ) : null}
+        {shown.length > 0 ? (
+          <button className="btn btn-outline btn-sm mt-3" onClick={() => downloadStandards(shown)} type="button">
+            ⤓ Download these {shown.length} as CSV
+          </button>
+        ) : null}
+      </Card>
 
       {isLoading ? (
         <p className="text-base text-base-content/65">Loading standards…</p>
@@ -157,3 +236,36 @@ const OpenStandard = ({ title }: { title: string }) => {
 
   return <StandardDetail className="mt-3" standard={data} />;
 };
+
+const downloadStandards = (rows: StandardRow[]) =>
+  downloadExcelCsv(
+    toExcelCsv(
+      rows.map((s) => ({
+        active: s.code === null ? '' : s.onPayroll ? 'yes' : 'no',
+        blank: s.blank ? 'yes' : 'no',
+        class: s.classTitle ?? '',
+        code: s.code ?? '',
+        flsa: s.flsa,
+        grade: s.grade,
+        how: s.how === 'hand' ? 'by hand' : s.how === 'title' ? 'by title' : '',
+        job: s.jobTitle ?? '',
+        responsibilities: s.keyResponsibilities,
+        title: s.title,
+        union: s.union,
+      })),
+      [
+        { header: 'Standard', key: 'title' },
+        { header: 'Job code', key: 'code' },
+        { header: 'Job', key: 'job' },
+        { header: 'Active at UC Davis', key: 'active' },
+        { header: 'Matched', key: 'how' },
+        { header: 'Class', key: 'class' },
+        { header: 'Grade', key: 'grade' },
+        { header: 'FLSA', key: 'flsa' },
+        { header: 'Union', key: 'union' },
+        { header: 'Key responsibilities', key: 'responsibilities' },
+        { header: 'Blank', key: 'blank' },
+      ]
+    ),
+    'jdwriter-standards.csv'
+  );

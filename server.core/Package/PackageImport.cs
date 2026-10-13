@@ -233,6 +233,7 @@ public sealed class PackageImporter
         work.PlanOriginals();
         work.PlanJobDescriptions(await _db.AuthoredJds.AsNoTracking().Select(a => new { a.Id, a.CorpusKey }).ToDictionaryAsync(a => a.CorpusKey, a => a.Id, ct));
         work.PlanClasses();
+        work.PlanFitReviews();
         return work;
     }
 
@@ -266,6 +267,7 @@ public sealed class PackageImporter
                     case JsonObject o:
                         o.Remove("updatedAt");
                         o.Remove("decidedAt");
+                        o.Remove("reviewedAt");
                         foreach (var kv in o.ToList())
                         {
                             Strip(kv.Value);
@@ -584,6 +586,35 @@ public sealed class PackageImporter
             }
 
             OnlyHere(s, here.Classes.Where(c => !matched.Contains(c)), incoming.Classes, c => c.Slug, c => $"{c.Title} ({c.UcJobCode})");
+        }
+
+        public void PlanFitReviews()
+        {
+            var s = Section("Fit reviews");
+            var mine = here.FitReviews.ToDictionary(r => r.SourceFile, StringComparer.Ordinal);
+            foreach (var r in incoming.FitReviews.DistinctBy(r => r.SourceFile))
+            {
+                var m = mine.GetValueOrDefault(r.SourceFile);
+                var v = Decide(m, m?.ReviewedAt, r, r.ReviewedAt);
+                Count(s, v, $"{r.SourceFile} ({r.UcJobCode})");
+                if (v == Verdict.Add)
+                {
+                    _apply.Add(() => db.JdFitReviews.Add(r));
+                }
+                else if (v == Verdict.Update)
+                {
+                    _apply.Add(() =>
+                    {
+                        m!.UcJobCode = r.UcJobCode;
+                        m.Note = r.Note;
+                        m.ReviewedByName = r.ReviewedByName;
+                        m.ReviewedByUserId = null;
+                        m.ReviewedAt = r.ReviewedAt;
+                    });
+                }
+            }
+
+            OnlyHere(s, here.FitReviews, incoming.FitReviews, r => r.SourceFile, r => r.SourceFile);
         }
 
         /// <summary>

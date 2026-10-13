@@ -59,6 +59,7 @@ public class PackageScrubTests
             Coverage = new CoverageReport { PerJd = [new JdCoverage { SourceFile = ExportName }] },
             Functions = [new ProfileFunction { Name = "PLANT CARE", SampleDuties = [new ProfileFunctionSampleDuty { Text = $"Reports to position {Boss}." }] }],
         });
+        db.JdFitReviews.Add(new JdFitReview { SourceFile = ExportName, UcJobCode = "009605", ReviewedAt = DateTimeOffset.UtcNow, Note = $"Reviewed {Position}." });
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
     }
@@ -93,6 +94,7 @@ public class PackageScrubTests
         var cls = doc["classes"]![0]!;
         cls["sourceFiles"]!.AsArray().Select(f => f!["sourceFile"]!.GetValue<string>()).Should().Equal(jdName, importName);
         cls["coverage"]!["perJd"]![0]!["sourceFile"]!.GetValue<string>().Should().Be(jdName);
+        doc["fitReviews"]![0]!["sourceFile"]!.GetValue<string>().Should().Be(jdName, "a review follows its JD's stand-in");
 
         // A position maps to the same stand-in wherever it appears, so "reports to" still points at its JD.
         var jds = doc["jobDescriptions"]!.AsArray();
