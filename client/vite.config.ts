@@ -50,6 +50,14 @@ export default defineConfig(({ command }) => ({
         secure: false,
         target,
       },
+      '/signout-oidc': {
+        secure: false,
+        target,
+      },
+      '/signout-callback-oidc': {
+        secure: false,
+        target,
+      },
       '/signin-oidc': {
         secure: false,
         target,
