@@ -60,7 +60,10 @@ gh variable set DEPLOY_ENABLED --body true
 ```
 
 From then on a push to `main` builds, tests, and deploys directly to `prod`, with no deployment
-approval step. PRs still require the `Validate` check. Manual CI/CD runs can select `test` or `prod`.
+approval step. Keep the `prod` GitHub Environment free of required reviewers or other manual approval
+gates. PRs still require the `Validate` check. Manual CI/CD runs default to `prod` and can select
+`test` or `prod`; they do not use the `DEPLOY_ENABLED` gate. Set `DEPLOY_ENABLED=false` to stop
+automatic deployments and restore Validate on pushes to `main`.
 
 Production uses `rg-jdwriter-prod` in the UC Davis CAES Production subscription and the shared
 `Nibbler` Linux plan in `service-plans-linux`, West US 2. Start on the App Service Azure hostname

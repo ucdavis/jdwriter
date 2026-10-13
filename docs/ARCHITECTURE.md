@@ -151,8 +151,7 @@ Responsibilities:
 
 - Validates pull requests
 - Checks deployment-setting generated regions for drift
-- Deploys pushes to `main` to the `prod` GitHub Environment when `DEPLOY_ENABLED=true`, without a deployment approval gate
-- Supports manual deployments to `test` or `prod`
+- Selects automatic and manual deployment targets according to the [deployment policy](DEPLOYMENT.md#2-turn-on-deployment)
 
 ### `.github/workflows/deploy-azure-appservice.yml`
 

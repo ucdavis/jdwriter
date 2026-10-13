@@ -79,7 +79,7 @@ Set `WEB_PLAN_NAME` and `WEB_PLAN_RESOURCE_GROUP` in a GitHub Environment, or ex
 
 ### GitHub Environments
 
-Create GitHub Environments named `test` and `prod`. Configure production reviewers or approval gates as appropriate for your project.
+Create GitHub Environments named `test` and `prod`. Follow the [JDWriter deployment policy](docs/DEPLOYMENT.md#2-turn-on-deployment) for production branch restrictions and approval settings.
 
 Using GitHub CLI:
 
@@ -283,11 +283,7 @@ For an existing installation that used the previous deployment app registration,
 
 ### First deployment
 
-The `CI/CD` workflow:
-
-- Validates pull requests.
-- When `DEPLOY_ENABLED=true`, deploys pushes to `main` directly to `prod` without deployment approval, changing only the app package.
-- Supports manual package deployments to `test` or `prod`.
+The `CI/CD` workflow validates pull requests and deploys the app package without changing infrastructure or App Service settings. See [JDWriter deployment policy](docs/DEPLOYMENT.md#2-turn-on-deployment) for automatic deployments, manual defaults, and disablement.
 
 Before the first package deployment, run the manual `Configure Azure` workflow for the target environment. Run it again whenever Bicep, deployment settings, GitHub Environment variables, or GitHub Environment secrets change. Wait for configuration to finish before starting a package deployment. Both workflows use the same environment-specific FIFO concurrency queue, so configuration and package deployment for one environment cannot overlap, pending operations do not displace one another, and running operations are not canceled. The `test` and `prod` queues are independent, and GitHub retains up to 100 pending operations in each queue.
 
