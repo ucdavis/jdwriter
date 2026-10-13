@@ -1,5 +1,10 @@
 using FluentAssertions;
+using System.Net;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -14,6 +19,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Server.Controllers;
 using Server.Helpers;
+using Server.Services;
 
 namespace Server.Tests;
 
@@ -211,7 +217,7 @@ public class LocalAuthenticationTests
         var result = controller.Logout().Should().BeOfType<SignOutResult>().Subject;
 
         result.AuthenticationSchemes.Should().Equal(cookieScheme, OpenIdConnectDefaults.AuthenticationScheme);
-        result.Properties!.RedirectUri.Should().Be("/jdwriter/about");
+        result.Properties!.RedirectUri.Should().Be("/jdwriter/logout/complete");
     }
 
     [Fact]
@@ -221,6 +227,82 @@ public class LocalAuthenticationTests
         controller.HttpContext.User = LocalAuthentication.CreatePrincipal("sample")!;
         var result = controller.Logout().Should().BeOfType<SignOutResult>().Subject;
         result.AuthenticationSchemes.Should().Equal(LocalAuthentication.Scheme);
+        result.Properties!.RedirectUri.Should().Be("/logout/complete");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("/jdwriter")]
+    public async Task Logout_returns_to_a_public_page_and_clears_the_cookie(string pathBase)
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            ApplicationName = typeof(AccountController).Assembly.GetName().Name,
+            EnvironmentName = "Development",
+        });
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Auth:UseLocal"] = "true",
+            ["Auth:ClientId"] = "<client-guid>",
+        });
+        builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
+        builder.Services.AddControllersWithViews().AddApplicationPart(typeof(AccountController).Assembly);
+        builder.Services.AddAuthenticationServices(builder.Configuration, builder.Environment);
+        builder.Services.AddAuthorization();
+        builder.Services.AddScoped(_ => TestDbContextFactory.CreateInMemory());
+        builder.Services.AddScoped<Server.Core.Access.AdminAccess>();
+        builder.Services.AddScoped<IUserService, UserService>();
+        await using var app = builder.Build();
+        if (pathBase.Length > 0)
+        {
+            app.UsePathBase(pathBase);
+        }
+        app.UseRouting();
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapControllers();
+        app.MapGet("/api/session", () => Results.Ok()).RequireAuthorization();
+        await app.StartAsync();
+        using var handler = new HttpClientHandler { AllowAutoRedirect = false };
+        using var client = new HttpClient(handler) { BaseAddress = new Uri(app.Urls.Single()) };
+
+        var anonymousLanding = await client.GetAsync(pathBase + "/logout/complete");
+        anonymousLanding.StatusCode.Should().Be(HttpStatusCode.OK);
+        var loginHtml = await client.GetStringAsync(pathBase + "/login");
+        var login = await client.PostAsync(pathBase + "/login/local", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["persona"] = "sample",
+            ["__RequestVerificationToken"] = AntiforgeryToken(loginHtml),
+        }));
+        login.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        (await client.GetAsync(pathBase + "/api/session")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var confirmation = await client.GetStringAsync(pathBase + "/logout");
+        var rejected = await client.PostAsync(pathBase + "/logout", new FormUrlEncodedContent(new Dictionary<string, string>()));
+        rejected.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await client.GetAsync(pathBase + "/api/session")).StatusCode.Should().Be(HttpStatusCode.OK);
+        var logout = await client.PostAsync(pathBase + "/logout", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = AntiforgeryToken(confirmation),
+        }));
+        logout.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        logout.Headers.Location!.OriginalString.Should().Be(pathBase + "/logout/complete");
+        var landing = await client.GetAsync(logout.Headers.Location);
+        landing.StatusCode.Should().Be(HttpStatusCode.OK);
+        landing.Content.Headers.ContentType!.MediaType.Should().Be("text/html");
+        var html = await landing.Content.ReadAsStringAsync();
+        html.Should().Contain("You are signed out of JDWriter");
+        html.Should().Contain($"href=\"{pathBase}/login\"");
+        (await client.GetAsync(pathBase + "/api/session")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await client.GetAsync(pathBase + "/login")).StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    private static string AntiforgeryToken(string html)
+    {
+        var match = Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"");
+        match.Success.Should().BeTrue();
+        return WebUtility.HtmlDecode(match.Groups[1].Value);
     }
 
     private static AccountController Controller(string? local = null, string clientId = "<client-guid>")
