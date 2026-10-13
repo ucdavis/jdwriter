@@ -138,8 +138,8 @@ public static partial class Customization
     /// standard (10%); senior individual contributors (level 4 and up) and supervisors and managers
     /// shape their roles more, and may reasonably add up to 30%.
     /// </summary>
-    public static int TargetPct(string title) =>
-        Supervision.IsSupervisory(title) || Level(title) >= 4 ? 30 : 10;
+    public static int TargetPct(string title, CtTitle? ct = null) =>
+        Supervision.IsSupervisory(title, ct) || Level(title) >= 4 ? 30 : 10;
 
     /// <summary>The class's level: its last standalone number ("Financial Analyst 4 CX" is 4).</summary>
     public static int? Level(string title)

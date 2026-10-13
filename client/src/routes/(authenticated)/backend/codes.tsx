@@ -1,3 +1,4 @@
+import { CtListingPanel } from '@/features/backend/CtListingPanel.tsx';
 import { JobsDirectory } from '@/features/backend/JobsDirectory.tsx';
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
 import { PageHeader } from '@/shared/ui/primitives.tsx';
@@ -22,6 +23,7 @@ function JobsPage() {
         sub="Every UC job code, and what it's attached to: its class and its standard. Open a job to bootstrap it, or to add its standard by hand."
         title="Codes"
       />
+      <CtListingPanel />
       <JobsDirectory initialCode={code} key={code ?? ''} />
     </AdminOnly>
   );

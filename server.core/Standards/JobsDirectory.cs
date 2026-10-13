@@ -56,6 +56,26 @@ public sealed class JobRow
 
     public JobClass? Class { get; set; }
     public JobStandardLink? Standard { get; set; }
+
+    /// <summary>The code in the Career Tracks listing, when it's there.</summary>
+    public JobCt? Ct { get; set; }
+}
+
+/// <summary>What the Career Tracks listing says of a code.</summary>
+public sealed class JobCt
+{
+    public string Title { get; set; } = "";
+    public string Family { get; set; } = "";
+    public string Function { get; set; } = "";
+    public string Level { get; set; } = "";
+    public string Origin { get; set; } = "";
+    public string Grade { get; set; } = "";
+    public string Flsa { get; set; } = "";
+    public string PersonnelProgram { get; set; } = "";
+    public string Status { get; set; } = "";
+    public bool OpOnly { get; set; }
+    public bool Supervisory { get; set; }
+    public DateOnly? LastUpdated { get; set; }
 }
 
 /// <summary>
@@ -153,6 +173,14 @@ public sealed class JobsDirectory
                                                 && standards.For(cls.Title, cls.UcJobCode) is { IsBlank: true },
                         },
                     Standard = standard,
+                    Ct = t.Ct is not { } c
+                        ? null
+                        : new JobCt
+                        {
+                            Title = c.Title, Family = c.JobFamily, Function = c.JobFunction, Level = c.LevelCode, Origin = c.Origin,
+                            Grade = c.Grade, Flsa = c.Flsa, PersonnelProgram = c.PersonnelProgram, Status = c.JobStatus,
+                            OpOnly = c.OpOnly, Supervisory = c.IsSupervisory, LastUpdated = c.LastUpdated,
+                        },
                 };
             })
             .OrderBy(r => r.Title, StringComparer.Ordinal)

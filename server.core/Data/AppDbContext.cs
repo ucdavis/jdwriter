@@ -12,6 +12,7 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
     public DbSet<CodeActiveOverride> CodeActiveOverrides => Set<CodeActiveOverride>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<JdFitReview> JdFitReviews => Set<JdFitReview>();
+    public DbSet<CtTitle> CtTitles => Set<CtTitle>();
 
     // ---- official standards
     public DbSet<JobStandard> JobStandards => Set<JobStandard>();
@@ -111,6 +112,7 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
             e.Ignore(x => x.IsInUse);
             e.Ignore(x => x.OnPayroll);
             e.Ignore(x => x.ActiveOverride);
+            e.Ignore(x => x.Ct);
 
             // Code is NOT unique: the reference lists some titles twice, once as possible at UCD
             // and once as observed on payroll.
@@ -127,6 +129,22 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
             e.Property(x => x.ToTitle).HasMaxLength(TitleLen);
             // One successor per retired code, or the remap is not a function.
             e.HasIndex(x => x.FromCode).IsUnique();
+        });
+
+        b.Entity<CtTitle>(e =>
+        {
+            e.Property(x => x.UcJobCode).HasMaxLength(20);
+            e.HasIndex(x => x.UcJobCode).IsUnique();
+            e.Property(x => x.Title).HasMaxLength(TitleLen);
+            e.Property(x => x.JobFamily).HasMaxLength(TitleLen);
+            e.Property(x => x.JobFunction).HasMaxLength(TitleLen);
+            e.Property(x => x.Origin).HasMaxLength(10);
+            e.Property(x => x.LevelCode).HasMaxLength(10);
+            e.Property(x => x.Flsa).HasMaxLength(10);
+            e.Property(x => x.PersonnelProgram).HasMaxLength(10);
+            e.Property(x => x.JobStatus).HasMaxLength(10);
+            e.Property(x => x.Grade).HasMaxLength(20);
+            e.Ignore(x => x.IsSupervisory);
         });
 
         b.Entity<JdFitReview>(e =>

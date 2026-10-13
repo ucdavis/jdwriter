@@ -682,6 +682,8 @@ export type BootstrapResponse = {
 export type CodeSuggestion = {
   /** On UC Davis payroll. */
   active: boolean;
+  /** The Career Tracks listing gives this code the standard's exact title. */
+  fromCtListing?: boolean;
   /** 0–1: how alike the titles are, once abbreviations are expanded. */
   score: number;
   title: string;
@@ -706,6 +708,49 @@ export type BlankStandardClass = {
 
 export type BlankStandardCleanup = { kept: BlankStandardClass[]; removed: BlankStandardClass[] };
 
+/** What the UC Career Tracks title code listing says of a code. */
+export type JobCt = {
+  family: string;
+  flsa: string;
+  function: string;
+  grade: string;
+  lastUpdated: string | null;
+  /** P1–P5 professional, S supervisor, M manager, ME executive, L lead. */
+  level: string;
+  /** Used by the Office of the President alone. */
+  opOnly: boolean;
+  /** C campus, MC medical center, OP Office of the President, AG, PS. */
+  origin: string;
+  personnelProgram: string;
+  status: string;
+  supervisory: boolean;
+  /** The full title, which payroll abbreviates. */
+  title: string;
+};
+
+/** The Career Tracks listing as stored. */
+export type CtListingStatus = { codes: number; importedAt: string | null };
+
+/** What importing a Career Tracks listing does, or did. */
+export type CtListingPlan = {
+  addedCodeCount: number;
+  addedCodes: string[];
+  affectedClasses: Array<{ slug: string; title: string; why: string }>;
+  applied: boolean;
+  changed: number;
+  familiesChanged: number;
+  familiesFilled: number;
+  gradesChanged: string[];
+  gradesFilled: number;
+  newToListing: number;
+  opOnly: number;
+  rows: number;
+  standardMoves: Array<{ fromCode: string; fromTitle: string; standard: string; toCode: string; toTitle: string }>;
+  standardSuggestions: number;
+  supervisionChanges: string[];
+  unchanged: number;
+};
+
 /** One UC job code, and what JDWriter has attached to it. */
 export type JobRow = {
   /** Active at UC Davis: on payroll, unless an admin has said otherwise. */
@@ -719,6 +764,8 @@ export type JobRow = {
     title: string;
   } | null;
   code: string;
+  /** The code in the Career Tracks listing, when it's there. */
+  ct?: JobCt | null;
   family: string | null;
   grade: string | null;
   /** What the payroll reference says; `active` departs from it when set by hand. */

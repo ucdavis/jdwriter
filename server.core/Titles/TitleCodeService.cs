@@ -50,8 +50,10 @@ public class TitleCodeService : ITitleCodeService
         var overrides = await _db.CodeActiveOverrides.AsNoTracking()
             .Select(o => new { o.UcJobCode, o.IsActive, o.DecidedAt })
             .ToListAsync(ct);
+        var ctCount = await _db.CtTitles.CountAsync(ct);
+        var ctAt = ctCount == 0 ? DateTimeOffset.MinValue : await _db.CtTitles.MaxAsync(t => t.ImportedAt, ct);
         // Overrides are changed in place, so their stamp is their content, not a count.
-        var stamp = $"{count}:{maxId}:" + string.Join(",", overrides
+        var stamp = $"{count}:{maxId}:ct{ctCount}@{ctAt.UtcTicks}:" + string.Join(",", overrides
             .OrderBy(o => o.UcJobCode, StringComparer.Ordinal)
             .Select(o => $"{o.UcJobCode}={o.IsActive}@{o.DecidedAt.UtcTicks}"));
 
@@ -63,10 +65,14 @@ public class TitleCodeService : ITitleCodeService
         }
 
         var rows = await _db.TitleCodes.AsNoTracking().OrderBy(t => t.Id).ToListAsync(ct);
+        rows = CtOverlay.Apply(rows, await _db.CtTitles.AsNoTracking().ToListAsync(ct));
         var active = overrides.ToDictionary(o => TitleCodeIndex.Pad(o.UcJobCode), o => o.IsActive, StringComparer.Ordinal);
         foreach (var row in rows)
         {
-            row.ActiveOverride = active.TryGetValue(TitleCodeIndex.Pad(row.Code), out var a) ? a : null;
+            row.ActiveOverride = active.TryGetValue(TitleCodeIndex.Pad(row.Code), out var a) ? a
+                // The Office of the President's own titles are never UC Davis's, unless an admin says.
+                : row.Ct?.OpOnly == true ? false
+                : null;
         }
 
         var index = new TitleCodeIndex(rows);

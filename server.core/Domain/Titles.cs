@@ -57,6 +57,52 @@ public class TitleCode
     /// classification: authoring against one would produce a JD under a classification nobody holds.
     /// </summary>
     public bool IsInUse => ActiveOverride ?? OnPayroll;
+
+    /// <summary>
+    /// The code's row in the Career Tracks title code listing, when it has one: its full title, level,
+    /// origin. Laid over the reference when the index loads (<see cref="CtTitle"/>); not stored here.
+    /// </summary>
+    public CtTitle? Ct { get; set; }
+}
+
+/// <summary>
+/// A job code as the UC Career Tracks title code listing states it — imported from the report, kept
+/// apart from <see cref="TitleCode"/> (which a reference import replaces), and laid over it: its full
+/// title links payroll's abbreviations to the standards' spelling, its level says who supervises, and
+/// its grade and family, being newer, win over the reference's.
+/// </summary>
+public class CtTitle
+{
+    public int Id { get; set; }
+    public string UcJobCode { get; set; } = "";
+
+    /// <summary>The full title ("Intellectual Property Manager 2"), not payroll's ("IP MGR 2").</summary>
+    public string Title { get; set; } = "";
+
+    public string JobFamily { get; set; } = "";
+    public string JobFunction { get; set; } = "";
+
+    /// <summary>C (campus), MC (medical center), OP (Office of the President), AG, PS.</summary>
+    public string Origin { get; set; } = "";
+
+    /// <summary>P1–P5 professional, S1–S3 supervisor, M1–M4 manager, ME executive, L lead.</summary>
+    public string LevelCode { get; set; } = "";
+
+    public DateOnly? LastUpdated { get; set; }
+
+    /// <summary>Used by the Office of the President alone: never active at UC Davis unless an admin says so.</summary>
+    public bool OpOnly { get; set; }
+
+    public string Flsa { get; set; } = "";
+    public string PersonnelProgram { get; set; } = "";
+    public string JobStatus { get; set; } = "";
+    public string Grade { get; set; } = "";
+
+    /// <summary>When the listing it came from was imported. Newer wins in an environment package.</summary>
+    public DateTimeOffset ImportedAt { get; set; }
+
+    /// <summary>A supervisor (S), manager (M) or executive (ME) level.</summary>
+    public bool IsSupervisory => LevelCode.StartsWith('S') || LevelCode.StartsWith('M');
 }
 
 /// <summary>

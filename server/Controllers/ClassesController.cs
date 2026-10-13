@@ -75,7 +75,7 @@ public class ClassesController : ApiControllerBase
             .Where(c => c.Ready)
             .Select(c => (c.UcJobCode, c.Slug, c.Title)));
         var twins = Sites.TwinsOf(profile.Title, profile.UcJobCode, titles, classes);
-        return Ok(ClassProfileView.From(profile, index.For(profile.Title, profile.UcJobCode), twins));
+        return Ok(ClassProfileView.From(profile, index.For(profile.Title, profile.UcJobCode), twins, titles.FindByCode(profile.UcJobCode)?.Ct));
     }
 
     [HttpGet("{slug}/coverage")]

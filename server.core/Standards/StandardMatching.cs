@@ -16,6 +16,9 @@ public sealed class CodeSuggestion
 
     /// <summary>0–1: how alike the two titles are, once abbreviations are expanded.</summary>
     public double Score { get; set; }
+
+    /// <summary>The Career Tracks listing gives this code the standard's exact title.</summary>
+    public bool FromCtListing { get; set; }
 }
 
 /// <summary>A standard that matches no job code exactly, and the codes it might be.</summary>
@@ -106,6 +109,13 @@ public sealed class StandardMatching
             .GroupBy(t => Shape(t.Key))
             .ToDictionary(g => g.Key, g => g.ToList());
 
+        // The Career Tracks listing's full titles, by strict key: a standard whose exact title it gives
+        // one code has that code as its first suggestion. A title it gives several codes suggests none.
+        var ctByKey = index.All.Where(t => t.Ct is not null)
+            .GroupBy(t => TitleNormalizer.TitleCodeKey(t.Ct!.Title))
+            .Where(g => g.Select(t => TitleCodeIndex.Pad(t.Code)).Distinct().Count() == 1)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+
         var review = new StandardMatchReview
         {
             Confirmed = decisions.Where(d => d.IsMatch)
@@ -144,6 +154,22 @@ public sealed class StandardMatching
                 .ThenBy(c => c.UcJobCode, StringComparer.Ordinal)
                 .Take(MaxSuggestions)
                 .ToList();
+
+            if (ctByKey.TryGetValue(key, out var listed)
+                && !index.IsSuperseded(listed.Code)
+                && (includeNotActive || listed.IsInUse)
+                && !rejected.Contains((s.LongTitle, TitleCodeIndex.Pad(listed.Code))))
+            {
+                suggestions.RemoveAll(c => TitleCodeIndex.Pad(c.UcJobCode) == TitleCodeIndex.Pad(listed.Code));
+                suggestions.Insert(0, new CodeSuggestion
+                {
+                    UcJobCode = listed.Code,
+                    Title = listed.Title,
+                    Active = listed.IsInUse,
+                    Score = 1,
+                    FromCtListing = true,
+                });
+            }
 
             if (suggestions.Count == 0)
             {

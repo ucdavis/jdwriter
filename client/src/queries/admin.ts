@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AnalyticsReport,
   ClassStandard,
+  CtListingPlan,
+  CtListingStatus,
   PackageInfo,
   PackagePlan,
   CodeActivityResult,
@@ -416,6 +418,33 @@ export const usePackageApply = () => {
   return useMutation({
     mutationFn: (file: File) => sendPackage('/api/admin/package/apply', file),
     // Everything an admin sees may have changed.
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+};
+
+/** The Career Tracks title code listing as stored. */
+export const useCtListingStatus = () =>
+  useQuery({
+    queryFn: () => fetchJson<CtListingStatus>('/api/admin/codes/ct-listing'),
+    queryKey: ['admin', 'ct-listing'] as const,
+  });
+
+const sendListing = (path: string, file: File) => {
+  const body = new FormData();
+  body.append('file', file, file.name);
+  return fetchJson<CtListingPlan>(path, { body, method: 'POST' });
+};
+
+/** What importing a Career Tracks listing would change. Writes nothing. */
+export const useCtListingPreview = () =>
+  useMutation({ mutationFn: (file: File) => sendListing('/api/admin/codes/ct-listing/preview', file) });
+
+/** Import a Career Tracks listing, as previewed. */
+export const useCtListingApply = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => sendListing('/api/admin/codes/ct-listing/apply', file),
+    // Codes, standards, matches and classes may all read differently now.
     onSuccess: () => queryClient.invalidateQueries(),
   });
 };

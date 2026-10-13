@@ -695,7 +695,11 @@ export const StandardMatchPanel = () => {
                     <span className="text-base">
                       <span className="tnum">{c.ucJobCode}</span> {c.title}{' '}
                       <Badge tone={c.active ? 'green' : 'muted'}>{c.active ? 'active' : 'not active'}</Badge>{' '}
-                      <span className="text-sm text-base-content/50 tnum">{Math.round(c.score * 100)}% alike</span>
+                      {c.fromCtListing ? (
+                        <Badge tone="accent">same title in the CT listing</Badge>
+                      ) : (
+                        <span className="text-sm text-base-content/50 tnum">{Math.round(c.score * 100)}% alike</span>
+                      )}
                     </span>
                     <button
                       className="btn btn-primary btn-sm"
