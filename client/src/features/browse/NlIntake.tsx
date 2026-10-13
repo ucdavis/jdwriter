@@ -2,9 +2,9 @@ import { SiteNote } from '@/shared/ui/SiteNote.tsx';
 import { Badge, Note } from '@/shared/ui/primitives.tsx';
 import { HttpError } from '@/lib/api.ts';
 import { useIntakeMatch } from '@/queries/authoring.ts';
+import { clearSessionState, setSessionState, useSessionState } from '@/lib/sessionState.ts';
 import { useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
-import type { ApiError } from '@/lib/contracts.ts';
+import type { ApiError, IntakeResponse } from '@/lib/contracts.ts';
 
 /** 4xx messages are written for the user, so they are shown verbatim. */
 export const messageOf = (error: unknown): string => {
@@ -23,17 +23,32 @@ export const messageOf = (error: unknown): string => {
 const toneFor = (confidence: number) =>
   confidence >= 70 ? 'green' : confidence >= 40 ? 'yellow' : 'muted';
 
+const KEY = 'home.intake.';
+
 /**
  * Semantic intake: the free-text request is matched against each class's envelope.
  * Two model calls happen server-side (a cheap catalog shortlist, then a detailed rank);
  * the client sees only the ranked result.
+ *
+ * The request and its suggestions are kept across pages (useSessionState): opening a suggested
+ * class and coming back finds them as they were. A result arriving after the page was left still
+ * lands, because it is stored from the request's own promise rather than this component.
  */
 export const NlIntake = () => {
-  const [text, setText] = useState('');
+  const [text, setText] = useSessionState(`${KEY}text`, '');
+  const [result] = useSessionState<IntakeResponse | null>(`${KEY}result`, null);
   const navigate = useNavigate();
   const match = useIntakeMatch();
 
-  const matches = match.data?.matches;
+  const matches = result?.matches;
+  const find = () => {
+    void match
+      .mutateAsync({ request: text })
+      .then((r) => setSessionState(`${KEY}result`, r))
+      .catch(() => {
+        // Shown from the mutation's own error while the page is open.
+      });
+  };
 
   return (
     <div>
@@ -49,11 +64,24 @@ export const NlIntake = () => {
         <button
           className="btn btn-primary btn-sm"
           disabled={match.isPending || !text.trim()}
-          onClick={() => match.mutate({ request: text })}
+          onClick={find}
           type="button"
         >
           {match.isPending ? 'Matching…' : 'Find matching class'}
         </button>
+        {text || result ? (
+          <button
+            className="btn btn-ghost btn-sm"
+            disabled={match.isPending}
+            onClick={() => {
+              clearSessionState(KEY);
+              match.reset();
+            }}
+            type="button"
+          >
+            Clear
+          </button>
+        ) : null}
         <span className="text-sm text-base-content/50">
           Your description is matched against every ingested job class.
         </span>

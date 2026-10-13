@@ -1,7 +1,8 @@
 import { Badge } from '@/shared/ui/primitives.tsx';
 import { titleMatches } from '@/lib/titles.ts';
 import { SiteBadge } from '@/shared/ui/SiteNote.tsx';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useSessionState } from '@/lib/sessionState.ts';
 import { useNavigate } from '@tanstack/react-router';
 import type { ClassListItem } from '@/lib/contracts.ts';
 
@@ -9,7 +10,8 @@ import type { ClassListItem } from '@/lib/contracts.ts';
 const CAP = 200;
 
 export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
-  const [query, setQuery] = useState('');
+  // Kept across pages, like the AI request beside it.
+  const [query, setQuery] = useSessionState('home.classes.query', '');
   const navigate = useNavigate();
 
   const filtered = useMemo(() => {
