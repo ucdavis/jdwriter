@@ -142,6 +142,8 @@ try
     builder.Services.AddScoped<CodeActivity>();
     builder.Services.AddScoped<Server.Core.Package.EnvironmentPackages>();
     builder.Services.AddScoped<Server.Core.Package.PackageImporter>();
+    builder.Services.AddSingleton(Server.Core.Package.PackageOptions.For(
+        builder.Environment.IsDevelopment(), builder.Configuration.GetValue<bool?>("Package:AcceptsRealData")));
     builder.Services.AddScoped<CorpusDirectory>();
     builder.Services.AddScoped<ManualStandards>();
     builder.Services.AddScoped<BlankStandardClasses>();

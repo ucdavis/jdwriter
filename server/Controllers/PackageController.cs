@@ -20,19 +20,26 @@ public class PackageController : ApiControllerBase
     private readonly EnvironmentPackages _packages;
     private readonly PackageImporter _importer;
     private readonly IWebHostEnvironment _env;
+    private readonly PackageOptions _options;
 
-    public PackageController(EnvironmentPackages packages, PackageImporter importer, IWebHostEnvironment env)
+    public PackageController(EnvironmentPackages packages, PackageImporter importer, IWebHostEnvironment env, PackageOptions options)
     {
         _packages = packages;
         _importer = importer;
         _env = env;
+        _options = options;
     }
 
+    /// <summary>Which packages this environment imports: real (prod), scrubbed (test), or both (development).</summary>
+    [HttpGet("info")]
+    public IActionResult Info() => Ok(_options);
+
+    /// <summary>The package; <c>scrubbed</c> for the test environment, which never holds real JDs.</summary>
     [HttpGet("export")]
-    public async Task<IActionResult> Export(CancellationToken ct)
+    public async Task<IActionResult> Export([FromQuery] bool scrubbed = false, CancellationToken ct = default)
     {
-        var bytes = await _packages.ExportAsync(ct);
-        var name = $"jdwriter-{_env.EnvironmentName.ToLowerInvariant()}-{DateTimeOffset.UtcNow:yyyy-MM-dd-HHmm}.jdwpkg.json.gz";
+        var bytes = await _packages.ExportAsync(scrubbed, ct);
+        var name = $"jdwriter-{_env.EnvironmentName.ToLowerInvariant()}{(scrubbed ? "-scrubbed" : "")}-{DateTimeOffset.UtcNow:yyyy-MM-dd-HHmm}.jdwpkg.json.gz";
         return File(bytes, "application/gzip", name);
     }
 

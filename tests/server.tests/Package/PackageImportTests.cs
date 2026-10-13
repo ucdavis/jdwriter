@@ -33,7 +33,7 @@ public class PackageImportTests
             .Options);
         var cache = new MemoryCache(new MemoryCacheOptions());
         var packages = new EnvironmentPackages(db);
-        return new Env(db, packages, new PackageImporter(db, packages, new TitleCodeService(db, cache), new StandardsStore(db, cache)), name);
+        return new Env(db, packages, new PackageImporter(db, packages, new TitleCodeService(db, cache), new StandardsStore(db, cache), new PackageOptions { AcceptsRealData = true, AcceptsScrubbed = true }), name);
     }
 
     private static TitleCode Tc(string code, string title) => new()
