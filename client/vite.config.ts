@@ -50,7 +50,7 @@ export default defineConfig(({ command }) => ({
         secure: false,
         target,
       },
-      '/signout-oidc': {
+      '/signin-oidc': {
         secure: false,
         target,
       },
@@ -58,7 +58,7 @@ export default defineConfig(({ command }) => ({
         secure: false,
         target,
       },
-      '/signin-oidc': {
+      '/signout-oidc': {
         secure: false,
         target,
       },

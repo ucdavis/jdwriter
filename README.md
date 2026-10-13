@@ -59,7 +59,6 @@ This deletes the sandbox database and local sign-in keys. It does not affect the
    SMTP and external telemetry are optional. Leave their example settings disabled until you configure those services.
 
 3. **Open In DevContainer**
-
    - Open the project folder in Visual Studio Code.
    - Click the prompt to open in container (or manually select from the command palette).
 
@@ -79,6 +78,7 @@ _Using the DevContainer is optional, but it will get you the right version of do
    With nvm, run `nvm install` and `nvm use` from the repo root to use the supported Node 22 line.
 
    Install dependencies and start the app:
+
    ```bash
    npm ci
    cd client && npm ci && cd ..
@@ -97,6 +97,7 @@ _Using the DevContainer is optional, but it will get you the right version of do
    - Docker (for the local SQL Server container)
 
    Install dependencies and start the database:
+
    ```bash
    npm ci
    cd client && npm ci && cd ..
@@ -114,6 +115,7 @@ _Using the DevContainer is optional, but it will get you the right version of do
    - Docker (for the local SQL Server container)
 
    Install dependencies and start the database:
+
    ```bash
    npm ci
    cd client && npm ci && cd ..
@@ -128,7 +130,7 @@ _Using the DevContainer is optional, but it will get you the right version of do
 In development, the frontend runs from **http://localhost:5173** and proxies backend requests to ASP.NET Core on **http://localhost:5165**.
 
 - **Main App**: http://localhost:5173
-- **Backend API**: http://localhost:5165/api/*
+- **Backend API**: http://localhost:5165/api/\*
 - **API Documentation (Swagger)**: http://localhost:5165/swagger
 - **Health Check**: http://localhost:5165/health
 - **Visual Studio F5**: launches through the backend profile, then redirects to the Vite dev server on `:5173`

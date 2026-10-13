@@ -9,16 +9,16 @@ CI/CD. This page lists only what JDWriter adds on top, in the order you will nee
 
 Besides the template's `AZURE_*` variables and `SQL_ADMIN_PASSWORD`:
 
-| Name | Kind | Value |
-|---|---|---|
-| `ADMIN_BOOTSTRAP_LOGIN_IDS` | variable | Comma-separated UC Davis login IDs that are always admins, e.g. `rsmith`. **Required** — Configure Azure refuses to run without it, because an app with no admin cannot be administered. These admins cannot be removed from the app; further admins are added on `/backend/settings`. |
-| `LLM_PROVIDER` | variable | `anthropic` (default), `azure-openai`, or `openai-compatible`. Which provider receives JD text is decided here, per environment — never in the app. |
-| `LLM_MODEL` | variable | Azure OpenAI **deployment name**, or model id. Optional for Anthropic. |
-| `LLM_ENDPOINT` | variable | `https://NAME.openai.azure.com` for Azure OpenAI; a base URL ending in `/v1` for an OpenAI-compatible server. |
-| `LLM_SEND_REASONING_EFFORT` | variable | `true` only for reasoning deployments (o-series, GPT-5); other models reject the parameter. |
-| `LLM_ALLOW_KEY_ENTRY_IN_APP` | variable | `false` to keep keys in Key Vault only (Settings then shows the source but accepts nothing). Default `true`. |
-| `PACKAGE_ACCEPTS_REAL_DATA` | variable | `true` in **prod only**. Prod then imports environment packages holding real JDs and refuses scrubbed ones. Leave it unset in test, which then takes only scrubbed packages — a forgotten setting can't let real JDs in. |
-| `ANTHROPIC_API_KEY` / `AZURE_OPENAI_API_KEY` / `OPENAI_API_KEY` | **secret** | The active provider's key — preferably a Key Vault reference (below), not the key itself. Where in-app entry is allowed, an admin can also enter or rotate one on `/backend/settings`; it is encrypted by the app, audited, and takes precedence while set. |
+| Name                                                            | Kind       | Value                                                                                                                                                                                                                                                                                  |
+| --------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ADMIN_BOOTSTRAP_LOGIN_IDS`                                     | variable   | Comma-separated UC Davis login IDs that are always admins, e.g. `rsmith`. **Required** — Configure Azure refuses to run without it, because an app with no admin cannot be administered. These admins cannot be removed from the app; further admins are added on `/backend/settings`. |
+| `LLM_PROVIDER`                                                  | variable   | `anthropic` (default), `azure-openai`, or `openai-compatible`. Which provider receives JD text is decided here, per environment — never in the app.                                                                                                                                    |
+| `LLM_MODEL`                                                     | variable   | Azure OpenAI **deployment name**, or model id. Optional for Anthropic.                                                                                                                                                                                                                 |
+| `LLM_ENDPOINT`                                                  | variable   | `https://NAME.openai.azure.com` for Azure OpenAI; a base URL ending in `/v1` for an OpenAI-compatible server.                                                                                                                                                                          |
+| `LLM_SEND_REASONING_EFFORT`                                     | variable   | `true` only for reasoning deployments (o-series, GPT-5); other models reject the parameter.                                                                                                                                                                                            |
+| `LLM_ALLOW_KEY_ENTRY_IN_APP`                                    | variable   | `false` to keep keys in Key Vault only (Settings then shows the source but accepts nothing). Default `true`.                                                                                                                                                                           |
+| `PACKAGE_ACCEPTS_REAL_DATA`                                     | variable   | `true` in **prod only**. Prod then imports environment packages holding real JDs and refuses scrubbed ones. Leave it unset in test, which then takes only scrubbed packages — a forgotten setting can't let real JDs in.                                                               |
+| `ANTHROPIC_API_KEY` / `AZURE_OPENAI_API_KEY` / `OPENAI_API_KEY` | **secret** | The active provider's key — preferably a Key Vault reference (below), not the key itself. Where in-app entry is allowed, an admin can also enter or rotate one on `/backend/settings`; it is encrypted by the app, audited, and takes precedence while set.                            |
 
 All are declared in `infrastructure/azure/deployment-settings.json` and applied to the App Service by
 the **Configure Azure** workflow. Run it after setting or changing them.
@@ -34,7 +34,7 @@ Set the key secret's value to a Key Vault reference instead of the key:
 Configure Azure writes that string to the App Service setting, and App Service resolves it at
 runtime; the key itself never passes through GitHub. Leave the version off the URI so a rotation in
 the vault is picked up (within 24 hours, or on restart). One-time, per environment: grant the web
-app's **system-assigned identity** the *Key Vault Secrets User* role on the vault:
+app's **system-assigned identity** the _Key Vault Secrets User_ role on the vault:
 
 ```bash
 az role assignment create --role "Key Vault Secrets User" \
@@ -42,7 +42,7 @@ az role assignment create --role "Key Vault Secrets User" \
   --scope "$(az keyvault show -n VAULT --query id -o tsv)"
 ```
 
-The App Service's *Environment variables* blade shows a green check beside a resolved reference.
+The App Service's _Environment variables_ blade shows a green check beside a resolved reference.
 If it is red, the app sees the literal string, the provider rejects it, and Settings shows the
 configured key as the reference's last four characters — the clue to look at the role assignment.
 
@@ -118,8 +118,8 @@ across with a package, instead.
 - `/health` returns 200 and sign-in works (the template's checks).
 - Sign in as a bootstrap admin and open **`/backend/settings`**:
   - **Data protection** should read **encrypted** — SQL Server reporting Transparent Data
-    Encryption on. Azure SQL enables it by default and nothing here disables it. If it reads *not
-    encrypted*, stop and enable TDE before loading real data.
+    Encryption on. Azure SQL enables it by default and nothing here disables it. If it reads _not
+    encrypted_, stop and enable TDE before loading real data.
   - **AI provider** should name the intended provider and model, and its key should show the
     configured key's last four characters.
   - **Key changes** lists every in-app change to the key — who and when, never the value.
@@ -156,13 +156,13 @@ sessions.
 
 ## Where sensitive data lives
 
-| Data | Where | Protection |
-|---|---|---|
-| JD corpus, uploaded HRTMS exports (position numbers, reporting lines) | Azure SQL only — never the App Service disk | TDE (encryption at rest); admin-only endpoints |
-| Saved JDs, envelopes | Azure SQL | TDE |
-| Provider key entered in the app | Azure SQL | Encrypted by ASP.NET Core Data Protection before storage, plus TDE; write-only; one per provider; every change audited (who, when, last four) |
-| Provider key from configuration | Key Vault, via an App Service Key Vault reference (recommended), or an App Service setting | Vault access by the app's managed identity only; never returned or logged |
-| JD text sent for assembly | The configured provider | Anthropic or Azure OpenAI under campus agreements, or a local model that keeps it on college infrastructure — chosen per environment |
+| Data                                                                  | Where                                                                                      | Protection                                                                                                                                    |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| JD corpus, uploaded HRTMS exports (position numbers, reporting lines) | Azure SQL only — never the App Service disk                                                | TDE (encryption at rest); admin-only endpoints                                                                                                |
+| Saved JDs, envelopes                                                  | Azure SQL                                                                                  | TDE                                                                                                                                           |
+| Provider key entered in the app                                       | Azure SQL                                                                                  | Encrypted by ASP.NET Core Data Protection before storage, plus TDE; write-only; one per provider; every change audited (who, when, last four) |
+| Provider key from configuration                                       | Key Vault, via an App Service Key Vault reference (recommended), or an App Service setting | Vault access by the app's managed identity only; never returned or logged                                                                     |
+| JD text sent for assembly                                             | The configured provider                                                                    | Anthropic or Azure OpenAI under campus agreements, or a local model that keeps it on college infrastructure — chosen per environment          |
 
 The app's Data Protection keys live on the App Service file system (the template's default), which
 persists across restarts and deployments. If the App Service is ever recreated those keys are lost:
