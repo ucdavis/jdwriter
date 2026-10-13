@@ -74,6 +74,9 @@ public class AccountController(IConfiguration configuration, IHostEnvironment en
     [HttpGet("logout")]
     public IActionResult LogoutPage() => View("Logout");
 
+    [HttpGet("logout/complete")]
+    public IActionResult LogoutComplete() => View("LogoutComplete");
+
     [HttpPost("logout")]
     [ValidateAntiForgeryToken]
     public IActionResult Logout()
@@ -83,7 +86,7 @@ public class AccountController(IConfiguration configuration, IHostEnvironment en
         var campusSession = User.Identity?.IsAuthenticated == true
             && User.Identity.AuthenticationType != LocalAuthentication.Scheme
             && AuthenticationHelper.IsEntraConfigured(configuration);
-        var properties = new AuthenticationProperties { RedirectUri = Url.Content("~/about") };
+        var properties = new AuthenticationProperties { RedirectUri = Url.Content("~/logout/complete") };
 
         // Clear our cookie first; Entra's iframe logout cannot reliably clear it in every browser.
         return campusSession
