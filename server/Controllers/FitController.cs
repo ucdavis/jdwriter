@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Server.Core.Ai;
 using Server.Core.Data;
 using Server.Core.Domain;
@@ -11,6 +12,9 @@ using Server.Helpers;
 namespace Server.Controllers;
 
 public sealed record FitSuggestRequest(string Slug, string SourceFile);
+
+/// <summary>A JD reviewed on Reclassification and found to belong in its class.</summary>
+public sealed record FitReviewRequest(string Slug, string SourceFile, string? Note);
 
 /// <param name="Slug">The class the JD is filed under.</param>
 /// <param name="TargetSlug">The class to rewrite it into; its own class when omitted.</param>
@@ -52,6 +56,57 @@ public class FitController : ApiControllerBase
         _saved = saved;
         _db = db;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Mark a low-coverage JD as reviewed: it genuinely belongs in its class. It leaves the work
+    /// queue, and stays marked while it remains in that class.
+    /// </summary>
+    [HttpPost("reviews")]
+    public async Task<IActionResult> Review(FitReviewRequest body, CancellationToken ct)
+    {
+        var profile = await _profiles.GetBySlugAsync(body.Slug, ct);
+        if (profile is null)
+        {
+            return NotFound(new { message = $"No class found for \u201C{body.Slug}\u201D." });
+        }
+
+        if (!await _db.JobDescriptions.AnyAsync(j => j.SourceFile == body.SourceFile && j.UcJobCode == profile.UcJobCode, ct))
+        {
+            return NotFound(new { message = "That job description is not in this class." });
+        }
+
+        var note = string.IsNullOrWhiteSpace(body.Note) ? null : body.Note.Trim();
+        if (note?.Length > 2000)
+        {
+            return BadRequest(new { message = "Keep the note under 2,000 characters." });
+        }
+
+        var userId = await User.IdAsync(_db, ct);
+        var user = userId is null ? null : await _db.AppUsers.FindAsync([userId.Value], ct);
+        var review = await _db.JdFitReviews.FirstOrDefaultAsync(r => r.SourceFile == body.SourceFile, ct);
+        if (review is null)
+        {
+            review = new JdFitReview { SourceFile = body.SourceFile };
+            _db.JdFitReviews.Add(review);
+        }
+
+        review.UcJobCode = profile.UcJobCode;
+        review.Note = note;
+        review.ReviewedByUserId = userId;
+        review.ReviewedByName = user?.DisplayName ?? user?.LoginId;
+        review.ReviewedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        return Ok(new FitReviewInfo { By = review.ReviewedByName, At = review.ReviewedAt, Note = review.Note });
+    }
+
+    /// <summary>Undo a review: the JD returns to the work queue.</summary>
+    [HttpDelete("reviews")]
+    public async Task<IActionResult> Unreview([FromQuery] string sourceFile, CancellationToken ct)
+    {
+        _db.JdFitReviews.RemoveRange(await _db.JdFitReviews.Where(r => r.SourceFile == sourceFile).ToListAsync(ct));
+        await _db.SaveChangesAsync(ct);
+        return NoContent();
     }
 
     /// <summary>

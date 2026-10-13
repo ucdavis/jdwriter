@@ -452,10 +452,15 @@ export type Misfit = {
   classTitle: string;
   coveredPct: number;
   idiosyncratic: Array<{ name: string; pct: number }>;
+  /** Set when an admin reviewed it and found it belongs in this class. */
+  reviewed?: FitReview | null;
   slug: string;
   sourceFile: string;
   ucJobCode: string;
 };
+
+/** A low-coverage JD reviewed and found to belong in its class. */
+export type FitReview = { at: string; by: string | null; note: string | null };
 
 export type MisfitsResponse = {
   misfits: Misfit[];

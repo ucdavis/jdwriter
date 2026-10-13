@@ -39,6 +39,9 @@ public sealed class EnvironmentPackage
     public List<JobDescription> JobDescriptions { get; set; } = [];
     public List<ClassProfile> Classes { get; set; } = [];
 
+    /// <summary>Low-coverage JDs reviewed on Reclassification and found to belong. Added within version 1.</summary>
+    public List<JdFitReview> FitReviews { get; set; } = [];
+
     /// <summary>The record types a package holds, and so the only ones its JSON may reach.</summary>
     public static readonly IReadOnlySet<Type> Types = new HashSet<Type>
     {
@@ -52,6 +55,7 @@ public sealed class EnvironmentPackage
         typeof(ConsolidatedFunction), typeof(ConsolidatedFunctionMember), typeof(ConsolidatedFunctionSampleDuty),
         typeof(ConsolidatedQual), typeof(ConsolidatedQualMember), typeof(ProfileDroppedItem),
         typeof(CoverageReport), typeof(JdCoverage), typeof(JdCoverageUncovered),
+        typeof(JdFitReview),
     };
 }
 
@@ -66,6 +70,7 @@ public sealed class PackageCounts
     public int JobDescriptions { get; set; }
     public int Originals { get; set; }
     public int Classes { get; set; }
+    public int FitReviews { get; set; }
 
     public static PackageCounts Of(EnvironmentPackage p) => new()
     {
@@ -77,6 +82,7 @@ public sealed class PackageCounts
         JobDescriptions = p.JobDescriptions.Count,
         Originals = p.Originals.Count,
         Classes = p.Classes.Count,
+        FitReviews = p.FitReviews.Count,
     };
 }
 
@@ -164,6 +170,7 @@ public sealed class EnvironmentPackages
                     .ToListAsync(ct),
                 JobDescriptions = [.. All<JobDescription>().OrderBy(j => j.SourceFile, StringComparer.Ordinal)],
                 Classes = [.. All<ClassProfile>().OrderBy(p => p.Slug, StringComparer.Ordinal)],
+                FitReviews = [.. All<JdFitReview>().OrderBy(r => r.SourceFile, StringComparer.Ordinal)],
             };
         }
         finally

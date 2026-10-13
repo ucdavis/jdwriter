@@ -43,11 +43,19 @@ describe('job descriptions and job standards', () => {
     expect(within(list).getAllByRole('button', { name: 'View' })).toHaveLength(3);
     expect(within(list).getByText('Not attached to a job code')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /^Blank/ }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Content' }), 'blank');
     expect(within(screen.getByTestId('standards-list')).getByText('Academic Achievement Counselor 3')).toBeInTheDocument();
     expect(within(screen.getByTestId('standards-list')).queryByText('Laboratory Assistant 1')).not.toBeInTheDocument();
+    expect(screen.getByTestId('standards-summary')).toHaveTextContent('1 standard · 1 attached to a job code · 0 with a class · 1 blank');
 
-    await user.click(screen.getByRole('button', { name: /^All/ }));
+    // Like Codes: by whether the job is active at UC Davis.
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Content' }), 'any');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Job code' }), 'none');
+    expect(within(screen.getByTestId('standards-list')).getAllByRole('listitem')).toHaveLength(1);
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Job code' }), 'active');
+    expect(within(screen.getByTestId('standards-list')).getAllByRole('listitem')).toHaveLength(2);
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Job code' }), 'all');
     const row = within(screen.getByTestId('standards-list')).getByText('Laboratory Assistant 1').closest('li') as HTMLElement;
     await user.click(within(row).getByRole('button', { name: 'View' }));
     expect(await within(row).findByText(/standard laboratory support tasks/)).toBeInTheDocument();

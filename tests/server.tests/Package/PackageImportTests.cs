@@ -73,6 +73,7 @@ public class PackageImportTests
         db.CorpusUploads.Add(new CorpusUpload { FileName = "a.docx", Sha256 = new string('a', 64), Content = [1, 2, 3], Status = CorpusUploadStatus.Filed, Source = CorpusUploadSource.Document });
         db.JobDescriptions.Add(Jd("import/aaaaaaaaaaaaaaaa", "40000001", Then));
         db.ClassProfiles.Add(Class("009605-lab-ast-1", "009605", "Lab Ast 1", "Supports research.", Then));
+        db.JdFitReviews.Add(new JdFitReview { SourceFile = "import/aaaaaaaaaaaaaaaa", UcJobCode = "009605", ReviewedByName = "An Admin", Note = "Belongs.", ReviewedAt = Then });
         using (db.KeepingChangeStamps())
         {
             await db.SaveChangesAsync();

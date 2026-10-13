@@ -989,6 +989,48 @@ namespace server.core.Migrations
                     b.ToTable("JdDuties");
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.JdFitReview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTimeOffset>("ReviewedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ReviewedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("ReviewedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceFile")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("UcJobCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewedByUserId");
+
+                    b.HasIndex("SourceFile")
+                        .IsUnique();
+
+                    b.ToTable("JdFitReviews");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.JdPemEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -1981,6 +2023,16 @@ namespace server.core.Migrations
                         .IsRequired();
 
                     b.Navigation("JdResponsibility");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.JdFitReview", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AppUser", "ReviewedBy")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ReviewedBy");
                 });
 
             modelBuilder.Entity("Server.Core.Domain.JdPemEntry", b =>

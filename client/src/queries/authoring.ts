@@ -15,6 +15,7 @@ import type {
   ExtractResponse,
   FitRewriteRequest,
   FitRewriteResponse,
+  FitReview,
   FitSuggestRequest,
   FitSuggestResponse,
   IntakeRequest,
@@ -117,6 +118,26 @@ export const useSuggestClass = () =>
   useMutation({
     mutationFn: post<FitSuggestRequest, FitSuggestResponse>('/api/fit/suggest'),
   });
+
+/** Mark a low-coverage JD as reviewed: it belongs in its class. */
+export const useReviewFit = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { note?: string; slug: string; sourceFile: string }) =>
+      fetchJson<FitReview>('/api/fit/reviews', { body: JSON.stringify(body), method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fit', 'misfits'] }),
+  });
+};
+
+/** Undo a review: the JD goes back to the work queue. */
+export const useUnreviewFit = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sourceFile: string) =>
+      fetchJson<null>(`/api/fit/reviews?sourceFile=${encodeURIComponent(sourceFile)}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fit', 'misfits'] }),
+  });
+};
 
 /**
  * Rewrite a misfitting JD to fit a class, saved as a draft for review. One model call that
