@@ -82,8 +82,8 @@ from `Admin__BootstrapLoginIds` (configuration) plus whoever is added on `/backe
 
 ### Signing in as yourself
 
-With JDWriter's public `Auth__ClientId` set in `server/.env`, `/login` also offers **Sign in to UC Davis** (see
-the README's Auth Configuration). A campus sign-in is an **Author** unless your login ID is
+Configure campus sign-in using [Auth Configuration](../README.md#auth-configuration).
+A campus sign-in is an **Author** unless your login ID is
 whitelisted. To be an admin locally, add your campus login ID (the part before `@ucdavis.edu`):
 
 ```
