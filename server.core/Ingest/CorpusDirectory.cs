@@ -15,7 +15,7 @@ public sealed class CorpusJdRow
     public string WorkingTitle { get; set; } = "";
     public string DepartmentName { get; set; } = "";
 
-    /// <summary>"export", "authored", "classify" or "imported" (from Word).</summary>
+    /// <summary>"export", "authored", "classify" or "imported" (from import: a Word copy of a JD, parsed).</summary>
     public string Origin { get; set; } = "";
 
     public DateTimeOffset? AddedAt { get; set; }

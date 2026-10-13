@@ -10,14 +10,14 @@ export const originLabel: Record<CorpusJdRow['origin'], { label: string; tone: T
   authored: { label: 'written in the app', tone: 'teal' },
   classify: { label: 'from Classify', tone: 'purple' },
   export: { label: 'HRTMS export', tone: 'muted' },
-  imported: { label: 'from Word', tone: 'accent' },
+  imported: { label: 'from import', tone: 'accent' },
 };
 
 const SHOWS = ['all', 'pending', 'imported'] as const;
 type Show = (typeof SHOWS)[number];
 const showLabels: Record<Show, string> = {
   all: 'All',
-  imported: 'From Word',
+  imported: 'From import',
   pending: 'Not yet in an envelope',
 };
 const PAGE = 100;
