@@ -171,6 +171,6 @@ Move the key ring to shared storage before scaling out to more than one instance
 
 ### Entra sign-in
 
-Follow the web app template's ID-token sign-in configuration. Enable **ID tokens** under the Entra app registration's Authentication settings and register each app origin plus `/signin-oidc` as a Web redirect URI. Keep the existing IAM claim mapping and enterprise-app assignments. No auth client secret is required. JDWriter additionally supports campus sign-in alongside local personas in Development; both use the development cookie and application roles still come from the database.
+Use the [Entra app registration setup](../README.customization.md#3-microsoft-entra-id-azure-ad-app-sign-in-setup) for ID-token issuance and Web redirect URIs. Keep the existing IAM claim mapping and enterprise-app assignments described in [Auth Configuration](../README.md#auth-configuration), which also covers campus sign-in alongside local development personas.
 
 When upgrading from JDWriter's previous authorization-code flow, enable ID-token issuance before deploying. After a fresh campus login, sign-out, IAM ID, and admin access have been verified, remove the obsolete `Auth__ClientSecret` App Service setting, `AUTH_CLIENT_SECRET` GitHub Environment secret, and sign-in credentials from the Entra registration. Remove any old local `Auth__ClientSecret` value from ignored `server/.env` files as well. GitHub-to-Azure deployment continues to use its separate, secretless OIDC identity.
