@@ -49,6 +49,24 @@ describe('matching standards to job codes', () => {
     expect(within(list).getByText(/ADMIN SUPV 1/).closest('li')).toHaveTextContent('74% alike');
   });
 
+  it('marks a code the CT listing gives the exact title, instead of a likeness score', async () => {
+    serve(
+      review({
+        unmatched: [
+          {
+            standardTitle: 'Intellectual Property Manager 2',
+            suggestions: [{ active: true, fromCtListing: true, score: 1, title: 'IP MGR 2', ucJobCode: '000372' }],
+          },
+        ],
+      })
+    );
+    renderRoute({ initialPath: '/backend/standards' });
+
+    const row = (await screen.findByText(/IP MGR 2/)).closest('li') as HTMLElement;
+    expect(row).toHaveTextContent('same title in the CT listing');
+    expect(row).not.toHaveTextContent('% alike');
+  });
+
   it('confirms the right code', async () => {
     const user = userEvent.setup();
     const decisions = serve(review());

@@ -42,6 +42,9 @@ public sealed class EnvironmentPackage
     /// <summary>Low-coverage JDs reviewed on Reclassification and found to belong. Added within version 1.</summary>
     public List<JdFitReview> FitReviews { get; set; } = [];
 
+    /// <summary>The Career Tracks title code listing, as imported. Added within version 1.</summary>
+    public List<CtTitle> CtListing { get; set; } = [];
+
     /// <summary>The record types a package holds, and so the only ones its JSON may reach.</summary>
     public static readonly IReadOnlySet<Type> Types = new HashSet<Type>
     {
@@ -55,7 +58,7 @@ public sealed class EnvironmentPackage
         typeof(ConsolidatedFunction), typeof(ConsolidatedFunctionMember), typeof(ConsolidatedFunctionSampleDuty),
         typeof(ConsolidatedQual), typeof(ConsolidatedQualMember), typeof(ProfileDroppedItem),
         typeof(CoverageReport), typeof(JdCoverage), typeof(JdCoverageUncovered),
-        typeof(JdFitReview),
+        typeof(JdFitReview), typeof(CtTitle),
     };
 }
 
@@ -71,6 +74,7 @@ public sealed class PackageCounts
     public int Originals { get; set; }
     public int Classes { get; set; }
     public int FitReviews { get; set; }
+    public int CtListing { get; set; }
 
     public static PackageCounts Of(EnvironmentPackage p) => new()
     {
@@ -83,6 +87,7 @@ public sealed class PackageCounts
         Originals = p.Originals.Count,
         Classes = p.Classes.Count,
         FitReviews = p.FitReviews.Count,
+        CtListing = p.CtListing.Count,
     };
 }
 
@@ -171,6 +176,7 @@ public sealed class EnvironmentPackages
                 JobDescriptions = [.. All<JobDescription>().OrderBy(j => j.SourceFile, StringComparer.Ordinal)],
                 Classes = [.. All<ClassProfile>().OrderBy(p => p.Slug, StringComparer.Ordinal)],
                 FitReviews = [.. All<JdFitReview>().OrderBy(r => r.SourceFile, StringComparer.Ordinal)],
+                CtListing = [.. All<CtTitle>().OrderBy(t => t.UcJobCode, StringComparer.Ordinal)],
             };
         }
         finally

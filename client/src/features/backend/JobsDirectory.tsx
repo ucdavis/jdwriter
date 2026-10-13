@@ -1,4 +1,4 @@
-import type { JobRow, JobsScope, StandardDraft } from '@/lib/contracts.ts';
+import type { JobCt, JobRow, JobsScope, StandardDraft } from '@/lib/contracts.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import {
   useBootstrapClass,
@@ -274,6 +274,32 @@ const emptyDraft = (title: string): StandardDraft => ({
   title,
 });
 
+const origins: Record<string, string> = { AG: 'Agriculture', C: 'Campus', MC: 'Medical Center', OP: 'Office of the President' };
+
+/** What the Career Tracks listing says of the code: its full title, and how it's graded and levelled. */
+const CtFacts = ({ ct }: { ct: JobCt }) => (
+  <div className="mt-2 rounded-lg bg-base-200 px-3 py-2 text-base" data-testid="ct-facts">
+    <div>
+      <span className="font-semibold">{ct.title}</span>{' '}
+      <span className="text-sm text-base-content/65">(CT listing)</span>
+    </div>
+    <div className="text-sm text-base-content/65">
+      {[
+        `${ct.family} · ${ct.function}`,
+        `level ${ct.level}${ct.supervisory ? ' — supervises' : ''}`,
+        ct.grade && `grade ${ct.grade}`,
+        ct.flsa === 'NE' || ct.flsa === 'N' ? 'non-exempt' : ct.flsa === 'E' ? 'exempt' : ct.flsa,
+        ct.personnelProgram,
+        origins[ct.origin] ?? ct.origin,
+        ct.status === 'GF' ? 'grandfathered' : null,
+        ct.opOnly ? 'Office of the President only' : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')}
+    </div>
+  </div>
+);
+
 /**
  * Whether the code is active at UC Davis: from the payroll reference, changeable by hand. Being
  * active decides whether a code can be bootstrapped, take imported JDs, or be matched to a standard,
@@ -348,6 +374,7 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
             <div className="mt-2">
               <ActiveCheckbox job={job} />
             </div>
+            {job.ct ? <CtFacts ct={job.ct} /> : null}
             {job.supersededBy ? (
               <p className="mt-1 text-base text-warning">Superseded by {job.supersededBy}: its JDs go to that class.</p>
             ) : null}

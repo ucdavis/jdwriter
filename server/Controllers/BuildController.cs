@@ -240,7 +240,9 @@ public class BuildController : ApiControllerBase
             return BadRequest(new { message = "Department is required." });
         }
 
-        var supervision = Supervision.Problem(profile, body.Supervises, body.SupervisesCount);
+        var code = Server.Core.Titles.TitleCodeIndex.Pad(profile.UcJobCode);
+        var ctRow = await _db.CtTitles.AsNoTracking().FirstOrDefaultAsync(c => c.UcJobCode == code, ct);
+        var supervision = Supervision.Problem(profile, body.Supervises, body.SupervisesCount, ctRow);
         if (supervision is not null)
         {
             return BadRequest(new { message = supervision });

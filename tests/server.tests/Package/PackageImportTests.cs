@@ -74,6 +74,7 @@ public class PackageImportTests
         db.JobDescriptions.Add(Jd("import/aaaaaaaaaaaaaaaa", "40000001", Then));
         db.ClassProfiles.Add(Class("009605-lab-ast-1", "009605", "Lab Ast 1", "Supports research.", Then));
         db.JdFitReviews.Add(new JdFitReview { SourceFile = "import/aaaaaaaaaaaaaaaa", UcJobCode = "009605", ReviewedByName = "An Admin", Note = "Belongs.", ReviewedAt = Then });
+        db.CtTitles.Add(new CtTitle { UcJobCode = "009605", Title = "Laboratory Assistant 1", LevelCode = "P1", Grade = "17", ImportedAt = Then });
         using (db.KeepingChangeStamps())
         {
             await db.SaveChangesAsync();

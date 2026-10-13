@@ -159,8 +159,9 @@ public sealed class ClassProfileView
     /// <summary>Null for most classes — a gap in standards coverage, not a matching failure.</summary>
     public ClassStandardRecord? Standard { get; set; }
 
+    /// <param name="ct">The class's code in the Career Tracks listing, which decides who may supervise.</param>
     public static ClassProfileView From(
-        ClassProfile p, ClassStandardRecord? standard, List<SiteTwin>? siteTwins = null)
+        ClassProfile p, ClassStandardRecord? standard, List<SiteTwin>? siteTwins = null, CtTitle? ct = null)
     {
         DistributionWire Dist(DistributionField field)
         {
@@ -189,11 +190,11 @@ public sealed class ClassProfileView
             UnionCode = Dist(DistributionField.UnionCode),
             BargainingUnit = BargainingUnits.For(p),
             IsRepresented = BargainingUnits.IsRepresented(p),
-            CannotSupervise = Supervision.WhyNot(p),
-            IsSupervisory = Supervision.IsSupervisory(p.Title),
+            CannotSupervise = Supervision.WhyNot(p, ct),
+            IsSupervisory = Supervision.IsSupervisory(p.Title, ct),
             Site = Sites.SiteOf(p.Title),
             SiteTwins = siteTwins ?? [],
-            CustomizationTarget = Customization.TargetPct(p.Title),
+            CustomizationTarget = Customization.TargetPct(p.Title, ct),
             Supervises = Dist(DistributionField.Supervises),
             Leads = Dist(DistributionField.Leads),
             WorksOutdoorsOver50pct = Dist(DistributionField.WorksOutdoorsOver50pct),

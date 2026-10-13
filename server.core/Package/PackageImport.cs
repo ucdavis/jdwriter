@@ -234,6 +234,7 @@ public sealed class PackageImporter
         work.PlanJobDescriptions(await _db.AuthoredJds.AsNoTracking().Select(a => new { a.Id, a.CorpusKey }).ToDictionaryAsync(a => a.CorpusKey, a => a.Id, ct));
         work.PlanClasses();
         work.PlanFitReviews();
+        work.PlanCtListing();
         return work;
     }
 
@@ -268,6 +269,7 @@ public sealed class PackageImporter
                         o.Remove("updatedAt");
                         o.Remove("decidedAt");
                         o.Remove("reviewedAt");
+                        o.Remove("importedAt");
                         foreach (var kv in o.ToList())
                         {
                             Strip(kv.Value);
@@ -586,6 +588,28 @@ public sealed class PackageImporter
             }
 
             OnlyHere(s, here.Classes.Where(c => !matched.Contains(c)), incoming.Classes, c => c.Slug, c => $"{c.Title} ({c.UcJobCode})");
+        }
+
+        public void PlanCtListing()
+        {
+            var s = Section("CT title code listing");
+            var mine = here.CtListing.ToDictionary(t => TitleCodeIndex.Pad(t.UcJobCode), StringComparer.Ordinal);
+            foreach (var t in incoming.CtListing.DistinctBy(t => TitleCodeIndex.Pad(t.UcJobCode)))
+            {
+                var m = mine.GetValueOrDefault(TitleCodeIndex.Pad(t.UcJobCode));
+                var v = Decide(m, m?.ImportedAt, t, t.ImportedAt);
+                Count(s, v, $"{t.UcJobCode} {t.Title}");
+                if (v == Verdict.Add)
+                {
+                    _apply.Add(() => db.CtTitles.Add(t));
+                }
+                else if (v == Verdict.Update)
+                {
+                    _apply.Add(() => { t.Id = m!.Id; db.Entry(m).CurrentValues.SetValues(t); });
+                }
+            }
+
+            OnlyHere(s, here.CtListing, incoming.CtListing, t => TitleCodeIndex.Pad(t.UcJobCode), t => $"{t.UcJobCode} {t.Title}");
         }
 
         public void PlanFitReviews()

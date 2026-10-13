@@ -71,3 +71,7 @@ server/wwwroot/*
 # Real JD exports (HRTMS, JDX/Word) for local parsing and testing. They carry department names,
 # position numbers and reporting lines for real employees: never committed (see AGENTS.md).
 JDs/
+
+# Reference reports (e.g. the UC Career Tracks title code listing) kept locally for parsing and
+# testing. Imported through the app; the files themselves stay out of git.
+Reference/
