@@ -92,8 +92,32 @@ public class LocalAuthenticationTests
         var oidc = provider.GetRequiredService<IOptionsMonitor<OpenIdConnectOptions>>()
             .Get(OpenIdConnectDefaults.AuthenticationScheme);
         oidc.SignInScheme.Should().Be(LocalAuthentication.Scheme);
-        oidc.ResponseType.Should().Be("code");
-        oidc.UsePkce.Should().BeTrue();
+        oidc.ResponseType.Should().Be("id_token");
+        oidc.ClientSecret.Should().BeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task Production_uses_template_id_token_sign_in_without_a_client_secret()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Auth:ClientId"] = "11111111-1111-1111-1111-111111111111",
+            ["Auth:TenantId"] = "22222222-2222-2222-2222-222222222222",
+            ["Auth:Instance"] = "https://login.microsoftonline.com/",
+        }).Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddAuthenticationServices(configuration, new TestEnvironment("Production"));
+        await using var provider = services.BuildServiceProvider();
+        var oidc = provider.GetRequiredService<IOptionsMonitor<OpenIdConnectOptions>>()
+            .Get(OpenIdConnectDefaults.AuthenticationScheme);
+
+        oidc.ResponseType.Should().Be("id_token");
+        oidc.ClientSecret.Should().BeNullOrEmpty();
+        oidc.SignInScheme.Should().Be(CookieAuthenticationDefaults.AuthenticationScheme);
+        var schemes = provider.GetRequiredService<IAuthenticationSchemeProvider>();
+        (await schemes.GetSchemeAsync(LocalAuthentication.Scheme)).Should().BeNull();
     }
 
     [Theory]
