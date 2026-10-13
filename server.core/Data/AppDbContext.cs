@@ -10,6 +10,7 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
     public DbSet<TitleCode> TitleCodes => Set<TitleCode>();
     public DbSet<Supersession> Supersessions => Set<Supersession>();
     public DbSet<CodeActiveOverride> CodeActiveOverrides => Set<CodeActiveOverride>();
+    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
     // ---- official standards
     public DbSet<JobStandard> JobStandards => Set<JobStandard>();
@@ -125,6 +126,12 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
             e.Property(x => x.ToTitle).HasMaxLength(TitleLen);
             // One successor per retired code, or the remap is not a function.
             e.HasIndex(x => x.FromCode).IsUnique();
+        });
+
+        b.Entity<AppSetting>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(100);
+            e.HasIndex(x => x.Name).IsUnique();
         });
 
         b.Entity<CodeActiveOverride>(e =>

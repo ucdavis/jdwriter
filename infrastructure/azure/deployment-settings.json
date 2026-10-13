@@ -76,6 +76,14 @@
       "description": "false to manage provider keys in Key Vault only: Settings then shows the key's source but accepts no key. Defaults to true."
     },
     {
+      "githubName": "PACKAGE_ACCEPTS_REAL_DATA",
+      "appServiceName": "Package__AcceptsRealData",
+      "classification": "variable",
+      "valueType": "bool",
+      "requiredWhen": "never",
+      "description": "true in prod only: it then imports environment packages holding real job descriptions, and refuses scrubbed ones. Unset (test), it takes only scrubbed packages, so real JDs can't land there by mistake."
+    },
+    {
       "githubName": "AZURE_OPENAI_API_KEY",
       "appServiceName": "AZURE_OPENAI_API_KEY",
       "classification": "secret",

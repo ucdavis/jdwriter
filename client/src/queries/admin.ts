@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AnalyticsReport,
   ClassStandard,
+  PackageInfo,
   PackagePlan,
   CodeActivityResult,
   CorpusJdDetail,
@@ -393,6 +394,10 @@ export const useStandardByTitle = (title: string | null) =>
       fetchJson<ClassStandard>(`/api/standards/by-title?title=${encodeURIComponent(title ?? '')}`),
     queryKey: ['admin', 'standards', 'by-title', title] as const,
   });
+
+/** Which packages this environment imports. */
+export const usePackageInfo = () =>
+  useQuery({ queryFn: () => fetchJson<PackageInfo>('/api/admin/package/info'), queryKey: ['admin', 'package', 'info'] as const });
 
 const sendPackage = (path: string, file: File) => {
   const body = new FormData();

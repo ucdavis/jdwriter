@@ -87,13 +87,16 @@ public sealed class PackageImporter
     private readonly EnvironmentPackages _packages;
     private readonly ITitleCodeService _titleCodes;
     private readonly IStandardsStore _standards;
+    private readonly PackageOptions _options;
 
-    public PackageImporter(AppDbContext db, EnvironmentPackages packages, ITitleCodeService titleCodes, IStandardsStore standards)
+    public PackageImporter(
+        AppDbContext db, EnvironmentPackages packages, ITitleCodeService titleCodes, IStandardsStore standards, PackageOptions options)
     {
         _db = db;
         _packages = packages;
         _titleCodes = titleCodes;
         _standards = standards;
+        _options = options;
     }
 
     /// <summary>Read a package file: gzip-compressed JSON, bounded, and checked for format.</summary>
@@ -124,6 +127,19 @@ public sealed class PackageImporter
         if (package.Version != 1)
         {
             throw new PackageRefusedException($"This package is version {package.Version}; this JDWriter reads version 1. Update it first.");
+        }
+
+        // Real JDs go to prod only; scrubbed stand-ins never mix into the real corpus.
+        if (!package.Scrubbed && !_options.AcceptsRealData)
+        {
+            throw new PackageRefusedException(
+                "This package holds real job descriptions, and this environment takes only scrubbed packages. Export it with “Export scrubbed (for test)”.");
+        }
+
+        if (package.Scrubbed && !_options.AcceptsScrubbed)
+        {
+            throw new PackageRefusedException(
+                "This package is scrubbed for testing, and this environment holds real job descriptions. Export it without scrubbing.");
         }
 
         return package;

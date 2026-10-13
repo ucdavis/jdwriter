@@ -52,6 +52,7 @@ jobs:
       OTEL_EXPORTER_OTLP_PROTOCOL: ${{ vars.OTEL_EXPORTER_OTLP_PROTOCOL || 'http/protobuf' }}
       OTEL_RESOURCE_ATTRIBUTES: ${{ vars.OTEL_RESOURCE_ATTRIBUTES }}
       OTEL_SERVICE_NAME: ${{ vars.OTEL_SERVICE_NAME }}
+      PACKAGE_ACCEPTS_REAL_DATA: ${{ vars.PACKAGE_ACCEPTS_REAL_DATA }}
       SMTP_BCC_EMAIL: ${{ vars.SMTP_BCC_EMAIL }}
       SMTP_FROM_EMAIL: ${{ vars.SMTP_FROM_EMAIL }}
       SMTP_FROM_NAME: ${{ vars.SMTP_FROM_NAME }}
@@ -256,6 +257,7 @@ jobs:
           add_setting "OTEL_EXPORTER_OTLP_PROTOCOL" "$OTEL_EXPORTER_OTLP_PROTOCOL"
           add_setting "OTEL_RESOURCE_ATTRIBUTES" "$OTEL_RESOURCE_ATTRIBUTES"
           add_setting "OTEL_SERVICE_NAME" "$OTEL_SERVICE_NAME"
+          add_setting "Package__AcceptsRealData" "$PACKAGE_ACCEPTS_REAL_DATA"
           add_setting "Smtp__BccEmail" "$SMTP_BCC_EMAIL"
           add_setting "Smtp__FromEmail" "$SMTP_FROM_EMAIL"
           add_setting "Smtp__FromName" "$SMTP_FROM_NAME"

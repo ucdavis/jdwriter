@@ -7,6 +7,7 @@ import {
   useAdmins,
   useApiKeyStatus,
   usePackageApply,
+  usePackageInfo,
   usePackagePreview,
   useClearApiKey,
   useGrantAdmin,
@@ -55,6 +56,7 @@ function SettingsPage() {
  * with a preview of exactly what will change before anything does.
  */
 function PackagePanel() {
+  const info = usePackageInfo();
   const preview = usePackagePreview();
   const apply = usePackageApply();
   const [file, setFile] = useState<File | null>(null);
@@ -68,11 +70,26 @@ function PackagePanel() {
         Everything built here, in one file: every envelope and class in full, the job codes and which
         are active, the standards and match decisions, every job description with the original it was
         read from, and the envelope rules. Accounts, admins, the API key and authors&apos; saved JDs
-        stay behind. It holds real job descriptions, so keep the file somewhere protected.
+        stay behind. It holds real job descriptions, so keep the file somewhere protected — or export
+        it scrubbed for the test environment, which replaces position numbers, departments and file
+        names and leaves the originals out.
       </p>
+      {info.data ? (
+        <p className="mt-1 text-base text-base-content/65" data-testid="package-accepts">
+          This environment imports{' '}
+          {info.data.acceptsRealData && info.data.acceptsScrubbed
+            ? 'both kinds (development).'
+            : info.data.acceptsRealData
+              ? 'packages with real job descriptions only.'
+              : 'scrubbed packages only — real job descriptions belong in prod.'}
+        </p>
+      ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <a className="btn btn-primary btn-sm" download href={appUrl('/api/admin/package/export')}>
           Export package
+        </a>
+        <a className="btn btn-outline btn-sm" download href={appUrl('/api/admin/package/export?scrubbed=true')}>
+          Export scrubbed (for test)
         </a>
         <label className="btn btn-outline btn-sm">
           Import a package…

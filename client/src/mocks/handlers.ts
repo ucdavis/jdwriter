@@ -842,6 +842,8 @@ export const handlers = [
     })
   ),
 
+  http.get('/api/admin/package/info', () => HttpResponse.json({ acceptsRealData: true, acceptsScrubbed: true })),
+
   http.post('/api/admin/codes/:code/active', async ({ params, request }) => {
     const { active } = (await request.json()) as { active: boolean };
     return HttpResponse.json<CodeActivityResult>({ active, code: String(params.code), onPayroll: !active, supersessionChanges: [] });

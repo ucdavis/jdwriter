@@ -137,13 +137,21 @@ describe('settings: admin whitelist', () => {
     expect(sent).toEqual(['preview:1', 'apply:1']);
   });
 
-  it('offers the one environment package export', async () => {
+  it('offers the one environment package export, real or scrubbed, and says what it imports', async () => {
+    testServer.use(
+      http.get('/api/admin/package/info', () => HttpResponse.json({ acceptsRealData: false, acceptsScrubbed: true }))
+    );
     renderRoute({ initialPath: '/backend/settings' });
 
     expect(await screen.findByRole('link', { name: 'Export package' })).toHaveAttribute(
       'href',
       '/api/admin/package/export'
     );
+    expect(screen.getByRole('link', { name: 'Export scrubbed (for test)' })).toHaveAttribute(
+      'href',
+      '/api/admin/package/export?scrubbed=true'
+    );
+    expect(await screen.findByTestId('package-accepts')).toHaveTextContent('scrubbed packages only');
   });
 });
 

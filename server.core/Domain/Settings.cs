@@ -48,3 +48,17 @@ public class AppSecretAudit
     public AppUser? User { get; set; }
     public DateTimeOffset At { get; set; }
 }
+
+/// <summary>
+/// A value this environment keeps for itself — not configuration, which is set from outside. One
+/// row per name.
+/// </summary>
+public class AppSetting
+{
+    /// <summary>Holds the key a scrubbed package's stand-ins are derived from (<see cref="Package.PackageScrubber"/>).</summary>
+    public const string PackageScrubKey = "package-scrub-key";
+
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Value { get; set; } = "";
+}

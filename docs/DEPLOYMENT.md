@@ -17,6 +17,7 @@ Besides the template's `AZURE_*` variables and `SQL_ADMIN_PASSWORD`:
 | `LLM_ENDPOINT` | variable | `https://NAME.openai.azure.com` for Azure OpenAI; a base URL ending in `/v1` for an OpenAI-compatible server. |
 | `LLM_SEND_REASONING_EFFORT` | variable | `true` only for reasoning deployments (o-series, GPT-5); other models reject the parameter. |
 | `LLM_ALLOW_KEY_ENTRY_IN_APP` | variable | `false` to keep keys in Key Vault only (Settings then shows the source but accepts nothing). Default `true`. |
+| `PACKAGE_ACCEPTS_REAL_DATA` | variable | `true` in **prod only**. Prod then imports environment packages holding real JDs and refuses scrubbed ones. Leave it unset in test, which then takes only scrubbed packages — a forgotten setting can't let real JDs in. |
 | `ANTHROPIC_API_KEY` / `AZURE_OPENAI_API_KEY` / `OPENAI_API_KEY` | **secret** | The active provider's key — preferably a Key Vault reference (below), not the key itself. Where in-app entry is allowed, an admin can also enter or rotate one on `/backend/settings`; it is encrypted by the app, audited, and takes precedence while set. |
 
 All are declared in `infrastructure/azure/deployment-settings.json` and applied to the App Service by
@@ -61,6 +62,27 @@ From then on a push to `main` deploys to `test`; `prod` is a manual CI/CD run.
 
 ## 3. Load data
 
+### From another environment: the environment package
+
+Everything built in one environment — every class and envelope in full, the job codes and which are
+active, standards and match decisions, every JD with its original, envelope rules — moves to another
+as one file, from **`/backend/settings` → Environment package**. Accounts, admins, AI keys and
+authors' saved JDs stay where they are.
+
+- **Export package** (real JDs) goes to **prod**. **Export scrubbed (for test)** goes to **test**: position
+  numbers, reports-to, JD numbers, departments and export file names are replaced — the same fields
+  as `migrate-poc --scrub` — and the originals are left out. Stand-ins come from a key the exporting
+  environment keeps, so they are stable from one export to the next and can't be traced back.
+- **Import a package…** shows what it would add, update, keep and skip before anything changes. Where
+  both sides have a record, the more recently changed one wins; nothing is removed for being absent
+  from the file. Import again whenever there is new work — it is built to be repeated, in either
+  direction.
+- Each environment refuses the wrong kind (see `PACKAGE_ACCEPTS_REAL_DATA`).
+- The import endpoints accept up to 500 MB. On a **Windows** App Service, IIS also limits a request
+  (about 30 MB by default); raise `maxAllowedContentLength` if packages outgrow it.
+
+### From the POC: the CLI
+
 The corpus is loaded once per environment with the CLI, from a machine that has the POC checkout
 (the HRTMS exports are not in this repository). Allow that machine's IP in the Azure SQL firewall
 first.
@@ -76,7 +98,8 @@ dotnet run --project tools/jdw-cli -- migrate-poc --write --connection "<prod co
 ```
 
 `migrate-poc --write` replaces the corpus and the class profiles. It refuses to delete a class that
-has saved JDs, by design — after go-live, add JDs with **Upload JDs** on `/backend` instead.
+has saved JDs, by design — after go-live, add JDs on **Descriptions**, or bring an environment's work
+across with a package, instead.
 
 ## 4. After the first deploy
 

@@ -802,6 +802,9 @@ export type PackageSection = {
   updatedItems: string[];
 };
 
+/** Which packages this environment imports: real JDs (prod), scrubbed (test), or both (development). */
+export type PackageInfo = { acceptsRealData: boolean; acceptsScrubbed: boolean };
+
 /** What an import would do (a preview), or did. */
 export type PackagePlan = {
   applied: boolean;

@@ -89,12 +89,17 @@ public sealed class EnvironmentPackages
         _db = db;
     }
 
-    /// <summary>The package as gzip-compressed JSON.</summary>
-    public async Task<byte[]> ExportAsync(CancellationToken ct = default)
+    /// <summary>The package as gzip-compressed JSON; scrubbed for the test environment when asked.</summary>
+    public async Task<byte[]> ExportAsync(bool scrubbed = false, CancellationToken ct = default)
     {
+        // The key is read, or made, before anything is loaded: making it is a save.
+        var scrubber = scrubbed ? new PackageScrubber(await ScrubKeyAsync(ct)) : null;
         var package = await BuildAsync(ct);
         try
         {
+            // Scrubbing changes the loaded records in place. Safe only because nothing is saved
+            // before the tracker is cleared below — keep it that way.
+            scrubber?.Apply(package);
             using var buffer = new MemoryStream();
             await using (var gzip = new GZipStream(buffer, CompressionLevel.Optimal, leaveOpen: true))
             {
@@ -165,6 +170,21 @@ public sealed class EnvironmentPackages
         {
             _db.ChangeTracker.AutoDetectChangesEnabled = true;
         }
+    }
+
+    /// <summary>This environment's scrub key, made the first time a scrubbed package is exported.</summary>
+    private async Task<byte[]> ScrubKeyAsync(CancellationToken ct)
+    {
+        var setting = await _db.AppSettings.FirstOrDefaultAsync(s => s.Name == AppSetting.PackageScrubKey, ct);
+        if (setting is null)
+        {
+            setting = new AppSetting { Name = AppSetting.PackageScrubKey, Value = PackageScrubber.NewKey() };
+            _db.AppSettings.Add(setting);
+            await _db.SaveChangesAsync(ct);
+            _db.ChangeTracker.Clear();
+        }
+
+        return Convert.FromBase64String(setting.Value);
     }
 
     private Task LoadAsync(Type type, CancellationToken ct) =>
