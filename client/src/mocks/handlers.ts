@@ -314,9 +314,9 @@ export const handlers = [
   http.get('/api/standards', () =>
     HttpResponse.json<{ standards: StandardRow[] }>({
       standards: [
-        { blank: false, classSlug: '009605-lab-ast-1', classTitle: 'Lab Ast 1', code: '009605', flsa: 'Non-Exempt', grade: 'Grade 19', how: 'title', jobTitle: 'Lab Ast 1', keyResponsibilities: 4, onPayroll: true, title: sampleStandard.longTitle, union: 'TX' },
-        { blank: true, classSlug: null, classTitle: null, code: '004501', flsa: 'Exempt', grade: 'Grade 20', how: 'hand', jobTitle: 'Acad Achievement Cnslr 3', keyResponsibilities: 0, onPayroll: true, title: 'Academic Achievement Counselor 3', union: '' },
-        { blank: false, classSlug: null, classTitle: null, code: null, flsa: '', grade: '', how: null, jobTitle: null, keyResponsibilities: 3, onPayroll: false, title: 'Systemwide Academic Personnel Analyst 3', union: '' },
+        { blank: false, classSlug: '009605-lab-ast-1', classTitle: 'Lab Ast 1', code: '009605', flsa: 'Non-Exempt', grade: 'Grade 19', how: 'title', jobTitle: 'Lab Ast 1', keyResponsibilities: 4, onPayroll: true, supersededBy: null, title: sampleStandard.longTitle, union: 'TX' },
+        { blank: true, classSlug: null, classTitle: null, code: '004501', flsa: 'Exempt', grade: 'Grade 20', how: 'hand', jobTitle: 'Acad Achievement Cnslr 3', keyResponsibilities: 0, onPayroll: true, supersededBy: null, title: 'Academic Achievement Counselor 3', union: '' },
+        { blank: false, classSlug: null, classTitle: null, code: null, flsa: '', grade: '', how: null, jobTitle: null, keyResponsibilities: 3, onPayroll: false, supersededBy: null, title: 'Systemwide Academic Personnel Analyst 3', union: '' },
       ],
     })
   ),

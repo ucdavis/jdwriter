@@ -61,8 +61,11 @@ export const useStartJdFromClass = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: post<ClassifyStartRequest, FitRewriteResponse>('/api/classify/start-jd'),
-    // The draft appears in the saved-JD lists.
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jds'] }),
+    // The draft appears in the saved-JD lists, and the JD is now dealt with on Reclassification.
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['jds'] });
+      void queryClient.invalidateQueries({ queryKey: ['fit'] });
+    },
   });
 };
 
@@ -125,7 +128,7 @@ export const useReviewFit = () => {
   return useMutation({
     mutationFn: (body: { note?: string; slug: string; sourceFile: string }) =>
       fetchJson<FitReview>('/api/fit/reviews', { body: JSON.stringify(body), method: 'POST' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fit', 'misfits'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fit'] }),
   });
 };
 
@@ -135,9 +138,18 @@ export const useUnreviewFit = () => {
   return useMutation({
     mutationFn: (sourceFile: string) =>
       fetchJson<null>(`/api/fit/reviews?sourceFile=${encodeURIComponent(sourceFile)}`, { method: 'DELETE' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fit', 'misfits'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['fit'] }),
   });
 };
+
+/** How a JD in a class was dealt with on Reclassification, or null. */
+export const fitReviewQueryOptions = (slug: string, sourceFile: string) => ({
+  queryFn: () =>
+    fetchJson<FitReview | null>(
+      `/api/fit/reviews?slug=${encodeURIComponent(slug)}&sourceFile=${encodeURIComponent(sourceFile)}`
+    ),
+  queryKey: ['fit', 'review', slug, sourceFile] as const,
+});
 
 /**
  * Rewrite a misfitting JD to fit a class, saved as a draft for review. One model call that

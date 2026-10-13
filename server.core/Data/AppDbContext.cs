@@ -135,6 +135,8 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
             e.Property(x => x.UcJobCode).HasMaxLength(20);
             e.Property(x => x.Note).HasMaxLength(2000);
             e.Property(x => x.ReviewedByName).HasMaxLength(200);
+            e.Property(x => x.RewrittenTo).HasMaxLength(TitleLen);
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
             e.HasIndex(x => x.SourceFile).IsUnique();
             e.HasOne(x => x.ReviewedBy).WithMany().HasForeignKey(x => x.ReviewedByUserId).OnDelete(DeleteBehavior.SetNull);
         });

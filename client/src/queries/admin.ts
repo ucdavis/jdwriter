@@ -64,10 +64,11 @@ export const useBootstrapClass = () => {
         body: JSON.stringify(typeof title === 'string' ? { title } : title),
         method: 'POST',
       }),
-    // A new class appears in the class list, the analyst index and the jobs directory.
+    // A new class appears in the class list, the analyst index, the jobs directory and the standards.
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'jobs'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'standards', 'list'] });
     },
   });
 };

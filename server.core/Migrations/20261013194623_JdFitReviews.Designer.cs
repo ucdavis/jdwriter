@@ -12,7 +12,7 @@ using Server.Core.Data;
 namespace server.core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261013193532_JdFitReviews")]
+    [Migration("20261013194623_JdFitReviews")]
     partial class JdFitReviews
     {
         /// <inheritdoc />
@@ -1000,6 +1000,11 @@ namespace server.core.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("Note")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -1013,6 +1018,10 @@ namespace server.core.Migrations
 
                     b.Property<int?>("ReviewedByUserId")
                         .HasColumnType("int");
+
+                    b.Property<string>("RewrittenTo")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<string>("SourceFile")
                         .IsRequired()

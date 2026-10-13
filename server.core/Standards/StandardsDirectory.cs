@@ -26,6 +26,10 @@ public sealed class StandardRow
     public string? How { get; set; }
 
     public bool OnPayroll { get; set; }
+
+    /// <summary>Set when a union successor has superseded the job: its JDs, and its class, go there.</summary>
+    public string? SupersededBy { get; set; }
+
     public string? ClassSlug { get; set; }
     public string? ClassTitle { get; set; }
 }
@@ -74,6 +78,7 @@ public sealed class StandardsDirectory
                     JobTitle = tc is null ? null : ProfileAggregator.Titleize(tc.Title),
                     How = tc is null ? null : byHand.Contains(s.LongTitle) ? "hand" : "title",
                     OnPayroll = tc?.IsInUse ?? false,
+                    SupersededBy = tc is null ? null : index.SupersededBy(tc.Code)?.ToCode,
                     ClassSlug = cls?.Slug,
                     ClassTitle = cls?.Title,
                 };

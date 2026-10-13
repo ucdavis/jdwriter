@@ -459,8 +459,15 @@ export type Misfit = {
   ucJobCode: string;
 };
 
-/** A low-coverage JD reviewed and found to belong in its class. */
-export type FitReview = { at: string; by: string | null; note: string | null };
+/** A low-coverage JD dealt with: found to belong in its class, or rewritten to fit one. */
+export type FitReview = {
+  at: string;
+  by: string | null;
+  kind: 'belongs' | 'rewritten';
+  note: string | null;
+  /** For a rewrite: the class it was rewritten to fit. */
+  rewrittenTo: string | null;
+};
 
 export type MisfitsResponse = {
   misfits: Misfit[];
@@ -586,6 +593,8 @@ export type StandardRow = {
   jobTitle: string | null;
   keyResponsibilities: number;
   onPayroll: boolean;
+  /** Set when a union successor has superseded the job: its class is the successor's. */
+  supersededBy: string | null;
   title: string;
   union: string;
 };

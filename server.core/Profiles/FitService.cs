@@ -35,9 +35,23 @@ public sealed class Misfit
 
 public sealed class FitReviewInfo
 {
+    public Domain.FitReviewKind Kind { get; set; }
+
+    /// <summary>For a rewrite: the class it was rewritten to fit.</summary>
+    public string? RewrittenTo { get; set; }
+
     public string? By { get; set; }
     public DateTimeOffset At { get; set; }
     public string? Note { get; set; }
+
+    public static FitReviewInfo Of(Domain.JdFitReview r) => new()
+    {
+        Kind = r.Kind,
+        RewrittenTo = r.RewrittenTo,
+        By = r.ReviewedByName,
+        At = r.ReviewedAt,
+        Note = r.Note,
+    };
 }
 
 public sealed class FitSummary
@@ -113,7 +127,7 @@ public sealed class FitService : IFitService
                     // A review holds for the class it was made in only.
                     Reviewed = reviewed.TryGetValue(jd.SourceFile, out var r)
                                && Titles.TitleCodeIndex.Pad(r.UcJobCode) == Titles.TitleCodeIndex.Pad(p.UcJobCode)
-                        ? new FitReviewInfo { By = r.ReviewedByName, At = r.ReviewedAt, Note = r.Note }
+                        ? FitReviewInfo.Of(r)
                         : null,
                 });
             }

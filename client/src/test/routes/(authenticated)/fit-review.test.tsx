@@ -1,6 +1,7 @@
 import { renderRoute, setupRouteTest } from '@/test/renderRoute.tsx';
 import { testServer } from '@/test/mswUtils.ts';
-import type { Misfit } from '@/lib/contracts.ts';
+import { useContractHandlers } from '@/test/mswHandlers.ts';
+import type { FitReview, Misfit } from '@/lib/contracts.ts';
 import { screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -17,72 +18,81 @@ const misfit = (over: Partial<Misfit>): Misfit => ({
   ...over,
 });
 
-describe('reclassification: a low-coverage JD that genuinely belongs', () => {
+const review = (over: Partial<FitReview>): FitReview => ({
+  at: '2026-10-13T17:00:00Z',
+  by: 'An Admin',
+  kind: 'belongs',
+  note: null,
+  rewrittenTo: null,
+  ...over,
+});
+
+describe('reclassification: reviewed JDs', () => {
   setupRouteTest();
 
-  it('is marked reviewed with a note, and leaves the queue for the reviewed list', async () => {
-    const user = userEvent.setup();
-    let sent: unknown = null;
-    let reviewed = false;
+  it('offers Suggest and Rewrite until a JD is dealt with, then shows it as Reviewed, after the rest', async () => {
     testServer.use(
       http.get('/api/fit/misfits', () =>
         HttpResponse.json({
           misfits: [
-            misfit({
-              reviewed: reviewed ? { at: '2026-10-13T17:00:00Z', by: 'An Admin', note: 'Specialized, but this class.' } : null,
-            }),
-            misfit({ coveredPct: 70, sourceFile: 'import/bbbbbbbbbbbbbbbb' }),
+            misfit({ coveredPct: 40, reviewed: review({ kind: 'rewritten', rewrittenTo: 'Lab Ast 2' }), sourceFile: 'import/rewritten00000000' }),
+            misfit({ coveredPct: 50, reviewed: review({}), sourceFile: 'import/belongs0000000000' }),
+            misfit({ coveredPct: 70, sourceFile: 'import/open000000000000' }),
           ],
           threshold: 90,
           totalJds: 10,
         })
-      ),
-      http.post('/api/fit/reviews', async ({ request }) => {
-        sent = await request.json();
-        reviewed = true;
-        return HttpResponse.json({ at: '2026-10-13T17:00:00Z', by: 'An Admin', note: 'Specialized, but this class.' });
-      })
+      )
     );
     renderRoute({ initialPath: '/backend/fit' });
 
-    expect(await screen.findByRole('button', { name: /To review/ })).toHaveTextContent('2');
-    await user.click(screen.getAllByRole('button', { name: 'Belongs in this class' })[0]);
-    await user.type(screen.getByLabelText('Why it belongs (optional)'), 'Specialized, but this class.');
-    await user.click(screen.getByRole('button', { name: 'Mark reviewed' }));
+    expect(await screen.findByTestId('fit-progress')).toHaveTextContent('1 to review · 2 reviewed');
+    // One JD still to do: its suggestion and rewrite, and nothing else.
+    expect(screen.getAllByRole('button', { name: 'Suggest class' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Rewrite to fit' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /Belongs/ })).not.toBeInTheDocument();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /To review/ })).toHaveTextContent('1'));
-    expect(sent).toEqual({ note: 'Specialized, but this class.', slug: '009605-lab-ast-1', sourceFile: 'import/aaaaaaaaaaaaaaaa' });
-
-    await user.click(screen.getByRole('button', { name: /Reviewed — belongs/ }));
-    const note = await screen.findByTestId('fit-review');
-    expect(note).toHaveTextContent('Reviewed by An Admin');
-    expect(note).toHaveTextContent('Specialized, but this class.');
+    const reviewed = screen.getAllByTestId('fit-review');
+    expect(reviewed).toHaveLength(2);
+    expect(reviewed[0]).toHaveTextContent('Reviewed');
+    expect(reviewed[0]).toHaveTextContent('Rewritten to fit Lab Ast 2 · An Admin');
+    expect(reviewed[1]).toHaveTextContent('Belongs in this class');
+    // The one still to do comes first.
+    const links = screen.getAllByRole('link').map((a) => a.textContent ?? '');
+    expect(links.findIndex((t) => t.includes('open'))).toBeLessThan(links.findIndex((t) => t.includes('rewritten')));
   });
 
-  it('can be undone, back into the queue', async () => {
+  it('is marked on the JD itself with a checkbox, and unmarked the same way', async () => {
+    useContractHandlers();
     const user = userEvent.setup();
-    let undone: string | null = null;
+    let current: FitReview | null = null;
+    const calls: string[] = [];
     testServer.use(
-      http.get('/api/fit/misfits', () =>
-        HttpResponse.json({
-          misfits: [misfit({ reviewed: undone ? null : { at: '2026-10-13T17:00:00Z', by: null, note: null } })],
-          threshold: 90,
-          totalJds: 10,
-        })
-      ),
+      http.get('/api/fit/reviews', () => HttpResponse.json(current)),
+      http.post('/api/fit/reviews', async ({ request }) => {
+        calls.push(`mark ${JSON.stringify(await request.json())}`);
+        current = review({});
+        return HttpResponse.json(current);
+      }),
       http.delete('/api/fit/reviews', ({ request }) => {
-        undone = new URL(request.url).searchParams.get('sourceFile');
+        calls.push(`unmark ${new URL(request.url).searchParams.get('sourceFile')}`);
+        current = null;
         return new HttpResponse(null, { status: 204 });
       })
     );
-    renderRoute({ initialPath: '/backend/fit' });
+    renderRoute({ initialPath: '/backend/jd/009605-lab-ast-1/Sample%20Class/JD-001.HTML' });
 
-    await user.click(await screen.findByRole('button', { name: /Reviewed — belongs/ }));
-    const row = (await screen.findByTestId('fit-review')).closest('div.card, [class*="p-4"]') as HTMLElement;
-    await user.click(within(row).getByRole('button', { name: 'Undo review' }));
+    const box = await screen.findByRole('checkbox', { name: /Reviewed/ });
+    expect(box).not.toBeChecked();
+    await user.click(box);
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: /Reviewed/ })).toBeChecked());
+    expect(within(box.closest('label') as HTMLElement).getByText('— belongs in this class')).toBeInTheDocument();
 
-    await waitFor(() => expect(undone).toBe('import/aaaaaaaaaaaaaaaa'));
-    await user.click(screen.getByRole('button', { name: /To review/ }));
-    expect(await screen.findByRole('button', { name: 'Belongs in this class' })).toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: /Reviewed/ }));
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: /Reviewed/ })).not.toBeChecked());
+    expect(calls).toEqual([
+      'mark {"slug":"009605-lab-ast-1","sourceFile":"Sample Class/JD-001.HTML"}',
+      'unmark Sample Class/JD-001.HTML',
+    ]);
   });
 });

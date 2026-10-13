@@ -1,8 +1,15 @@
 import { renderRoute, setupRouteTest } from '@/test/renderRoute.tsx';
 import { useContractHandlers } from '@/test/mswHandlers.ts';
-import { screen, within } from '@testing-library/react';
+import { testServer } from '@/test/mswUtils.ts';
+import { screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
+
+const standardRow = (over: object) => ({
+  blank: false, classSlug: null, classTitle: null, code: '009610', flsa: '', grade: '', how: 'title',
+  jobTitle: 'Some Job', keyResponsibilities: 4, onPayroll: true, supersededBy: null, title: 'Ready Standard', union: '', ...over,
+});
 
 describe('job descriptions and job standards', () => {
   setupRouteTest();
@@ -104,5 +111,42 @@ describe('job descriptions and job standards', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Codes' })).toBeInTheDocument();
     expect(within(await screen.findByRole('dialog')).getByRole('heading', { name: 'Lab Ast 1' })).toBeInTheDocument();
+  });
+
+  it('says why a standard has no class, and starts one when it can', async () => {
+    useContractHandlers();
+    const user = userEvent.setup();
+    let created: unknown = null;
+    testServer.use(
+      http.get('/api/standards', () =>
+        HttpResponse.json({
+          standards: [
+            standardRow({}),
+            standardRow({ blank: true, code: '009611', keyResponsibilities: 0, title: 'Blank Standard' }),
+            standardRow({ code: '009612', onPayroll: false, title: 'Inactive Standard' }),
+            standardRow({ code: '009613', supersededBy: '009614', title: 'Superseded Standard' }),
+            standardRow({ code: null, how: null, jobTitle: null, title: 'Unmatched Standard' }),
+          ],
+        })
+      ),
+      http.post('/api/admin/bootstrap', async ({ request }) => {
+        created = await request.json();
+        return HttpResponse.json({ slug: '009610-ready-standard', title: 'Ready Standard', ucJobCode: '009610' });
+      })
+    );
+    renderRoute({ initialPath: '/backend/standards' });
+
+    const reasons = await screen.findAllByTestId('no-class');
+    expect(reasons.map((r) => r.textContent)).toEqual([
+      expect.stringContaining('Ready: no JDs yet'),
+      expect.stringContaining('blank'),
+      expect.stringContaining("isn't active at UC Davis"),
+      expect.stringContaining('superseded by 009614'),
+      expect.stringContaining('Not matched to a job code'),
+    ]);
+    expect(within(reasons[2]).getByRole('link', { name: 'mark it active on Codes →' })).toHaveAttribute('href', '/backend/codes?code=009612');
+
+    await user.click(within(reasons[0]).getByRole('button', { name: 'Create class from standard' }));
+    await waitFor(() => expect(created).toEqual({ title: 'Ready Standard' }));
   });
 });
