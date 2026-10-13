@@ -4,13 +4,7 @@ import { Badge, Card, Eyebrow, Note, PageHeader } from '@/shared/ui/primitives.t
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { misfitsQueryOptions, useMisfits } from '@/queries/classes.ts';
-import {
-  useReviewFit,
-  useRewriteToFit,
-  useSuggestClass,
-  useUnreviewFit,
-} from '@/queries/authoring.ts';
-import { useState } from 'react';
+import { useRewriteToFit, useSuggestClass } from '@/queries/authoring.ts';
 import type { FitRewriteResponse, Misfit } from '@/lib/contracts.ts';
 import type { RouterContext } from '@/main.tsx';
 
@@ -30,8 +24,8 @@ export const Route = createFileRoute('/(authenticated)/backend/fit')({
  *
  * These are reclassification candidates. Low coverage is not automatically a wrong
  * class — genuinely idiosyncratic work looks the same from here — which is why each row
- * offers a suggestion rather than a verdict. When an analyst finds a JD genuinely belongs, they
- * mark it reviewed: it leaves the queue, and stays marked while it stays in that class.
+ * offers a suggestion rather than a verdict. A JD that has been dealt with — rewritten to fit, or
+ * marked on its own page as belonging — shows as reviewed instead, below the ones still to do.
  */
 function FitPage() {
   return (
@@ -44,11 +38,11 @@ function FitPage() {
 // Inside the gate so the admin-only query never fires for an Author.
 function FitContent() {
   const { data } = useMisfits(90);
-  const [showReviewed, setShowReviewed] = useState(false);
   const misfits = data?.misfits ?? [];
   const open = misfits.filter((m) => !m.reviewed);
   const reviewed = misfits.filter((m) => m.reviewed);
-  const shown = (showReviewed ? reviewed : open).slice(0, CAP);
+  // Still to do first, worst fit first; the reviewed after them.
+  const shown = [...open, ...reviewed].slice(0, CAP);
   const totalJds = data?.totalJds ?? 0;
   const threshold = data?.threshold ?? 90;
 
@@ -70,25 +64,10 @@ function FitContent() {
               {Math.round((1 - misfits.length / (totalJds || 1)) * 100)}% fit well
             </span>
           </div>
-          <div aria-label="Show" className="mt-3 flex flex-wrap gap-1" role="group">
-            <button
-              aria-pressed={!showReviewed}
-              className={`btn btn-sm ${showReviewed ? 'btn-ghost' : 'btn-primary'}`}
-              onClick={() => setShowReviewed(false)}
-              type="button"
-            >
-              To review <span className="tnum opacity-70">{open.length}</span>
-            </button>
-            <button
-              aria-pressed={showReviewed}
-              className={`btn btn-sm ${showReviewed ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setShowReviewed(true)}
-              type="button"
-            >
-              Reviewed — belongs <span className="tnum opacity-70">{reviewed.length}</span>
-            </button>
-          </div>
-          {(showReviewed ? reviewed : open).length > CAP ? (
+          <p className="mt-1 text-base text-base-content/65" data-testid="fit-progress">
+            {open.length} to review · {reviewed.length} reviewed
+          </p>
+          {misfits.length > CAP ? (
             <p className="mt-1 text-sm text-base-content/50">
               Showing the {CAP} worst-fitting.
             </p>
@@ -105,14 +84,6 @@ function FitContent() {
                 Every JD fits its class at ≥{threshold}%. No reclassification candidates.
               </p>
             </Card>
-          ) : shown.length === 0 ? (
-            <Card className="p-6">
-              <p className="text-base text-base-content/65">
-                {showReviewed
-                  ? 'None reviewed yet.'
-                  : 'Every low-coverage JD has been reviewed.'}
-              </p>
-            </Card>
           ) : null}
         </div>
       </div>
@@ -123,10 +94,7 @@ function FitContent() {
 const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
   const suggest = useSuggestClass();
   const rewrite = useRewriteToFit();
-  const review = useReviewFit();
-  const unreview = useUnreviewFit();
-  const [confirming, setConfirming] = useState(false);
-  const [note, setNote] = useState('');
+
   const matches = suggest.data?.matches;
   const best = matches?.[0];
   const bestIsCurrent = best?.slug === misfit.slug;
@@ -140,7 +108,7 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <Badge tone={tone}>{misfit.coveredPct}% fit</Badge>
-            {misfit.reviewed ? <Badge tone="green">reviewed — belongs</Badge> : null}
+
             <Link
               className="truncate text-base font-semibold text-primary hover:underline"
               params={{ _splat: misfit.sourceFile, slug: misfit.slug }}
@@ -159,95 +127,47 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
               {misfit.idiosyncratic.map((u) => `${u.name} (${u.pct}%)`).join(', ')}
             </div>
           ) : null}
-          {misfit.reviewed ? (
-            <div className="mt-1 text-sm text-base-content/65" data-testid="fit-review">
-              Reviewed{misfit.reviewed.by ? ` by ${misfit.reviewed.by}` : ''},{' '}
-              {new Date(misfit.reviewed.at).toLocaleDateString()}
-              {misfit.reviewed.note ? ` — ${misfit.reviewed.note}` : ''}
-            </div>
-          ) : null}
         </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
-          {misfit.reviewed ? (
-            <button
-              className="btn btn-ghost btn-sm"
-              disabled={unreview.isPending}
-              onClick={() => unreview.mutate(misfit.sourceFile)}
-              title="Put it back in the queue"
-              type="button"
-            >
-              {unreview.isPending ? 'Undoing…' : 'Undo review'}
-            </button>
-          ) : (
+        {misfit.reviewed ? (
+          <div className="flex shrink-0 flex-col items-end text-right" data-testid="fit-review">
+            <Badge tone="green">Reviewed</Badge>
+            <span className="mt-1 text-sm text-base-content/65">
+              {misfit.reviewed.kind === 'rewritten'
+                ? `Rewritten to fit ${misfit.reviewed.rewrittenTo ?? 'a class'}`
+                : 'Belongs in this class'}
+              {misfit.reviewed.by ? ` · ${misfit.reviewed.by}` : ''} ·{' '}
+              {new Date(misfit.reviewed.at).toLocaleDateString()}
+            </span>
+          </div>
+        ) : (
+          <div className="flex shrink-0 gap-1.5">
             <button
               className="btn btn-outline btn-sm"
-              disabled={review.isPending}
-              onClick={() => setConfirming(true)}
-              title="It genuinely belongs in this class: take it out of the queue"
+              disabled={suggest.isPending}
+              onClick={() =>
+                suggest.mutate({ slug: misfit.slug, sourceFile: misfit.sourceFile })
+              }
               type="button"
             >
-              Belongs in this class
+              {suggest.isPending ? 'Matching…' : 'Suggest class'}
             </button>
-          )}
-          <button
-            className="btn btn-outline btn-sm"
-            disabled={suggest.isPending}
-            onClick={() =>
-              suggest.mutate({ slug: misfit.slug, sourceFile: misfit.sourceFile })
-            }
-            type="button"
-          >
-            {suggest.isPending ? 'Matching…' : 'Suggest class'}
-          </button>
-          <button
-            className="btn btn-outline btn-sm"
-            disabled={rewrite.isPending}
-            onClick={() =>
-              rewrite.mutate({ slug: misfit.slug, sourceFile: misfit.sourceFile })
-            }
-            title={`Draft a new JD for ${misfit.classTitle} from this one`}
-            type="button"
-          >
-            {rewrite.isPending && !rewrite.variables?.targetSlug
-              ? 'Rewriting…'
-              : 'Rewrite to fit'}
-          </button>
-        </div>
+            <button
+              className="btn btn-outline btn-sm"
+              disabled={rewrite.isPending}
+              onClick={() =>
+                rewrite.mutate({ slug: misfit.slug, sourceFile: misfit.sourceFile })
+              }
+              title={`Draft a new JD for ${misfit.classTitle} from this one`}
+              type="button"
+            >
+              {rewrite.isPending && !rewrite.variables?.targetSlug
+                ? 'Rewriting…'
+                : 'Rewrite to fit'}
+            </button>
+          </div>
+        )}
       </div>
 
-      {confirming && !misfit.reviewed ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-base-300 bg-base-200 p-3">
-          <input
-            aria-label="Why it belongs (optional)"
-            className="input input-sm input-bordered min-w-0 flex-1"
-            maxLength={2000}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Why it belongs (optional)"
-            value={note}
-          />
-          <button
-            className="btn btn-primary btn-sm"
-            disabled={review.isPending}
-            onClick={() =>
-              review.mutate(
-                { note: note.trim() || undefined, slug: misfit.slug, sourceFile: misfit.sourceFile },
-                { onSuccess: () => setConfirming(false) }
-              )
-            }
-            type="button"
-          >
-            {review.isPending ? 'Saving…' : 'Mark reviewed'}
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setConfirming(false)} type="button">
-            Cancel
-          </button>
-        </div>
-      ) : null}
-      {review.error || unreview.error ? (
-        <div className="mt-2">
-          <Note tone="red">{messageOf(review.error ?? unreview.error)}</Note>
-        </div>
-      ) : null}
       {suggest.error ? (
         <div className="mt-2">
           <Note tone="red">{messageOf(suggest.error)}</Note>

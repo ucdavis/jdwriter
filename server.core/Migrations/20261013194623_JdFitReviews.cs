@@ -19,6 +19,8 @@ namespace server.core.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     SourceFile = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: false),
                     UcJobCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Kind = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    RewrittenTo = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
                     Note = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     ReviewedByUserId = table.Column<int>(type: "int", nullable: true),
                     ReviewedByName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),

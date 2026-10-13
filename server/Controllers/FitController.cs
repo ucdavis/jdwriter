@@ -60,7 +60,8 @@ public class FitController : ApiControllerBase
 
     /// <summary>
     /// Mark a low-coverage JD as reviewed: it genuinely belongs in its class. It leaves the work
-    /// queue, and stays marked while it remains in that class.
+    /// queue, and stays marked while it remains in that class. A rewrite marks it too
+    /// (<see cref="Rewrite"/>).
     /// </summary>
     [HttpPost("reviews")]
     public async Task<IActionResult> Review(FitReviewRequest body, CancellationToken ct)
@@ -82,22 +83,47 @@ public class FitController : ApiControllerBase
             return BadRequest(new { message = "Keep the note under 2,000 characters." });
         }
 
+        var review = await RecordReviewAsync(body.SourceFile, profile.UcJobCode, FitReviewKind.Belongs, null, note, ct);
+        return Ok(FitReviewInfo.Of(review));
+    }
+
+    /// <summary>Record how a JD was dealt with, replacing what was recorded before.</summary>
+    private async Task<JdFitReview> RecordReviewAsync(
+        string sourceFile, string ucJobCode, FitReviewKind kind, string? rewrittenTo, string? note, CancellationToken ct)
+    {
         var userId = await User.IdAsync(_db, ct);
         var user = userId is null ? null : await _db.AppUsers.FindAsync([userId.Value], ct);
-        var review = await _db.JdFitReviews.FirstOrDefaultAsync(r => r.SourceFile == body.SourceFile, ct);
+        var review = await _db.JdFitReviews.FirstOrDefaultAsync(r => r.SourceFile == sourceFile, ct);
         if (review is null)
         {
-            review = new JdFitReview { SourceFile = body.SourceFile };
+            review = new JdFitReview { SourceFile = sourceFile };
             _db.JdFitReviews.Add(review);
         }
 
-        review.UcJobCode = profile.UcJobCode;
+        review.UcJobCode = ucJobCode;
+        review.Kind = kind;
+        review.RewrittenTo = rewrittenTo;
         review.Note = note;
         review.ReviewedByUserId = userId;
         review.ReviewedByName = user?.DisplayName ?? user?.LoginId;
         review.ReviewedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(ct);
-        return Ok(new FitReviewInfo { By = review.ReviewedByName, At = review.ReviewedAt, Note = review.Note });
+        return review;
+    }
+
+    /// <summary>
+    /// How a JD in a class was dealt with, or null when it hasn't been: a review made while it was in
+    /// another class doesn't count.
+    /// </summary>
+    [HttpGet("reviews")]
+    public async Task<IActionResult> GetReview([FromQuery] string slug, [FromQuery] string sourceFile, CancellationToken ct)
+    {
+        var profile = await _profiles.GetBySlugAsync(slug, ct);
+        var review = await _db.JdFitReviews.AsNoTracking().FirstOrDefaultAsync(r => r.SourceFile == sourceFile, ct);
+        return Ok(profile is not null && review is not null
+                  && Server.Core.Titles.TitleCodeIndex.Pad(review.UcJobCode) == Server.Core.Titles.TitleCodeIndex.Pad(profile.UcJobCode)
+            ? FitReviewInfo.Of(review)
+            : null);
     }
 
     /// <summary>Undo a review: the JD returns to the work queue.</summary>
@@ -209,6 +235,9 @@ public class FitController : ApiControllerBase
 
         var id = await _saved.SaveDraftAsync(
             rewrite.Inputs, target, await User.IdAsync(_db, ct), null, rewrite.DraftState, ct);
+
+        // Rewritten is dealt with: it leaves Reclassification's queue, reviewed.
+        await RecordReviewAsync(incumbent.SourceFile, source.UcJobCode, FitReviewKind.Rewritten, target.Title, null, ct);
 
         return Ok(new
         {

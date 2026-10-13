@@ -2,10 +2,11 @@ import { Badge, Card } from '@/shared/ui/primitives.tsx';
 import { downloadExcelCsv, toExcelCsv } from '@/lib/csv.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { StandardDetail } from '@/features/build/StandardDetail.tsx';
-import { useStandardByTitle, useStandardsList } from '@/queries/admin.ts';
+import { useBootstrapClass, useStandardByTitle, useStandardsList } from '@/queries/admin.ts';
 import type { StandardRow } from '@/lib/contracts.ts';
 import { Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 
 /** The same kinds of filter as the Codes page, so the two read alike. */
 type CodeFilter = 'active' | 'all' | 'inactive' | 'none';
@@ -203,6 +204,7 @@ export const StandardsList = ({ initialOpen, initialQuery }: { initialOpen?: str
                     {open === s.title ? 'Hide' : 'View'}
                   </button>
                 </div>
+                {s.classSlug ? null : <NoClass standard={s} />}
                 {open === s.title ? <OpenStandard title={s.title} /> : null}
               </li>
             ))}
@@ -221,6 +223,60 @@ export const StandardsList = ({ initialOpen, initialQuery }: { initialOpen?: str
         </Card>
       )}
     </>
+  );
+};
+
+/**
+ * Why a standard has no class, and what makes one. A class is built from JDs (re-ingested) or, with
+ * none, bootstrapped from the standard — but only for a job active at UC Davis, never a superseded
+ * one, and never from a blank standard, which has nothing to build an envelope from.
+ */
+const NoClass = ({ standard: s }: { standard: StandardRow }) => {
+  const bootstrap = useBootstrapClass();
+  const toCode = (code: string, label: string) => (
+    <Link className="font-semibold text-primary hover:underline" search={{ code }} to="/backend/codes">
+      {label}
+    </Link>
+  );
+
+  let reason: ReactNode;
+  let action: ReactNode = null;
+  if (s.code === null) {
+    reason = 'Not matched to a job code, so nothing can be built from it.';
+    action = <>Match it to its code in the standard–code review above.</>;
+  } else if (s.supersededBy) {
+    reason = `Its job is superseded by ${s.supersededBy}: JDs go to the successor's class, so none is built here.`;
+    action = toCode(s.supersededBy, `Open ${s.supersededBy} →`);
+  } else if (!s.onPayroll) {
+    reason = "Its job isn't active at UC Davis, and a class is only built for an active job.";
+    action = <>If it should be, {toCode(s.code, 'mark it active on Codes →')}</>;
+  } else if (s.blank) {
+    reason = 'The standard is blank — a title with no key responsibilities — so there is nothing to build an envelope from.';
+    action = (
+      <>
+        Add the full standard ({toCode(s.code, 'open the job on Codes →')}), or add JDs on Descriptions and
+        re-ingest.
+      </>
+    );
+  } else {
+    reason = 'Ready: no JDs yet, but the standard can start a class.';
+    action = (
+      <button
+        className="btn btn-primary btn-xs"
+        disabled={bootstrap.isPending}
+        onClick={() => bootstrap.mutate(s.title)}
+        type="button"
+      >
+        {bootstrap.isPending ? 'Creating…' : 'Create class from standard'}
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 rounded-lg border border-base-300 bg-base-200 px-3 py-2 text-sm" data-testid="no-class">
+      <span className="font-semibold">No class.</span> {reason} {action}
+      {bootstrap.error ? <span className="block text-error">{messageOf(bootstrap.error)}</span> : null}
+    </div>
   );
 };
 

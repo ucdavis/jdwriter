@@ -3,7 +3,9 @@ import { isAdmin } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { jdDetailQueryOptions } from '@/queries/classes.ts';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { fitReviewQueryOptions, useReviewFit, useUnreviewFit } from '@/queries/authoring.ts';
+import { messageOf } from '@/features/browse/NlIntake.tsx';
 import type { RouterContext } from '@/main.tsx';
 
 export const Route = createFileRoute('/(authenticated)/backend/jd/$slug/$')({
@@ -84,8 +86,9 @@ function JdReviewContent() {
             {record.supervises ? ' · supervises' : ''}
             {record.leads ? ' · leads' : ''}
           </div>
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <Badge tone={tone}>{coveredPct}% fits the standard envelope</Badge>
+            <ReviewedCheckbox slug={profile.slug} sourceFile={record.sourceFile} />
             <Link
               className="text-base text-primary hover:underline"
               params={{ slug: profile.slug }}
@@ -208,3 +211,43 @@ const QualList = ({ items, label }: { items: string[]; label: string }) => (
     )}
   </div>
 );
+
+/**
+ * Reviewed on Reclassification: ticked when the JD genuinely belongs in this class, despite low
+ * coverage, or once it has been rewritten to fit. A reviewed JD shows as reviewed in the queue rather
+ * than offering a suggestion or a rewrite. Unticked, it goes back to the queue.
+ */
+const ReviewedCheckbox = ({ slug, sourceFile }: { slug: string; sourceFile: string }) => {
+  const { data: review, isPending } = useQuery(fitReviewQueryOptions(slug, sourceFile));
+  const mark = useReviewFit();
+  const unmark = useUnreviewFit();
+  const busy = isPending || mark.isPending || unmark.isPending;
+
+  return (
+    <span className="flex flex-col">
+      <label className="flex cursor-pointer items-center gap-2 text-base">
+        <input
+          checked={Boolean(review)}
+          className="checkbox checkbox-sm checkbox-primary"
+          disabled={busy}
+          onChange={(e) =>
+            e.target.checked ? mark.mutate({ slug, sourceFile }) : unmark.mutate(sourceFile)
+          }
+          type="checkbox"
+        />
+        Reviewed
+        <span className="text-sm text-base-content/65">
+          {review
+            ? review.kind === 'rewritten'
+              ? `— rewritten to fit ${review.rewrittenTo ?? 'a class'}`
+              : '— belongs in this class'
+            : '— it belongs in this class'}
+        </span>
+      </label>
+      {mark.error || unmark.error ? (
+        <span className="text-sm text-error">{messageOf(mark.error ?? unmark.error)}</span>
+      ) : null}
+    </span>
+  );
+};
+
