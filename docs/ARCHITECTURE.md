@@ -104,7 +104,7 @@ Responsibilities:
 Responsibilities:
 
 - Runs the frontend dev server on port `5173`
-- Proxies `/api`, `/login`, `/logout`, `/signin-oidc`, and `/health` to ASP.NET Core, including the local sign-in and sign-out POST routes
+- Proxies `/api`, `/login`, `/logout`, `/signin-oidc`, `/signout-oidc`, `/signout-callback-oidc`, and `/health` to ASP.NET Core, including the local sign-in and sign-out POST routes
 - Detects either `ASPNETCORE_URLS` or `ASPNETCORE_HTTPS_PORT` so the same config works for normal `dotnet watch` and IIS Express
 
 ### `server/Program.cs`

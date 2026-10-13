@@ -19,7 +19,7 @@ Try these flows:
 2. Open Table Export and download the example CSV. Open Form to try validation.
 3. Open Notification and send either example. Read the rendered email in the local inbox linked in the quick start. Mailpit captures all recipients locally and has no relay configured.
 4. Visit `/login`, switch to Basic User, and request `/api/weatherforecast`. It returns `403` because this user lacks `SampleRole`. `/api/user/me` still returns their identity.
-5. Visit `/login` and sign out. `/api/user/me` returns `401`. The public `/about` page still opens.
+5. Follow the [sign-out flow](../README.md#auth-configuration). `/api/user/me` returns `401`. The signed-out page remains accessible without authentication.
 
 Sample User has ID `sandbox-sample`, email `sample@example.test`, IAM ID `sandbox-10001`, and roles `User` and `SampleRole`. Basic User has ID `sandbox-basic`, email `basic@example.test`, IAM ID `sandbox-10002`, and only `User`. They are fixed claims, not database user rows. Extend `LocalAuthentication.cs` when adding application roles, and `DbInitializer.cs` when adding fixtures.
 
