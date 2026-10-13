@@ -5,7 +5,16 @@ import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { ProposedCompare } from './ProposedCompare.tsx';
 import { useClassify, useExtractDocument, useStartJdFromClass } from '@/queries/authoring.ts';
 import { useRef, useState, type DragEvent } from 'react';
-import type { ClassifyMatch, ClassifyVerdict, LevelFit } from '@/lib/contracts.ts';
+import { clearSessionState, setSessionState, useSessionState } from '@/lib/sessionState.ts';
+import type {
+  ClassifyMatch,
+  ClassifyResponse,
+  ClassifyVerdict,
+  ExtractResponse,
+  LevelFit,
+} from '@/lib/contracts.ts';
+
+const KEY = 'classify.';
 
 const verdictTone: Record<ClassifyVerdict, 'green' | 'orange' | 'red' | 'yellow'> = {
   clear: 'green',
@@ -48,7 +57,11 @@ const ACCEPTED =
  * model call, which matters because the extraction is free and the classification is not.
  */
 export const DescriptionClassifier = () => {
-  const [text, setText] = useState('');
+  // The description, the file it came from and its classification are kept across pages: opening a
+  // recommended class and coming back finds them as they were. A reload, or Clear, starts fresh.
+  const [text, setText] = useSessionState(`${KEY}text`, '');
+  const [file, setFile] = useSessionState<ExtractResponse | null>(`${KEY}file`, null);
+  const [result, setResult] = useSessionState<ClassifyResponse | null>(`${KEY}result`, null);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   // Drag events fire on every child element, so a boolean flickers as the pointer crosses
@@ -60,12 +73,15 @@ export const DescriptionClassifier = () => {
   const classify = useClassify();
   const start = useStartJdFromClass();
   const navigate = useNavigate();
-  const file = extract.data;
 
   const ingestFile = (f: File) => {
     classify.reset();
+    setResult(null);
     extract.mutate(f, {
-      onSuccess: (result) => setText(result.text),
+      onSuccess: (read) => {
+        setText(read.text);
+        setFile(read);
+      },
     });
   };
 
@@ -79,7 +95,6 @@ export const DescriptionClassifier = () => {
     }
   };
 
-  const result = classify.data;
   const [top, ...alternatives] = result?.matches ?? [];
 
   // The class's standard as the frame, this description's work merged in, opened as a draft.
@@ -171,6 +186,7 @@ export const DescriptionClassifier = () => {
               // Once edited, the file chip would otherwise claim credit for text the
               // extractor did not produce — including its proposed code.
               extract.reset();
+              setFile(null);
             }}
             placeholder="Drag an Excel, Word, or PDF file here, or paste the full job description — summary, responsibilities, qualifications…"
             rows={12}
@@ -212,17 +228,38 @@ export const DescriptionClassifier = () => {
             className="btn btn-primary btn-sm"
             disabled={classify.isPending || !text.trim()}
             onClick={() =>
-              classify.mutate({
-                description: text,
-                // Sent SEPARATELY from the description so it cannot reach the ranking
-                // prompt. The server keeps it out; the client keeps it out of `text`.
-                proposedCode: file?.proposed?.code ?? null,
-              })
+              void classify
+                .mutateAsync({
+                  description: text,
+                  // Sent SEPARATELY from the description so it cannot reach the ranking
+                  // prompt. The server keeps it out; the client keeps it out of `text`.
+                  proposedCode: file?.proposed?.code ?? null,
+                })
+                // Stored from the request itself, so a result arriving after the page was
+                // left is still there on return.
+                .then((r) => setSessionState(`${KEY}result`, r))
+                .catch(() => {
+                  // Shown from the mutation's own error while the page is open.
+                })
             }
             type="button"
           >
             {classify.isPending ? 'Classifying…' : 'Classify this description'}
           </button>
+          {text || result ? (
+            <button
+              className="btn btn-ghost btn-sm"
+              disabled={classify.isPending || extract.isPending}
+              onClick={() => {
+                clearSessionState(KEY);
+                classify.reset();
+                extract.reset();
+              }}
+              type="button"
+            >
+              Clear
+            </button>
+          ) : null}
           <span className="text-sm text-base-content/50">
             {classify.isPending
               ? 'Reading the description, then comparing it against every ingested class.'
