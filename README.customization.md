@@ -286,7 +286,7 @@ For an existing installation that used the previous deployment app registration,
 The `CI/CD` workflow:
 
 - Validates pull requests.
-- Deploys pushes to `main` to the `test` environment without changing infrastructure or App Service settings.
+- When `DEPLOY_ENABLED=true`, deploys pushes to `main` directly to `prod` without deployment approval, changing only the app package.
 - Supports manual package deployments to `test` or `prod`.
 
 Before the first package deployment, run the manual `Configure Azure` workflow for the target environment. Run it again whenever Bicep, deployment settings, GitHub Environment variables, or GitHub Environment secrets change. Wait for configuration to finish before starting a package deployment. Both workflows use the same environment-specific FIFO concurrency queue, so configuration and package deployment for one environment cannot overlap, pending operations do not displace one another, and running operations are not canceled. The `test` and `prod` queues are independent, and GitHub retains up to 100 pending operations in each queue.

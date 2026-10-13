@@ -11,6 +11,7 @@ Besides the template's `AZURE_*` variables and `SQL_ADMIN_PASSWORD`:
 
 | Name | Kind | Value |
 |---|---|---|
+| `AUTH_CLIENT_SECRET` | **secret** | Production credential for the existing Entra web app. Add the Azure hostname plus `/signin-oidc` to its redirect URIs. |
 | `ADMIN_BOOTSTRAP_LOGIN_IDS` | variable | Comma-separated UC Davis login IDs that are always admins, e.g. `rsmith`. **Required** — Configure Azure refuses to run without it, because an app with no admin cannot be administered. These admins cannot be removed from the app; further admins are added on `/backend/settings`. |
 | `LLM_PROVIDER` | variable | `anthropic` (default), `azure-openai`, or `openai-compatible`. Which provider receives JD text is decided here, per environment — never in the app. |
 | `LLM_MODEL` | variable | Azure OpenAI **deployment name**, or model id. Optional for Anthropic. |
@@ -52,13 +53,19 @@ be entered in the app, and one stored earlier is ignored.
 ## 2. Turn on deployment
 
 Until Azure is configured, pushes to `main` run tests (the Validate job) and skip deploying. Once the
-`test` environment's variables exist, set the **repository** variable:
+`prod` environment's variables exist, set the **repository** variable:
 
 ```bash
 gh variable set DEPLOY_ENABLED --body true
 ```
 
-From then on a push to `main` deploys to `test`; `prod` is a manual CI/CD run.
+From then on a push to `main` builds, tests, and deploys directly to `prod`, with no deployment
+approval step. PRs still require the `Validate` check. Manual CI/CD runs can select `test` or `prod`.
+
+Production uses `rg-jdwriter-prod` in the UC Davis CAES Production subscription and the shared
+`Nibbler` Linux plan in `service-plans-linux`, West US 2. Start on the App Service Azure hostname
+with `APP_PATH_BASE` unset; the CAES People routing below is a separate setup step.
+The `prod` GitHub Environment allows deployment from `main` only.
 
 ## 3. Load data
 

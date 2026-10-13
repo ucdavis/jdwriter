@@ -106,6 +106,14 @@
       "valueType": "string",
       "requiredWhen": "never",
       "description": "HTTPS address of the Workforce Management (WFM) tool's page for starting a new request. JDWriter's \"Begin working on the Workforce Management request\" button opens it with ?source=jdwriter&jd=<handoff URL> (docs/WFM-HANDOFF.md). Leave unset until WFM is live; Markdown and JSON downloads stand in for the button."
+    },
+    {
+      "githubName": "AUTH_CLIENT_SECRET",
+      "appServiceName": "Auth__ClientSecret",
+      "classification": "secret",
+      "valueType": "string",
+      "requiredWhen": "never",
+      "description": "Entra confidential web app credential for the authorization-code sign-in callback. Store in the GitHub Environment secret; rotate before expiration."
     }
   ]
 }

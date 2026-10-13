@@ -36,9 +36,9 @@ USAGE
     'Deployment settings overlay: infrastructure/azure/deployment-settings.json' \
     'Template defaults: infrastructure/azure/deployment-settings-defaults.json' \
     'ADMIN_BOOTSTRAP_LOGIN_IDS, ANTHROPIC_API_KEY, APP_PATH_BASE, AUTH_CALLBACK_PATH' \
-    '  AUTH_CLIENT_ID, AUTH_DOMAIN, AUTH_INSTANCE, AUTH_TENANT_ID, AZURE_OPENAI_API_KEY' \
-    '  LLM_ALLOW_KEY_ENTRY_IN_APP, LLM_API_VERSION, LLM_ENDPOINT, LLM_MODEL' \
-    '  LLM_PROVIDER, LLM_SEND_REASONING_EFFORT, NOTIFICATION_BASE_URL' \
+    '  AUTH_CLIENT_ID, AUTH_CLIENT_SECRET, AUTH_DOMAIN, AUTH_INSTANCE, AUTH_TENANT_ID' \
+    '  AZURE_OPENAI_API_KEY, LLM_ALLOW_KEY_ENTRY_IN_APP, LLM_API_VERSION, LLM_ENDPOINT' \
+    '  LLM_MODEL, LLM_PROVIDER, LLM_SEND_REASONING_EFFORT, NOTIFICATION_BASE_URL' \
     '  NOTIFICATION_DEFAULT_APP_NAME, NOTIFICATION_DEFAULT_BUTTON_TEXT, OPENAI_API_KEY' \
     '  OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS' \
     '  OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_RESOURCE_ATTRIBUTES, OTEL_SERVICE_NAME' \
@@ -274,6 +274,7 @@ add_setting "ANTHROPIC_API_KEY" "${ANTHROPIC_API_KEY:-}"
 add_setting "App__PathBase" "${APP_PATH_BASE:-}"
 add_setting "Auth__CallbackPath" "${AUTH_CALLBACK_PATH:-/signin-oidc}"
 add_setting "Auth__ClientId" "${AUTH_CLIENT_ID:-}"
+add_setting "Auth__ClientSecret" "${AUTH_CLIENT_SECRET:-}"
 add_setting "Auth__Domain" "${AUTH_DOMAIN:-}"
 add_setting "Auth__Instance" "${AUTH_INSTANCE:-https://login.microsoftonline.com/}"
 add_setting "Auth__TenantId" "${AUTH_TENANT_ID:-}"

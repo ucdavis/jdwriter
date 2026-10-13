@@ -3,7 +3,7 @@
 GitHub Actions is the primary deployment path. Follow [Azure deployment setup](../../README.customization.md#5-azure-deployment-setup) for the one-time OIDC bootstrap and GitHub Environment configuration.
 
 1. Run **Configure Azure** for infrastructure or runtime setting changes.
-2. Run **CI/CD** for a package deployment. Pushes to `main` deploy to test; manual runs can select test or prod.
+2. Run **CI/CD** for a package deployment. When `DEPLOY_ENABLED=true`, pushes to `main` deploy directly to prod without approval; manual runs can select test or prod.
 3. Check the deployment's application health result and verify sign-in at the app's hostname.
 
 Local `deploy_test.sh` and `deploy_prod.sh` are secondary operator tools. They apply runtime settings as part of deployment and do not perform the GitHub workflow's explicit application health check. Verify `/health` and sign-in after using them.
