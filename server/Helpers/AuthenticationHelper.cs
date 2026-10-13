@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Server.Services;
 
 namespace Server.Helpers;
@@ -87,8 +86,6 @@ public static class AuthenticationHelper
             .AddMicrosoftIdentityWebApp(options =>
             {
                 configuration.Bind("Auth", options);
-                options.ResponseType = OpenIdConnectResponseType.Code;
-                options.UsePkce = true;
                 // Both sign-in choices use one session cookie in Development. The principal keeps
                 // its authentication type, so only fictional identities accept example.test.
                 options.SignInScheme = useLocal ? LocalAuthentication.Scheme : CookieAuthenticationDefaults.AuthenticationScheme;
