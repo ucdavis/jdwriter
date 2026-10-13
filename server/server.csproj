@@ -31,7 +31,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
     <!-- Keep XML security fixes independent of the installed shared runtime.
          Update this override with .NET 10 security patches until deployed runtimes guarantee equivalent fixes. -->
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.12" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
