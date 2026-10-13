@@ -107,6 +107,8 @@ For the Configure Azure workflow to create or update Azure SQL and App Service r
 
 - `SQL_ADMIN_PASSWORD`
 
+Also configure the [JDWriter runtime settings](docs/DEPLOYMENT.md#1-github-environment-settings-test-and-prod), including the required settings, before running Configure Azure.
+
 Optionally configure `DB_CONNECTION` as an environment secret when the App Service should use a connection string other than the one produced by the Bicep-managed Azure SQL resources.
 
 Routine package deployments use `APP_NAME` to find the App Service by its `application` and `environment` tags. Set `WEB_APP_NAME` only when the workflow should target an App Service by its exact name instead.
@@ -302,7 +304,7 @@ Before the first package deployment, run the manual `Configure Azure` workflow f
 
 For production, complete the manual [SQL connectivity prerequisite](infrastructure/azure/README.md#production-sql-connectivity) before deploying the first package.
 
-For local deployment:
+For local deployment, export the [JDWriter runtime settings](docs/DEPLOYMENT.md#1-github-environment-settings-test-and-prod) as shell environment variables too. GitHub Environment variables and secrets are not available to the local scripts.
 
 ```bash
 export APP_NAME="<app-name>"
