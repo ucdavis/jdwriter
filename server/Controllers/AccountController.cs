@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -68,6 +69,26 @@ public class AccountController(IConfiguration configuration, IHostEnvironment en
 
         await HttpContext.SignInAsync(LocalAuthentication.Scheme, principal);
         return LocalRedirect(Url.IsLocalUrl(returnUrl) ? returnUrl! : AppRoot);
+    }
+
+    [HttpGet("logout")]
+    public IActionResult LogoutPage() => View("Logout");
+
+    [HttpPost("logout")]
+    [ValidateAntiForgeryToken]
+    public IActionResult Logout()
+    {
+        var useLocal = LocalAuthentication.IsEnabled(configuration, environment);
+        var cookieScheme = useLocal ? LocalAuthentication.Scheme : CookieAuthenticationDefaults.AuthenticationScheme;
+        var campusSession = User.Identity?.IsAuthenticated == true
+            && User.Identity.AuthenticationType != LocalAuthentication.Scheme
+            && AuthenticationHelper.IsEntraConfigured(configuration);
+        var properties = new AuthenticationProperties { RedirectUri = Url.Content("~/about") };
+
+        // Clear our cookie first; Entra's iframe logout cannot reliably clear it in every browser.
+        return campusSession
+            ? SignOut(properties, cookieScheme, OpenIdConnectDefaults.AuthenticationScheme)
+            : SignOut(properties, cookieScheme);
     }
 
     [HttpPost("logout/local")]

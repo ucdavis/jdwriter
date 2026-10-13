@@ -1,4 +1,5 @@
 using FluentAssertions;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -195,6 +196,31 @@ public class LocalAuthenticationTests
 
         (await controller.LocalLogin("sample", "/")).Should().BeOfType<NotFoundResult>();
         (await controller.LocalLogout()).Should().BeOfType<NotFoundResult>();
+    }
+
+    [Theory]
+    [InlineData(null, CookieAuthenticationDefaults.AuthenticationScheme)]
+    [InlineData("true", LocalAuthentication.Scheme)]
+    public void Campus_logout_clears_the_session_cookie_before_Entra(string? local, string cookieScheme)
+    {
+        var controller = Controller(local, "11111111-1111-1111-1111-111111111111");
+        controller.HttpContext.Request.PathBase = "/jdwriter";
+        controller.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+            [new Claim(ClaimTypes.NameIdentifier, "campus-user")], "AuthenticationTypes.Federation"));
+
+        var result = controller.Logout().Should().BeOfType<SignOutResult>().Subject;
+
+        result.AuthenticationSchemes.Should().Equal(cookieScheme, OpenIdConnectDefaults.AuthenticationScheme);
+        result.Properties!.RedirectUri.Should().Be("/jdwriter/about");
+    }
+
+    [Fact]
+    public void Fictional_persona_logout_does_not_sign_out_of_Entra()
+    {
+        var controller = Controller("true", "11111111-1111-1111-1111-111111111111");
+        controller.HttpContext.User = LocalAuthentication.CreatePrincipal("sample")!;
+        var result = controller.Logout().Should().BeOfType<SignOutResult>().Subject;
+        result.AuthenticationSchemes.Should().Equal(LocalAuthentication.Scheme);
     }
 
     private static AccountController Controller(string? local = null, string clientId = "<client-guid>")

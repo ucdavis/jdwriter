@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign out | JDWriter</title>
+    <style>
+        body { margin: 0; background: #f2f5f8; color: #172b40; font: 1rem system-ui, sans-serif; }
+        main { max-width: 32rem; margin: 10vh auto; padding: 2rem; background: white; border-top: 6px solid #ffbf00; border-radius: 8px; }
+        h1 { color: #022851; }
+        button { padding: .75rem 1.5rem; border: 0; border-radius: 6px; background: #022851; color: white; font: inherit; cursor: pointer; }
+        a { color: #00588a; }
+        button:focus-visible, a:focus-visible { outline: 3px solid #13639e; outline-offset: 3px; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Sign out of JDWriter?</h1>
+    <p>Campus accounts will also be redirected to UC Davis sign-out.</p>
+    <form action="@Url.Content("~/logout")" method="post">
+        @Html.AntiForgeryToken()
+        <button type="submit">Sign out</button>
+    </form>
+    <p><a href="@Url.Content("~/")">Cancel</a></p>
+</main>
+</body>
+</html>

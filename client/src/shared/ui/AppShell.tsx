@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { asset } from '@/lib/basePath.ts';
+import { appUrl, asset } from '@/lib/basePath.ts';
 import { AppFooter } from './AppFooter.tsx';
 import { useUser } from '@/shared/auth/UserContext.tsx';
 import type { ReactNode } from 'react';
@@ -27,7 +27,11 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 flex h-[60px] items-center justify-between bg-ucd-blue px-8">
         <Link className="flex items-center gap-2.5" to="/">
-          <img alt="" className="h-10 w-10 rounded-md bg-white object-cover" src={asset('icon-192.png')} />
+          <img
+            alt=""
+            className="h-10 w-10 rounded-md bg-white object-cover"
+            src={asset('icon-192.png')}
+          />
           <div className="flex flex-col leading-none">
             <span className="text-base font-bold leading-tight text-ucd-gold">
               JDWriter
@@ -65,6 +69,12 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
               Back end
             </Link>
           ) : null}
+          <a
+            className="text-base font-semibold text-white/75 hover:text-ucd-gold"
+            href={appUrl('/logout')}
+          >
+            Sign out
+          </a>
         </nav>
       </header>
       <main className="mx-auto w-full max-w-[1100px] flex-1 px-8 py-8">
@@ -87,8 +97,9 @@ export const AdminOnly = ({ children }: { children: ReactNode }) => {
       <div className="rounded-xl border border-base-300 bg-base-100 p-6">
         <h2 className="text-xl font-bold">Admin access required</h2>
         <p className="mt-2 text-base text-base-content/65">
-          This is the JDWriter back end — envelopes, reclassification review, ingest and
-          settings. It is open to JDWriter admins only; ask an admin if you need access.
+          This is the JDWriter back end — envelopes, reclassification review,
+          ingest and settings. It is open to JDWriter admins only; ask an admin
+          if you need access.
         </p>
         <Link className="btn btn-primary btn-sm mt-4" to="/">
           Back to start
