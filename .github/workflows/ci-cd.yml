@@ -13,7 +13,7 @@ on:
         description: GitHub Environment to deploy.
         required: true
         type: choice
-        default: test
+        default: prod
         options:
           - test
           - prod
@@ -22,10 +22,8 @@ permissions:
   contents: read
 
 jobs:
-  # Until Azure is configured (Phase 9), pushes to main validate instead of deploying, so
-  # tests still run on GitHub and main is not red purely for missing Azure variables. Set
-  # the repository variable DEPLOY_ENABLED=true once the test environment's AZURE_*
-  # variables exist; from then on deploy_test runs and builds/tests the app itself.
+  # PRs always validate. Once prod is configured and DEPLOY_ENABLED=true, pushes
+  # to main build, test, and deploy directly to prod without an approval gate.
   validate:
     name: Validate
     if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && vars.DEPLOY_ENABLED != 'true') }}
@@ -82,15 +80,15 @@ jobs:
       - name: Test .NET projects
         run: dotnet test app.sln --configuration Release --no-build --settings .runsettings
 
-  deploy_test:
-    name: Deploy test
+  deploy_prod:
+    name: Deploy prod
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true' }}
     uses: ./.github/workflows/deploy-azure-appservice.yml
     permissions:
       contents: read
       id-token: write
     with:
-      environment: test
+      environment: prod
 
   deploy_manual:
     name: Deploy ${{ inputs.environment }}

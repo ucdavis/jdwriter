@@ -33,6 +33,7 @@ jobs:
       APP_PATH_BASE: ${{ vars.APP_PATH_BASE }}
       AUTH_CALLBACK_PATH: ${{ vars.AUTH_CALLBACK_PATH || '/signin-oidc' }}
       AUTH_CLIENT_ID: ${{ vars.AUTH_CLIENT_ID }}
+      AUTH_CLIENT_SECRET: ${{ secrets.AUTH_CLIENT_SECRET }}
       AUTH_DOMAIN: ${{ vars.AUTH_DOMAIN }}
       AUTH_INSTANCE: ${{ vars.AUTH_INSTANCE || 'https://login.microsoftonline.com/' }}
       AUTH_TENANT_ID: ${{ vars.AUTH_TENANT_ID }}
@@ -111,6 +112,11 @@ jobs:
           # <deployment-settings:workflow-required-checks>
           if [[ -z "$ADMIN_BOOTSTRAP_LOGIN_IDS" ]]; then
             echo "ADMIN_BOOTSTRAP_LOGIN_IDS must be configured as a GitHub Environment variable when configuring Azure."
+            exit 1
+          fi
+
+          if [[ -z "$AUTH_CLIENT_SECRET" ]]; then
+            echo "AUTH_CLIENT_SECRET must be configured as a GitHub Environment secret when configuring Azure."
             exit 1
           fi
           # </deployment-settings:workflow-required-checks>
@@ -238,6 +244,7 @@ jobs:
           add_setting "App__PathBase" "$APP_PATH_BASE"
           add_setting "Auth__CallbackPath" "$AUTH_CALLBACK_PATH"
           add_setting "Auth__ClientId" "$AUTH_CLIENT_ID"
+          add_setting "Auth__ClientSecret" "$AUTH_CLIENT_SECRET"
           add_setting "Auth__Domain" "$AUTH_DOMAIN"
           add_setting "Auth__Instance" "$AUTH_INSTANCE"
           add_setting "Auth__TenantId" "$AUTH_TENANT_ID"

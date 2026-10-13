@@ -79,7 +79,7 @@ Set `WEB_PLAN_NAME` and `WEB_PLAN_RESOURCE_GROUP` in a GitHub Environment, or ex
 
 ### GitHub Environments
 
-Create GitHub Environments named `test` and `prod`. Configure production reviewers or approval gates as appropriate for your project.
+Create GitHub Environments named `test` and `prod`. Follow the [JDWriter deployment policy](docs/DEPLOYMENT.md#2-turn-on-deployment) for production branch restrictions and approval settings.
 
 Using GitHub CLI:
 
@@ -106,6 +106,8 @@ The shared App Service plan defaults normally require no GitHub variables. If yo
 For the Configure Azure workflow to create or update Azure SQL and App Service resources, add this secret:
 
 - `SQL_ADMIN_PASSWORD`
+
+Also configure the [JDWriter runtime settings](docs/DEPLOYMENT.md#1-github-environment-settings-test-and-prod), including the required settings, before running Configure Azure.
 
 Optionally configure `DB_CONNECTION` as an environment secret when the App Service should use a connection string other than the one produced by the Bicep-managed Azure SQL resources.
 
@@ -195,6 +197,17 @@ This bootstrap is only for deployment authentication from GitHub Actions to Azur
 
 The managed identity lives in the resource group where it receives Contributor, matching the KOI deployment pattern. It can therefore manage its own managed-identity resource and federated credentials, but Contributor does not allow it to create, change, or delete Azure RBAC assignments.
 
+Read the repository's OIDC subject prefix before bootstrapping. GitHub may use immutable organization
+and repository IDs; a name-only Azure trust will not match those tokens.
+
+```bash
+repository="ucdavis/jdwriter"
+github_subject_prefix="$(gh api "repos/$repository/actions/oidc/customization/sub" --jq '.sub_claim_prefix // empty')"
+if [[ -z "$github_subject_prefix" ]]; then
+  github_subject_prefix="repo:$repository"
+fi
+```
+
 Validate the bootstrap for `test` before applying it:
 
 ```bash
@@ -208,7 +221,8 @@ az deployment sub validate \
   --template-file infrastructure/azure/github-oidc.bicep \
   --parameters \
     appName="<app-name>" \
-    repository="<owner>/<repo>" \
+    repository="$repository" \
+    githubSubjectPrefix="$github_subject_prefix" \
     env="test" \
     expectedSubscriptionId="<subscription-id>" \
     resourceGroupName="rg-<app-name>-test" \
@@ -228,7 +242,8 @@ az deployment sub create \
   --template-file infrastructure/azure/github-oidc.bicep \
   --parameters \
     appName="<app-name>" \
-    repository="<owner>/<repo>" \
+    repository="$repository" \
+    githubSubjectPrefix="$github_subject_prefix" \
     env="test" \
     expectedSubscriptionId="<subscription-id>" \
     resourceGroupName="rg-<app-name>-test" \
@@ -283,17 +298,13 @@ For an existing installation that used the previous deployment app registration,
 
 ### First deployment
 
-The `CI/CD` workflow:
-
-- Validates pull requests.
-- Deploys pushes to `main` to the `test` environment without changing infrastructure or App Service settings.
-- Supports manual package deployments to `test` or `prod`.
+The `CI/CD` workflow validates pull requests and deploys the app package without changing infrastructure or App Service settings. See [JDWriter deployment policy](docs/DEPLOYMENT.md#2-turn-on-deployment) for automatic deployments, manual defaults, and disablement.
 
 Before the first package deployment, run the manual `Configure Azure` workflow for the target environment. Run it again whenever Bicep, deployment settings, GitHub Environment variables, or GitHub Environment secrets change. Wait for configuration to finish before starting a package deployment. Both workflows use the same environment-specific FIFO concurrency queue, so configuration and package deployment for one environment cannot overlap, pending operations do not displace one another, and running operations are not canceled. The `test` and `prod` queues are independent, and GitHub retains up to 100 pending operations in each queue.
 
 For production, complete the manual [SQL connectivity prerequisite](infrastructure/azure/README.md#production-sql-connectivity) before deploying the first package.
 
-For local deployment:
+For local deployment, export the [JDWriter runtime settings](docs/DEPLOYMENT.md#1-github-environment-settings-test-and-prod) as shell environment variables too. GitHub Environment variables and secrets are not available to the local scripts.
 
 ```bash
 export APP_NAME="<app-name>"
