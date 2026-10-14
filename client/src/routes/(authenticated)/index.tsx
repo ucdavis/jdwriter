@@ -36,7 +36,9 @@ function Home() {
           <RecentJds />
         </div>
 
-        <Card className="p-5">
+        {/* Stretched to the row's height by the grid; the class list grows to fill it rather than
+            leaving blank space when the AI request beside it expands with results. */}
+        <Card className="flex flex-col p-5">
           <Eyebrow>Browse job classes</Eyebrow>
           <p className="mb-3 mt-1 text-base text-base-content/65">
             Select the job class below to start.
