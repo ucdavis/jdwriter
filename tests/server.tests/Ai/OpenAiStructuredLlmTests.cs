@@ -112,6 +112,31 @@ public class OpenAiStructuredLlmTests
         body["messages"]![0]!["content"]!.GetValue<string>().Should().Be("sys", "prompts are sent exactly as written");
     }
 
+    [Theory]
+    [InlineData("https://api.openai.com/v1", true)]
+    [InlineData("https://us.api.openai.com/v1", true)]
+    [InlineData("https://eu.api.openai.com/v1", true)]
+    [InlineData("https://api.openai.com.example.org/v1", false)]
+    [InlineData("https://gateway.example.org/v1", false)]
+    public async Task Hosted_OpenAI_uses_the_reasoning_model_token_budget(string endpoint, bool hostedOpenAi)
+    {
+        var options = new LlmOptions
+        {
+            Provider = LlmProvider.OpenAiCompatible, Endpoint = endpoint, Model = "gpt-6-luna",
+        };
+        var (llm, h) = Make(options, "test-key-0000000000000000", HttpStatusCode.OK,
+            Completion("""{"category":"Plants","confidence":80,"parts":[]}"""));
+
+        await llm.StructuredAsync<Answer>(Request);
+
+        var body = JsonNode.Parse(h.SentBody!)!;
+        body[hostedOpenAi ? "max_completion_tokens" : "max_tokens"]!.GetValue<int>().Should().Be(500);
+        body[hostedOpenAi ? "max_tokens" : "max_completion_tokens"].Should().BeNull();
+        body["model"]!.GetValue<string>().Should().Be("gpt-6-luna");
+        h.Request!.RequestUri!.ToString().Should().Be($"{endpoint}/chat/completions");
+        h.Request.Headers.Authorization!.Scheme.Should().Be("Bearer");
+    }
+
     [Fact]
     public void The_schema_is_strict_mode_valid_every_property_required_and_closed()
     {

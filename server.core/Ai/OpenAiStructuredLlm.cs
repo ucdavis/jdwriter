@@ -162,15 +162,23 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
             },
         };
 
-        if (_options.Provider == LlmProvider.AzureOpenAi)
+        var host = new Uri(_options.Endpoint).Host;
+        var openAiEndpoint = host.Equals("api.openai.com", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".api.openai.com", StringComparison.OrdinalIgnoreCase);
+        if (_options.Provider == LlmProvider.AzureOpenAi || openAiEndpoint)
         {
-            // Azure names the output budget differently, and reasoning models require it.
+            // OpenAI reasoning models reject max_tokens, including on regional endpoints.
             body["max_completion_tokens"] = request.MaxTokens;
         }
         else
         {
-            body["model"] = _options.EffectiveModel;
+            // Preserve compatibility with local servers and other gateways.
             body["max_tokens"] = request.MaxTokens;
+        }
+
+        if (_options.Provider != LlmProvider.AzureOpenAi)
+        {
+            body["model"] = _options.EffectiveModel;
         }
 
         if (_options.SendReasoningEffort)
