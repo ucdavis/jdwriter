@@ -1,9 +1,11 @@
 import { AddRow, Badge, Card, Eyebrow } from '@/shared/ui/primitives.tsx';
 import { useState, type Dispatch, type SetStateAction } from 'react';
+import { LineEditor } from './LineEditor.tsx';
 import type { Item } from './useBuildState.ts';
 
 /**
- * A keep/drop checklist over one qualification section, plus a guarded add row.
+ * One qualification section: each line kept or dropped by its checkbox and editable in place,
+ * plus a guarded add row.
  *
  * Only ADDED items can be deleted outright. A standard item is unchecked rather than
  * removed, so the author can always see what the class expects and put it back — which
@@ -52,37 +54,15 @@ export const SectionEditor = ({
       ) : null}
       <ul className="mt-2.5 space-y-1.5">
         {items.map((it, i) => (
-          <li className="flex items-start gap-2.5" key={`${it.text}-${i}`}>
-            <label className="flex flex-1 cursor-pointer items-start gap-2.5">
-              <input
-                checked={it.kept}
-                className="checkbox checkbox-sm mt-0.5"
-                onChange={() =>
-                  setItems((arr) =>
-                    arr.map((x, j) => (j === i ? { ...x, kept: !x.kept } : x))
-                  )
-                }
-                type="checkbox"
-              />
-              <span
-                className={`text-base ${
-                  it.kept ? '' : 'text-base-content/50 line-through'
-                }`}
-              >
-                {it.added ? <Badge tone="green">+</Badge> : null} {it.text}
-              </span>
-            </label>
-            {it.added ? (
-              <button
-                aria-label="Remove added item"
-                className="text-base text-base-content/50 hover:text-error"
-                onClick={() => setItems((arr) => arr.filter((_, j) => j !== i))}
-                type="button"
-              >
-                ✕
-              </button>
-            ) : null}
-          </li>
+          <LineEditor
+            item={it}
+            // By position, not text: the text changes as it's edited, and a key that changes
+            // with every keystroke would remount the box and lose the cursor.
+            key={i}
+            label={it.original ?? it.text}
+            onChange={(next) => setItems((arr) => arr.map((x, j) => (j === i ? next : x)))}
+            onRemove={() => setItems((arr) => arr.filter((_, j) => j !== i))}
+          />
         ))}
       </ul>
       <AddRow
