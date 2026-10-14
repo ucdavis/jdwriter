@@ -329,6 +329,8 @@ export type BuildRequest = {
   department: string;
   /** The build screen as left, so the JD can be reopened and continued. */
   draftState?: unknown;
+  /** Standard items the author reworded, each with the wording it replaced: compared, not counted as new. */
+  editedItems?: Array<{ original: string; text: string }>;
   keptCerts: string[];
   keptEducation: string[];
   keptMinKSA: string[];

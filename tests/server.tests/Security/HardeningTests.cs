@@ -125,6 +125,60 @@ public class HardeningTests
     }
 
     [Fact]
+    public void A_reworded_standard_item_is_compared_with_its_original_not_counted_as_new()
+    {
+        var profile = JdTestData.Profile();
+        var standard = EnvelopeWire.From(profile.Envelope!);
+        var original = standard.KeyResponsibilities[0].Duties[0];
+        const string reworded = "Prepares greenhouse media and records plant growth weekly.";
+        var inputs = new BuildInputs
+        {
+            KeptResponsibilities =
+            [
+                new JdKeyResponsibility { FunctionName = standard.KeyResponsibilities[0].FunctionName, PctTime = 100, Duties = [reworded] },
+            ],
+            EditedItems = [new EditedItem { Original = original, Text = reworded }],
+            Supervises = true,
+            SupervisesCount = 3,
+            Leads = false,
+        };
+
+        var declared = JdAssembler.WithUndeclaredAdditions(profile, inputs);
+
+        declared.AddedItems.Should().BeEmpty("an edit is judged against what it replaced, not as an addition");
+        declared.EditedItems.Should().ContainSingle().Which.Text.Should().Be(reworded);
+        new JdAssembler(new FakeStructuredLlm()).HasAdditions(declared).Should().BeTrue("the check still sees it");
+        JdAssembler.AdditionsText(declared).Should().Contain($"\"{original}\" → \"{reworded}\"");
+    }
+
+    [Fact]
+    public void An_edit_whose_original_is_not_the_class_s_wording_is_an_addition_and_supervision_survives()
+    {
+        // "Edit" is only what the client claims: one that didn't start from the standard is new text.
+        var profile = JdTestData.Profile();
+        var standard = EnvelopeWire.From(profile.Envelope!);
+        const string text = "Approves all campus budgets.";
+        var inputs = new BuildInputs
+        {
+            KeptResponsibilities =
+            [
+                new JdKeyResponsibility { FunctionName = standard.KeyResponsibilities[0].FunctionName, PctTime = 100, Duties = [text] },
+            ],
+            EditedItems = [new EditedItem { Original = "Something the class never said.", Text = text }],
+            Supervises = true,
+            SupervisesCount = 3,
+            Leads = true,
+        };
+
+        var declared = JdAssembler.WithUndeclaredAdditions(profile, inputs);
+
+        declared.AddedItems.Should().Equal(text);
+        declared.EditedItems.Should().BeEmpty();
+        // The rebuilt inputs once dropped these, so a finished JD lost its supervision.
+        (declared.Supervises, declared.SupervisesCount, declared.Leads).Should().Be((true, 3, true));
+    }
+
+    [Fact]
     public void A_build_that_only_keeps_standard_items_declares_nothing()
     {
         var profile = JdTestData.Profile();

@@ -33,6 +33,12 @@ public sealed class BuildInputs
     /// <summary>Every user-added item across all sections, for the envelope check.</summary>
     public List<string> AddedItems { get; set; } = [];
 
+    /// <summary>
+    /// Standard items the author reworded, each with the wording it replaced. The envelope check
+    /// judges an edit against its original — is it still the same duty? — rather than as a new item.
+    /// </summary>
+    public List<EditedItem> EditedItems { get; set; } = [];
+
     public string Notes { get; set; } = "";
 
     /// <summary>Whether the position supervises others. Null when not stated. Never true for a represented class.</summary>
@@ -43,6 +49,13 @@ public sealed class BuildInputs
 
     /// <summary>Whether the position leads others' work (without supervising them). Null when not stated.</summary>
     public bool? Leads { get; set; }
+}
+
+/// <summary>A standard item as the class states it, and as the author reworded it.</summary>
+public sealed class EditedItem
+{
+    public string Original { get; set; } = "";
+    public string Text { get; set; } = "";
 }
 
 public interface IJdAssembler
@@ -265,17 +278,34 @@ public sealed class JdAssembler : IJdAssembler
             .Select(ItemKey)
             .ToHashSet(StringComparer.Ordinal);
         var declared = inputs.AddedItems.Select(ItemKey).ToHashSet(StringComparer.Ordinal);
-
-        var undeclared = inputs.KeptResponsibilities.SelectMany(r => r.Duties)
+        var kept = inputs.KeptResponsibilities.SelectMany(r => r.Duties)
             .Concat(inputs.KeptCerts).Concat(inputs.KeptEducation).Concat(inputs.KeptWorkExperience)
             .Concat(inputs.KeptMinKSA).Concat(inputs.KeptPrefKSA).Concat(inputs.KeptWorkEnvironment)
+            .ToList();
+        var keptKeys = kept.Select(ItemKey).ToHashSet(StringComparer.Ordinal);
+
+        // An edit is judged against what it replaced, but only a real one: its original must be the
+        // class's own wording, and its text must be what the build keeps. Anything else claimed as an
+        // edit is just new text, and is an addition like any other.
+        var edits = inputs.EditedItems
+            .Where(e => standard.Contains(ItemKey(e.Original)) && keptKeys.Contains(ItemKey(e.Text))
+                        && ItemKey(e.Text) != ItemKey(e.Original) && !standard.Contains(ItemKey(e.Text)))
+            .DistinctBy(e => ItemKey(e.Text))
+            .ToList();
+        foreach (var e in edits)
+        {
+            declared.Add(ItemKey(e.Text));
+        }
+
+        var undeclared = kept
             .Where(t => !standard.Contains(ItemKey(t)) && declared.Add(ItemKey(t)))
             .ToList();
-        if (undeclared.Count == 0)
+        if (undeclared.Count == 0 && edits.Count == inputs.EditedItems.Count)
         {
             return inputs;
         }
 
+        // Every field carried over: supervision included, which this once dropped.
         return new BuildInputs
         {
             WorkingTitle = inputs.WorkingTitle,
@@ -288,7 +318,11 @@ public sealed class JdAssembler : IJdAssembler
             KeptPrefKSA = inputs.KeptPrefKSA,
             KeptWorkEnvironment = inputs.KeptWorkEnvironment,
             AddedItems = [.. inputs.AddedItems, .. undeclared],
+            EditedItems = edits,
             Notes = inputs.Notes,
+            Supervises = inputs.Supervises,
+            SupervisesCount = inputs.SupervisesCount,
+            Leads = inputs.Leads,
         };
     }
 
@@ -298,7 +332,7 @@ public sealed class JdAssembler : IJdAssembler
             .Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
     public bool HasAdditions(BuildInputs inputs) =>
-        inputs.AddedItems.Count > 0 || inputs.Notes.Trim().Length > 0;
+        inputs.AddedItems.Count > 0 || inputs.EditedItems.Count > 0 || inputs.Notes.Trim().Length > 0;
 
     internal static string AdditionsText(BuildInputs inputs)
     {
@@ -307,6 +341,16 @@ public sealed class JdAssembler : IJdAssembler
         if (inputs.AddedItems.Count > 0)
         {
             parts.Add($"Added items:\n{string.Join('\n', inputs.AddedItems.Select(d => $"- {d}"))}");
+        }
+
+        // Not in the ported prompt: JDWriter lets an author reword a standard item, and the check
+        // compares the new wording with the old rather than judging it as something new.
+        if (inputs.EditedItems.Count > 0)
+        {
+            parts.Add(
+                "Edited standard items (the class's wording → the manager's wording; judge whether the edit "
+                + "changes the duty's scope):\n"
+                + string.Join('\n', inputs.EditedItems.Select(e => $"- \"{e.Original}\" → \"{e.Text}\"")));
         }
 
         if (inputs.Notes.Trim().Length > 0)
