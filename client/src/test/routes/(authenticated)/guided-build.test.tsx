@@ -166,13 +166,70 @@ describe('the guided build', () => {
     expect(screen.getByText('Check completed — take a look')).toBeInTheDocument();
   });
 
+  it('edits a duty in place: marked edited, counted as customization, checked, and undoable', async () => {
+    const user = userEvent.setup();
+    open();
+    await screen.findByTestId('duties-intro');
+
+    const box = screen.getAllByRole('textbox', { name: /^Wording: / })[0] as HTMLTextAreaElement;
+    const original = box.value;
+    expect(screen.queryByTestId('customization')).not.toBeInTheDocument();
+    expect(screen.queryByText('edited')).not.toBeInTheDocument();
+
+    await user.clear(box);
+    await user.type(box, 'Runs the greenhouse irrigation schedule.');
+
+    expect(screen.getByText('edited')).toBeInTheDocument();
+    expect(screen.getByTestId('customization')).toHaveTextContent('1 added or edited');
+    // Its checkbox still names the standard line, so it can be found after the edit.
+    expect(screen.getByRole('checkbox', { name: `Include: ${original}` })).toBeChecked();
+
+    // Undo puts the standard wording back, and it no longer counts.
+    await user.click(screen.getByRole('button', { name: 'Undo edit' }));
+    expect(screen.getAllByRole('textbox', { name: /^Wording: / })[0]).toHaveValue(original);
+    expect(screen.queryByText('edited')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('customization')).not.toBeInTheDocument();
+  });
+
+  it('sends an edited duty in place of the standard one, and to the envelope check as a change', async () => {
+    const user = userEvent.setup();
+    open();
+    await screen.findByTestId('duties-intro');
+    const box = screen.getAllByRole('textbox', { name: /^Wording: / })[0] as HTMLTextAreaElement;
+    const original = box.value;
+    await user.clear(box);
+    await user.type(box, 'Runs the greenhouse irrigation schedule.');
+
+    const sent = await sentOnCheck(user);
+
+    const duties = sent.keptResponsibilities.flatMap((r) => r.duties);
+    expect(duties).toContain('Runs the greenhouse irrigation schedule.');
+    expect(duties).not.toContain(original);
+    expect(sent.addedItems).toContain('Runs the greenhouse irrigation schedule.');
+  });
+
+  it('drops a whole line with its checkbox, which then cannot be edited', async () => {
+    const user = userEvent.setup();
+    open();
+    await screen.findByTestId('duties-intro');
+    const box = screen.getAllByRole('textbox', { name: /^Wording: / })[0] as HTMLTextAreaElement;
+    const text = box.value;
+
+    await user.click(screen.getByRole('checkbox', { name: `Include: ${text}` }));
+
+    expect(box).toBeDisabled();
+    expect(box).toHaveClass('line-through');
+    const sent = await sentOnCheck(user);
+    expect(sent.keptResponsibilities.flatMap((r) => r.duties)).not.toContain(text);
+  });
+
   it('explains why an added item that the class already covers was not included', async () => {
     const user = userEvent.setup();
     open();
 
     const add = (await screen.findAllByPlaceholderText('Add a duty to this function…'))[0];
-    const existing = screen.getAllByRole('checkbox', { checked: true }).find((c) => c.closest('li'));
-    const text = existing?.closest('label')?.textContent?.trim() ?? '';
+    const existing = screen.getAllByRole('textbox', { name: /^Wording: / })[0] as HTMLTextAreaElement;
+    const text = existing.value.trim();
     await user.type(add, `${text}{Enter}`);
 
     // Shown under the box it was typed in, not at the top of the page.

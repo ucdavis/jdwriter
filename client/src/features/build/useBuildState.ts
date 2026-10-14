@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import type { BuildRequest, KeyResponsibility } from '@/lib/contracts.ts';
 
 /**
- * One selectable line. The editor is AFFIRMATIVE/SUBTRACTIVE by design: the author keeps
- * or drops what the standard offers and may add a few unit-specific items. It is not
- * free-text editing, because the point of the envelope is that most positions in a class
- * need under 10% customisation — and free text makes drift invisible.
+ * One line. The author keeps or drops what the standard offers, may reword a line, and may add a
+ * few unit-specific items. Rewording is allowed but never invisible: an edited standard line keeps
+ * its original wording, is marked as edited, and counts as customization like an addition — the
+ * point of the envelope is that most positions in a class need little of it, and drift that can't
+ * be seen can't be kept small.
  */
 export type Item = {
   added: boolean;
@@ -15,6 +16,8 @@ export type Item = {
    * started from a description or rewritten to fit — so they can see where their wording went.
    */
   matchedFrom?: string[];
+  /** A standard line's wording before the author edited it; absent until the first edit. */
+  original?: string;
   text: string;
 };
 
@@ -31,6 +34,16 @@ const toItems = (xs: string[]): Item[] =>
 
 const norm = (s: string) =>
   s.toLowerCase().replaceAll(/[^\d a-z]/g, '').replaceAll(/\s+/g, ' ').trim();
+
+/**
+ * A standard line whose wording has changed. Case, punctuation and spacing don't count — the server
+ * reads a line the same way when it decides what is new.
+ */
+export const isEdited = (item: Item) =>
+  !item.added && item.original !== undefined && norm(item.text) !== norm(item.original);
+
+/** Lines that customize the standard: added, or reworded. */
+const customizes = (item: Item) => item.kept && item.text.trim() !== '' && (item.added || isEdited(item));
 
 export type EnvelopeSections = {
   certs: string[];
@@ -170,18 +183,16 @@ export const useBuildState = (
     .reduce((sum, r) => sum + (Number(r.pctTime) || 0), 0);
 
   /**
-   * Customisation meter. Counts ADDITIONS only — removals do not count, because dropping
-   * a standard duty is the envelope working as intended, while adding one is drift away
-   * from it. The target is ≤10%.
+   * Customisation meter. Counts ADDITIONS and EDITS — removals do not count, because dropping
+   * a standard duty is the envelope working as intended, while adding one, or rewording one,
+   * is drift away from it. These are also what the envelope check reviews.
    */
   const addedItems = useMemo(
     () => [
       ...resps
         .filter((r) => r.functionKept)
-        .flatMap((r) => r.duties.filter((d) => d.kept && d.added).map((d) => d.text)),
-      ...sections.flatMap((s) =>
-        s.filter((d) => d.kept && d.added).map((d) => d.text)
-      ),
+        .flatMap((r) => r.duties.filter(customizes).map((d) => d.text.trim())),
+      ...sections.flatMap((s) => s.filter(customizes).map((d) => d.text.trim())),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [resps, certs, education, workExp, minKSA, prefKSA, workEnv]
@@ -200,7 +211,8 @@ export const useBuildState = (
     ? Math.round((addedItems.length / envelopeTotal) * 100)
     : 0;
 
-  const keptOf = (s: Item[]) => s.filter((d) => d.kept).map((d) => d.text);
+  // A line edited down to nothing is left out.
+  const keptOf = (s: Item[]) => s.filter((d) => d.kept && d.text.trim() !== '').map((d) => d.text.trim());
 
   const buildRequest = (slug: string): BuildRequest => ({
     addedItems,
@@ -212,7 +224,7 @@ export const useBuildState = (
     keptResponsibilities: resps
       .filter((r) => r.functionKept)
       .map((r) => ({
-        duties: r.duties.filter((d) => d.kept).map((d) => d.text),
+        duties: keptOf(r.duties),
         functionName: r.functionName,
         pctTime: Number(r.pctTime) || 0,
       }))

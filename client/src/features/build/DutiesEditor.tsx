@@ -1,13 +1,15 @@
 import { AddRow, Badge, Card, Eyebrow } from '@/shared/ui/primitives.tsx';
 import { AddRefusal } from './SectionEditor.tsx';
+import { LineEditor } from './LineEditor.tsx';
 import { useState } from 'react';
 import type { useBuildState } from './useBuildState.ts';
 
 type BuildState = ReturnType<typeof useBuildState>;
 
 /**
- * The key responsibilities: keep or drop whole functions and single duties, add unit-specific
- * duties, and set % time. Affirmative and subtractive by design — see useBuildState.
+ * The key responsibilities: keep or drop whole functions and single duties, reword a duty in place,
+ * add unit-specific duties, and set % time. Edits stay visible and count as customization — see
+ * useBuildState.
  */
 export const DutiesEditor = ({ state }: { state: BuildState }) => {
   const balanced = state.totalPct === 100;
@@ -60,44 +62,27 @@ export const DutiesEditor = ({ state }: { state: BuildState }) => {
               <>
                 <ul className="mt-2 space-y-1 pl-1">
                   {r.duties.map((d, di) => (
-                    <li className="flex items-start gap-2.5" key={`${d.text}-${di}`}>
-                      <label className="flex flex-1 cursor-pointer items-start gap-2.5">
-                        <input
-                          checked={d.kept}
-                          className="checkbox checkbox-sm mt-0.5"
-                          onChange={() =>
-                            state.patchResp(ri, {
-                              duties: r.duties.map((x, j) => (j === di ? { ...x, kept: !x.kept } : x)),
-                            })
-                          }
-                          type="checkbox"
-                        />
-                        <span className={`text-base ${d.kept ? '' : 'text-base-content/50 line-through'}`}>
-                          {d.added ? <Badge tone="green">+</Badge> : null} {d.text}
-                          {d.matchedFrom && d.matchedFrom.length > 0 ? (
-                            <span className="mt-0.5 block text-sm text-base-content/55" data-testid="matched-from">
-                              {d.matchedFrom.map((m) => (
-                                <span className="block" key={m}>
-                                  ↳ From your description: “{m}”
-                                </span>
-                              ))}
+                    <LineEditor
+                      item={d}
+                      // By position, not text: the text changes as it's edited, and a key that
+                      // changes with every keystroke would remount the box and lose the cursor.
+                                key={di}
+                      label={d.original ?? d.text}
+                      onChange={(next) =>
+                        state.patchResp(ri, { duties: r.duties.map((x, j) => (j === di ? next : x)) })
+                      }
+                      onRemove={() => state.patchResp(ri, { duties: r.duties.filter((_, j) => j !== di) })}
+                    >
+                      {d.matchedFrom && d.matchedFrom.length > 0 ? (
+                        <span className="mt-0.5 block pl-1.5 text-sm text-base-content/55" data-testid="matched-from">
+                          {d.matchedFrom.map((m) => (
+                            <span className="block" key={m}>
+                              ↳ From your description: “{m}”
                             </span>
-                          ) : null}
+                          ))}
                         </span>
-                      </label>
-                      {d.added ? (
-                        <button
-                          aria-label="Remove added duty"
-                          className="mt-0.5 text-base text-base-content/50 hover:text-error"
-                          onClick={() =>
-                            state.patchResp(ri, { duties: r.duties.filter((_, j) => j !== di) })
-                          }
-                          type="button"
-                        >
-                          ✕
-                        </button>
                       ) : null}
-                    </li>
+                    </LineEditor>
                   ))}
                 </ul>
                 <AddRow
