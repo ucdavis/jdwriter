@@ -6,7 +6,7 @@ import '@/test/mswUtils.ts';
 describe('home', () => {
   setupRouteTest();
 
-  it('lists ingested classes and separates titles awaiting ingestion', async () => {
+  it('lists ingested classes without a JD count, and marks titles not available yet', async () => {
     renderRoute({ initialPath: '/' });
 
     await waitFor(() => {
@@ -14,9 +14,11 @@ describe('home', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getAllByText(/ready$/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText('not available yet').length).toBeGreaterThan(0);
     });
-    expect(screen.getAllByText('not available yet').length).toBeGreaterThan(0);
+    // A class you can start carries no badge: the JD count and "ready" added nothing.
+    expect(screen.queryByText(/JDs · ready$/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /^Lab Ast 1/ })[0]).toBeEnabled();
   });
 
   it('says how to start, and counts the classes available at the bottom of the list', async () => {
