@@ -38,12 +38,15 @@ public static class RequestLimits
         if (b.WorkingTitle.Length > TitleChars || b.Department.Length > TitleChars || b.Notes.Length > NotesChars
             || b.KeptResponsibilities.Count > Functions
             || b.KeptResponsibilities.Any(r => r.Duties.Count > DutiesPerFunction || r.FunctionName.Length > TitleChars)
-            || lists.Any(l => l.Count > ItemsPerList))
+            || lists.Any(l => l.Count > ItemsPerList)
+            || b.EditedItems.Count > ItemsPerList)
         {
             return TooLarge;
         }
 
-        var texts = lists.SelectMany(l => l).Concat(b.KeptResponsibilities.SelectMany(r => r.Duties)).ToList();
+        var texts = lists.SelectMany(l => l).Concat(b.KeptResponsibilities.SelectMany(r => r.Duties))
+            .Concat(b.EditedItems.SelectMany(e => new[] { e.Original, e.Text }))
+            .ToList();
         if (texts.Any(t => (t ?? "").Length > ItemChars))
         {
             return TooLarge;

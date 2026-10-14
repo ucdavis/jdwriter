@@ -3,10 +3,9 @@ import type { BuildRequest, KeyResponsibility } from '@/lib/contracts.ts';
 
 /**
  * One line. The author keeps or drops what the standard offers, may reword a line, and may add a
- * few unit-specific items. Rewording is allowed but never invisible: an edited standard line keeps
- * its original wording, is marked as edited, and counts as customization like an addition — the
- * point of the envelope is that most positions in a class need little of it, and drift that can't
- * be seen can't be kept small.
+ * few unit-specific items. A reworded standard line keeps its original wording and is marked as
+ * edited; it isn't counted as something new — the envelope check compares it with the line it
+ * replaced, to see whether the rewording changed the duty.
  */
 export type Item = {
   added: boolean;
@@ -42,8 +41,7 @@ const norm = (s: string) =>
 export const isEdited = (item: Item) =>
   !item.added && item.original !== undefined && norm(item.text) !== norm(item.original);
 
-/** Lines that customize the standard: added, or reworded. */
-const customizes = (item: Item) => item.kept && item.text.trim() !== '' && (item.added || isEdited(item));
+const live = (item: Item) => item.kept && item.text.trim() !== '';
 
 export type EnvelopeSections = {
   certs: string[];
@@ -183,16 +181,17 @@ export const useBuildState = (
     .reduce((sum, r) => sum + (Number(r.pctTime) || 0), 0);
 
   /**
-   * Customisation meter. Counts ADDITIONS and EDITS — removals do not count, because dropping
-   * a standard duty is the envelope working as intended, while adding one, or rewording one,
-   * is drift away from it. These are also what the envelope check reviews.
+   * Customisation meter. Counts ADDITIONS only — removals do not count, because dropping
+   * a standard duty is the envelope working as intended, and neither do edits, which the
+   * envelope check compares with the line they replaced. The target is ≤10% (≤30% for senior
+   * and supervisory classes).
    */
   const addedItems = useMemo(
     () => [
       ...resps
         .filter((r) => r.functionKept)
-        .flatMap((r) => r.duties.filter(customizes).map((d) => d.text.trim())),
-      ...sections.flatMap((s) => s.filter(customizes).map((d) => d.text.trim())),
+        .flatMap((r) => r.duties.filter((d) => live(d) && d.added).map((d) => d.text.trim())),
+      ...sections.flatMap((s) => s.filter((d) => live(d) && d.added).map((d) => d.text.trim())),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [resps, certs, education, workExp, minKSA, prefKSA, workEnv]
@@ -207,6 +206,19 @@ export const useBuildState = (
     envelope.prefKSA.length +
     envelope.workEnvironment.length;
 
+  /** Reworded standard lines, each with what it replaced, for the envelope check to compare. */
+  const editedItems = useMemo(
+    () =>
+      [
+        ...resps.filter((r) => r.functionKept).flatMap((r) => r.duties),
+        ...sections.flat(),
+      ]
+        .filter((d) => live(d) && isEdited(d))
+        .map((d) => ({ original: d.original ?? '', text: d.text.trim() })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resps, certs, education, workExp, minKSA, prefKSA, workEnv]
+  );
+
   const customPct = envelopeTotal
     ? Math.round((addedItems.length / envelopeTotal) * 100)
     : 0;
@@ -217,6 +229,7 @@ export const useBuildState = (
   const buildRequest = (slug: string): BuildRequest => ({
     addedItems,
     department,
+    editedItems,
     keptCerts: keptOf(certs),
     keptEducation: keptOf(education),
     keptMinKSA: keptOf(minKSA),
@@ -262,7 +275,7 @@ export const useBuildState = (
    * builds with the same key get the same verdict, so the requirements step skips a second check
    * when nothing it reads has changed since the duties check.
    */
-  const checkKey = JSON.stringify({ addedItems, department, notes, workingTitle });
+  const checkKey = JSON.stringify({ addedItems, department, editedItems, notes, workingTitle });
 
   return {
     addedCount: addedItems.length,
@@ -271,6 +284,7 @@ export const useBuildState = (
     checkKey,
     customPct,
     department,
+    editedCount: editedItems.length,
     education,
     guardAdd,
     leads,

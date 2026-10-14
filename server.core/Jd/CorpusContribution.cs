@@ -34,7 +34,7 @@ public static class CorpusContribution
             return OutOfEnvelope;
         }
 
-        if (inputs.AddedItems.Count > 0 && verdict == null)
+        if ((inputs.AddedItems.Count > 0 || inputs.EditedItems.Count > 0) && verdict == null)
         {
             return Unchecked;
         }
@@ -48,7 +48,7 @@ public static class CorpusContribution
     /// </summary>
     public static bool Differs(BuildInputs inputs, JobEnvelope? envelope)
     {
-        if (envelope == null || inputs.AddedItems.Count > 0)
+        if (envelope == null || inputs.AddedItems.Count > 0 || inputs.EditedItems.Count > 0)
         {
             return true;
         }

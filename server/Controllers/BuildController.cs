@@ -32,6 +32,10 @@ public sealed class BuildRequest
     public List<string> KeptPrefKSA { get; set; } = [];
     public List<string> KeptWorkEnvironment { get; set; } = [];
     public List<string> AddedItems { get; set; } = [];
+
+    /// <summary>Standard items the author reworded, with the wording each replaced.</summary>
+    public List<EditedItem> EditedItems { get; set; } = [];
+
     public string Notes { get; set; } = "";
     public bool? Supervises { get; set; }
     public int? SupervisesCount { get; set; }
@@ -75,6 +79,7 @@ public sealed class BuildRequest
         KeptPrefKSA = KeptPrefKSA,
         KeptWorkEnvironment = KeptWorkEnvironment,
         AddedItems = AddedItems,
+        EditedItems = EditedItems,
         Notes = Notes,
         Supervises = Supervises,
         SupervisesCount = SupervisesCount,

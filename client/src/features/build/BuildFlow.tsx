@@ -419,14 +419,16 @@ export const BuildFlow = ({
 };
 
 /**
- * The customization meter: additions and reworded lines, against the class's target — ≤10% for
- * most classes, ≤30% for senior (level 4+) and supervisory ones, which shape their roles more.
+ * The customization meter: additions against the class's target — ≤10% for most classes, ≤30% for
+ * senior (level 4+) and supervisory ones, which shape their roles more. Edits are counted beside it,
+ * not in it: the envelope check compares each with the standard line it replaced.
  */
 const CustomizationNote = ({ state, target }: { state: ReturnType<typeof useBuildState>; target: number }) =>
-  state.addedCount > 0 ? (
+  state.addedCount > 0 || state.editedCount > 0 ? (
     <span className="flex items-center gap-2 text-base text-base-content/65" data-testid="customization">
       <Badge tone={state.customPct <= target ? 'green' : 'yellow'}>Customization {state.customPct}%</Badge>
-      {state.addedCount} added or edited · target ≤{target}%
+      {state.addedCount} added · target ≤{target}%
+      {state.editedCount > 0 ? ` · ${state.editedCount} edited, checked against the standard` : ''}
     </span>
   ) : null;
 

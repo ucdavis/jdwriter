@@ -166,7 +166,7 @@ describe('the guided build', () => {
     expect(screen.getByText('Check completed — take a look')).toBeInTheDocument();
   });
 
-  it('edits a duty in place: marked edited, counted as customization, checked, and undoable', async () => {
+  it('edits a duty in place: marked edited, not counted as customization, and undoable', async () => {
     const user = userEvent.setup();
     open();
     await screen.findByTestId('duties-intro');
@@ -180,7 +180,10 @@ describe('the guided build', () => {
     await user.type(box, 'Runs the greenhouse irrigation schedule.');
 
     expect(screen.getByText('edited')).toBeInTheDocument();
-    expect(screen.getByTestId('customization')).toHaveTextContent('1 added or edited');
+    // Counted beside the meter, not in it: the check compares it with the line it replaced.
+    expect(screen.getByTestId('customization')).toHaveTextContent('Customization 0%');
+    expect(screen.getByTestId('customization')).toHaveTextContent('0 added');
+    expect(screen.getByTestId('customization')).toHaveTextContent('1 edited, checked against the standard');
     // Its checkbox still names the standard line, so it can be found after the edit.
     expect(screen.getByRole('checkbox', { name: `Include: ${original}` })).toBeChecked();
 
@@ -191,7 +194,7 @@ describe('the guided build', () => {
     expect(screen.queryByTestId('customization')).not.toBeInTheDocument();
   });
 
-  it('sends an edited duty in place of the standard one, and to the envelope check as a change', async () => {
+  it('sends an edited duty in place of the standard one, and to the envelope check as a comparison', async () => {
     const user = userEvent.setup();
     open();
     await screen.findByTestId('duties-intro');
@@ -205,7 +208,8 @@ describe('the guided build', () => {
     const duties = sent.keptResponsibilities.flatMap((r) => r.duties);
     expect(duties).toContain('Runs the greenhouse irrigation schedule.');
     expect(duties).not.toContain(original);
-    expect(sent.addedItems).toContain('Runs the greenhouse irrigation schedule.');
+    expect(sent.addedItems).not.toContain('Runs the greenhouse irrigation schedule.');
+    expect(sent.editedItems).toEqual([{ original, text: 'Runs the greenhouse irrigation schedule.' }]);
   });
 
   it('drops a whole line with its checkbox, which then cannot be edited', async () => {

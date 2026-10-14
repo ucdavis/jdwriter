@@ -7,10 +7,9 @@ import { isEdited, type Item } from './useBuildState.ts';
  *
  * The checkbox is about the whole line — unchecked, it is struck through and left out. The text is
  * edited where it stands. A standard line that has been reworded says so, keeps its original wording
- * (shown on hover) and can be put back; the edit counts as customization and goes to the envelope
- * check like an addition, because changed wording is drift from the standard however it got there.
- * Only lines the author added can be deleted outright: a standard line is dropped, never removed, so
- * the author can always see what the class expects.
+ * (shown on hover) and can be put back; the envelope check compares the edit with that original, to
+ * see whether the rewording changed the duty. Only lines the author added can be deleted outright: a
+ * standard line is dropped, never removed, so the author can always see what the class expects.
  */
 export const LineEditor = ({
   children,
