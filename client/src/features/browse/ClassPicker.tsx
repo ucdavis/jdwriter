@@ -73,11 +73,8 @@ export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
                       : ''}
                 </span>
               </span>
-              {c.ready ? (
-                <Badge tone="green">{c.corpusSize} JDs · ready</Badge>
-              ) : (
-                <Badge tone="muted">not available yet</Badge>
-              )}
+              {/* A class you can start needs no badge; one you can't says why it's greyed out. */}
+              {c.ready ? null : <Badge tone="muted">not available yet</Badge>}
             </button>
           ))}
           {hidden > 0 ? (
