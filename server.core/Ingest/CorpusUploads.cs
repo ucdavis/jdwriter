@@ -186,7 +186,7 @@ public sealed class CorpusUploads
                     ReplacesStarter = profile?.EnvelopeSource == EnvelopeSource.Standard && profile.CorpusSize == 0,
                 };
             })
-            .OrderBy(c => c.Title, StringComparer.Ordinal)
+            .OrderBy(c => c.Title, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 

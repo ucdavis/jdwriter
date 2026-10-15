@@ -166,10 +166,14 @@ public sealed class Bootstrapper : IBootstrapper
         // A profile still filed under a superseded code is a dead class awaiting retirement, and it
         // must not count as "having" its successor: the loose key drops the union suffix, so
         // "Financial Anl 3" would otherwise hide "Financial Analyst 3 CX" from this list.
-        var have = profiled
-            .Where(p => !titleCodes.IsSuperseded(p.UcJobCode))
-            .Select(p => Sites.ClassKey(p.Title))
-            .ToHashSet(StringComparer.Ordinal);
+        var live = profiled.Where(p => !titleCodes.IsSuperseded(p.UcJobCode)).ToList();
+        var have = live.Select(p => Sites.ClassKey(p.Title)).ToHashSet(StringComparer.Ordinal);
+
+        // A code that already has a class has its class, whatever the standard's title: bootstrapping
+        // refuses it (RefuseIfProfiledAsync), so the list must not offer it. Two standards can share
+        // one code — "Behavioral Health Counselor 3 HX" and its "… HX CEH" variant both sit on
+        // 004459 — and the second used to be offered, then refused.
+        var haveCode = live.Select(p => TitleCodeIndex.Pad(p.UcJobCode)).ToHashSet(StringComparer.Ordinal);
 
         var result = new BootstrapCandidates();
 
@@ -214,6 +218,11 @@ public sealed class Bootstrapper : IBootstrapper
                 continue;
             }
 
+            if (haveCode.Contains(TitleCodeIndex.Pad(tc.Code)))
+            {
+                continue;
+            }
+
             result.Candidates.Add(new BootstrapCandidate
             {
                 Title = s.LongTitle,
@@ -224,7 +233,7 @@ public sealed class Bootstrapper : IBootstrapper
             });
         }
 
-        result.Candidates = result.Candidates.OrderBy(c => c.Title, StringComparer.Ordinal).ToList();
+        result.Candidates = result.Candidates.OrderBy(c => c.Title, StringComparer.OrdinalIgnoreCase).ToList();
         return result;
     }
 

@@ -90,7 +90,7 @@ public sealed class CorpusDirectory
                 };
             })
             .OrderByDescending(r => r.AddedAt ?? DateTimeOffset.MinValue)
-            .ThenBy(r => r.UcJobTitle, StringComparer.Ordinal)
+            .ThenBy(r => r.UcJobTitle, StringComparer.OrdinalIgnoreCase)
             .ThenBy(r => r.Id)
             .ToList();
     }

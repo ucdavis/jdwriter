@@ -183,7 +183,7 @@ public sealed class JobsDirectory
                         },
                 };
             })
-            .OrderBy(r => r.Title, StringComparer.Ordinal)
+            .OrderBy(r => r.Title, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 }
