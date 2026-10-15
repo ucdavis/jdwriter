@@ -348,9 +348,22 @@ export type BuildRequest = {
   workingTitle: string;
 };
 
+/** One of the author's changes, as the envelope check judged it. */
+export type CheckedChange = {
+  kind: 'added' | 'edited';
+  /** For an edit, the standard wording it replaced. */
+  original: string | null;
+  /** How it fits the class, or what takes it outside; empty when the check didn't say. */
+  reason: string;
+  text: string;
+  verdict: 'borderline' | 'in_envelope' | 'out_of_envelope' | null;
+};
+
 export type EnvelopeCheckResponse = {
   /** A borderline verdict also searches for a better fit; with no suggestion, the class is still best. */
   betterFitChecked: boolean;
+  /** Each addition and edit, with how it fits the class. */
+  changes?: CheckedChange[];
   matchedSignals: string[];
   rationale: string;
   suggestedClass: string;

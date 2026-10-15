@@ -52,6 +52,14 @@ public class JdAssemblerTests
         public EnvelopeVerdict Verdict { get; set; }
         public List<string> MatchedSignals { get; set; } = [];
         public string Rationale { get; set; } = "";
+        public List<ChangeDto> Changes { get; set; } = [];
+    }
+
+    private sealed class ChangeDto
+    {
+        public int Number { get; set; }
+        public EnvelopeVerdict Verdict { get; set; }
+        public string Reason { get; set; } = "";
     }
 
     private sealed class AltDto
@@ -690,6 +698,51 @@ public class JdAssemblerTests
         new() { Slug = "x", Title = "Other Class", UcJobCode = "111111", Summary = "Other work." },
         new() { Slug = "y", Title = "Budget Analyst 2", UcJobCode = "222222", Summary = "Budgets." },
     ];
+
+    [Fact]
+    public async Task Each_change_comes_back_with_its_own_reason_by_number_in_the_author_s_words()
+    {
+        var verdict = new VerdictDto
+        {
+            Verdict = EnvelopeVerdict.InEnvelope,
+            Rationale = "Both changes sit within the class's plant care duties.",
+            Changes =
+            [
+                new ChangeDto { Number = 2, Verdict = EnvelopeVerdict.InEnvelope, Reason = "Same duty, reworded." },
+                new ChangeDto { Number = 1, Verdict = EnvelopeVerdict.InEnvelope, Reason = "Falls within Plant care." },
+                new ChangeDto { Number = 9, Verdict = EnvelopeVerdict.OutOfEnvelope, Reason = "No such change." },
+            ],
+        };
+        var (assembler, llm) = Build(verdict: verdict);
+        var inputs = JdTestData.Inputs();
+        inputs.AddedItems = ["Logs greenhouse temperatures."];
+        inputs.EditedItems = [new EditedItem { Original = "Waters plants.", Text = "Waters and feeds plants." }];
+
+        var result = await assembler.CheckEnvelopeAsync(JdTestData.Profile(), inputs);
+
+        // The text shown is the author's, matched by number; a number with no change is ignored.
+        result.Changes.Should().BeEquivalentTo(
+            [
+                new { Kind = "added", Text = "Logs greenhouse temperatures.", Original = (string?)null, Reason = "Falls within Plant care." },
+                new { Kind = "edited", Text = "Waters and feeds plants.", Original = (string?)"Waters plants.", Reason = "Same duty, reworded." },
+            ],
+            o => o.WithStrictOrdering());
+        var user = llm.Requests.Single(r => r.Label == "build.checkEnvelope").User;
+        user.Should().Contain("1. Added: Logs greenhouse temperatures.");
+        user.Should().Contain("2. Edited a standard item (judge whether the edit changes the duty's scope): \"Waters plants.\" → \"Waters and feeds plants.\"");
+    }
+
+    [Fact]
+    public async Task A_change_the_check_says_nothing_about_has_no_reason_rather_than_a_guessed_one()
+    {
+        var (assembler, _) = Build(verdict: new VerdictDto { Verdict = EnvelopeVerdict.InEnvelope, Rationale = "Fits." });
+        var inputs = JdTestData.Inputs();
+        inputs.AddedItems = ["Logs greenhouse temperatures."];
+
+        var result = await assembler.CheckEnvelopeAsync(JdTestData.Profile(), inputs);
+
+        result.Changes.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Reason = "", Verdict = (EnvelopeVerdict?)null });
+    }
 
     [Fact]
     public async Task Borderline_also_suggests_a_better_fit_without_changing_the_verdict()
