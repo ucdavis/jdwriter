@@ -119,7 +119,7 @@ public sealed class StandardMatching
         var review = new StandardMatchReview
         {
             Confirmed = decisions.Where(d => d.IsMatch)
-                .OrderBy(d => d.StandardTitle, StringComparer.Ordinal)
+                .OrderBy(d => d.StandardTitle, StringComparer.OrdinalIgnoreCase)
                 .Select(d => new ConfirmedMatch
                 {
                     StandardTitle = d.StandardTitle,
@@ -130,7 +130,7 @@ public sealed class StandardMatching
                 .ToList(),
         };
 
-        foreach (var s in standards.All.OrderBy(s => s.LongTitle, StringComparer.Ordinal))
+        foreach (var s in standards.All.OrderBy(s => s.LongTitle, StringComparer.OrdinalIgnoreCase))
         {
             if (StandardCodes.For(s, index) is not null)
             {

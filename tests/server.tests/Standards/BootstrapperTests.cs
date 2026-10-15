@@ -132,6 +132,36 @@ public class BootstrapperTests
     }
 
     [Fact]
+    public async Task A_second_standard_on_a_code_that_already_has_a_class_is_not_offered()
+    {
+        // "Behavioral Health Counselor 3 HX CEH" was matched by hand to 004459, whose class was built
+        // from "Behavioral Health Counselor 3 HX". Bootstrapping it is refused (the code has its class),
+        // so offering it only led to a failure.
+        var ceh = S("Behavioral Health Counselor 3 HX CEH");
+        ceh.Code = "004459";
+        var (boot, db, _) = Build(
+            [S("Behavioral Health Counselor 3 HX"), ceh, S("Widget Analyst 2")],
+            [Tc("004459", "BEH HEALTH COUNSELOR 3 HX"), Tc("111111", "Widget Analyst 2")]);
+        using var _db = db;
+        db.ClassProfiles.Add(new ClassProfile { Slug = "004459-behavioral-health-counselor-3-hx", Title = "Behavioral Health Counselor 3 HX", UcJobCode = "004459" });
+        await db.SaveChangesAsync();
+
+        (await boot.GetCandidatesAsync()).Candidates.Select(c => c.Title).Should().Equal("Widget Analyst 2");
+    }
+
+    [Fact]
+    public async Task Candidates_are_alphabetical_whatever_their_case()
+    {
+        // Ordinal order put every capital before every lower-case letter: "AV IT Engineer" before "Academic".
+        var (boot, db, _) = Build(
+            [S("AV IT Engineer 3"), S("Academic Advisor 2")],
+            [Tc("111111", "AV IT ENGR 3"), Tc("222222", "ACAD ADVISOR 2")]);
+        using var _db = db;
+
+        (await boot.GetCandidatesAsync()).Candidates.Select(c => c.Title).Should().Equal("Academic Advisor 2", "AV IT Engineer 3");
+    }
+
+    [Fact]
     public async Task An_existing_profile_is_matched_on_the_loose_key()
     {
         // "Does this class already have a profile?" is a same-class question, so a variant suffix or

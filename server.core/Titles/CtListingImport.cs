@@ -291,6 +291,6 @@ public sealed class CtListingImport
             }
         }
 
-        plan.AffectedClasses = [.. affected.Values.OrderBy(c => c.Title, StringComparer.Ordinal)];
+        plan.AffectedClasses = [.. affected.Values.OrderBy(c => c.Title, StringComparer.OrdinalIgnoreCase)];
     }
 }

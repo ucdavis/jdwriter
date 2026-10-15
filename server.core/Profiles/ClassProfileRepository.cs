@@ -227,7 +227,7 @@ public sealed class ClassProfileRepository : IClassProfileRepository
             Site = Sites.SiteOf(p.Title),
             CorpusSize = p.CorpusSize,
             BargainingUnit = p.Union,
-        }).OrderBy(x => x.Title, StringComparer.Ordinal).ToList();
+        }).OrderBy(x => x.Title, StringComparer.OrdinalIgnoreCase).ToList();
 
         var readyCodes = ready.Select(r => r.UcJobCode).ToHashSet(StringComparer.Ordinal);
         // Site-aware: a Health Center or Student Health class doesn't hide the regular one, nor the reverse.
@@ -250,7 +250,7 @@ public sealed class ClassProfileRepository : IClassProfileRepository
                 Family = string.IsNullOrEmpty(t.Family) ? null : t.Family,
                 Grade = string.IsNullOrEmpty(t.Grade) ? null : t.Grade,
             })
-            .OrderBy(x => x.Title, StringComparer.Ordinal)
+            .OrderBy(x => x.Title, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         return [.. ready, .. seeds];
@@ -312,7 +312,7 @@ public sealed class ClassProfileRepository : IClassProfileRepository
             CoverageN = r.CoverageN,
             MeanCoverage = r.MeanCoverage,
             WellCoveredPct = r.WellCoveredPct,
-        }).OrderBy(x => x.Title, StringComparer.Ordinal).ToList();
+        }).OrderBy(x => x.Title, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     public async Task<List<JobDescription>> GetJobDescriptionsAsync(

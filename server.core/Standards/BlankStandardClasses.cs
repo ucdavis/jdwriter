@@ -62,7 +62,7 @@ public sealed class BlankStandardClasses
                 UcJobCode = p.UcJobCode,
                 SavedJds = saved.GetValueOrDefault(p.Id),
             })
-            .OrderBy(p => p.Title, StringComparer.Ordinal)
+            .OrderBy(p => p.Title, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 

@@ -147,7 +147,7 @@ public sealed partial class IngestPipeline
             });
         }
 
-        return pending.OrderBy(p => p.Title, StringComparer.Ordinal).ToList();
+        return pending.OrderBy(p => p.Title, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     /// <summary>

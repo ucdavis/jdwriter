@@ -154,14 +154,14 @@ public sealed class AdminAnalytics
                     .. profiles
                         .Where(p => authoredByClass.ContainsKey(p.Id))
                         .Select(p => new ClassCount { Slug = p.Slug, Title = p.Title, UcJobCode = p.UcJobCode, Count = authoredByClass[p.Id] })
-                        .OrderByDescending(c => c.Count).ThenBy(c => c.Title, StringComparer.Ordinal)
+                        .OrderByDescending(c => c.Count).ThenBy(c => c.Title, StringComparer.OrdinalIgnoreCase)
                         .Take(10),
                 ],
                 NeverUsed =
                 [
                     .. profiles
                         .Where(p => !authoredByClass.ContainsKey(p.Id))
-                        .OrderByDescending(p => p.CorpusSize).ThenBy(p => p.Title, StringComparer.Ordinal)
+                        .OrderByDescending(p => p.CorpusSize).ThenBy(p => p.Title, StringComparer.OrdinalIgnoreCase)
                         .Select(p => new ClassCount { Slug = p.Slug, Title = p.Title, UcJobCode = p.UcJobCode, Count = p.CorpusSize }),
                 ],
                 EnvelopeMatch =
