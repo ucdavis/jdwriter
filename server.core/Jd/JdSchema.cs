@@ -320,11 +320,33 @@ public sealed class EnvelopeCheck
     /// <summary>Why the suggested class fits better. Set by the better-fit search, not the verdict.</summary>
     public string SuggestedRationale { get; set; } = "";
 
+    /// <summary>Each addition and edit, with how it fits the class. Set from the check, not by the model directly.</summary>
+    public List<CheckedChange> Changes { get; set; } = [];
+
     /// <summary>
     /// The catalog was searched for a better fit. With no suggestion, that is an answer — the current
     /// class is still the best match — rather than a search that never ran.
     /// </summary>
     public bool BetterFitChecked { get; set; }
+}
+
+/// <summary>One of the author's changes, as the envelope check judged it.</summary>
+public sealed class CheckedChange
+{
+    /// <summary>"added" or "edited".</summary>
+    public string Kind { get; set; } = "";
+
+    /// <summary>The author's text.</summary>
+    public string Text { get; set; } = "";
+
+    /// <summary>For an edit, the standard wording it replaced.</summary>
+    public string? Original { get; set; }
+
+    /// <summary>Whether this change alone fits; null when the check didn't say.</summary>
+    public EnvelopeVerdict? Verdict { get; set; }
+
+    /// <summary>How it fits the class, or what takes it outside; empty when the check didn't say.</summary>
+    public string Reason { get; set; } = "";
 }
 
 /// <summary>A search of the catalog for a class that fits a build better than its own.</summary>

@@ -212,6 +212,33 @@ describe('the guided build', () => {
     expect(sent.editedItems).toEqual([{ original, text: 'Runs the greenhouse irrigation schedule.' }]);
   });
 
+  it('explains each change: how an addition or an edit fits the class, and what an edit replaced', async () => {
+    const user = userEvent.setup();
+    testServer.use(
+      http.post('/api/build/check', () =>
+        HttpResponse.json<EnvelopeCheckResponse>({
+          ...verdict('in_envelope'),
+          changes: [
+            { kind: 'added', original: null, reason: 'Falls within Plant care, which already covers growth records.', text: 'Logs greenhouse temperatures.', verdict: 'in_envelope' },
+            { kind: 'edited', original: 'Waters plants.', reason: 'The same duty, reworded.', text: 'Waters and feeds plants.', verdict: 'in_envelope' },
+          ],
+          rationale: 'Both changes sit within the class’s plant care duties, so the position still fits.',
+        })
+      )
+    );
+    open();
+    await screen.findByTestId('duties-intro');
+    await fillDepartment(user);
+    await user.click(screen.getByRole('button', { name: 'Check my duties →' }));
+
+    const list = await screen.findByTestId('checked-changes');
+    expect(list).toHaveTextContent('Added: Logs greenhouse temperatures.');
+    expect(list).toHaveTextContent('Falls within Plant care, which already covers growth records.');
+    expect(list).toHaveTextContent('Edited: Waters and feeds plants.');
+    expect(list).toHaveTextContent('was: Waters plants.');
+    expect(screen.getAllByLabelText('fits')).toHaveLength(2);
+  });
+
   it('drops a whole line with its checkbox, which then cannot be edited', async () => {
     const user = userEvent.setup();
     open();

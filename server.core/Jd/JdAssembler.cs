@@ -121,8 +121,25 @@ public sealed class JdAssembler : IJdAssembler
         [Description("Which out-of-envelope signals (if any) the additions triggered.")]
         public List<string> MatchedSignals { get; set; } = [];
 
-        [Description("1-2 sentence explanation for the verdict.")]
+        // Not ported: JDWriter asks for more than the original 1-2 sentences, because authors want to
+        // know WHY their changes were accepted, not only that they were.
+        [Description("2-4 sentences explaining the verdict: how the changes as a whole relate to the class's expected duties and scope — which standard responsibilities they fall within, or which out-of-envelope signals take them outside.")]
         public string Rationale { get; set; } = "";
+
+        [Description("One entry for each numbered change, by its number: how that change fits the class.")]
+        public List<ChangeVerdict> Changes { get; set; } = [];
+    }
+
+    private sealed class ChangeVerdict
+    {
+        [Description("The change's number, as listed.")]
+        public int Number { get; set; }
+
+        [Description("Whether this change alone fits the class.")]
+        public EnvelopeVerdict Verdict { get; set; }
+
+        [Description("One sentence: the standard duty or scope it falls within, or what takes it outside the class. Do not repeat the change's text.")]
+        public string Reason { get; set; } = "";
     }
 
     private sealed class Alternative
@@ -334,6 +351,29 @@ public sealed class JdAssembler : IJdAssembler
     public bool HasAdditions(BuildInputs inputs) =>
         inputs.AddedItems.Count > 0 || inputs.EditedItems.Count > 0 || inputs.Notes.Trim().Length > 0;
 
+    /// <summary>Each addition, then each edit, in the order the check numbers them.</summary>
+    internal static List<(string Text, string? Original)> NumberedChanges(BuildInputs inputs) =>
+        [.. inputs.AddedItems.Select(a => (a, (string?)null)), .. inputs.EditedItems.Select(e => (e.Text, (string?)e.Original))];
+
+    /// <summary>The changes numbered, for the check to answer change by change; then any notes.</summary>
+    internal static string ChangesText(List<(string Text, string? Original)> changes, BuildInputs inputs)
+    {
+        var parts = new List<string>();
+        if (changes.Count > 0)
+        {
+            parts.Add(string.Join('\n', changes.Select((c, i) => c.Original is null
+                ? $"{i + 1}. Added: {c.Text}"
+                : $"{i + 1}. Edited a standard item (judge whether the edit changes the duty's scope): \"{c.Original}\" → \"{c.Text}\"")));
+        }
+
+        if (inputs.Notes.Trim().Length > 0)
+        {
+            parts.Add($"Notes: {inputs.Notes.Trim()}");
+        }
+
+        return parts.Count > 0 ? string.Join("\n\n", parts) : "(no additions — using the standard as-is)";
+    }
+
     internal static string AdditionsText(BuildInputs inputs)
     {
         var parts = new List<string>();
@@ -435,10 +475,11 @@ public sealed class JdAssembler : IJdAssembler
         IReadOnlyList<ClassDescriptor>? others = null,
         CancellationToken ct = default)
     {
+        var changes = NumberedChanges(inputs);
         var verdict = await _llm.StructuredAsync<VerdictResponse>(new StructuredRequest
         {
             System = CheckSystem,
-            User = $"{EnvelopeContext(profile)}\n\nMANAGER'S ADDITIONS:\n{AdditionsText(inputs)}\n\nWorking title: {(inputs.WorkingTitle.Length > 0 ? inputs.WorkingTitle : "(none)")}\nDepartment: {(inputs.Department.Length > 0 ? inputs.Department : "(none)")}",
+            User = $"{EnvelopeContext(profile)}\n\nMANAGER'S ADDITIONS:\n{ChangesText(changes, inputs)}\n\nWorking title: {(inputs.WorkingTitle.Length > 0 ? inputs.WorkingTitle : "(none)")}\nDepartment: {(inputs.Department.Length > 0 ? inputs.Department : "(none)")}",
             Effort = LlmEffort.Low,
             Label = "build.checkEnvelope",
         }, ct);
@@ -450,6 +491,19 @@ public sealed class JdAssembler : IJdAssembler
             Rationale = verdict.Rationale,
             SuggestedClass = "",
             SuggestedSlug = "",
+            // The model names a change by its number; the text shown is the author's own, from here.
+            Changes = [.. changes.Select((c, i) =>
+            {
+                var said = verdict.Changes.FirstOrDefault(v => v.Number == i + 1);
+                return new CheckedChange
+                {
+                    Kind = c.Original is null ? "added" : "edited",
+                    Text = c.Text,
+                    Original = c.Original,
+                    Verdict = said?.Verdict,
+                    Reason = said?.Reason.Trim() ?? "",
+                };
+            })],
         };
 
         if (others is null || others.Count == 0 || verdict.Verdict == EnvelopeVerdict.InEnvelope)
