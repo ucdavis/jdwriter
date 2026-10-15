@@ -1,8 +1,8 @@
 import { renderRoute, setupRouteTest } from '@/test/renderRoute.tsx';
 import { testServer } from '@/test/mswUtils.ts';
-import { fillDepartment } from '@/test/build.ts';
+import { checkAndContinue, fillDepartment } from '@/test/build.ts';
 import type { BuildRequest, EnvelopeCheckResponse } from '@/lib/contracts.ts';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import profilesFixture from '@/mocks/profiles.json' with { type: 'json' };
@@ -42,8 +42,8 @@ const asClass = (over: Record<string, unknown>) => {
 const sentOnCheck = async (user: ReturnType<typeof userEvent.setup>) => {
   const checks = countChecks('in_envelope');
   await fillDepartment(user);
-  await user.click(screen.getByRole('button', { name: 'Check my duties →' }));
-  await screen.findByTestId('requirements-intro');
+  await user.click(screen.getByRole('button', { name: 'Check my duties' }));
+  await screen.findByRole('button', { name: /^Continue/ });
   return checks[0];
 };
 
@@ -75,16 +75,19 @@ describe('the guided build', () => {
     expect(await screen.findByText(/Authoritative baseline/)).toBeInTheDocument();
   });
 
-  it('checks the duties, then moves on to the requirements without the envelope overview', async () => {
+  it('checks the duties on the same page, then continues to the requirements without the envelope overview', async () => {
     const user = userEvent.setup();
     countChecks('in_envelope');
     open();
 
     await fillDepartment(user);
-    await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
+    await user.click(await screen.findByRole('button', { name: 'Check my duties' }));
 
+    // The result is shown on the duties step, before moving on.
     expect(await screen.findByText('Check completed!')).toBeInTheDocument();
-    expect(screen.getByTestId('requirements-intro')).toBeInTheDocument();
+    expect(screen.getByTestId('duties-intro')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continue to requirements →' }));
+    expect(await screen.findByTestId('requirements-intro')).toBeInTheDocument();
     expect(screen.getByText('Preferred qualifications')).toBeInTheDocument();
     expect(screen.queryByTestId('envelope-summary')).not.toBeInTheDocument();
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('Requirements');
@@ -96,7 +99,7 @@ describe('the guided build', () => {
     open();
 
     await fillDepartment(user);
-    await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
+    await checkAndContinue(user);
     await user.click(await screen.findByRole('button', { name: 'Assemble the JD →' }));
 
     expect(await screen.findByTestId('build-outcome')).toHaveTextContent('Great! Your JD passed.');
@@ -109,7 +112,7 @@ describe('the guided build', () => {
     open();
 
     await fillDepartment(user);
-    await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
+    await checkAndContinue(user);
     await user.type(await screen.findByPlaceholderText('Add to preferred qualifications…'), 'Sets the unit budget{Enter}');
     await user.click(screen.getByRole('button', { name: 'Assemble the JD →' }));
 
@@ -129,7 +132,7 @@ describe('the guided build', () => {
     open();
 
     await fillDepartment(user);
-    await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
+    await checkAndContinue(user);
     await user.click(await screen.findByRole('button', { name: 'Assemble the JD →' }));
 
     expect(await screen.findByTestId('build-outcome')).toHaveTextContent('Great! Your JD passed.');
@@ -147,7 +150,7 @@ describe('the guided build', () => {
     open();
 
     await fillDepartment(user);
-    await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
+    await user.click(await screen.findByRole('button', { name: 'Check my duties' }));
 
     expect(await screen.findByText('Check completed!')).toBeInTheDocument();
     expect(screen.getByText('Fits class')).toBeInTheDocument();
@@ -160,7 +163,7 @@ describe('the guided build', () => {
     open();
 
     await fillDepartment(user);
-    await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
+    await user.click(await screen.findByRole('button', { name: 'Check my duties' }));
 
     expect(await screen.findByText('Doesn’t fit class')).toBeInTheDocument();
     expect(screen.getByText('Check completed — take a look')).toBeInTheDocument();
@@ -212,7 +215,7 @@ describe('the guided build', () => {
     expect(sent.editedItems).toEqual([{ original, text: 'Runs the greenhouse irrigation schedule.' }]);
   });
 
-  it('explains each change: how an addition or an edit fits the class, and what an edit replaced', async () => {
+  it('shows each change\'s verdict and reason under the line itself, with no separate list', async () => {
     const user = userEvent.setup();
     testServer.use(
       http.post('/api/build/check', () =>
@@ -220,7 +223,7 @@ describe('the guided build', () => {
           ...verdict('in_envelope'),
           changes: [
             { kind: 'added', original: null, reason: 'Falls within Plant care, which already covers growth records.', text: 'Logs greenhouse temperatures.', verdict: 'in_envelope' },
-            { kind: 'edited', original: 'Waters plants.', reason: 'The same duty, reworded.', text: 'Waters and feeds plants.', verdict: 'in_envelope' },
+            { kind: 'edited', original: 'x', reason: 'The same duty, reworded.', text: 'Waters and feeds plants.', verdict: 'borderline' },
           ],
           rationale: 'Both changes sit within the class’s plant care duties, so the position still fits.',
         })
@@ -228,15 +231,58 @@ describe('the guided build', () => {
     );
     open();
     await screen.findByTestId('duties-intro');
+    const box = screen.getAllByRole('textbox', { name: /^Wording: / })[0];
+    await user.clear(box);
+    await user.type(box, 'Waters and feeds plants.');
+    await user.type(screen.getAllByPlaceholderText('Add a duty to this function…')[0], 'Logs greenhouse temperatures.{Enter}');
     await fillDepartment(user);
-    await user.click(screen.getByRole('button', { name: 'Check my duties →' }));
+    await user.click(screen.getByRole('button', { name: 'Check my duties' }));
 
-    const list = await screen.findByTestId('checked-changes');
-    expect(list).toHaveTextContent('Added: Logs greenhouse temperatures.');
-    expect(list).toHaveTextContent('Falls within Plant care, which already covers growth records.');
-    expect(list).toHaveTextContent('Edited: Waters and feeds plants.');
-    expect(list).toHaveTextContent('was: Waters plants.');
-    expect(screen.getAllByLabelText('fits')).toHaveLength(2);
+    const verdicts = await screen.findAllByTestId('line-verdict');
+    expect(verdicts.map((v) => v.textContent)).toEqual([
+      '~ Stretches the class — The same duty, reworded.',
+      '✓ Fits the class — Falls within Plant care, which already covers growth records.',
+    ]);
+    // Each sits under its own line.
+    expect(verdicts[0].closest('li')).toContainElement(screen.getByDisplayValue('Waters and feeds plants.'));
+    expect(screen.queryByTestId('checked-changes')).not.toBeInTheDocument();
+  });
+
+  it('needs checking again after an edit, and only then continues', async () => {
+    const user = userEvent.setup();
+    countChecks('in_envelope', 'in_envelope');
+    open();
+    await fillDepartment(user);
+    await user.click(await screen.findByRole('button', { name: 'Check my duties' }));
+    await screen.findByRole('button', { name: 'Continue to requirements →' });
+
+    const box = screen.getAllByRole('textbox', { name: /^Wording: / })[0];
+    await user.type(box, ' Weekly.');
+
+    expect(screen.getByTestId('check-stale')).toHaveTextContent('check them again');
+    expect(screen.queryByRole('button', { name: 'Continue to requirements →' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Check my duties' }));
+    expect(await screen.findByRole('button', { name: 'Continue to requirements →' })).toBeEnabled();
+  });
+
+  it('needs at least one duty under each kept responsibility', async () => {
+    const user = userEvent.setup();
+    open();
+    await fillDepartment(user);
+    const duty = screen.getAllByRole('checkbox', { name: /^Include: / });
+    const firstFunction = screen.getAllByRole('checkbox', { name: /^Include [^:]/ })[0];
+    const card = firstFunction.closest('div.rounded-lg') as HTMLElement;
+    for (const d of duty.filter((c) => card.contains(c))) {
+      await user.click(d);
+    }
+
+    expect(within(card).getByTestId('function-needs-duty')).toHaveTextContent('Keep at least one duty');
+    expect(screen.getByTestId('build-gate-reason')).toHaveTextContent(/has no duties left — keep at least one, or drop the whole responsibility/);
+    expect(screen.getByRole('button', { name: 'Check my duties' })).toBeDisabled();
+
+    // Dropping the whole responsibility instead is fine (once the time is rebalanced).
+    await user.click(firstFunction);
+    expect(screen.queryByTestId('function-needs-duty')).not.toBeInTheDocument();
   });
 
   it('drops a whole line with its checkbox, which then cannot be edited', async () => {
@@ -279,8 +325,7 @@ describe('the guided build', () => {
     open();
 
     await fillDepartment(user);
-    await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
-    await screen.findByTestId('requirements-intro');
+    await checkAndContinue(user);
     expect(screen.queryByRole('button', { name: /Back to duties/ })).not.toBeInTheDocument();
     // Later steps are not links: they are reached by passing the check.
     expect(screen.queryByRole('button', { name: 'Your JD' })).not.toBeInTheDocument();
@@ -301,7 +346,7 @@ describe('the guided build', () => {
     const user = userEvent.setup();
     open();
 
-    const check = await screen.findByRole('button', { name: 'Check my duties →' });
+    const check = await screen.findByRole('button', { name: 'Check my duties' });
     expect(check).toBeDisabled();
     expect(screen.getByTestId('build-gate-reason')).toHaveTextContent('Enter the department before continuing.');
     expect(screen.getByLabelText(/^Department/)).toHaveAttribute('aria-required', 'true');
@@ -339,13 +384,13 @@ describe('the guided build', () => {
       expect(screen.getByLabelText('Leads')).toHaveValue('no');
       expect(screen.getByLabelText('Leads')).toBeEnabled();
       await fillDepartment(user);
-      expect(screen.getByRole('button', { name: 'Check my duties →' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Check my duties' })).toBeDisabled();
       expect(screen.getByTestId('build-gate-reason')).toHaveTextContent('Enter how many people this position supervises.');
 
       await user.type(screen.getByLabelText(/How many people/), '4');
       const checks = countChecks('in_envelope');
-      await user.click(screen.getByRole('button', { name: 'Check my duties →' }));
-      await screen.findByTestId('requirements-intro');
+      await user.click(screen.getByRole('button', { name: 'Check my duties' }));
+      await screen.findByRole('button', { name: 'Continue to requirements →' });
       expect([checks[0].supervises, checks[0].supervisesCount]).toEqual([true, 4]);
     });
 

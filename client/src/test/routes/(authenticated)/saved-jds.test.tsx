@@ -1,6 +1,6 @@
 import { renderRoute, setupRouteTest } from '@/test/renderRoute.tsx';
 import { testServer } from '@/test/mswUtils.ts';
-import { fillDepartment } from '@/test/build.ts';
+import { checkAndContinue, fillDepartment } from '@/test/build.ts';
 import type { BuildRequest, SavedJd, SavedJdSummary } from '@/lib/contracts.ts';
 import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -125,7 +125,7 @@ describe('saved JDs', () => {
     renderRoute({ initialPath: '/class/009605-lab-ast-1' });
 
     await fillDepartment(user);
-    await user.click(await screen.findByRole('button', { name: /Check my duties/ }));
+    await checkAndContinue(user);
     await user.click(await screen.findByRole('button', { name: /Assemble the JD/ }));
     expect(await screen.findByTestId('saved-status')).toHaveTextContent('Saved as Ready');
     expect(screen.getByTestId('corpus-note')).toHaveTextContent(/Added to this class’s corpus/);
@@ -133,7 +133,7 @@ describe('saved JDs', () => {
     // Make changes and assemble again: the second request names the saved record.
     await user.click(screen.getByRole('button', { name: 'Make changes' }));
     await fillDepartment(user);
-    await user.click(await screen.findByRole('button', { name: /Check my duties/ }));
+    await checkAndContinue(user);
     await user.click(await screen.findByRole('button', { name: /Assemble the JD/ }));
     await waitFor(() => expect(sent).toEqual([null, 42]));
   });
@@ -215,7 +215,7 @@ describe('saved JDs', () => {
     renderRoute({ initialPath: '/class/009605-lab-ast-1' });
 
     await fillDepartment(user);
-    await user.click(await screen.findByRole('button', { name: /Check my duties/ }));
+    await checkAndContinue(user);
     await user.click(await screen.findByRole('button', { name: /Assemble the JD/ }));
 
     expect(await screen.findByTestId('from-envelope')).toHaveTextContent(/no AI review was needed/);
