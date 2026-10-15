@@ -75,6 +75,27 @@ describe('build allocation', () => {
     expect(screen.getByRole('button', { name: /Check my duties/ })).toBeEnabled();
   });
 
+  it('rebalances the kept time to 100% in proportion to each function\'s share', async () => {
+    const user = userEvent.setup();
+    await openBuild(user);
+    await waitFor(() => screen.getByTestId('allocation-total'));
+
+    const pcts = () =>
+      screen.getAllByRole('spinbutton', { name: /^Percent of time for / }).map((i) => Number((i as HTMLInputElement).value));
+    const before = pcts();
+    await user.click(screen.getAllByRole('checkbox', { name: /^Include / })[0]);
+
+    await user.click(await screen.findByRole('button', { name: 'Rebalance to 100%' }));
+
+    await waitFor(() => expect(screen.getByTestId('allocation-total')).toHaveTextContent('100%'));
+    expect(screen.getByRole('button', { name: /Check my duties/ })).toBeEnabled();
+    // The kept functions grew in proportion to their shares, not by the same amount each.
+    const kept = before.slice(1);
+    const after = pcts().slice(1);
+    const scale = 100 / kept.reduce((a, b) => a + b, 0);
+    after.forEach((p, i) => expect(Math.abs(p - kept[i] * scale)).toBeLessThan(1));
+  });
+
   it('treats over-allocation the same way', async () => {
     const user = userEvent.setup();
     await openBuild(user);
