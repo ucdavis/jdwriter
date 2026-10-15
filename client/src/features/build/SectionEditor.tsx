@@ -1,6 +1,7 @@
 import { AddRow, Badge, Card, Eyebrow } from '@/shared/ui/primitives.tsx';
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { LineEditor } from './LineEditor.tsx';
+import type { CheckedChange } from '@/lib/contracts.ts';
 import type { Item } from './useBuildState.ts';
 
 /**
@@ -16,12 +17,15 @@ export const SectionEditor = ({
   items,
   setItems,
   title,
+  verdicts,
 }: {
   /** Why an addition is refused, or null when it may be added. */
   guardAdd: (t: string) => string | null;
   items: Item[];
   setItems: Dispatch<SetStateAction<Item[]>>;
   title: string;
+  /** The current check's verdict on each added or edited line, by its text. */
+  verdicts?: Map<string, CheckedChange>;
 }) => {
   const [draft, setDraft] = useState('');
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -62,6 +66,7 @@ export const SectionEditor = ({
             label={it.original ?? it.text}
             onChange={(next) => setItems((arr) => arr.map((x, j) => (j === i ? next : x)))}
             onRemove={() => setItems((arr) => arr.filter((_, j) => j !== i))}
+            verdict={it.kept ? verdicts?.get(it.text.trim()) : undefined}
           />
         ))}
       </ul>

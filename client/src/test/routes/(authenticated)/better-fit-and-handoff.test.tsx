@@ -21,7 +21,7 @@ const check = (over: Partial<EnvelopeCheckResponse>): EnvelopeCheckResponse => (
 const reviewAndContinue = async (user: ReturnType<typeof userEvent.setup>) => {
   renderRoute({ initialPath: '/class/009605-lab-ast-1' });
   await fillDepartment(user);
-  await user.click(await screen.findByRole('button', { name: 'Check my duties →' }));
+  await user.click(await screen.findByRole('button', { name: 'Check my duties' }));
 };
 
 describe('a borderline fit', () => {
@@ -50,8 +50,8 @@ describe('a borderline fit', () => {
       'href',
       '/class/004767-budget-analyst-2'
     );
-    // Assembling here is still the normal path, and the search already ran.
-    expect(screen.getByRole('button', { name: 'Assemble the JD →' })).toBeEnabled();
+    // Continuing is still the normal path, and the search already ran.
+    expect(screen.getByRole('button', { name: 'Continue to requirements →' })).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'Look for a better fit' })).not.toBeInTheDocument();
   });
 

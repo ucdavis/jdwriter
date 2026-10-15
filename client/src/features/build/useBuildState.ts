@@ -176,6 +176,9 @@ export const useBuildState = (
   const patchResp = (index: number, patch: Partial<RespState>) =>
     setResps((rs) => rs.map((r, i) => (i === index ? { ...r, ...patch } : r)));
 
+  /** Kept responsibilities with no duty left under them: each needs at least one, or must be dropped. */
+  const emptyFunctions = resps.filter((r) => r.functionKept && !r.duties.some(live)).map((r) => r.functionName);
+
   const totalPct = resps
     .filter((r) => r.functionKept)
     .reduce((sum, r) => sum + (Number(r.pctTime) || 0), 0);
@@ -286,6 +289,7 @@ export const useBuildState = (
     department,
     editedCount: editedItems.length,
     education,
+    emptyFunctions,
     guardAdd,
     leads,
     minKSA,

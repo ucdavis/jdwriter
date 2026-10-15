@@ -88,9 +88,11 @@ const Progress = ({ onGo, step }: { onGo: (step: Step) => void; step: Step }) =>
  * The guided build, in three steps a new author can follow without scrolling past the envelope:
  *
  * 1. Duties — tailor the key responsibilities to 100% time, then check them against the class.
- * 2. Requirements — the check's result, then qualifications, work environment and the rest. The
- *    final check runs when they assemble; if nothing it reads changed since the duties check, it
- *    is not asked twice.
+ *    The check's result shows on this page, each added or edited line with its own verdict, and
+ *    the author continues only once the check is current: an edit after it means checking again.
+ *    A build that changed nothing from the standard is answered at once, without the model.
+ * 2. Requirements — qualifications, work environment and the rest. The final check runs when they
+ *    assemble; if nothing it reads changed since the duties check, it is not asked twice.
  * 3. Your JD — it passed, what to do next, downloads, and a way back to make changes.
  *
  * The envelope check polices ADDITIONS only, and routes work that has outgrown the class to a real
@@ -146,7 +148,17 @@ export const BuildFlow = ({
   const busy = check.isPending || assemble.isPending;
   const balanced = state.totalPct === 100;
   const hasDepartment = state.department.trim().length > 0;
-  const ready = balanced && hasDepartment && state.supervisionReady;
+  const ready = balanced && hasDepartment && state.supervisionReady && state.emptyFunctions.length === 0;
+
+  // The duties check, while it still describes the build: an edit since makes it stale.
+  const dutiesCurrent = dutiesCheck !== null && dutiesCheck.key === state.checkKey ? dutiesCheck.result : null;
+  // Each checked line's verdict, by its text, to show under the line itself.
+  const verdicts = new Map((dutiesCurrent?.changes ?? []).map((c) => [c.text.trim(), c]));
+  // The final check's, likewise, on the requirements step — while it still describes the build.
+  const finalVerdicts =
+    finalCheck !== null && finalCheck.key === state.checkKey
+      ? new Map((finalCheck.result.changes ?? []).map((c) => [c.text.trim(), c]))
+      : undefined;
 
   const go = (next: Step) => {
     // A step change answers afresh; an earlier search described a different build.
@@ -155,13 +167,13 @@ export const BuildFlow = ({
     setStep(next);
   };
 
-  const checkDuties = () =>
+  // The check stays on this page; continuing is a separate step the author takes after reading it.
+  const checkDuties = () => {
+    const key = state.checkKey;
     check.mutate(state.buildRequest(slug), {
-      onSuccess: (result) => {
-        setDutiesCheck({ key: state.checkKey, result });
-        go('requirements');
-      },
+      onSuccess: (result) => setDutiesCheck({ key, result }),
     });
+  };
 
   const runAssemble = () =>
     assemble.mutate(
@@ -200,6 +212,8 @@ export const BuildFlow = ({
     ? 'Enter the department before continuing.'
     : !state.supervisionReady
       ? 'Enter how many people this position supervises.'
+      : state.emptyFunctions.length > 0
+        ? `“${state.emptyFunctions[0]}” has no duties left — keep at least one, or drop the whole responsibility.`
       : balanced
       ? null
       : state.totalPct < 100
@@ -245,10 +259,10 @@ export const BuildFlow = ({
           <Eyebrow>Build your job description</Eyebrow>
           <p className="mt-1 text-base leading-relaxed" data-testid="duties-intro">
             Here is where you build your custom job description (JD) based on the standard
-            envelope. Below are the standard duties for the job. Select which items you&apos;d
-            like to remove, or add the items you want in each section. Then make sure the total
-            balances to 100% time. When you&apos;re done, we&apos;ll check it all against the
-            standard and let you know if we need to make any changes.
+            envelope. Below are the standard duties for the job. Uncheck what you&apos;d like to
+            remove, edit any line in place, or add the items you want in each section. Then make
+            sure the total balances to 100% time. When you&apos;re done, check your duties: we&apos;ll
+            show right here how each change fits the standard before you move on.
           </p>
           </div>
 
@@ -304,17 +318,42 @@ export const BuildFlow = ({
           </Card>
 
           <AllocationBar onRedistribute={state.setResps} resps={state.resps} totalPct={state.totalPct} />
-          <DutiesEditor state={state} />
+          <DutiesEditor state={state} verdicts={dutiesCurrent ? verdicts : undefined} />
+
+          {dutiesCurrent ? (
+            <CheckResult
+              betterFit={betterFit}
+              check={dutiesCurrent}
+              currentTitle={title}
+              heading={dutiesCurrent.verdict === 'out_of_envelope' ? 'Check completed — take a look' : 'Check completed!'}
+              onLookForBetterFit={() => betterFit.mutate(state.buildRequest(slug))}
+            />
+          ) : dutiesCheck ? (
+            <p className="text-base text-base-content/65" data-testid="check-stale">
+              You&apos;ve changed your duties since the check — check them again before continuing.
+            </p>
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              className="btn btn-primary btn-sm"
-              disabled={busy || !ready}
-              onClick={checkDuties}
-              type="button"
-            >
-              {busy ? 'Checking…' : 'Check my duties →'}
-            </button>
+            {dutiesCurrent ? (
+              <button
+                className={`btn btn-sm ${dutiesCurrent?.verdict === 'out_of_envelope' ? 'btn-outline' : 'btn-primary'}`}
+                disabled={busy || !ready}
+                onClick={() => go('requirements')}
+                type="button"
+              >
+                {dutiesCurrent?.verdict === 'out_of_envelope' ? 'Continue anyway →' : 'Continue to requirements →'}
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary btn-sm"
+                disabled={busy || !ready}
+                onClick={checkDuties}
+                type="button"
+              >
+                {busy ? 'Checking…' : 'Check my duties'}
+              </button>
+            )}
             {draftButton}
             <CustomizationNote state={state} target={customizationTarget} />
             {gateReason ? (
@@ -328,16 +367,6 @@ export const BuildFlow = ({
 
       {step === 'requirements' ? (
         <>
-          {dutiesCheck ? (
-            <CheckResult
-              betterFit={betterFit}
-              check={dutiesCheck.result}
-              currentTitle={title}
-              heading={dutiesCheck.result.verdict === 'out_of_envelope' ? 'Check completed — take a look' : 'Check completed!'}
-              onLookForBetterFit={() => betterFit.mutate(state.buildRequest(slug))}
-            />
-          ) : null}
-
           <div>
           <Eyebrow>Finish the requirements</Eyebrow>
           <p className="mt-1 text-base leading-relaxed" data-testid="requirements-intro">
@@ -347,17 +376,18 @@ export const BuildFlow = ({
           </p>
           </div>
 
-          <SectionEditor guardAdd={state.guardAdd} items={state.certs} setItems={state.setCerts} title="Licenses & certifications" />
-          <SectionEditor guardAdd={state.guardAdd} items={state.education} setItems={state.setEducation} title="Education" />
-          <SectionEditor guardAdd={state.guardAdd} items={state.workExp} setItems={state.setWorkExp} title="Work experience" />
+          <SectionEditor guardAdd={state.guardAdd} items={state.certs} setItems={state.setCerts} title="Licenses & certifications" verdicts={finalVerdicts} />
+          <SectionEditor guardAdd={state.guardAdd} items={state.education} setItems={state.setEducation} title="Education" verdicts={finalVerdicts} />
+          <SectionEditor guardAdd={state.guardAdd} items={state.workExp} setItems={state.setWorkExp} title="Work experience" verdicts={finalVerdicts} />
           <SectionEditor
             guardAdd={state.guardAdd}
             items={state.minKSA}
             setItems={state.setMinKSA}
             title="Minimum knowledge, skills & abilities"
+            verdicts={finalVerdicts}
           />
-          <SectionEditor guardAdd={state.guardAdd} items={state.prefKSA} setItems={state.setPrefKSA} title="Preferred qualifications" />
-          <SectionEditor guardAdd={state.guardAdd} items={state.workEnv} setItems={state.setWorkEnv} title="Work environment" />
+          <SectionEditor guardAdd={state.guardAdd} items={state.prefKSA} setItems={state.setPrefKSA} title="Preferred qualifications" verdicts={finalVerdicts} />
+          <SectionEditor guardAdd={state.guardAdd} items={state.workEnv} setItems={state.setWorkEnv} title="Work environment" verdicts={finalVerdicts} />
 
           <Card className="p-5">
             <Eyebrow>Included automatically</Eyebrow>

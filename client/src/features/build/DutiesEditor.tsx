@@ -2,6 +2,7 @@ import { AddRow, Badge, Card, Eyebrow } from '@/shared/ui/primitives.tsx';
 import { AddRefusal } from './SectionEditor.tsx';
 import { LineEditor } from './LineEditor.tsx';
 import { useState } from 'react';
+import type { CheckedChange } from '@/lib/contracts.ts';
 import type { useBuildState } from './useBuildState.ts';
 
 type BuildState = ReturnType<typeof useBuildState>;
@@ -11,7 +12,14 @@ type BuildState = ReturnType<typeof useBuildState>;
  * add unit-specific duties, and set % time. Edits stay visible and count as customization — see
  * useBuildState.
  */
-export const DutiesEditor = ({ state }: { state: BuildState }) => {
+export const DutiesEditor = ({
+  state,
+  verdicts,
+}: {
+  state: BuildState;
+  /** The current check's verdict on each added or edited line, by its text. */
+  verdicts?: Map<string, CheckedChange>;
+}) => {
   const balanced = state.totalPct === 100;
   // Which function's add box refused a duty, and why — shown under that box.
   const [refusal, setRefusal] = useState<{ at: number; text: string } | null>(null);
@@ -72,6 +80,7 @@ export const DutiesEditor = ({ state }: { state: BuildState }) => {
                         state.patchResp(ri, { duties: r.duties.map((x, j) => (j === di ? next : x)) })
                       }
                       onRemove={() => state.patchResp(ri, { duties: r.duties.filter((_, j) => j !== di) })}
+                      verdict={d.kept ? verdicts?.get(d.text.trim()) : undefined}
                     >
                       {d.matchedFrom && d.matchedFrom.length > 0 ? (
                         <span className="mt-0.5 block pl-1.5 text-sm text-base-content/55" data-testid="matched-from">
@@ -85,6 +94,12 @@ export const DutiesEditor = ({ state }: { state: BuildState }) => {
                     </LineEditor>
                   ))}
                 </ul>
+                {!r.duties.some((d) => d.kept && d.text.trim() !== '') ? (
+                  <p className="mt-2 text-base text-warning" data-testid="function-needs-duty" role="status">
+                    Keep at least one duty under this responsibility, or uncheck it to drop the whole
+                    responsibility.
+                  </p>
+                ) : null}
                 <AddRow
                   onAdd={() => {
                     const v = r.draft.trim();
