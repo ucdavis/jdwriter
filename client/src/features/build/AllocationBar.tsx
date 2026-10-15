@@ -1,4 +1,5 @@
 import { Badge, Card, Eyebrow } from '@/shared/ui/primitives.tsx';
+import { rebalance } from './rebalance.ts';
 import type { RespState } from './useBuildState.ts';
 
 /**
@@ -54,6 +55,16 @@ export const AllocationBar = ({
     );
   };
 
+  /**
+   * Scale the kept responsibilities to 100% in proportion to their current shares — the quick way
+   * through, and the one that keeps the author's own weighting: a 50/25 split stays two to one.
+   */
+  const rebalanceKept = () => {
+    const next = rebalance(kept.map((r) => Number(r.pctTime) || 0));
+    let k = 0;
+    onRedistribute(resps.map((r) => (r.functionKept ? { ...r, pctTime: next[k++] } : r)));
+  };
+
   /** Give all of the freed time to one responsibility. */
   const giveAllTo = (index: number) =>
     onRedistribute(
@@ -86,7 +97,15 @@ export const AllocationBar = ({
         {!balanced && kept.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
             <button
-              className="btn btn-outline btn-sm"
+              className="btn btn-primary btn-sm"
+              onClick={rebalanceKept}
+              title="Scale each kept responsibility in proportion to its current share, so they total 100%"
+              type="button"
+            >
+              Rebalance to 100%
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
               onClick={distributeEvenly}
               type="button"
             >
