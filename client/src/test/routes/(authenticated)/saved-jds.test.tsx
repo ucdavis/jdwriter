@@ -112,6 +112,60 @@ describe('saved JDs', () => {
     expect(screen.getByText('Supports greenhouse research.')).toBeInTheDocument();
   });
 
+  it('rewrites the summary in place, marks it as the author’s, and saves it to the record', async () => {
+    const user = userEvent.setup();
+    const sent: { id: string; summary: string }[] = [];
+    testServer.use(
+      http.get('/api/jds/:id', () => HttpResponse.json(saved())),
+      http.put('/api/jds/:id/summary', async ({ params, request }) => {
+        const { summary } = (await request.json()) as { summary: string };
+        sent.push({ id: String(params.id), summary });
+        return HttpResponse.json({ jobSummary: summary, summaryEdited: true });
+      })
+    );
+    renderRoute({ initialPath: '/jds/7' });
+
+    await user.click(await screen.findByRole('button', { name: 'Edit summary' }));
+    const box = screen.getByRole('textbox', { name: 'Job summary' });
+    expect(box).toHaveValue('Supports greenhouse research.');
+    await user.clear(box);
+    await user.type(box, '  Runs the teaching greenhouse and its plant sale.  ');
+    await user.click(screen.getByRole('button', { name: 'Save summary' }));
+
+    expect(await screen.findByTestId('job-summary')).toHaveTextContent('Runs the teaching greenhouse and its plant sale.');
+    expect(screen.getByTestId('summary-edited')).toHaveTextContent('Written by the author');
+    expect(sent).toEqual([{ id: '7', summary: 'Runs the teaching greenhouse and its plant sale.' }]);
+  });
+
+  it('cancels a summary edit without saving, and will not save an empty one', async () => {
+    const user = userEvent.setup();
+    const put = vi.fn();
+    testServer.use(
+      http.get('/api/jds/:id', () => HttpResponse.json(saved())),
+      http.put('/api/jds/:id/summary', () => {
+        put();
+        return HttpResponse.json({ jobSummary: 'x', summaryEdited: true });
+      })
+    );
+    renderRoute({ initialPath: '/jds/7' });
+
+    await user.click(await screen.findByRole('button', { name: 'Edit summary' }));
+    await user.clear(screen.getByRole('textbox', { name: 'Job summary' }));
+    expect(screen.getByRole('button', { name: 'Save summary' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByTestId('job-summary')).toHaveTextContent('Supports greenhouse research.');
+    expect(screen.queryByTestId('summary-edited')).not.toBeInTheDocument();
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it('shows a summary the author already rewrote as theirs', async () => {
+    testServer.use(http.get('/api/jds/:id', () => HttpResponse.json(saved({ summaryEdited: true }))));
+    renderRoute({ initialPath: '/jds/7' });
+
+    expect(await screen.findByTestId('summary-edited')).toHaveTextContent('Written by the author');
+  });
+
   it('assembling saves the JD, and assembling again revises the same one', async () => {
     const user = userEvent.setup();
     const sent: Array<number | null | undefined> = [];

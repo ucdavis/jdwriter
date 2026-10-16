@@ -139,6 +139,35 @@ public class JdsController : ApiControllerBase
     /// <summary>JDWriter's absolute root as this request reached it, mount point included.</summary>
     private string AppBaseUrl() => $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
 
+    public sealed class SummaryRequest
+    {
+        public string Summary { get; set; } = "";
+    }
+
+    /// <summary>A summary longer than a few paragraphs is not a summary.</summary>
+    public const int MaxSummaryLength = 2000;
+
+    /// <summary>Rewrite an assembled JD's summary (yours; an admin may edit any). 404 for anyone else's.</summary>
+    [HttpPut("{id:int}/summary")]
+    public async Task<IActionResult> SetSummary(int id, SummaryRequest body, CancellationToken ct)
+    {
+        var text = (body.Summary ?? "").Trim();
+        if (text.Length == 0)
+        {
+            return BadRequest(new { message = "The summary can’t be empty." });
+        }
+
+        if (text.Length > MaxSummaryLength)
+        {
+            return BadRequest(new { message = $"Keep the summary under {MaxSummaryLength:N0} characters." });
+        }
+
+        var saved = await _store.SetSummaryAsync(id, text, await User.IdAsync(_db, ct), User.IsInRole(AppRoles.Admin), ct);
+        return saved
+            ? Ok(new { jobSummary = text, summaryEdited = true })
+            : NotFound(new { message = "That job description was not found." });
+    }
+
     /// <summary>Delete one of your saved JDs (an admin may delete any). 404 for anyone else's.</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)

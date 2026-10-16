@@ -125,6 +125,9 @@ public sealed class ComplianceEditRecord
 public sealed class AssembledJd
 {
     public string Slug { get; set; } = "";
+
+    /// <summary>Whether the author has rewritten the summary since it was assembled. Never, on a fresh assembly.</summary>
+    public bool SummaryEdited { get; set; }
     public string Title { get; set; } = "";
     public string WorkingTitle { get; set; } = "";
     public string Department { get; set; } = "";
