@@ -424,6 +424,8 @@ export type AssembledJd = {
   slug: string;
   /** Draft until the time totals exactly 100%. */
   status: JdStatus;
+  /** The author has rewritten the summary since it was assembled. Never, on a fresh assembly. */
+  summaryEdited?: boolean;
   /** As the author stated it; null when not stated. */
   supervises?: boolean | null;
   supervisesCount?: number | null;

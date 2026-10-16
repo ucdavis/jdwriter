@@ -56,6 +56,9 @@ public sealed class SavedJd
 
     /// <summary>False for a draft saved before it was ever assembled.</summary>
     public bool Assembled { get; set; }
+
+    /// <summary>Whether the author has rewritten the assembled summary.</summary>
+    public bool SummaryEdited { get; set; }
     public string? CreatedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -178,6 +181,7 @@ public sealed class AuthoredJdStore
         existing.SupervisesCount = fresh.SupervisesCount;
         existing.Leads = fresh.Leads;
         existing.JobSummary = fresh.JobSummary;
+        existing.SummaryEdited = false;
         existing.Status = fresh.Status;
         existing.UnallocatedPct = fresh.UnallocatedPct;
         existing.Notes = fresh.Notes;
@@ -224,6 +228,38 @@ public sealed class AuthoredJdStore
 
         assembled.InCorpus = jd.InCorpus;
         assembled.CorpusNote = jd.CorpusNote;
+    }
+
+    /// <summary>
+    /// Replace an assembled JD's summary with the author's own wording. Only its author may — or an
+    /// admin. The summary is prose about the position, not a duty, so it isn't put through the
+    /// envelope check; it is marked as the author's, and the JD's corpus copy takes it too.
+    /// Returns false when there is no such assembled JD visible to the caller.
+    /// </summary>
+    public async Task<bool> SetSummaryAsync(int id, string summary, int? userId, bool isAdmin, CancellationToken ct = default)
+    {
+        var jd = await _db.AuthoredJds.FirstOrDefaultAsync(a => a.Id == id, ct);
+        if (jd == null || jd.AssembledAt == null || (!isAdmin && (userId == null || jd.CreatedByUserId != userId)))
+        {
+            return false;
+        }
+
+        var text = summary.Trim();
+        if (text == jd.JobSummary)
+        {
+            return true;
+        }
+
+        jd.JobSummary = text;
+        jd.SummaryEdited = true;
+        jd.UpdatedAt = DateTimeOffset.UtcNow;
+        foreach (var copy in await _db.JobDescriptions.Where(j => j.AuthoredJdId == id).ToListAsync(ct))
+        {
+            copy.JobSummary = text;
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return true;
     }
 
     /// <summary>
@@ -348,6 +384,7 @@ public sealed class AuthoredJdStore
             CorpusNote = a.CorpusNote,
             DraftState = a.DraftState == null ? null : System.Text.Json.JsonDocument.Parse(a.DraftState).RootElement.Clone(),
             Assembled = a.AssembledAt != null,
+            SummaryEdited = a.SummaryEdited,
             CreatedBy = a.CreatedBy?.DisplayName ?? a.CreatedBy?.LoginId,
             CreatedAt = a.CreatedAt,
             UpdatedAt = a.UpdatedAt,

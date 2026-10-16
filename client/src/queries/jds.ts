@@ -17,6 +17,19 @@ export const savedJdQueryOptions = (id: number) => ({
   queryKey: ['jds', 'one', id] as const,
 });
 
+/** Rewrite an assembled JD's summary. Its downloads and its corpus copy follow the saved record. */
+export const useSetSummary = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, summary }: { id: number; summary: string }) =>
+      fetchJson<{ jobSummary: string; summaryEdited: boolean }>(`/api/jds/${id}/summary`, {
+        body: JSON.stringify({ summary }),
+        method: 'PUT',
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['jds'] }),
+  });
+};
+
 /** Delete a saved JD. Its corpus copy, if it has one, goes with it. */
 export const useDeleteJd = () => {
   const queryClient = useQueryClient();

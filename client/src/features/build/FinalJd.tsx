@@ -1,5 +1,6 @@
 import { Badge, Card, Eyebrow, Note } from '@/shared/ui/primitives.tsx';
 import type { AssembledJd } from '@/lib/contracts.ts';
+import { EditableSummary } from './EditableSummary.tsx';
 import { Link } from '@tanstack/react-router';
 import { appUrl } from '@/lib/basePath.ts';
 import { NextSteps } from './NextSteps.tsx';
@@ -147,7 +148,13 @@ export const FinalJd = ({
           ) : null}
 
           <Section title="Job Summary">
-            <p className="text-base leading-relaxed">{jd.jobSummary}</p>
+            {/* Keyed so a fresh assembly starts from its own summary, not the last edit. */}
+            <EditableSummary
+              authoredJdId={result.authoredJdId}
+              edited={result.summaryEdited ?? false}
+              key={`${result.authoredJdId}:${jd.jobSummary}`}
+              summary={jd.jobSummary}
+            />
           </Section>
 
           {/* The total is displayed because it is a compliance property of the document,

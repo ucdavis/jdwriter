@@ -32,6 +32,12 @@ public class AuthoredJd
 
     public string JobSummary { get; set; } = "";
 
+    /// <summary>
+    /// The author rewrote the model's summary after assembling. Assembling again writes a fresh one
+    /// (the duties may have changed under it) and clears this.
+    /// </summary>
+    public bool SummaryEdited { get; set; }
+
     // ---- provenance
     public int? CreatedByUserId { get; set; }
     public AppUser? CreatedBy { get; set; }

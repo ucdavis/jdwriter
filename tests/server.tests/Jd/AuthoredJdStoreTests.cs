@@ -118,6 +118,54 @@ public class AuthoredJdStoreTests
         (await db.AuthoredJdResponsibilities.CountAsync()).Should().Be(0, "its content goes with it");
     }
 
+    [Fact]
+    public async Task An_author_rewrites_the_summary_which_is_marked_theirs_and_reaches_the_corpus_copy()
+    {
+        var (db, profile, alice, _) = await Seed();
+        var store = new AuthoredJdStore(db);
+        var id = await store.SaveAsync(Assembled("Lab Tech", ("Bench work", 100)), new BuildInputs(), profile, alice, null);
+        db.JobDescriptions.Add(new JobDescription { SourceFile = "authored/x", AuthoredJdId = id, JobSummary = "Summary for Lab Tech" });
+        await db.SaveChangesAsync();
+
+        (await store.SetSummaryAsync(id, "  Runs the teaching greenhouse.  ", alice, isAdmin: false)).Should().BeTrue();
+
+        var saved = (await store.GetAsync(id))!.Value.Jd;
+        saved.Jd.JobSummary.Should().Be("Runs the teaching greenhouse.");
+        saved.SummaryEdited.Should().BeTrue();
+        (await db.JobDescriptions.SingleAsync()).JobSummary.Should().Be("Runs the teaching greenhouse.");
+    }
+
+    [Fact]
+    public async Task Only_the_author_or_an_admin_rewrites_a_summary_and_only_once_assembled()
+    {
+        var (db, profile, alice, bob) = await Seed();
+        var store = new AuthoredJdStore(db);
+        var id = await store.SaveAsync(Assembled("Lab Tech", ("Bench work", 100)), new BuildInputs(), profile, alice, null);
+        var draft = await store.SaveDraftAsync(Kept(("A", 100)), profile, alice, null, State);
+
+        (await store.SetSummaryAsync(id, "Bob's words.", bob, isAdmin: false)).Should().BeFalse();
+        (await store.SetSummaryAsync(draft, "No summary yet.", alice, isAdmin: false)).Should().BeFalse("a draft has no assembled summary to edit");
+        (await store.GetAsync(id))!.Value.Jd.SummaryEdited.Should().BeFalse();
+
+        (await store.SetSummaryAsync(id, "An admin's words.", bob, isAdmin: true)).Should().BeTrue();
+        (await store.GetAsync(id))!.Value.Jd.Jd.JobSummary.Should().Be("An admin's words.");
+    }
+
+    [Fact]
+    public async Task Assembling_again_writes_a_fresh_summary_and_clears_the_mark()
+    {
+        var (db, profile, alice, _) = await Seed();
+        var store = new AuthoredJdStore(db);
+        var id = await store.SaveAsync(Assembled("Lab Tech", ("Bench work", 100)), new BuildInputs(), profile, alice, null);
+        await store.SetSummaryAsync(id, "Runs the teaching greenhouse.", alice, isAdmin: false);
+
+        await store.SaveAsync(Assembled("Lab Tech II", ("Bench work", 100)), new BuildInputs(), profile, alice, id);
+
+        var saved = (await store.GetAsync(id))!.Value.Jd;
+        saved.Jd.JobSummary.Should().Be("Summary for Lab Tech II", "the duties may have changed under the old summary");
+        saved.SummaryEdited.Should().BeFalse();
+    }
+
     private static BuildInputs Kept(params (string Name, int Pct)[] fns) => new()
     {
         WorkingTitle = "Greenhouse Tech",
