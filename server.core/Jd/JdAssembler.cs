@@ -39,6 +39,13 @@ public sealed class BuildInputs
     /// </summary>
     public List<EditedItem> EditedItems { get; set; } = [];
 
+    /// <summary>
+    /// The author's own job summary, in place of the class's: the class's wording as Original, theirs
+    /// as Text. Null when they kept the class's summary. Checked like an edit, and the JD carries it
+    /// as written.
+    /// </summary>
+    public EditedItem? SummaryEdit { get; set; }
+
     public string Notes { get; set; } = "";
 
     /// <summary>Whether the position supervises others. Null when not stated. Never true for a represented class.</summary>
@@ -317,7 +324,19 @@ public sealed class JdAssembler : IJdAssembler
         var undeclared = kept
             .Where(t => !standard.Contains(ItemKey(t)) && declared.Add(ItemKey(t)))
             .ToList();
-        if (undeclared.Count == 0 && edits.Count == inputs.EditedItems.Count)
+
+        // A summary is the author's own only when it says something other than the class's; its
+        // original is always the class's summary, whatever the request claimed.
+        var classSummary = ClassSummary(profile);
+        var summaryText = inputs.SummaryEdit?.Text.Trim() ?? "";
+        EditedItem? summaryEdit = null;
+        if (summaryText.Length > 0 && ItemKey(summaryText) != ItemKey(classSummary))
+        {
+            summaryEdit = new EditedItem { Original = classSummary, Text = summaryText };
+        }
+
+        var summaryAsSent = summaryEdit?.Text == inputs.SummaryEdit?.Text && summaryEdit?.Original == inputs.SummaryEdit?.Original;
+        if (undeclared.Count == 0 && edits.Count == inputs.EditedItems.Count && summaryAsSent)
         {
             return inputs;
         }
@@ -336,6 +355,7 @@ public sealed class JdAssembler : IJdAssembler
             KeptWorkEnvironment = inputs.KeptWorkEnvironment,
             AddedItems = [.. inputs.AddedItems, .. undeclared],
             EditedItems = edits,
+            SummaryEdit = summaryEdit,
             Notes = inputs.Notes,
             Supervises = inputs.Supervises,
             SupervisesCount = inputs.SupervisesCount,
@@ -349,21 +369,42 @@ public sealed class JdAssembler : IJdAssembler
             .Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
     public bool HasAdditions(BuildInputs inputs) =>
-        inputs.AddedItems.Count > 0 || inputs.EditedItems.Count > 0 || inputs.Notes.Trim().Length > 0;
+        inputs.AddedItems.Count > 0 || inputs.EditedItems.Count > 0 || inputs.SummaryEdit != null
+        || inputs.Notes.Trim().Length > 0;
 
-    /// <summary>Each addition, then each edit, in the order the check numbers them.</summary>
-    internal static List<(string Text, string? Original)> NumberedChanges(BuildInputs inputs) =>
-        [.. inputs.AddedItems.Select(a => (a, (string?)null)), .. inputs.EditedItems.Select(e => (e.Text, (string?)e.Original))];
+    /// <summary>The class's own job summary: what a JD says unless its author writes their own.</summary>
+    public static string ClassSummary(ClassProfile p) => p.Envelope?.Summary ?? "";
+
+    internal readonly record struct Change(string Kind, string Text, string? Original);
+
+    /// <summary>Each addition, then each edit, then a rewritten summary, in the order the check numbers them.</summary>
+    internal static List<Change> NumberedChanges(BuildInputs inputs)
+    {
+        List<Change> changes =
+        [
+            .. inputs.AddedItems.Select(a => new Change("added", a, null)),
+            .. inputs.EditedItems.Select(e => new Change("edited", e.Text, e.Original)),
+        ];
+        if (inputs.SummaryEdit != null)
+        {
+            changes.Add(new Change("summary", inputs.SummaryEdit.Text, inputs.SummaryEdit.Original));
+        }
+
+        return changes;
+    }
 
     /// <summary>The changes numbered, for the check to answer change by change; then any notes.</summary>
-    internal static string ChangesText(List<(string Text, string? Original)> changes, BuildInputs inputs)
+    internal static string ChangesText(List<Change> changes, BuildInputs inputs)
     {
         var parts = new List<string>();
         if (changes.Count > 0)
         {
-            parts.Add(string.Join('\n', changes.Select((c, i) => c.Original is null
-                ? $"{i + 1}. Added: {c.Text}"
-                : $"{i + 1}. Edited a standard item (judge whether the edit changes the duty's scope): \"{c.Original}\" → \"{c.Text}\"")));
+            parts.Add(string.Join('\n', changes.Select((c, i) => c.Kind switch
+            {
+                "added" => $"{i + 1}. Added: {c.Text}",
+                "summary" => $"{i + 1}. Rewrote the job summary (judge whether it describes work beyond the class): \"{c.Original}\" → \"{c.Text}\"",
+                _ => $"{i + 1}. Edited a standard item (judge whether the edit changes the duty's scope): \"{c.Original}\" → \"{c.Text}\"",
+            })));
         }
 
         if (inputs.Notes.Trim().Length > 0)
@@ -391,6 +432,11 @@ public sealed class JdAssembler : IJdAssembler
                 "Edited standard items (the class's wording → the manager's wording; judge whether the edit "
                 + "changes the duty's scope):\n"
                 + string.Join('\n', inputs.EditedItems.Select(e => $"- \"{e.Original}\" → \"{e.Text}\"")));
+        }
+
+        if (inputs.SummaryEdit != null)
+        {
+            parts.Add($"Rewrote the job summary: \"{inputs.SummaryEdit.Original}\" → \"{inputs.SummaryEdit.Text}\"");
         }
 
         if (inputs.Notes.Trim().Length > 0)
@@ -497,7 +543,7 @@ public sealed class JdAssembler : IJdAssembler
                 var said = verdict.Changes.FirstOrDefault(v => v.Number == i + 1);
                 return new CheckedChange
                 {
-                    Kind = c.Original is null ? "added" : "edited",
+                    Kind = c.Kind,
                     Text = c.Text,
                     Original = c.Original,
                     Verdict = said?.Verdict,
@@ -803,8 +849,12 @@ public sealed class JdAssembler : IJdAssembler
     /// True when the author kept the envelope exactly as offered and wrote no notes — nothing for
     /// a model to tailor, review, or learn from.
     /// </summary>
+    /// <summary>
+    /// Nothing but the class's own content, as kept — though the summary may be the author's: that
+    /// needs no generation, since the envelope path carries it as written.
+    /// </summary>
     public static bool IsUnchanged(ClassProfile profile, BuildInputs inputs) =>
-        inputs.Notes.Trim().Length == 0 && !CorpusContribution.Differs(inputs, profile.Envelope);
+        inputs.Notes.Trim().Length == 0 && !CorpusContribution.Differs(inputs, profile.Envelope, countSummary: false);
 
     public async Task<AssembledJd> AssembleAsync(
         ClassProfile profile,
@@ -827,6 +877,14 @@ public sealed class JdAssembler : IJdAssembler
 
         var draft = await GenerateAsync(profile, inputs, ct);
 
+        // The summary is what the author saw on the build screen: the class's, or their own. The
+        // model's is used only when the class has none to show.
+        var shown = JobSummary(profile, inputs);
+        if (shown.Length > 0)
+        {
+            draft.JobSummary = shown;
+        }
+
         // Deterministic rules first: cheap, auditable, reproducible, and they keep the model from
         // spending tokens on substitutions a regex can make.
         var ruled = ComplianceEngine.ApplyRulePass(draft, rules, _logger);
@@ -836,9 +894,13 @@ public sealed class JdAssembler : IJdAssembler
     }
 
     /// <summary>The envelope, as kept, laid out as a JD — what generation would start from.</summary>
+    /// <summary>The author's summary when they wrote one, else the class's.</summary>
+    private static string JobSummary(ClassProfile p, BuildInputs inputs) =>
+        inputs.SummaryEdit?.Text ?? ClassSummary(p);
+
     private static Jd FromEnvelope(ClassProfile p, BuildInputs inputs) => new()
     {
-        JobSummary = p.Envelope?.Summary ?? "",
+        JobSummary = JobSummary(p, inputs),
         KeyResponsibilities =
         [
             .. inputs.KeptResponsibilities
@@ -871,6 +933,7 @@ public sealed class JdAssembler : IJdAssembler
             SupervisesCount = inputs.Supervises == true ? inputs.SupervisesCount : null,
             Leads = inputs.Leads,
             Jd = jd,
+            SummaryEdited = inputs.SummaryEdit != null,
             UnallocatedPct = UnallocatedPct(jd.KeyResponsibilities),
             ComplianceEdits = edits,
         };

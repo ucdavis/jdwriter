@@ -18,6 +18,7 @@ public static class RequestLimits
 
     private const int TitleChars = 300;
     private const int NotesChars = 4_000;
+    private const int SummaryChars = 2_000;
     private const int ItemChars = 2_000;
     private const int ItemsPerList = 200;
     private const int Functions = 40;
@@ -36,6 +37,7 @@ public static class RequestLimits
     {
         var lists = new[] { b.KeptCerts, b.KeptEducation, b.KeptWorkExperience, b.KeptMinKSA, b.KeptPrefKSA, b.KeptWorkEnvironment, b.AddedItems };
         if (b.WorkingTitle.Length > TitleChars || b.Department.Length > TitleChars || b.Notes.Length > NotesChars
+            || (b.JobSummary ?? "").Length > SummaryChars
             || b.KeptResponsibilities.Count > Functions
             || b.KeptResponsibilities.Any(r => r.Duties.Count > DutiesPerFunction || r.FunctionName.Length > TitleChars)
             || lists.Any(l => l.Count > ItemsPerList)
@@ -52,7 +54,7 @@ public static class RequestLimits
             return TooLarge;
         }
 
-        return texts.Sum(t => (t ?? "").Length) + b.Notes.Length > TotalChars ? TooLarge : null;
+        return texts.Sum(t => (t ?? "").Length) + b.Notes.Length + (b.JobSummary ?? "").Length > TotalChars ? TooLarge : null;
     }
 
     public static string? Distilled(DistilledJd? d)

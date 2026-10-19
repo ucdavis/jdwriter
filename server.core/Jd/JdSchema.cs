@@ -125,6 +125,9 @@ public sealed class ComplianceEditRecord
 public sealed class AssembledJd
 {
     public string Slug { get; set; } = "";
+
+    /// <summary>Whether the JD carries the author's own summary rather than the class's.</summary>
+    public bool SummaryEdited { get; set; }
     public string Title { get; set; } = "";
     public string WorkingTitle { get; set; } = "";
     public string Department { get; set; } = "";
@@ -222,6 +225,7 @@ public sealed class AssembledJd
             SupervisesCount = SupervisesCount,
             Leads = Leads,
             JobSummary = Jd.JobSummary,
+            SummaryEdited = SummaryEdited,
             CreatedByUserId = createdByUserId,
             CreatedAt = now,
             UpdatedAt = now,

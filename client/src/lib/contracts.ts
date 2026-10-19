@@ -331,6 +331,8 @@ export type BuildRequest = {
   draftState?: unknown;
   /** Standard items the author reworded, each with the wording it replaced: compared, not counted as new. */
   editedItems?: Array<{ original: string; text: string }>;
+  /** The author's own job summary; null keeps the class's. */
+  jobSummary?: string | null;
   keptCerts: string[];
   keptEducation: string[];
   keptMinKSA: string[];
@@ -350,8 +352,8 @@ export type BuildRequest = {
 
 /** One of the author's changes, as the envelope check judged it. */
 export type CheckedChange = {
-  kind: 'added' | 'edited';
-  /** For an edit, the standard wording it replaced. */
+  kind: 'added' | 'edited' | 'summary';
+  /** For an edit or a rewritten summary, the class's wording it replaced. */
   original: string | null;
   /** How it fits the class, or what takes it outside; empty when the check didn't say. */
   reason: string;
@@ -424,6 +426,8 @@ export type AssembledJd = {
   slug: string;
   /** Draft until the time totals exactly 100%. */
   status: JdStatus;
+  /** The JD carries the author's own summary rather than the class's. */
+  summaryEdited?: boolean;
   /** As the author stated it; null when not stated. */
   supervises?: boolean | null;
   supervisesCount?: number | null;

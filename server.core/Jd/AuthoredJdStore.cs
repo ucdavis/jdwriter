@@ -56,6 +56,9 @@ public sealed class SavedJd
 
     /// <summary>False for a draft saved before it was ever assembled.</summary>
     public bool Assembled { get; set; }
+
+    /// <summary>Whether the JD carries the author's own summary rather than the class's.</summary>
+    public bool SummaryEdited { get; set; }
     public string? CreatedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -178,6 +181,7 @@ public sealed class AuthoredJdStore
         existing.SupervisesCount = fresh.SupervisesCount;
         existing.Leads = fresh.Leads;
         existing.JobSummary = fresh.JobSummary;
+        existing.SummaryEdited = fresh.SummaryEdited;
         existing.Status = fresh.Status;
         existing.UnallocatedPct = fresh.UnallocatedPct;
         existing.Notes = fresh.Notes;
@@ -348,6 +352,7 @@ public sealed class AuthoredJdStore
             CorpusNote = a.CorpusNote,
             DraftState = a.DraftState == null ? null : System.Text.Json.JsonDocument.Parse(a.DraftState).RootElement.Clone(),
             Assembled = a.AssembledAt != null,
+            SummaryEdited = a.SummaryEdited,
             CreatedBy = a.CreatedBy?.DisplayName ?? a.CreatedBy?.LoginId,
             CreatedAt = a.CreatedAt,
             UpdatedAt = a.UpdatedAt,

@@ -270,6 +270,9 @@ namespace server.core.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("nvarchar(60)");
 
+                    b.Property<bool>("SummaryEdited")
+                        .HasColumnType("bit");
+
                     b.Property<bool?>("Supervises")
                         .HasColumnType("bit");
 

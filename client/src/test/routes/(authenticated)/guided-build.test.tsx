@@ -54,7 +54,7 @@ describe('the guided build', () => {
     open();
 
     await screen.findByTestId('duties-intro');
-    expect(screen.getByTestId('envelope-summary')).not.toBeEmptyDOMElement();
+    expect(screen.getByRole('textbox', { name: 'Job summary' })).not.toHaveValue('');
     expect(screen.getByTestId('envelope-facts')).toHaveTextContent('UC job code');
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('Duties');
     // Qualifications wait for step 2, so the duties are not pushed below the fold.
@@ -89,8 +89,61 @@ describe('the guided build', () => {
     await user.click(screen.getByRole('button', { name: 'Continue to requirements →' }));
     expect(await screen.findByTestId('requirements-intro')).toBeInTheDocument();
     expect(screen.getByText('Preferred qualifications')).toBeInTheDocument();
-    expect(screen.queryByTestId('envelope-summary')).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Job summary' })).not.toBeInTheDocument();
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('Requirements');
+  });
+
+  it('starts from the class’s summary, which is sent only once the author rewrites it', async () => {
+    const user = userEvent.setup();
+    open();
+    const box = await screen.findByRole('textbox', { name: 'Job summary' });
+
+    // Unchanged (case and spacing aside), the class's summary stands.
+    await user.type(box, '  ');
+    expect((await sentOnCheck(user)).jobSummary).toBeNull();
+  });
+
+  it('checks a rewritten summary with the other changes, shows its verdict under it, and can put the class’s back', async () => {
+    const user = userEvent.setup();
+    const seen: BuildRequest[] = [];
+    testServer.use(
+      http.post('/api/build/check', async ({ request }) => {
+        const body = (await request.json()) as BuildRequest;
+        seen.push(body);
+        return HttpResponse.json<EnvelopeCheckResponse>({
+          ...verdict('in_envelope'),
+          changes: [
+            { kind: 'summary', original: 'x', reason: 'Describes the same plant care work.', text: body.jobSummary ?? '', verdict: 'in_envelope' },
+          ],
+        });
+      })
+    );
+    open();
+    const box = await screen.findByRole('textbox', { name: 'Job summary' });
+    const classSummary = (box as HTMLTextAreaElement).value;
+    await user.clear(box);
+    await user.type(box, 'Runs the teaching greenhouse.');
+    expect(screen.getByText('edited')).toBeInTheDocument();
+    await fillDepartment(user);
+    await user.click(screen.getByRole('button', { name: 'Check my duties' }));
+
+    expect(await screen.findByTestId('line-verdict')).toHaveTextContent('✓ Fits the class — Describes the same plant care work.');
+    expect(seen[0].jobSummary).toBe('Runs the teaching greenhouse.');
+
+    await user.click(screen.getByRole('button', { name: 'Use the class’s summary' }));
+    expect(box).toHaveValue(classSummary);
+    expect(screen.queryByTestId('line-verdict')).not.toBeInTheDocument();
+  });
+
+  it('needs a summary before the duties can be checked', async () => {
+    const user = userEvent.setup();
+    open();
+    await fillDepartment(user);
+    await user.clear(await screen.findByRole('textbox', { name: 'Job summary' }));
+
+    expect(screen.getByText('A job description needs a summary.')).toBeInTheDocument();
+    expect(screen.getByTestId('build-gate-reason')).toHaveTextContent('Write a job summary, or use the class’s.');
+    expect(screen.getByRole('button', { name: 'Check my duties' })).toBeDisabled();
   });
 
   it('does not check twice when nothing changed since the duties check', async () => {
