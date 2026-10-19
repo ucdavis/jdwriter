@@ -6,6 +6,7 @@ import { FinalJd } from './FinalJd.tsx';
 import { Link } from '@tanstack/react-router';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { SectionEditor } from './SectionEditor.tsx';
+import { SummaryEditor } from './SummaryEditor.tsx';
 import {
   useAssembleJd,
   useBetterFit,
@@ -148,7 +149,8 @@ export const BuildFlow = ({
   const busy = check.isPending || assemble.isPending;
   const balanced = state.totalPct === 100;
   const hasDepartment = state.department.trim().length > 0;
-  const ready = balanced && hasDepartment && state.supervisionReady && state.emptyFunctions.length === 0;
+  const ready =
+    balanced && hasDepartment && state.supervisionReady && state.emptyFunctions.length === 0 && state.summary.trim() !== '';
 
   // The duties check, while it still describes the build: an edit since makes it stale.
   const dutiesCurrent = dutiesCheck !== null && dutiesCheck.key === state.checkKey ? dutiesCheck.result : null;
@@ -212,6 +214,8 @@ export const BuildFlow = ({
     ? 'Enter the department before continuing.'
     : !state.supervisionReady
       ? 'Enter how many people this position supervises.'
+      : state.summary.trim() === ''
+        ? 'Write a job summary, or use the class’s.'
       : state.emptyFunctions.length > 0
         ? `“${state.emptyFunctions[0]}” has no duties left — keep at least one, or drop the whole responsibility.`
       : balanced
@@ -316,6 +320,14 @@ export const BuildFlow = ({
               </p>
             ) : null}
           </Card>
+
+          <SummaryEditor
+            classSummary={envelope.summary}
+            edited={state.summaryEdited}
+            onChange={state.setSummary}
+            summary={state.summary}
+            verdict={dutiesCurrent && state.summaryEdited ? verdicts.get(state.summary.trim()) : undefined}
+          />
 
           <AllocationBar onRedistribute={state.setResps} resps={state.resps} totalPct={state.totalPct} />
           <DutiesEditor state={state} verdicts={dutiesCurrent ? verdicts : undefined} />

@@ -148,6 +148,11 @@ export const FinalJd = ({
 
           <Section title="Job Summary">
             <p className="text-base leading-relaxed">{jd.jobSummary}</p>
+            {result.summaryEdited ? (
+              <div className="mt-2 print:hidden" data-testid="summary-edited">
+                <Badge tone="muted">Written by the author</Badge>
+              </div>
+            ) : null}
           </Section>
 
           {/* The total is displayed because it is a compliance property of the document,

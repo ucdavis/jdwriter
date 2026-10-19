@@ -83,17 +83,7 @@ export const LineEditor = ({
             </button>
           </div>
         ) : null}
-        {verdict?.verdict ? (
-          <p
-            className={`mt-0.5 pl-1.5 text-sm ${verdictLine[verdict.verdict].tone}`}
-            data-testid="line-verdict"
-          >
-            <span className="font-semibold">
-              {verdictLine[verdict.verdict].symbol} {verdictLine[verdict.verdict].label}
-            </span>
-            {verdict.reason ? <span className="text-base-content/70"> — {verdict.reason}</span> : null}
-          </p>
-        ) : null}
+        <LineVerdict verdict={verdict} />
         {item.kept && item.text.trim() === '' ? (
           <p className="mt-0.5 pl-1.5 text-sm text-warning">Empty — this line will be left out.</p>
         ) : null}
@@ -112,6 +102,17 @@ export const LineEditor = ({
     </li>
   );
 };
+
+/** How the envelope check judged a change, and why: shown under the change itself. */
+export const LineVerdict = ({ verdict }: { verdict?: CheckedChange }) =>
+  verdict?.verdict ? (
+    <p className={`mt-0.5 pl-1.5 text-sm ${verdictLine[verdict.verdict].tone}`} data-testid="line-verdict">
+      <span className="font-semibold">
+        {verdictLine[verdict.verdict].symbol} {verdictLine[verdict.verdict].label}
+      </span>
+      {verdict.reason ? <span className="text-base-content/70"> — {verdict.reason}</span> : null}
+    </p>
+  ) : null;
 
 /** A text box that reads like a line of text and grows with what's typed into it. */
 const GrowingText = ({

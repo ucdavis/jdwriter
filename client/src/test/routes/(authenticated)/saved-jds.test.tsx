@@ -112,6 +112,13 @@ describe('saved JDs', () => {
     expect(screen.getByText('Supports greenhouse research.')).toBeInTheDocument();
   });
 
+  it('shows a summary the author already rewrote as theirs', async () => {
+    testServer.use(http.get('/api/jds/:id', () => HttpResponse.json(saved({ summaryEdited: true }))));
+    renderRoute({ initialPath: '/jds/7' });
+
+    expect(await screen.findByTestId('summary-edited')).toHaveTextContent('Written by the author');
+  });
+
   it('assembling saves the JD, and assembling again revises the same one', async () => {
     const user = userEvent.setup();
     const sent: Array<number | null | undefined> = [];

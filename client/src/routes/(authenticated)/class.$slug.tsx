@@ -96,6 +96,7 @@ function ClassPage() {
             minKSA: envelope.minQualifications,
             prefKSA: envelope.prefQualifications,
             responsibilities: envelope.keyResponsibilities,
+            summary: envelope.summary,
             workEnvironment: envelope.workEnvironment,
             workExperience: envelope.workExperience,
           }}
@@ -118,8 +119,7 @@ function ClassPage() {
 }
 
 /**
- * The envelope at a glance, kept short so the duties start above the fold: one summary, the job
- * standard and the out-of-envelope signals behind toggles, and the class facts in a compact row.
+ * The envelope at a glance, kept short so the duties start above the fold: the job standard and the out-of-envelope signals behind toggles, and the class facts in a compact row.
  */
 const EnvelopeOverview = ({
   isAdmin,
@@ -137,15 +137,10 @@ const EnvelopeOverview = ({
 
   return (
     <Card className="p-5">
-      <Eyebrow>Summary</Eyebrow>
-      <p className="mt-1 text-base leading-relaxed" data-testid="envelope-summary">
-        {envelope?.summary}
-      </p>
+      {/* The class's summary is in the build itself, where the author can rewrite it. */}
       <SiteNote site={profile.site} siteTwins={profile.siteTwins} />
 
-      <div className="mt-4">
-        <Eyebrow>Class facts</Eyebrow>
-      </div>
+      <Eyebrow>Class facts</Eyebrow>
       <dl className="mt-1 flex flex-wrap gap-x-6 gap-y-2 text-base" data-testid="envelope-facts">
         <FactChip label="UC job code" value={profile.ucJobCode} />
         <FactChip label="Salary grade" value={profile.salaryGrade.consensus ?? '—'} />

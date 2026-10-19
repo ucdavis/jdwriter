@@ -230,6 +230,78 @@ public class JdAssemblerTests
     }
 
     [Fact]
+    public async Task The_author_s_own_summary_needs_no_model_and_the_jd_carries_it_as_written()
+    {
+        var (assembler, llm) = Build(CleanGeneration());
+        var profile = JdTestData.Profile();
+        var unchanged = Unchanged();
+        unchanged.SummaryEdit = new EditedItem { Text = "Runs the evaluation office's study data." };
+        var inputs = JdAssembler.WithUndeclaredAdditions(profile, unchanged);
+
+        var result = await assembler.AssembleAsync(profile, inputs, JdTestData.Rules());
+
+        llm.Requests.Should().BeEmpty("only the summary changed, and the author wrote it");
+        result.FromEnvelope.Should().BeTrue();
+        result.Jd.JobSummary.Should().Be("Runs the evaluation office's study data.");
+        result.SummaryEdited.Should().BeTrue();
+        assembler.HasAdditions(inputs).Should().BeTrue("the rewritten summary is checked");
+        CorpusContribution.Differs(inputs, profile.Envelope).Should().BeTrue("it is the author's own JD, for the corpus");
+    }
+
+    [Fact]
+    public async Task A_generated_jd_carries_the_summary_the_author_saw_not_the_model_s()
+    {
+        var (assembler, _) = Build(CleanGeneration());
+        var profile = JdTestData.Profile();
+        var inputs = JdTestData.Inputs();
+
+        var result = await assembler.AssembleAsync(profile, inputs, JdTestData.Rules());
+
+        result.Jd.JobSummary.Should().Be(profile.Envelope!.Summary);
+        result.SummaryEdited.Should().BeFalse();
+    }
+
+    [Fact]
+    public void A_summary_is_the_author_s_only_when_it_differs_from_the_class_s_and_its_original_is_the_class_s()
+    {
+        var profile = JdTestData.Profile();
+        BuildInputs With(string text) => new() { SummaryEdit = new EditedItem { Original = "anything claimed", Text = text } };
+
+        var same = JdAssembler.WithUndeclaredAdditions(profile, With("  " + profile.Envelope!.Summary.ToUpperInvariant() + " "));
+        same.SummaryEdit.Should().BeNull("case and spacing don't make it the author's");
+        JdAssembler.WithUndeclaredAdditions(profile, With("   ")).SummaryEdit.Should().BeNull();
+
+        var theirs = JdAssembler.WithUndeclaredAdditions(profile, With(" Runs the evaluation office's study data. ")).SummaryEdit!;
+        theirs.Original.Should().Be(profile.Envelope.Summary);
+        theirs.Text.Should().Be("Runs the evaluation office's study data.");
+    }
+
+    [Fact]
+    public async Task A_rewritten_summary_is_checked_as_its_own_change_after_the_line_changes()
+    {
+        var verdict = new VerdictDto
+        {
+            Verdict = EnvelopeVerdict.InEnvelope,
+            Rationale = "Fits.",
+            Changes = [new ChangeDto { Number = 2, Verdict = EnvelopeVerdict.InEnvelope, Reason = "Describes the same work." }],
+        };
+        var (assembler, llm) = Build(verdict: verdict);
+        var profile = JdTestData.Profile();
+        var inputs = JdTestData.Inputs();
+        inputs.AddedItems = ["Logs greenhouse temperatures."];
+        inputs.SummaryEdit = new EditedItem { Original = profile.Envelope!.Summary, Text = "Runs the study data." };
+
+        var result = await assembler.CheckEnvelopeAsync(profile, inputs);
+
+        result.Changes[1].Should().BeEquivalentTo(new
+        {
+            Kind = "summary", Text = "Runs the study data.", Original = (string?)profile.Envelope.Summary, Reason = "Describes the same work.",
+        });
+        llm.Requests.Single().User.Should().Contain(
+            $"2. Rewrote the job summary (judge whether it describes work beyond the class): \"{profile.Envelope.Summary}\" → \"Runs the study data.\"");
+    }
+
+    [Fact]
     public async Task The_deterministic_compliance_rules_still_apply_to_an_unchanged_build()
     {
         // Rules are HR policy, applied to every JD; only the MODEL review is skipped.
@@ -553,12 +625,14 @@ public class JdAssemblerTests
     {
         // Cheap, reproducible, auditable changes should not cost tokens, and the trail should
         // attribute them to a rule.
+        // The JD carries the class's summary (or the author's), so that is where the rules find it.
         var gen = CleanGeneration();
-        gen.JobSummary = "Seeking a rockstar analyst.";
+        var profile = JdTestData.Profile();
+        profile.Envelope!.Summary = "Seeking a rockstar analyst.";
 
         var (assembler, llm) = Build(gen);
         var result = await assembler.AssembleAsync(
-            JdTestData.Profile(), JdTestData.Inputs(), JdTestData.Rules());
+            profile, JdTestData.Inputs(), JdTestData.Rules());
 
         result.Jd.JobSummary.Should().Be("Seeking a expert analyst.");
         result.ComplianceEdits.Should().ContainSingle();
@@ -573,8 +647,10 @@ public class JdAssemblerTests
     [Fact]
     public async Task Rule_edits_precede_model_edits_in_the_audit_trail()
     {
+        // The JD carries the class's summary (or the author's), so that is where the rules find it.
         var gen = CleanGeneration();
-        gen.JobSummary = "Seeking a rockstar analyst.";
+        var profile = JdTestData.Profile();
+        profile.Envelope!.Summary = "Seeking a rockstar analyst.";
 
         var edits = new EditsDto
         {
@@ -583,7 +659,7 @@ public class JdAssemblerTests
 
         var (assembler, _) = Build(gen, edits);
         var result = await assembler.AssembleAsync(
-            JdTestData.Profile(), JdTestData.Inputs(), JdTestData.Rules());
+            profile, JdTestData.Inputs(), JdTestData.Rules());
 
         result.ComplianceEdits.Select(e => e.Source).Should().Equal(
             ComplianceEditSource.Rule, ComplianceEditSource.Llm);
@@ -975,12 +1051,14 @@ public class JdAssemblerTests
     [Fact]
     public async Task The_audit_trail_is_persisted_in_order()
     {
+        // The JD carries the class's summary (or the author's), so that is where the rules find it.
         var gen = CleanGeneration();
-        gen.JobSummary = "A rockstar chairman role.";
+        var profile = JdTestData.Profile();
+        profile.Envelope!.Summary = "A rockstar chairman role.";
 
         var (assembler, _) = Build(gen);
         var assembled = await assembler.AssembleAsync(
-            JdTestData.Profile(), JdTestData.Inputs(), JdTestData.Rules());
+            profile, JdTestData.Inputs(), JdTestData.Rules());
 
         var entity = assembled.ToEntity(classProfileId: 1);
 

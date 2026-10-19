@@ -32,6 +32,9 @@ public class AuthoredJd
 
     public string JobSummary { get; set; } = "";
 
+    /// <summary>The author wrote their own summary in place of the class's.</summary>
+    public bool SummaryEdited { get; set; }
+
     // ---- provenance
     public int? CreatedByUserId { get; set; }
     public AppUser? CreatedBy { get; set; }

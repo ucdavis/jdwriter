@@ -36,6 +36,9 @@ public sealed class BuildRequest
     /// <summary>Standard items the author reworded, with the wording each replaced.</summary>
     public List<EditedItem> EditedItems { get; set; } = [];
 
+    /// <summary>The author's own job summary; null (or the class's own wording) keeps the class's.</summary>
+    public string? JobSummary { get; set; }
+
     public string Notes { get; set; } = "";
     public bool? Supervises { get; set; }
     public int? SupervisesCount { get; set; }
@@ -80,6 +83,8 @@ public sealed class BuildRequest
         KeptWorkEnvironment = KeptWorkEnvironment,
         AddedItems = AddedItems,
         EditedItems = EditedItems,
+        // Its original is filled in from the class, which only the server knows for certain.
+        SummaryEdit = string.IsNullOrWhiteSpace(JobSummary) ? null : new EditedItem { Text = JobSummary },
         Notes = Notes,
         Supervises = Supervises,
         SupervisesCount = SupervisesCount,

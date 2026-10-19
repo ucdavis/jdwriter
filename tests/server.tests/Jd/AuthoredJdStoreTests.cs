@@ -118,6 +118,21 @@ public class AuthoredJdStoreTests
         (await db.AuthoredJdResponsibilities.CountAsync()).Should().Be(0, "its content goes with it");
     }
 
+    [Fact]
+    public async Task An_assembly_with_the_author_s_summary_is_marked_and_a_revision_with_the_class_s_is_not()
+    {
+        var (db, profile, alice, _) = await Seed();
+        var store = new AuthoredJdStore(db);
+        var theirs = Assembled("Lab Tech", ("Bench work", 100));
+        theirs.SummaryEdited = true;
+        var id = await store.SaveAsync(theirs, new BuildInputs(), profile, alice, null);
+        (await store.GetAsync(id))!.Value.Jd.SummaryEdited.Should().BeTrue();
+
+        await store.SaveAsync(Assembled("Lab Tech", ("Bench work", 100)), new BuildInputs(), profile, alice, id);
+
+        (await store.GetAsync(id))!.Value.Jd.SummaryEdited.Should().BeFalse();
+    }
+
     private static BuildInputs Kept(params (string Name, int Pct)[] fns) => new()
     {
         WorkingTitle = "Greenhouse Tech",

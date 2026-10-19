@@ -34,7 +34,7 @@ public static class CorpusContribution
             return OutOfEnvelope;
         }
 
-        if ((inputs.AddedItems.Count > 0 || inputs.EditedItems.Count > 0) && verdict == null)
+        if ((inputs.AddedItems.Count > 0 || inputs.EditedItems.Count > 0 || inputs.SummaryEdit != null) && verdict == null)
         {
             return Unchecked;
         }
@@ -44,11 +44,13 @@ public static class CorpusContribution
 
     /// <summary>
     /// Did the author change anything relative to the envelope: add an item, drop or reword a
-    /// responsibility or duty, move a percentage, or drop a qualification line?
+    /// responsibility or duty, move a percentage, drop a qualification line, or (unless
+    /// <paramref name="countSummary"/> is false) write their own summary?
     /// </summary>
-    public static bool Differs(BuildInputs inputs, JobEnvelope? envelope)
+    public static bool Differs(BuildInputs inputs, JobEnvelope? envelope, bool countSummary = true)
     {
-        if (envelope == null || inputs.AddedItems.Count > 0 || inputs.EditedItems.Count > 0)
+        if (envelope == null || inputs.AddedItems.Count > 0 || inputs.EditedItems.Count > 0
+            || (countSummary && inputs.SummaryEdit != null))
         {
             return true;
         }

@@ -43,12 +43,17 @@ export const isEdited = (item: Item) =>
 
 const live = (item: Item) => item.kept && item.text.trim() !== '';
 
+/** Case, punctuation and spacing don't make a summary different, as the server judges it. */
+const words = (s: string) => s.toLowerCase().replaceAll(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
 export type EnvelopeSections = {
   certs: string[];
   education: string[];
   minKSA: string[];
   prefKSA: string[];
   responsibilities: KeyResponsibility[];
+  /** The class's job summary: the JD's, unless the author writes their own. */
+  summary: string;
   workEnvironment: string[];
   workExperience: string[];
 };
@@ -67,6 +72,8 @@ export type DraftState = {
   notes: string;
   prefKSA: Item[];
   resps: RespState[];
+  /** Added later, like `leads`; older drafts take the class's summary. */
+  summary?: string;
   supervises?: YesNo;
   supervisesCount?: string;
   version: 1;
@@ -110,6 +117,9 @@ export const useBuildState = (
   const [workingTitle, setWorkingTitle] = useState(initial?.workingTitle ?? '');
   const [department, setDepartment] = useState(initial?.department ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
+  const [summary, setSummary] = useState(initial?.summary ?? envelope.summary);
+  // The author's own only when it says something else.
+  const summaryEdited = words(summary) !== words(envelope.summary);
 
   const [resps, setResps] = useState<RespState[]>(
     () =>
@@ -233,6 +243,7 @@ export const useBuildState = (
     addedItems,
     department,
     editedItems,
+    jobSummary: summaryEdited && summary.trim() !== '' ? summary.trim() : null,
     keptCerts: keptOf(certs),
     keptEducation: keptOf(education),
     keptMinKSA: keptOf(minKSA),
@@ -265,6 +276,7 @@ export const useBuildState = (
     notes,
     prefKSA,
     resps,
+    summary,
     supervises,
     supervisesCount,
     version: 1,
@@ -278,7 +290,14 @@ export const useBuildState = (
    * builds with the same key get the same verdict, so the requirements step skips a second check
    * when nothing it reads has changed since the duties check.
    */
-  const checkKey = JSON.stringify({ addedItems, department, editedItems, notes, workingTitle });
+  const checkKey = JSON.stringify({
+    addedItems,
+    department,
+    editedItems,
+    notes,
+    summary: summaryEdited ? summary.trim() : null,
+    workingTitle,
+  });
 
   return {
     addedCount: addedItems.length,
@@ -305,12 +324,15 @@ export const useBuildState = (
     setNotes,
     setPrefKSA,
     setResps,
+    setSummary,
     setSupervises,
     setSupervisesCount,
     setWorkEnv,
     setWorkExp,
     setWorkingTitle,
     snapshot,
+    summary,
+    summaryEdited,
     supervises,
     supervisesCount,
     supervisionReady,

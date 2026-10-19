@@ -64,6 +64,10 @@ public class HardeningTests
         oneHuge.AddedItems = [new string('x', 2_001)];
         RequestLimits.Build(oneHuge).Should().NotBeNull();
 
+        var longSummary = Build();
+        longSummary.JobSummary = new string('x', 2_001);
+        RequestLimits.Build(longSummary).Should().NotBeNull();
+
         var tooMany = Build();
         tooMany.AddedItems = [.. Enumerable.Repeat("An addition.", 201)];
         RequestLimits.Build(tooMany).Should().NotBeNull();
