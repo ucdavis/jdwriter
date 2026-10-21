@@ -107,6 +107,12 @@ const ArchiveDialog = ({ jds, onClose, slug }: { jds: ArchivedJd[]; onClose: () 
                 </div>
               ))}
             </div>
+            {chosen.responsibilities.some((r) => r.duties.length === 0) ? (
+              <p className="mt-4 text-sm text-base-content/80" data-testid="titles-only">
+                {chosen.responsibilities.every((r) => r.duties.length === 0) ? 'Lists its' : 'Lists some'} responsibilities
+                by title only. Working from it fills in this class&apos;s duties under each, for you to edit.
+              </p>
+            ) : null}
             <p className="mt-4 text-sm text-base-content/65">
               Its summary and duties come into the builder under this class&apos;s responsibilities, replacing
               anything you&apos;ve changed so far. The class&apos;s qualifications stay, and work outside the
