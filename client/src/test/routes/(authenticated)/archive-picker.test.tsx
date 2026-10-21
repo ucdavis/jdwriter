@@ -127,8 +127,37 @@ describe('starting from an archived job description', () => {
     expect(preview).toHaveTextContent('Orders potting supplies.');
     expect(preview).not.toHaveTextContent('00000001');
 
+    expect(screen.queryByTestId('titles-only')).not.toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('says when a JD lists its responsibilities by title only, and that the class’s duties fill them in', async () => {
+    const user = userEvent.setup();
+    testServer.use(
+      http.get(`/api/classes/${SLUG}/archive`, () =>
+        HttpResponse.json({
+          jds: [
+            {
+              ...archived[0],
+              responsibilities: [
+                { duties: [], functionName: 'PLANT CARE', pct: 70 },
+                { duties: [], functionName: 'SUPPLIES', pct: 30 },
+              ],
+            },
+          ],
+        })
+      )
+    );
+    renderRoute({ initialPath: `/class/${SLUG}` });
+
+    await user.click(await screen.findByRole('button', { name: /start from an archived job description/ }));
+    await user.click(within(screen.getByTestId('archive-list')).getByRole('button', { name: /Greenhouse Assistant/ }));
+
+    expect(screen.getByTestId('titles-only')).toHaveTextContent(
+      "Lists its responsibilities by title only. Working from it fills in this class's duties under each, for you to edit."
+    );
   });
 
   it('works from the chosen JD: a draft with its duties and summary opens in the builder', async () => {

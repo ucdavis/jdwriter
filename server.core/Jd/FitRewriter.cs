@@ -225,6 +225,13 @@ public sealed partial class FitRewriter : IFitRewriter
             {
                 sb.AppendLine($"  R{r}.{d} {duties[d].Text}");
             }
+
+            // Older JDs list a responsibility by its title and % alone. Its title is then all there is
+            // to go on, and the class's own duties are what fill it in.
+            if (duties.Count == 0)
+            {
+                sb.AppendLine("  (no duties listed: choose the standard duties of its function that this title describes)");
+            }
         }
 
         sb.AppendLine();

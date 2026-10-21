@@ -335,6 +335,26 @@ public class FitRewriterTests
     }
 
     [Fact]
+    public async Task A_responsibility_listed_by_title_alone_asks_for_the_duties_its_title_describes()
+    {
+        var plan = new
+        {
+            placements = new[] { new { responsibility = 0, function = 0 }, new { responsibility = 1, function = 1 } },
+            functions = Array.Empty<object>(), carryOver = Array.Empty<object>(),
+            outside = Array.Empty<object>(), matches = Array.Empty<object>(),
+        };
+        var oldStyle = Incumbent(("BUDGET WORK", 60, []), ("Reports", 40, ["Writes monthly variance reports."]));
+
+        var (rewrite, llm) = await Run(oldStyle, plan, RewriteMode.KeepSpecifics);
+
+        var user = llm.Requests.Single().User;
+        user.Should().Contain("R0. BUDGET WORK (60%)\n  (no duties listed: choose the standard duties of its function that this title describes)");
+        user.Split("(no duties listed").Should().HaveCount(2, "only the responsibility with none is marked");
+        // Picked nothing for it: the class's standard duties stand in, so it never arrives empty.
+        rewrite.Inputs.KeptResponsibilities[0].Duties.Should().Equal("Prepares budget forecasts.", "Reconciles ledgers monthly.");
+    }
+
+    [Fact]
     public async Task Each_mode_tells_the_model_its_own_carry_over_rule()
     {
         var plan = new
