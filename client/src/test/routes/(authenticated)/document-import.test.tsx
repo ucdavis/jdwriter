@@ -74,9 +74,10 @@ describe('add job descriptions', () => {
       ),
       http.post('/api/admin/uploads/documents/reparse', () =>
         HttpResponse.json({
-          discarded: [{ fileName: 'posting.docx', reason: 'Incomplete, so not added: It lists no duties.' }],
+          discarded: [{ fileName: 'empty.docx', reason: 'Incomplete, so not added: It has no key responsibilities.' }],
           refiled: [],
           reparsed: 12,
+          restored: [{ fileName: 'old-style.docx', reason: 'filed under 004973' }],
           unrecognized: 0,
         })
       )
@@ -87,7 +88,9 @@ describe('add job descriptions', () => {
     expect(await screen.findByText('LAB AST 1 (009605) · parsed')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Re-read imported documents' }));
-    expect(await screen.findByTestId('reparse-summary')).toHaveTextContent('Re-read 12 · discarded 1 incomplete');
+    expect(await screen.findByTestId('reparse-summary')).toHaveTextContent(
+      'Re-read 12 · discarded 1 incomplete · 1 restored that were refused for listing no duties'
+    );
     vi.restoreAllMocks();
   });
 

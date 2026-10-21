@@ -636,6 +636,8 @@ export type ReparseSummary = {
   discarded: Array<{ fileName: string; reason: string }>;
   refiled: Array<{ fileName: string; reason: string }>;
   reparsed: number;
+  /** Refused earlier as incomplete under the old duties rule, and filed now. */
+  restored: Array<{ fileName: string; reason: string }>;
   unrecognized: number;
 };
 

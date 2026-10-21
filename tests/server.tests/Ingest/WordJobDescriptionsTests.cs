@@ -102,15 +102,20 @@ public class WordJobDescriptionsTests
     }
 
     [Fact]
-    public void A_posting_parses_but_is_incomplete_without_duties()
+    public void An_old_style_jd_with_titles_and_percentages_only_is_complete()
     {
+        // Older JDs list each responsibility as a title and a % with nothing under it. Valid as they are.
         var r = WordJobDescriptions.TryParse(Posting(), "p.docx")!;
 
         r.UcJobCode.Should().Be("009605");
-        r.Responsibilities.Select(x => (x.Pct, x.FunctionName)).Should().Equal((60, "PLANT CARE"), (40, "RECORDS"));
+        r.Responsibilities.Select(x => (x.Pct, x.FunctionName, x.Duties.Count)).Should().Equal((60, "PLANT CARE", 0), (40, "RECORDS", 0));
         r.Qualifications.KsaMin.Should().Equal("Experience in a greenhouse.", "Experience keeping records.");
-        WordJobDescriptions.Incomplete(r).Should().Contain("no duties");
+        WordJobDescriptions.Incomplete(r).Should().BeNull();
     }
+
+    [Fact]
+    public void A_jd_with_no_responsibilities_at_all_is_incomplete() =>
+        WordJobDescriptions.Incomplete(new HrtmsRecord()).Should().Be("It has no key responsibilities.");
 
     [Fact]
     public void An_unrecognized_document_is_not_parsed() =>
@@ -202,22 +207,21 @@ public class WordJobDescriptionsTests
     }
 
     [Fact]
-    public async Task An_incomplete_document_is_not_added()
+    public async Task An_old_style_document_with_titles_and_percentages_only_is_added()
     {
         var (db, documents, model) = Harness();
 
         var posting = await documents.ImportAsync("p.docx", Posting(), DocxMime, null);
         var noDuties = await documents.ImportAsync("n.docx", HrtmsExport(position: "40000002", withDuties: false), DocxMime, null);
 
-        posting.Result.Should().Be("failed");
-        posting.Error.Should().StartWith("Incomplete, so not added");
-        noDuties.Error.Should().StartWith("Incomplete, so not added");
+        posting.Result.Should().Be("added");
+        noDuties.Result.Should().Be("added");
         model.Calls.Should().Be(0);
-        (await db.JobDescriptions.CountAsync()).Should().Be(0);
+        (await db.JobDescriptions.CountAsync()).Should().Be(2);
     }
 
     [Fact]
-    public async Task Reparse_turns_model_read_imports_into_verbatim_records_and_discards_incomplete_ones()
+    public async Task Reparse_turns_model_read_imports_into_verbatim_records()
     {
         var (db, documents, _) = Harness();
         // Two documents imported before the parser: each filed as a model-condensed record.
@@ -239,10 +243,39 @@ public class WordJobDescriptionsTests
 
         var summary = await documents.ReparseAsync();
 
-        summary.Reparsed.Should().Be(1);
-        summary.Discarded.Should().ContainSingle().Which.FileName.Should().Be("doc2.docx");
+        summary.Reparsed.Should().Be(2);
+        summary.Discarded.Should().BeEmpty();
         var jds = await db.JobDescriptions.Include(j => j.Responsibilities).ToListAsync();
-        jds.Should().ContainSingle().Which.Responsibilities.Select(r => r.FunctionName).Should().BeEquivalentTo(["PLANT CARE", "RECORDS"]);
-        (await db.CorpusUploads.SingleAsync(u => u.Id == 2)).Status.Should().Be(CorpusUploadStatus.Failed);
+        jds.Should().HaveCount(2).And.OnlyContain(j => j.Responsibilities.Select(r => r.FunctionName).SequenceEqual(new[] { "PLANT CARE", "RECORDS" }));
+    }
+
+    [Fact]
+    public async Task Reparse_restores_a_document_refused_under_the_old_duties_rule_and_leaves_other_failures_alone()
+    {
+        var (db, documents, _) = Harness();
+        db.CorpusUploads.AddRange(
+            new CorpusUpload
+            {
+                Id = 1, FileName = "old-style.docx", Sha256 = "sha1".PadRight(16, '0'), Content = Posting(), SizeBytes = 1,
+                Source = CorpusUploadSource.Document, Status = CorpusUploadStatus.Failed,
+                Error = "Incomplete, so not added: It lists no duties under its responsibilities (a job posting names functions only).",
+            },
+            new CorpusUpload
+            {
+                Id = 2, FileName = "unmatched.docx", Sha256 = "sha2".PadRight(16, '0'), Content = Posting(), SizeBytes = 1,
+                Source = CorpusUploadSource.Document, Status = CorpusUploadStatus.Failed, Error = "No UC job title could be found in it.",
+            });
+        await db.SaveChangesAsync();
+
+        var summary = await documents.ReparseAsync();
+
+        summary.Restored.Should().ContainSingle().Which.FileName.Should().Be("old-style.docx");
+        var restored = await db.CorpusUploads.SingleAsync(u => u.Id == 1);
+        restored.Status.Should().Be(CorpusUploadStatus.Filed);
+        restored.Error.Should().BeNull();
+        var jd = await db.JobDescriptions.SingleAsync();
+        jd.SourceFile.Should().Be(CorpusNames.Imported("sha1".PadRight(16, '0')), "the same name its class was built from");
+        jd.Origin.Should().Be(CorpusOrigin.Imported);
+        (await db.CorpusUploads.SingleAsync(u => u.Id == 2)).Status.Should().Be(CorpusUploadStatus.Failed, "only the old duties rule is revisited");
     }
 }

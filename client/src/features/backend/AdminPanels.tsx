@@ -277,6 +277,9 @@ export const DocumentImportPanel = () => {
         <div className="mt-2" data-testid="reparse-summary">
           <Note tone="green">
             Re-read {reparse.data.reparsed} · discarded {reparse.data.discarded.length} incomplete
+            {reparse.data.restored.length > 0
+              ? ` · ${reparse.data.restored.length} restored that were refused for listing no duties`
+              : ''}
             {reparse.data.refiled.length > 0 ? ` · ${reparse.data.refiled.length} moved to the class their code states` : ''}
             {reparse.data.unrecognized > 0 ? ` · ${reparse.data.unrecognized} not recognized, left as they were` : ''}.
           </Note>
