@@ -98,10 +98,10 @@ describe('a regular class with a veterinary hospital twin', () => {
   });
 });
 
-describe('customization target', () => {
+describe('customization', () => {
   setupRouteTest();
 
-  it('allows senior and supervisory classes up to 30%', async () => {
+  it('shows no customization meter: the envelope check is what judges the changes', async () => {
     const user = userEvent.setup();
     asClass({ customizationTarget: 30, title: 'Financial Analyst 4' });
     renderRoute({ initialPath: '/class/009605-lab-ast-1' });
@@ -109,17 +109,7 @@ describe('customization target', () => {
     const add = (await screen.findAllByPlaceholderText('Add a duty to this function…'))[0];
     await user.type(add, 'Leads the annual budget model redesign{Enter}');
 
-    expect(await screen.findByTestId('customization')).toHaveTextContent('target ≤30%');
-  });
-
-  it('keeps most classes at 10%', async () => {
-    const user = userEvent.setup();
-    asClass({ customizationTarget: 10 });
-    renderRoute({ initialPath: '/class/009605-lab-ast-1' });
-
-    const add = (await screen.findAllByPlaceholderText('Add a duty to this function…'))[0];
-    await user.type(add, 'Leads the annual budget model redesign{Enter}');
-
-    expect(await screen.findByTestId('customization')).toHaveTextContent('target ≤10%');
+    expect(await screen.findByDisplayValue('Leads the annual budget model redesign')).toBeInTheDocument();
+    expect(screen.queryByText(/Customization/)).not.toBeInTheDocument();
   });
 });

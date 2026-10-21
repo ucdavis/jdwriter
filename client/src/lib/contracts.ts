@@ -500,6 +500,19 @@ export type FitSuggestResponse = { matches: ClassMatch[] };
 /** Rewrite a misfit into a class: its own when targetSlug is omitted. */
 export type FitRewriteRequest = { slug: string; sourceFile: string; targetSlug?: string };
 
+/** One of a class's archived JDs, as an author may see it: named by working title, no position numbers. */
+export type ArchivedJd = {
+  department: string;
+  origin: 'authored' | 'classify' | 'export' | 'imported';
+  responsibilities: Array<{ duties: string[]; functionName: string; pct: number | null }>;
+  /** The corpus's own key for it, to start from. */
+  sourceFile: string;
+  summary: string;
+  workingTitle: string;
+};
+
+export type ArchiveResponse = { jds: ArchivedJd[] };
+
 /** The rewrite is saved as a draft; open it at /class/{slug}?draft={authoredJdId}. */
 export type FitRewriteResponse = {
   authoredJdId: number;

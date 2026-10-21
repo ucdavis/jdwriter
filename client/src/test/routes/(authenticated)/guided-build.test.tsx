@@ -229,17 +229,12 @@ describe('the guided build', () => {
 
     const box = screen.getAllByRole('textbox', { name: /^Wording: / })[0] as HTMLTextAreaElement;
     const original = box.value;
-    expect(screen.queryByTestId('customization')).not.toBeInTheDocument();
     expect(screen.queryByText('edited')).not.toBeInTheDocument();
 
     await user.clear(box);
     await user.type(box, 'Runs the greenhouse irrigation schedule.');
 
     expect(screen.getByText('edited')).toBeInTheDocument();
-    // Counted beside the meter, not in it: the check compares it with the line it replaced.
-    expect(screen.getByTestId('customization')).toHaveTextContent('Customization 0%');
-    expect(screen.getByTestId('customization')).toHaveTextContent('0 added');
-    expect(screen.getByTestId('customization')).toHaveTextContent('1 edited, checked against the standard');
     // Its checkbox still names the standard line, so it can be found after the edit.
     expect(screen.getByRole('checkbox', { name: `Include: ${original}` })).toBeChecked();
 

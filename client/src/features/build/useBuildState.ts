@@ -210,15 +210,6 @@ export const useBuildState = (
     [resps, certs, education, workExp, minKSA, prefKSA, workEnv]
   );
 
-  const envelopeTotal =
-    envelope.responsibilities.reduce((sum, r) => sum + r.duties.length, 0) +
-    envelope.certs.length +
-    envelope.education.length +
-    envelope.workExperience.length +
-    envelope.minKSA.length +
-    envelope.prefKSA.length +
-    envelope.workEnvironment.length;
-
   /** Reworded standard lines, each with what it replaced, for the envelope check to compare. */
   const editedItems = useMemo(
     () =>
@@ -231,10 +222,6 @@ export const useBuildState = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [resps, certs, education, workExp, minKSA, prefKSA, workEnv]
   );
-
-  const customPct = envelopeTotal
-    ? Math.round((addedItems.length / envelopeTotal) * 100)
-    : 0;
 
   // A line edited down to nothing is left out.
   const keptOf = (s: Item[]) => s.filter((d) => d.kept && d.text.trim() !== '').map((d) => d.text.trim());
@@ -300,13 +287,10 @@ export const useBuildState = (
   });
 
   return {
-    addedCount: addedItems.length,
     buildRequest,
     certs,
     checkKey,
-    customPct,
     department,
-    editedCount: editedItems.length,
     education,
     emptyFunctions,
     guardAdd,
