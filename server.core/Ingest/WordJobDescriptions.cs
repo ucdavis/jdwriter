@@ -37,15 +37,12 @@ public static partial class WordJobDescriptions
 
     /// <summary>
     /// Why a parsed JD is too incomplete for the corpus, or null when it will do: it needs
-    /// responsibilities, with duties under them. (% time is not a test: real exports from within
+    /// responsibilities. Duties under them are not required — older JDs list each responsibility as a
+    /// title and a % only, and are as valid as any. (Nor is % time a test: real exports from within
     /// the unit don't always total 100, and they are kept as they are.)
     /// </summary>
     public static string? Incomplete(HrtmsRecord r) =>
-        r.Responsibilities.Count == 0
-            ? "It has no key responsibilities."
-            : r.Responsibilities.All(x => x.Duties.Count == 0)
-                ? "It lists no duties under its responsibilities (a job posting names functions only)."
-                : null;
+        r.Responsibilities.Count == 0 ? "It has no key responsibilities." : null;
 
     public static HrtmsRecord? TryParse(byte[] docx, string sourceFile)
     {

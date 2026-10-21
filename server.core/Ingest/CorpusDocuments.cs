@@ -42,8 +42,11 @@ public sealed class ReparseSummary
     /// <summary>Re-read from their layout into verbatim records.</summary>
     public int Reparsed { get; set; }
 
-    /// <summary>Incomplete — no responsibilities, or no duties — and removed from the corpus.</summary>
+    /// <summary>Incomplete — no responsibilities — and removed from the corpus.</summary>
     public List<ReparsedDocument> Discarded { get; set; } = [];
+
+    /// <summary>Refused earlier as incomplete under a stricter rule, and filed now.</summary>
+    public List<ReparsedDocument> Restored { get; set; } = [];
 
     /// <summary>Filed under a different class than before: the code the document states.</summary>
     public List<ReparsedDocument> Refiled { get; set; } = [];
@@ -258,12 +261,14 @@ public sealed partial class CorpusDocuments
         return outcome;
     }
 
+    private const string IncompletePrefix = "Incomplete, so not added:";
+
     /// <summary>A parsed JD as a corpus record, or why it can't be one.</summary>
     private static (JobDescription? Record, string? Problem) Entity(HrtmsRecord parsed, TitleCodeIndex index)
     {
         if (WordJobDescriptions.Incomplete(parsed) is { } incomplete)
         {
-            return (null, $"Incomplete, so not added: {incomplete}");
+            return (null, $"{IncompletePrefix} {incomplete}");
         }
 
         if (index.FindByCode(parsed.UcJobCode) is null)
@@ -299,13 +304,17 @@ public sealed partial class CorpusDocuments
     /// Re-read every imported Word document from its stored original with the layout parser, so JDs
     /// imported before it existed — condensed by a model — become the same verbatim records an
     /// in-unit export makes. An incomplete one is discarded; an unrecognized layout is left as it was.
-    /// Re-read JDs count at their class's next rebuild.
+    /// A document once refused as incomplete is read again too: the rule was stricter once (it wanted
+    /// duties under every responsibility, which older JDs don't list), and one that passes now is
+    /// filed. Re-read JDs count at their class's next rebuild.
     /// </summary>
     public async Task<ReparseSummary> ReparseAsync(CancellationToken ct = default)
     {
         var index = await _titleCodes.GetAsync(ct);
         var uploads = await _db.CorpusUploads
-            .Where(u => u.Source == CorpusUploadSource.Document && u.Status == CorpusUploadStatus.Filed)
+            .Where(u => u.Source == CorpusUploadSource.Document
+                        && (u.Status == CorpusUploadStatus.Filed
+                            || (u.Status == CorpusUploadStatus.Failed && u.Error != null && u.Error.StartsWith(IncompletePrefix))))
             .OrderBy(u => u.Id)
             .ToListAsync(ct);
 
@@ -327,8 +336,17 @@ public sealed partial class CorpusDocuments
             _db.JobDescriptions.RemoveRange(existing);
 
             var (record, problem) = Entity(parsed, index);
+            var wasRefused = upload.Status == CorpusUploadStatus.Failed;
             if (record is null)
             {
+                if (wasRefused)
+                {
+                    // Still refused: it stays as it was, with the reason as it reads now.
+                    upload.Error = problem;
+                    await _db.SaveChangesAsync(ct);
+                    continue;
+                }
+
                 upload.Status = CorpusUploadStatus.Failed;
                 upload.Error = problem;
                 summary.Discarded.Add(new ReparsedDocument { FileName = upload.FileName, Reason = problem! });
@@ -352,7 +370,16 @@ public sealed partial class CorpusDocuments
             upload.UcJobCode = record.UcJobCode;
             upload.UcJobTitle = record.UcJobTitle;
             upload.OriginalUcJobCode = record.OriginalUcJobCode;
-            summary.Reparsed++;
+            if (wasRefused)
+            {
+                upload.Status = CorpusUploadStatus.Filed;
+                upload.Error = null;
+                summary.Restored.Add(new ReparsedDocument { FileName = upload.FileName, Reason = $"filed under {record.UcJobCode}" });
+            }
+            else
+            {
+                summary.Reparsed++;
+            }
             await _db.SaveChangesAsync(ct);
         }
 
