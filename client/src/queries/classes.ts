@@ -1,10 +1,12 @@
 import { fetchJson } from '../lib/api.ts';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
+  ArchiveResponse,
   ClassListResponse,
   ClassProfileResponse,
   ClassSummaryResponse,
   CoverageReport,
+  FitRewriteResponse,
   JdDetailResponse,
   MisfitsResponse,
 } from '../lib/contracts.ts';
@@ -56,3 +58,21 @@ export const misfitsQueryOptions = (threshold = 90) => ({
 });
 
 export const useMisfits = (threshold = 90) => useQuery(misfitsQueryOptions(threshold));
+
+/** Every JD archived under a class, to start a new one from. */
+export const archiveQueryOptions = (slug: string) => ({
+  queryFn: () => fetchJson<ArchiveResponse>(`/api/classes/${encodeURIComponent(slug)}/archive`),
+  queryKey: ['classes', slug, 'archive'] as const,
+});
+
+export const useArchive = (slug: string) => useQuery(archiveQueryOptions(slug));
+
+/** Start a draft from an archived JD: its work placed in the class's functions, its specifics kept. */
+export const useStartFromArchive = (slug: string) =>
+  useMutation({
+    mutationFn: (sourceFile: string) =>
+      fetchJson<FitRewriteResponse>(`/api/classes/${encodeURIComponent(slug)}/archive/start`, {
+        body: JSON.stringify({ sourceFile }),
+        method: 'POST',
+      }),
+  });

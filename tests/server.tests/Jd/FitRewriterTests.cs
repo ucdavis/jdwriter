@@ -314,6 +314,27 @@ public class FitRewriterTests
     }
 
     [Fact]
+    public async Task A_unit_s_own_jd_keeps_its_summary_and_a_correction_takes_the_class_s()
+    {
+        var plan = new
+        {
+            placements = new[] { new { responsibility = 0, function = 0 }, new { responsibility = 1, function = 1 } },
+            functions = Array.Empty<object>(), carryOver = Array.Empty<object>(),
+            outside = Array.Empty<object>(), matches = Array.Empty<object>(),
+        };
+
+        var (specifics, _) = await Run(Greenhouse, plan, RewriteMode.KeepSpecifics);
+        specifics.Inputs.SummaryEdit.Should().BeEquivalentTo(new EditedItem { Original = "Analyzes finances.", Text = "Runs the department budget." });
+        System.Text.Json.JsonDocument.Parse(specifics.DraftState).RootElement.GetProperty("summary").GetString()
+            .Should().Be("Runs the department budget.");
+
+        var (correct, _) = await Run(Greenhouse, plan, RewriteMode.Correct);
+        correct.Inputs.SummaryEdit.Should().BeNull();
+        System.Text.Json.JsonDocument.Parse(correct.DraftState).RootElement.GetProperty("summary").GetString()
+            .Should().Be("Analyzes finances.");
+    }
+
+    [Fact]
     public async Task Each_mode_tells_the_model_its_own_carry_over_rule()
     {
         var plan = new

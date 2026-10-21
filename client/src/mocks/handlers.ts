@@ -1,6 +1,7 @@
 import profilesFixture from './profiles.json' with { type: 'json' };
 import { delay, http, HttpResponse } from 'msw';
 import type {
+  ArchiveResponse,
   AnalyticsReport,
   StandardsUploadResponse,
   SecurityStatus,
@@ -232,6 +233,9 @@ export const handlers = [
       }),
     })
   ),
+
+  // No archived JDs by default: the builder opens on the envelope with no picker.
+  http.get('/api/classes/:slug/archive', () => HttpResponse.json<ArchiveResponse>({ jds: [] })),
 
   http.get('/api/classes/:slug', ({ params }) => {
     const profile = profileOf(String(params.slug));

@@ -426,6 +426,18 @@ public sealed partial class FitRewriter : IFitRewriter
         inputs.KeptPrefKSA = Section(EnvelopeListKind.PrefQualification);
         inputs.KeptWorkEnvironment = Section(EnvelopeListKind.WorkEnvironment);
 
+        // A unit's own document keeps its own summary too, checked like any rewritten summary. A
+        // correction toward the class takes the class's.
+        var summary = mode == RewriteMode.KeepSpecifics ? incumbent.JobSummary.Trim() : "";
+        if (summary.Length > 0)
+        {
+            inputs.SummaryEdit = new EditedItem { Original = envelope.Summary, Text = summary };
+        }
+        else
+        {
+            summary = envelope.Summary;
+        }
+
         static IEnumerable<object> Items(List<string> xs) => xs.Select(text => new { added = false, kept = true, text });
 
         var draftState = JsonSerializer.Serialize(new
@@ -437,6 +449,7 @@ public sealed partial class FitRewriter : IFitRewriter
             notes = "",
             prefKSA = Items(inputs.KeptPrefKSA),
             resps = resps0,
+            summary,
             version = 1,
             workEnv = Items(inputs.KeptWorkEnvironment),
             workExp = Items(inputs.KeptWorkExperience),

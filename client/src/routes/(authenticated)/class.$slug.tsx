@@ -3,6 +3,7 @@ import { StandardDetail } from '@/features/build/StandardDetail.tsx';
 import { SiteNote } from '@/shared/ui/SiteNote.tsx';
 import { useState } from 'react';
 import { BuildFlow } from '@/features/build/BuildFlow.tsx';
+import { ArchivePicker } from '@/features/build/ArchivePicker.tsx';
 import { asDraftState } from '@/features/build/useBuildState.ts';
 import { savedJdQueryOptions } from '@/queries/jds.ts';
 import { useQuery } from '@tanstack/react-query';
@@ -88,7 +89,6 @@ function ClassPage() {
 
       {envelope ? (
         <BuildFlow
-          customizationTarget={profile.customizationTarget ?? 10}
           draft={draft}
           envelope={{
             certs: envelope.requiredCertifications,
@@ -101,7 +101,12 @@ function ClassPage() {
             workExperience: envelope.workExperience,
           }}
           key={draft ? `draft-${draft.id}` : 'fresh'}
-          overview={<EnvelopeOverview isAdmin={isAdmin} profile={profile} source={source} />}
+          overview={
+            <>
+              <ArchivePicker slug={profile.slug} />
+              <EnvelopeOverview isAdmin={isAdmin} profile={profile} source={source} />
+            </>
+          }
           role={{ cannotSupervise: profile.cannotSupervise ?? null, supervisory: profile.isSupervisory ?? false }}
           slug={profile.slug}
           title={profile.title}
