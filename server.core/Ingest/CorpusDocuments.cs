@@ -372,6 +372,19 @@ public sealed partial class CorpusDocuments
             upload.OriginalUcJobCode = record.OriginalUcJobCode;
             if (wasRefused)
             {
+                // Refused before JD names became stable, a class built from it still lists it by its
+                // old row-id name: the rename that migration made for every JD on file, made now.
+                var oldName = $"import/document-{upload.Id}";
+                foreach (var f in await _db.ProfileSourceFiles.Where(f => f.SourceFile == oldName).ToListAsync(ct))
+                {
+                    f.SourceFile = sourceFile;
+                }
+
+                foreach (var c in await _db.JdCoverages.Where(c => c.SourceFile == oldName).ToListAsync(ct))
+                {
+                    c.SourceFile = sourceFile;
+                }
+
                 upload.Status = CorpusUploadStatus.Filed;
                 upload.Error = null;
                 summary.Restored.Add(new ReparsedDocument { FileName = upload.FileName, Reason = $"filed under {record.UcJobCode}" });

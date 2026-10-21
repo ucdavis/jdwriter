@@ -265,10 +265,13 @@ public class WordJobDescriptionsTests
                 Id = 2, FileName = "unmatched.docx", Sha256 = "sha2".PadRight(16, '0'), Content = Posting(), SizeBytes = 1,
                 Source = CorpusUploadSource.Document, Status = CorpusUploadStatus.Failed, Error = "No UC job title could be found in it.",
             });
+        // A class built from it while it was filed, under its old row-id name.
+        db.ProfileSourceFiles.Add(new ProfileSourceFile { ClassProfileId = 1, SourceFile = "import/document-1" });
         await db.SaveChangesAsync();
 
         var summary = await documents.ReparseAsync();
 
+        (await db.ProfileSourceFiles.SingleAsync()).SourceFile.Should().Be(CorpusNames.Imported("sha1".PadRight(16, '0')), "the class finds it again");
         summary.Restored.Should().ContainSingle().Which.FileName.Should().Be("old-style.docx");
         var restored = await db.CorpusUploads.SingleAsync(u => u.Id == 1);
         restored.Status.Should().Be(CorpusUploadStatus.Filed);
