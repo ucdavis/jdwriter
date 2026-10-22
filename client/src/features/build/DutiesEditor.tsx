@@ -55,11 +55,11 @@ export const DutiesEditor = ({
                 type="number"
                 value={r.pctTime}
               />
-              <span className="text-base text-base-content/65">%</span>
+              <span className="text-base text-base-content/70">%</span>
               <input
                 aria-label="Function name"
-                className={`flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-base font-semibold outline-none hover:border-base-300 focus:border-primary ${
-                  r.functionKept ? '' : 'text-base-content/50 line-through'
+                className={`min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-base font-semibold outline-none hover:border-base-300 focus:border-primary ${
+                  r.functionKept ? '' : 'text-base-content/70 line-through'
                 }`}
                 disabled={!r.functionKept}
                 onChange={(e) => state.patchResp(ri, { functionName: e.target.value })}
@@ -83,7 +83,7 @@ export const DutiesEditor = ({
                       verdict={d.kept ? verdicts?.get(d.text.trim()) : undefined}
                     >
                       {d.matchedFrom && d.matchedFrom.length > 0 ? (
-                        <span className="mt-0.5 block pl-1.5 text-sm text-base-content/55" data-testid="matched-from">
+                        <span className="mt-0.5 block pl-1.5 text-sm text-base-content/70" data-testid="matched-from">
                           {d.matchedFrom.map((m) => (
                             <span className="block" key={m}>
                               ↳ From your description: “{m}”
@@ -95,7 +95,7 @@ export const DutiesEditor = ({
                   ))}
                 </ul>
                 {!r.duties.some((d) => d.kept && d.text.trim() !== '') ? (
-                  <p className="mt-2 text-base text-warning" data-testid="function-needs-duty" role="status">
+                  <p className="mt-2 text-base text-warning-ink" data-testid="function-needs-duty" role="status">
                     Keep at least one duty under this responsibility, or uncheck it to drop the whole
                     responsibility.
                   </p>
@@ -132,7 +132,7 @@ export const DutiesEditor = ({
         ))}
       </div>
       {!balanced ? (
-        <p className="mt-3 text-base text-warning">
+        <p className="mt-3 text-base text-warning-ink">
           ⚠ Percent time totals {state.totalPct}% —{' '}
           {state.totalPct < 100
             ? `${100 - state.totalPct}% is unallocated.`

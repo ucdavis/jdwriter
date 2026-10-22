@@ -1,4 +1,5 @@
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { isAdmin } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { corpusJdQueryOptions } from '@/queries/admin.ts';
@@ -18,6 +19,7 @@ export const Route = createFileRoute('/(authenticated)/backend/descriptions/$id'
 
 /** One job description from the corpus, whole, as it was parsed. */
 function JobDescriptionPage() {
+  usePageTitle('Job description · Back end');
   return (
     <AdminOnly>
       <JobDescriptionContent />
@@ -56,10 +58,10 @@ function JobDescriptionContent() {
             {data.pending ? <Badge tone="yellow">not yet in an envelope</Badge> : null}
             {total !== 100 ? <Badge tone="muted">% time totals {total}</Badge> : null}
           </div>
-          <div className="mt-2 text-base text-base-content/65">
+          <div className="mt-2 text-base text-base-content/70">
             {[record.departmentName, record.division].filter(Boolean).join(' · ')}
           </div>
-          {meta ? <div className="mt-0.5 text-base text-base-content/65">{meta}</div> : null}
+          {meta ? <div className="mt-0.5 text-base text-base-content/70">{meta}</div> : null}
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
             <Link
               className="text-base font-semibold text-primary hover:underline"
@@ -88,7 +90,7 @@ function JobDescriptionContent() {
                 )}
               </>
             ) : (
-              <span className="text-base text-base-content/65">
+              <span className="text-base text-base-content/70">
                 Its class hasn&apos;t been built yet — re-ingest it to make one.
               </span>
             )}
@@ -154,7 +156,7 @@ function JobDescriptionContent() {
 
 const ItemList = ({ items, label }: { items: string[]; label: string }) => (
   <div>
-    <div className="mb-1 text-sm font-semibold uppercase tracking-wide text-base-content/50">{label}</div>
+    <div className="mb-1 text-sm font-semibold uppercase tracking-wide text-base-content/70">{label}</div>
     {items.length ? (
       <ul className="space-y-0.5">
         {items.map((it, i) => (
@@ -164,7 +166,7 @@ const ItemList = ({ items, label }: { items: string[]; label: string }) => (
         ))}
       </ul>
     ) : (
-      <span className="text-base text-base-content/50">—</span>
+      <span className="text-base text-base-content/70">—</span>
     )}
   </div>
 );

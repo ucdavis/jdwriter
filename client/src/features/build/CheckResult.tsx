@@ -41,8 +41,8 @@ export const CheckResult = ({
     {check.matchedSignals.length > 0 ? (
       <ul className="mt-3 space-y-1">
         {check.matchedSignals.map((s) => (
-          <li className="flex gap-2 text-base text-base-content/65" key={s}>
-            <span className="text-warning">⚠</span>
+          <li className="flex gap-2 text-base text-base-content/70" key={s}>
+            <span className="text-warning-ink">⚠</span>
             <span>{s}</span>
           </li>
         ))}

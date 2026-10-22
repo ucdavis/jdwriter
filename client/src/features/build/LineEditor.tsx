@@ -4,8 +4,8 @@ import { isEdited, type Item } from './useBuildState.ts';
 import type { CheckedChange } from '@/lib/contracts.ts';
 
 const verdictLine = {
-  borderline: { label: 'Stretches the class', symbol: '~', tone: 'text-warning' },
-  in_envelope: { label: 'Fits the class', symbol: '✓', tone: 'text-success' },
+  borderline: { label: 'Stretches the class', symbol: '~', tone: 'text-warning-ink' },
+  in_envelope: { label: 'Fits the class', symbol: '✓', tone: 'text-success-ink' },
   out_of_envelope: { label: 'Outside the class', symbol: '✕', tone: 'text-error' },
 } as const;
 
@@ -70,7 +70,7 @@ export const LineEditor = ({
           />
         </div>
         {edited ? (
-          <div className="mt-0.5 flex flex-wrap items-center gap-2 pl-1.5 text-sm text-base-content/60">
+          <div className="mt-0.5 flex flex-wrap items-center gap-2 pl-1.5 text-sm text-base-content/70">
             <span title={`Standard wording: ${item.original}`}>
               <Badge tone="yellow">edited</Badge>
             </span>
@@ -85,14 +85,14 @@ export const LineEditor = ({
         ) : null}
         <LineVerdict verdict={verdict} />
         {item.kept && item.text.trim() === '' ? (
-          <p className="mt-0.5 pl-1.5 text-sm text-warning">Empty — this line will be left out.</p>
+          <p className="mt-0.5 pl-1.5 text-sm text-warning-ink">Empty — this line will be left out.</p>
         ) : null}
         {children}
       </div>
       {item.added && onRemove ? (
         <button
           aria-label={`Remove: ${label}`}
-          className="mt-1.5 text-base text-base-content/50 hover:text-error"
+          className="mt-1.5 text-base text-base-content/70 hover:text-error"
           onClick={onRemove}
           type="button"
         >
@@ -141,7 +141,7 @@ const GrowingText = ({
     <textarea
       aria-label={label}
       className={`w-full resize-none overflow-hidden rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-base leading-snug outline-none hover:border-base-300 focus:border-primary disabled:cursor-default disabled:hover:border-transparent ${
-        struck ? 'text-base-content/50 line-through' : ''
+        struck ? 'text-base-content/70 line-through' : ''
       }`}
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}

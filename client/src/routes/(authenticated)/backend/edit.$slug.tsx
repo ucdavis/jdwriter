@@ -1,4 +1,5 @@
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { Card, PageHeader } from '@/shared/ui/primitives.tsx';
 import { classProfileQueryOptions, useClassProfile } from '@/queries/classes.ts';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/(authenticated)/backend/edit/$slug')({
 });
 
 function EditEnvelopePage() {
+  usePageTitle('Edit envelope · Back end');
   const { slug } = Route.useParams();
   const { data: profile } = useClassProfile(slug);
 
@@ -34,7 +36,7 @@ function EditEnvelopePage() {
       />
       {profile.standard ? (
         <Link
-          className="mb-4 inline-block text-base font-semibold text-info hover:underline"
+          className="mb-4 inline-block text-base font-semibold text-info-ink hover:underline"
           params={{ slug }}
           to="/backend/standard/$slug"
         >
@@ -45,7 +47,7 @@ function EditEnvelopePage() {
         <EnvelopeEditor initial={profile.envelope} slug={slug} />
       ) : (
         <Card className="p-6">
-          <p className="text-base text-base-content/65">
+          <p className="text-base text-base-content/70">
             This class has no envelope to edit yet. Ingest its JDs, or bootstrap it from an
             official standard, first.
           </p>

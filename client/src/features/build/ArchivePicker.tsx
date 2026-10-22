@@ -3,7 +3,8 @@ import type { ArchivedJd } from '@/lib/contracts.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { useArchive, useStartFromArchive } from '@/queries/classes.ts';
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useDialog } from '@/shared/ui/useDialog.ts';
+import { useEffect, useRef, useState } from 'react';
 
 const originLabel: Record<ArchivedJd['origin'], string> = {
   authored: 'Written in JDWriter',
@@ -56,16 +57,18 @@ const ArchiveDialog = ({ jds, onClose, slug }: { jds: ArchivedJd[]; onClose: () 
   const start = useStartFromArchive(slug);
   const navigate = useNavigate();
   const shown = jds.filter((jd) => matches(jd, query));
+  const box = useDialog<HTMLDivElement>(onClose);
+  const heading = useRef<HTMLHeadingElement>(null);
 
+  const shownView = useRef(chosen);
+
+  // Moving between the list and a preview replaces what had focus; it goes to the new view's title.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    if (shownView.current !== chosen) {
+      shownView.current = chosen;
+      heading.current?.focus();
+    }
+  }, [chosen]);
 
   const workFrom = (jd: ArchivedJd) =>
     start.mutate(jd.sourceFile, {
@@ -77,16 +80,16 @@ const ArchiveDialog = ({ jds, onClose, slug }: { jds: ArchivedJd[]; onClose: () 
 
   return (
     <div aria-labelledby="archive-dialog-title" aria-modal className="modal modal-open" role="dialog">
-      <div className="modal-box max-w-3xl">
+      <div className="modal-box max-w-3xl" ref={box}>
         {chosen ? (
           <>
             <button className="text-base text-primary hover:underline" onClick={() => setChosen(null)} type="button">
               ← All archived job descriptions
             </button>
-            <h2 className="mt-2 text-2xl font-bold" id="archive-dialog-title">
+            <h2 className="mt-2 text-2xl font-bold focus:outline-none" id="archive-dialog-title" ref={heading} tabIndex={-1}>
               {chosen.workingTitle}
             </h2>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-base text-base-content/65">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-base text-base-content/70">
               {chosen.department}
               <Badge tone="muted">{originLabel[chosen.origin]}</Badge>
             </div>
@@ -113,7 +116,7 @@ const ArchiveDialog = ({ jds, onClose, slug }: { jds: ArchivedJd[]; onClose: () 
                 by title only. Working from it fills in this class&apos;s duties under each, for you to edit.
               </p>
             ) : null}
-            <p className="mt-4 text-sm text-base-content/65">
+            <p className="mt-4 text-sm text-base-content/70">
               Its summary and duties come into the builder under this class&apos;s responsibilities, replacing
               anything you&apos;ve changed so far. The class&apos;s qualifications stay, and work outside the
               class is left out. You&apos;ll check it before moving on, as usual.
@@ -135,7 +138,7 @@ const ArchiveDialog = ({ jds, onClose, slug }: { jds: ArchivedJd[]; onClose: () 
         ) : (
           <>
             <div className="flex items-start justify-between gap-3">
-              <h2 className="text-2xl font-bold" id="archive-dialog-title">
+              <h2 className="text-2xl font-bold focus:outline-none" id="archive-dialog-title" ref={heading} tabIndex={-1}>
                 Archived job descriptions
               </h2>
               <button className="btn btn-ghost btn-sm" onClick={onClose} type="button">
@@ -145,11 +148,15 @@ const ArchiveDialog = ({ jds, onClose, slug }: { jds: ArchivedJd[]; onClose: () 
             <input
               aria-label="Search archived job descriptions"
               className="input input-bordered mt-3 w-full"
+              data-autofocus
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by title, department or wording"
               type="search"
               value={query}
             />
+            <p className="sr-only" role="status">
+              {query.trim() ? `${shown.length} job description${shown.length === 1 ? '' : 's'} match.` : ''}
+            </p>
             <ul className="mt-3 max-h-[55vh] divide-y divide-base-300 overflow-y-auto" data-testid="archive-list">
               {shown.map((jd) => (
                 <li key={jd.sourceFile}>
@@ -162,7 +169,7 @@ const ArchiveDialog = ({ jds, onClose, slug }: { jds: ArchivedJd[]; onClose: () 
                     type="button"
                   >
                     <div className="text-base font-semibold">{jd.workingTitle}</div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-base-content/65">
+                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-base-content/70">
                       {jd.department}
                       <Badge tone="muted">{originLabel[jd.origin]}</Badge>
                       <span>
@@ -172,12 +179,12 @@ const ArchiveDialog = ({ jds, onClose, slug }: { jds: ArchivedJd[]; onClose: () 
                   </button>
                 </li>
               ))}
-              {shown.length === 0 ? <li className="py-3 text-base text-base-content/65">No match.</li> : null}
+              {shown.length === 0 ? <li className="py-3 text-base text-base-content/70">No match.</li> : null}
             </ul>
           </>
         )}
       </div>
-      <button aria-label="Close dialog" className="modal-backdrop" onClick={onClose} type="button" />
+      <button aria-label="Close dialog" className="modal-backdrop" onClick={onClose} tabIndex={-1} type="button" />
     </div>
   );
 };

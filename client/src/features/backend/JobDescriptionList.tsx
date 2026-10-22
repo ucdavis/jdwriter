@@ -83,10 +83,10 @@ export const JobDescriptionList = ({ initialQuery }: { initialQuery?: string }) 
       </div>
 
       {isLoading ? (
-        <p className="text-base text-base-content/65">Loading job descriptions…</p>
+        <p className="text-base text-base-content/70">Loading job descriptions…</p>
       ) : shown.length === 0 ? (
         <Card className="p-6">
-          <p className="text-base text-base-content/65">No job descriptions match.</p>
+          <p className="text-base text-base-content/70">No job descriptions match.</p>
         </Card>
       ) : (
         <Card>
@@ -99,7 +99,7 @@ export const JobDescriptionList = ({ initialQuery }: { initialQuery?: string }) 
                     <Badge tone={originLabel[j.origin].tone}>{originLabel[j.origin].label}</Badge>
                     {j.pending ? <Badge tone="yellow">not yet in an envelope</Badge> : null}
                   </div>
-                  <div className="mt-0.5 text-base text-base-content/65">
+                  <div className="mt-0.5 text-base text-base-content/70">
                     <Link
                       className="hover:text-primary hover:underline"
                       search={{ code: j.ucJobCode }}
@@ -109,7 +109,7 @@ export const JobDescriptionList = ({ initialQuery }: { initialQuery?: string }) 
                     </Link>
                     {j.departmentName ? ` · ${j.departmentName}` : ''}
                   </div>
-                  <div className="text-sm text-base-content/50 tnum">
+                  <div className="text-sm text-base-content/70 tnum">
                     {j.functions} function{j.functions === 1 ? '' : 's'} · {j.duties} dut
                     {j.duties === 1 ? 'y' : 'ies'} · {j.pctTotal}% time
                     {j.addedAt ? ` · added ${new Date(j.addedAt).toLocaleDateString()}` : ''}

@@ -16,7 +16,7 @@ export const Section = ({
     <h2 className="text-xl font-bold" id={`${id}-heading`}>
       {title}
     </h2>
-    <p className="mb-3 mt-0.5 text-base text-base-content/65">{sub}</p>
+    <p className="mb-3 mt-0.5 text-base text-base-content/70">{sub}</p>
     {children}
   </section>
 );

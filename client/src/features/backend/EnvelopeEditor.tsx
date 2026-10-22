@@ -164,7 +164,7 @@ export const EnvelopeEditor = ({
                   type="number"
                   value={r.pctTime}
                 />
-                <span className="text-base text-base-content/65">%</span>
+                <span className="text-base text-base-content/70">%</span>
                 <input
                   aria-label="Function name"
                   className="input input-bordered input-sm flex-1 font-semibold"
@@ -173,7 +173,7 @@ export const EnvelopeEditor = ({
                 />
                 <button
                   aria-label="Remove function"
-                  className="px-1 text-base text-base-content/50 hover:text-error"
+                  className="px-1 text-base text-base-content/70 hover:text-error"
                   onClick={() =>
                     update(
                       'keyResponsibilities',
@@ -222,7 +222,7 @@ export const EnvelopeEditor = ({
         </Card>
       ))}
 
-      <p className="text-sm text-base-content/50">
+      <p className="text-sm text-base-content/70">
         Saving marks this envelope as <strong>manually edited</strong>; re-running ingest
         will preserve it rather than re-synthesizing it from the corpus.
       </p>
@@ -252,7 +252,7 @@ const ListEditor = ({
         />
         <button
           aria-label="Remove item"
-          className="mt-1.5 text-base text-base-content/50 hover:text-error"
+          className="mt-1.5 text-base text-base-content/70 hover:text-error"
           onClick={() => onChange(items.filter((_, j) => j !== i))}
           type="button"
         >

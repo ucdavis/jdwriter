@@ -69,7 +69,7 @@ export const ColumnChart = ({
       </div>
       <div className="mt-1 flex gap-1">
         {data.map((d) => (
-          <span className="flex-1 text-center text-sm text-base-content/50" key={d.key}>
+          <span className="flex-1 text-center text-sm text-base-content/70" key={d.key}>
             {d.tick}
           </span>
         ))}

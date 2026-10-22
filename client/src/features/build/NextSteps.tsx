@@ -45,7 +45,7 @@ export const NextSteps = ({ result }: { result: AssembledJd }) => {
                 Begin working on the Workforce Management request →
               </a>
             ) : (
-              <span className="text-base text-base-content/65">
+              <span className="text-base text-base-content/70">
                 The Workforce Management tool is not available yet. Until it is, keep the
                 downloads below with your request:{' '}
                 <a className="text-primary hover:underline" download href={appUrl(`/api/jds/${id}/markdown`)}>

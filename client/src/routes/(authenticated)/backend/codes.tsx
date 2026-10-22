@@ -1,4 +1,5 @@
 import { CtListingPanel } from '@/features/backend/CtListingPanel.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { JobsDirectory } from '@/features/backend/JobsDirectory.tsx';
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
 import { PageHeader } from '@/shared/ui/primitives.tsx';
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/(authenticated)/backend/codes')({
 /* eslint-enable perfectionist/sort-objects */
 
 function JobsPage() {
+  usePageTitle('Codes · Back end');
   const { code } = Route.useSearch();
   return (
     <AdminOnly>

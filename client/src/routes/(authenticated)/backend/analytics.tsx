@@ -1,4 +1,5 @@
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { isAdmin } from '@/queries/user.ts';
 import { analyticsQueryOptions } from '@/queries/admin.ts';
 import { BarList, ColumnChart } from '@/features/backend/Charts.tsx';
@@ -18,6 +19,7 @@ export const Route = createFileRoute('/(authenticated)/backend/analytics')({
 });
 
 function AnalyticsPage() {
+  usePageTitle('Analytics · Back end');
   return (
     <AdminOnly>
       <AnalyticsContent />
@@ -29,14 +31,16 @@ const Tile = ({ label, note, value }: { label: string; note?: string; value: num
   <div className="rounded-lg border border-base-300 p-4">
     <Eyebrow>{label}</Eyebrow>
     <div className="mt-1 text-3xl font-bold leading-none tnum">{value}</div>
-    {note ? <div className="mt-1 text-sm text-base-content/55">{note}</div> : null}
+    {note ? <div className="mt-1 text-sm text-base-content/70">{note}</div> : null}
   </div>
 );
 
 const TableView = ({ children }: { children: ReactNode }) => (
   <details className="mt-3">
-    <summary className="cursor-pointer text-sm text-base-content/55">Show as table</summary>
-    <div className="mt-2 overflow-x-auto">{children}</div>
+    <summary className="cursor-pointer text-sm text-base-content/70">Show as table</summary>
+    <div aria-label="Table" className="mt-2 overflow-x-auto" role="region" tabIndex={0}>
+      {children}
+    </div>
   </details>
 );
 
@@ -67,7 +71,7 @@ function AnalyticsContent() {
       />
 
       <Card className="p-5">
-        <Eyebrow>Usage</Eyebrow>
+        <h2 className="eyebrow">Usage</h2>
         <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-6">
           <Tile label="Users" value={usage.users} />
           <Tile label="Active, 7 days" value={usage.active7Days} />
@@ -100,12 +104,12 @@ function AnalyticsContent() {
       </Card>
 
       <Card className="mt-5 p-5">
-        <Eyebrow>Classes</Eyebrow>
+        <h2 className="eyebrow">Classes</h2>
         <div className="mt-3 grid gap-6 md:grid-cols-2">
           <section>
             <h3 className="text-base font-semibold">Most-authored classes</h3>
             {classes.mostAuthored.length === 0 ? (
-              <p className="mt-2 text-base text-base-content/65">No JDs written yet.</p>
+              <p className="mt-2 text-base text-base-content/70">No JDs written yet.</p>
             ) : (
               <BarList
                 data={classes.mostAuthored.map((c) => ({ key: c.slug, label: c.title, value: c.count }))}
@@ -116,7 +120,7 @@ function AnalyticsContent() {
           </section>
           <section>
             <h3 className="text-base font-semibold">Envelope match across classes</h3>
-            <p className="mt-1 text-sm text-base-content/55">
+            <p className="mt-1 text-sm text-base-content/70">
               Classes by the share of their real JDs at least 90% covered by the envelope.
             </p>
             <BarList
@@ -131,7 +135,7 @@ function AnalyticsContent() {
           <section>
             <h3 className="text-base font-semibold">
               Lowest envelope match{' '}
-              <span className="font-normal text-base-content/55">— where curation pays off first</span>
+              <span className="font-normal text-base-content/70">— where curation pays off first</span>
             </h3>
             <table className="table table-xs mt-2">
               <thead>
@@ -161,11 +165,11 @@ function AnalyticsContent() {
           <section>
             <h3 className="text-base font-semibold">
               Never used{' '}
-              <span className="font-normal text-base-content/55">
+              <span className="font-normal text-base-content/70">
                 — {classes.neverUsed.length} of {classes.totalClasses} classes have no JDs written yet
               </span>
             </h3>
-            <div className="mt-2 max-h-72 overflow-y-auto">
+            <div aria-label="Classes with no JDs written yet" className="mt-2 max-h-72 overflow-y-auto" role="region" tabIndex={0}>
               <table className="table table-xs">
                 <thead>
                   <tr>

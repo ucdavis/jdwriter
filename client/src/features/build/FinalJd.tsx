@@ -39,13 +39,13 @@ export const FinalJd = ({
     result.leads == null ? null : `Leads: ${result.leads ? 'Yes' : 'No'}`,
   ].filter((x): x is string => x !== null);
   const savedStatus = result.authoredJdId ? (
-    <span className="text-base text-base-content/65" data-testid="saved-status">
+    <span className="text-base text-base-content/70" data-testid="saved-status">
       Saved as{' '}
       <Badge tone={result.status === 'ready' ? 'green' : 'yellow'}>
         {result.status === 'ready' ? 'Ready' : 'Draft'}
       </Badge>{' '}
       ·{' '}
-      <Link className="text-primary hover:underline" to="/jds">
+      <Link className="text-primary underline" to="/jds">
         My JDs
       </Link>
     </span>
@@ -93,7 +93,7 @@ export const FinalJd = ({
       )}
 
       {result.fromEnvelope ? (
-        <p className="text-base text-base-content/65" data-testid="from-envelope">
+        <p className="text-base text-base-content/70" data-testid="from-envelope">
           Assembled straight from the class envelope — nothing was changed, so no AI review was
           needed.
         </p>
@@ -105,7 +105,7 @@ export const FinalJd = ({
             <span data-testid="corpus-note">{result.corpusNote}</span>
           </Note>
         ) : (
-          <p className="text-base text-base-content/65" data-testid="corpus-note">
+          <p className="text-base text-base-content/70" data-testid="corpus-note">
             {result.corpusNote}
           </p>
         )
@@ -128,7 +128,7 @@ export const FinalJd = ({
           <div className="flex items-center justify-between gap-3 border-b border-base-300 pb-3">
             <div>
               <h2 className="text-2xl font-bold">{result.workingTitle}</h2>
-              <div className="mt-0.5 text-base text-base-content/65">
+              <div className="mt-0.5 text-base text-base-content/70">
                 {result.department ? `${result.department} · ` : ''}UC Job Code{' '}
                 <span className="tnum">{result.ucJobCode}</span>
               </div>
@@ -139,7 +139,7 @@ export const FinalJd = ({
             </div>
           </div>
           {result.bargainingUnit || supervision.length > 0 ? (
-            <div className="mt-2 text-sm text-base-content/50" data-testid="jd-facts">
+            <div className="mt-2 text-sm text-base-content/70" data-testid="jd-facts">
               {[result.bargainingUnit ? `Bargaining Unit: ${result.bargainingUnit}` : null, ...supervision]
                 .filter(Boolean)
                 .join(' · ')}
@@ -204,7 +204,7 @@ export const FinalJd = ({
           </Badge>
         </div>
         {result.complianceEdits.length === 0 ? (
-          <p className="mt-2 text-base text-base-content/65">
+          <p className="mt-2 text-base text-base-content/70">
             No compliance issues found.
           </p>
         ) : (
@@ -213,12 +213,12 @@ export const FinalJd = ({
               <li className="text-base" key={e.section}>
                 <div className="flex items-center gap-2">
                   <Badge tone={e.source === 'rule' ? 'muted' : 'purple'}>{e.source}</Badge>
-                  <span className="text-base-content/50 tnum">{e.section}</span>
+                  <span className="text-base-content/70 tnum">{e.section}</span>
                 </div>
-                <div className="mt-1 text-base-content/65">{e.reason}</div>
+                <div className="mt-1 text-base-content/70">{e.reason}</div>
                 <div className="mt-1 flex flex-col gap-0.5">
                   <span className="text-error line-through">{e.before}</span>
-                  <span className="text-success">{e.after}</span>
+                  <span className="text-success-ink">{e.after}</span>
                 </div>
               </li>
             ))}
@@ -255,7 +255,7 @@ const Outcome = ({
       {savedStatus}
     </div>
     <div className="mt-4 border-t border-base-300 pt-3">
-      <p className="text-base text-base-content/65">Need to make changes?</p>
+      <p className="text-base text-base-content/70">Need to make changes?</p>
       <button className="btn btn-outline btn-sm mt-2" onClick={onEdit} type="button">
         Make changes
       </button>

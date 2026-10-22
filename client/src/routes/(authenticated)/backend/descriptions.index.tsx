@@ -1,4 +1,5 @@
 import { DocumentImportPanel, PendingRebuildsPanel } from '@/features/backend/AdminPanels.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { JobDescriptionList } from '@/features/backend/JobDescriptionList.tsx';
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
 import { PageHeader } from '@/shared/ui/primitives.tsx';
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/(authenticated)/backend/descriptions/')({
 /* eslint-enable perfectionist/sort-objects */
 
 function JobDescriptionsPage() {
+  usePageTitle('Descriptions · Back end');
   const { q } = Route.useSearch();
   return (
     <AdminOnly>

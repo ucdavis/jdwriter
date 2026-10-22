@@ -31,7 +31,7 @@ export const SummaryEditor = ({
       rows={4}
       value={summary}
     />
-    <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-base-content/60">
+    <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-base-content/70">
       {edited ? (
         <>
           <span title={`The class's summary: ${classSummary}`}>
@@ -47,7 +47,7 @@ export const SummaryEditor = ({
     </div>
     <LineVerdict verdict={verdict} />
     {summary.trim() === '' ? (
-      <p className="mt-0.5 text-sm text-warning">A job description needs a summary.</p>
+      <p className="mt-0.5 text-sm text-warning-ink">A job description needs a summary.</p>
     ) : null}
   </Card>
 );

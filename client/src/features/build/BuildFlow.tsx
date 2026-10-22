@@ -51,7 +51,7 @@ const Progress = ({ onGo, step }: { onGo: (step: Step) => void; step: Step }) =>
           <li
             aria-current={i === current ? 'step' : undefined}
             className={`flex items-center gap-1.5 text-base font-semibold ${
-              i <= current ? 'text-primary' : 'text-base-content/50'
+              i <= current ? 'text-primary' : 'text-base-content/70'
             }`}
             key={key}
           >
@@ -237,7 +237,7 @@ export const BuildFlow = ({
         {saveDraft.isPending ? 'Saving…' : 'Save draft'}
       </button>
       {saveDraft.isSuccess && !saveDraft.isPending ? (
-        <span className="text-base text-success" data-testid="draft-saved">
+        <span className="text-base text-success-ink" data-testid="draft-saved">
           Draft saved ·{' '}
           <Link className="underline" to="/jds">
             My JDs
@@ -248,8 +248,28 @@ export const BuildFlow = ({
     </>
   );
 
+  // What a screen reader is told as a check or an assembly runs and lands (WCAG 4.1.3). The region
+  // is always there, so a change to its text is announced.
+  const fitWords = (v: EnvelopeCheckResponse['verdict']) =>
+    v === 'out_of_envelope' ? 'do not fit the class' : v === 'borderline' ? 'stretch the class but fit it' : 'fit the class';
+  const shownCheck = step === 'duties' ? dutiesCurrent : accepted ? finalCheck.result : null;
+  const announcement = check.isPending
+    ? 'Checking…'
+    : assemble.isPending
+      ? 'Assembling your job description…'
+      : step === 'final' && assemble.data
+        ? 'Your job description is assembled.'
+        : shownCheck
+          ? `Check complete: your changes ${fitWords(shownCheck.verdict)}.${
+              (shownCheck.changes?.length ?? 0) > 0 ? ' Each change shows its verdict and reason under it.' : ''
+            }`
+          : '';
+
   return (
     <div className="space-y-5">
+      <p className="sr-only" role="status">
+        {announcement}
+      </p>
       {step === 'duties' ? overview : null}
       <Progress onGo={go} step={step} />
       {error ? <Note tone="red">{messageOf(error)}</Note> : null}
@@ -312,7 +332,7 @@ export const BuildFlow = ({
               <YesNoField label="Leads" onChange={state.setLeads} value={state.leads} />
             </div>
             {role?.cannotSupervise ? (
-              <p className="mt-2 text-base text-base-content/65" data-testid="cannot-supervise">
+              <p className="mt-2 text-base text-base-content/70" data-testid="cannot-supervise">
                 {role.cannotSupervise}
               </p>
             ) : null}
@@ -338,7 +358,7 @@ export const BuildFlow = ({
               onLookForBetterFit={() => betterFit.mutate(state.buildRequest(slug))}
             />
           ) : dutiesCheck ? (
-            <p className="text-base text-base-content/65" data-testid="check-stale">
+            <p className="text-base text-base-content/70" data-testid="check-stale">
               You&apos;ve changed your duties since the check — check them again before continuing.
             </p>
           ) : null}
@@ -365,7 +385,7 @@ export const BuildFlow = ({
             )}
             {draftButton}
             {gateReason ? (
-              <span className="text-base text-warning" data-testid="build-gate-reason">
+              <span className="text-base text-warning-ink" data-testid="build-gate-reason">
                 {gateReason}
               </span>
             ) : null}
@@ -399,7 +419,7 @@ export const BuildFlow = ({
 
           <Card className="p-5">
             <Eyebrow>Included automatically</Eyebrow>
-            <p className="mt-2 text-base text-base-content/65">
+            <p className="mt-2 text-base text-base-content/70">
               Conditions of Employment and Physical Requirements are standard UC language, added
               to the final JD for you.
             </p>
@@ -440,7 +460,7 @@ export const BuildFlow = ({
             </button>
             {draftButton}
             {gateReason ? (
-              <span className="text-base text-warning" data-testid="build-gate-reason">
+              <span className="text-base text-warning-ink" data-testid="build-gate-reason">
                 {gateReason}
               </span>
             ) : null}

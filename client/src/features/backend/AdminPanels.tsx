@@ -90,7 +90,7 @@ export const PendingRebuildsPanel = ({ hideWhenEmpty = false }: { hideWhenEmpty?
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Eyebrow>Waiting to be re-ingested</Eyebrow>
-          <p className="mt-1 text-base text-base-content/65">
+          <p className="mt-1 text-base text-base-content/70">
             {pending.isLoading
               ? 'Checking for new JDs…'
               : list.length === 0
@@ -113,12 +113,17 @@ export const PendingRebuildsPanel = ({ hideWhenEmpty = false }: { hideWhenEmpty?
       </div>
 
       {list.length > 0 ? (
-        <ul className="mt-3 max-h-96 divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300">
+        // Scrolls, so it takes focus: keyboard users scroll it with the arrow keys (WCAG 2.1.1).
+        <ul
+          aria-label="Classes waiting to be re-ingested"
+          className="mt-3 max-h-96 divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300"
+          tabIndex={0}
+        >
           {list.map((c) => (
             <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.code}>
               <span className="flex flex-col">
                 <span className="text-base font-semibold">{c.title}</span>
-                <span className="text-sm text-base-content/65 tnum">
+                <span className="text-sm text-base-content/70 tnum">
                   Code {c.code} ·{' '}
                   {[
                     c.newImported > 0 ? `${c.newImported} new JD${c.newImported === 1 ? '' : 's'}` : null,
@@ -135,7 +140,7 @@ export const PendingRebuildsPanel = ({ hideWhenEmpty = false }: { hideWhenEmpty?
                       : ' · new class'}
                 </span>
                 {c.hasManualEnvelope ? (
-                  <span className="text-sm text-warning">
+                  <span className="text-sm text-warning-ink">
                     This class&apos;s envelope was edited by hand — re-ingesting replaces those edits.
                   </span>
                 ) : null}
@@ -152,7 +157,7 @@ export const PendingRebuildsPanel = ({ hideWhenEmpty = false }: { hideWhenEmpty?
         </div>
       ) : null}
       {running ? (
-        <p className="mt-2 text-sm text-base-content/50">
+        <p className="mt-2 text-sm text-base-content/70">
           Each class is consolidated and its envelope rebuilt — a large class can take a minute
           or two.
         </p>
@@ -243,11 +248,12 @@ export const DocumentImportPanel = () => {
   return (
     <Card className="mb-5 p-5">
       <Eyebrow>Add job descriptions</Eyebrow>
-      <p className="mt-1 text-base text-base-content/65">
+      <p className="mt-1 text-base text-base-content/70">
         JD exports copied out of JDX into Word (.docx) — files or a whole folder. Each is parsed
         straight from its layout — no AI, wording kept exactly — and filed under the job code it
-        states. A document with no responsibilities or no duties (a job posting, for one) is
-        incomplete and not added. Only a layout the parser doesn&apos;t recognize is read by the AI.
+        states. Older JDs that list each responsibility as a title and a % only are added as they
+        are; a document with no responsibilities at all is incomplete and not added. Only a layout
+        the parser doesn&apos;t recognize is read by the AI.
         Added JDs wait below until their class is re-ingested.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -286,7 +292,11 @@ export const DocumentImportPanel = () => {
           {reparse.data.discarded.length > 0 ? (
             <details className="mt-2">
               <summary className="cursor-pointer text-base">Discarded ({reparse.data.discarded.length})</summary>
-              <ul className="mt-1 max-h-60 list-disc overflow-y-auto pl-5 text-sm text-base-content/75">
+              <ul
+                aria-label="Discarded documents"
+                className="mt-1 max-h-60 list-disc overflow-y-auto pl-5 text-sm text-base-content/75"
+                tabIndex={0}
+              >
                 {reparse.data.discarded.map((d) => (
                   <li key={d.fileName}>
                     {d.fileName}: {d.reason}
@@ -331,7 +341,7 @@ export const DocumentImportPanel = () => {
         </label>
         {running ? (
           <>
-            <span className="text-base text-base-content/65 tnum">
+            <span className="text-base text-base-content/70 tnum">
               Reading {Math.min(done + 1, rows.length)} of {rows.length}…
             </span>
             <button
@@ -347,6 +357,14 @@ export const DocumentImportPanel = () => {
         ) : null}
       </div>
 
+      {/* Announced as a folder starts and finishes, not file by file (WCAG 4.1.3). */}
+      <p className="sr-only" role="status">
+        {running
+          ? `Adding ${rows.length} document${rows.length === 1 ? '' : 's'}…`
+          : rows.length > 0
+            ? `Done: ${count('added')} added, ${count('duplicate')} already added, ${count('failed')} not usable.`
+            : ''}
+      </p>
       {rows.length > 0 && !running ? (
         <p className="mt-3 text-base" data-testid="document-summary">
           {count('added')} added · {count('duplicate')} already added · {count('failed')} not usable
@@ -355,14 +373,18 @@ export const DocumentImportPanel = () => {
       ) : null}
 
       {rows.length > 0 ? (
-        <ul className="mt-2 max-h-96 divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300">
+        <ul
+          aria-label="Documents added"
+          className="mt-2 max-h-96 divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300"
+          tabIndex={0}
+        >
           {rows.map((r) => (
             <li className="flex items-start justify-between gap-3 px-3 py-2" key={r.name}>
               <span className="flex min-w-0 flex-col">
                 <span className="truncate text-base">{r.name}</span>
                 {r.detail ? (
                   <span
-                    className={`text-sm ${r.status === 'failed' ? 'text-error' : 'text-base-content/65'}`}
+                    className={`text-sm ${r.status === 'failed' ? 'text-error' : 'text-base-content/70'}`}
                   >
                     {r.detail}
                   </span>
@@ -400,7 +422,7 @@ export const QualificationRulesPanel = () => {
   return (
     <Card className="mb-5 p-5">
       <Eyebrow>Education rules</Eyebrow>
-      <p className="mt-1 text-base text-base-content/65">
+      <p className="mt-1 text-base text-base-content/70">
         A preferred degree belongs in preferred qualifications, not education, and every degree
         reads “or equivalent experience”. New and edited envelopes follow these rules
         automatically; this applies them to envelopes written before.
@@ -446,11 +468,16 @@ export const QualificationRulesPanel = () => {
       ) : null}
 
       {summary && !summary.applied && summary.examples.length > 0 ? (
-        <ul className="mt-3 max-h-96 space-y-3 overflow-y-auto" data-testid="qualification-examples">
+        <ul
+          aria-label="Example changes"
+          className="mt-3 max-h-96 space-y-3 overflow-y-auto"
+          data-testid="qualification-examples"
+          tabIndex={0}
+        >
           {summary.examples.map((e) => (
             <li className="rounded-lg border border-base-300 p-3" key={e.slug}>
               <div className="font-semibold">{e.title}</div>
-              <div className="mt-1 text-sm text-base-content/50">Education</div>
+              <div className="mt-1 text-sm text-base-content/70">Education</div>
               <ul className="list-disc pl-5 text-sm">
                 {e.educationAfter.map((t) => (
                   <li key={t}>{t}</li>
@@ -458,7 +485,7 @@ export const QualificationRulesPanel = () => {
               </ul>
               {e.preferredChanged.length > 0 ? (
                 <>
-                  <div className="mt-1 text-sm text-base-content/50">Preferred qualifications</div>
+                  <div className="mt-1 text-sm text-base-content/70">Preferred qualifications</div>
                   <ul className="list-disc pl-5 text-sm">
                     {e.preferredChanged.map((t) => (
                       <li key={t}>{t}</li>
@@ -486,7 +513,7 @@ export const StandardsPanel = () => {
       <div className="flex items-center justify-between gap-3">
         <div>
           <Eyebrow>Official job standards</Eyebrow>
-          <p className="mt-1 text-base text-base-content/65">
+          <p className="mt-1 text-base text-base-content/70">
             Upload UC job-standard workbooks (Job Builder .xlsx exports). They augment envelopes
             with authoritative KSAs, education, certifications and scope — the corpus still
             drives the % time responsibilities, which is the actual-JD advantage. Uploads add
@@ -547,7 +574,7 @@ export const StandardsPanel = () => {
             </ul>
           ) : null}
           {uploaded.files.some((f) => f.result === 'duplicate') ? (
-            <span className="text-base text-base-content/50">
+            <span className="text-base text-base-content/70">
               {uploaded.files.filter((f) => f.result === 'duplicate').length} workbook(s) had
               already been uploaded.
             </span>
@@ -573,12 +600,12 @@ export const StandardsPanel = () => {
             </Badge>
           </div>
           {result.linkedCount > 0 ? (
-            <span className="text-base text-base-content/65">
+            <span className="text-base text-base-content/70">
               Linked: {result.linkedSample.join(', ')}
             </span>
           ) : null}
           {result.uncodedSample.length > 0 ? (
-            <span className="text-base text-base-content/50">
+            <span className="text-base text-base-content/70">
               {/* Unresolved codes are usually UC-systemwide titles with no UCD
                   equivalent, which is a coverage fact rather than a matching bug. */}
               No job code: {result.uncodedSample.join(', ')}
@@ -646,7 +673,7 @@ export const StandardMatchPanel = () => {
   return (
     <Card className="mb-5 p-5">
       <Eyebrow>Match standards to job codes</Eyebrow>
-      <p className="mt-1 text-base text-base-content/65">
+      <p className="mt-1 text-base text-base-content/70">
         These standards&apos; titles don&apos;t match any job code exactly. Each is shown with the
         closest codes at the same level, union and site. Confirm the right one, reject them, or
         type the right code. A confirmed match links the standard everywhere and survives
@@ -679,7 +706,7 @@ export const StandardMatchPanel = () => {
           {review.data.withoutSuggestion} with no close job code
         </p>
       ) : review.isPending ? (
-        <p className="mt-3 text-base text-base-content/65">Loading…</p>
+        <p className="mt-3 text-base text-base-content/70">Loading…</p>
       ) : null}
       {review.error || decide.error || undo.error ? (
         <div className="mt-3">
@@ -701,7 +728,7 @@ export const StandardMatchPanel = () => {
                       {c.fromCtListing ? (
                         <Badge tone="accent">same title in the CT listing</Badge>
                       ) : (
-                        <span className="text-sm text-base-content/50 tnum">{Math.round(c.score * 100)}% alike</span>
+                        <span className="text-sm text-base-content/70 tnum">{Math.round(c.score * 100)}% alike</span>
                       )}
                     </span>
                     <button
@@ -751,10 +778,10 @@ export const StandardMatchPanel = () => {
           ))}
         </ul>
       ) : review.data ? (
-        <p className="mt-3 text-base text-base-content/65">Nothing to review.</p>
+        <p className="mt-3 text-base text-base-content/70">Nothing to review.</p>
       ) : null}
       {unmatched.length > MATCH_LIMIT ? (
-        <p className="mt-2 text-sm text-base-content/50">
+        <p className="mt-2 text-sm text-base-content/70">
           Showing the first {MATCH_LIMIT} of {unmatched.length} — filter to narrow.
         </p>
       ) : null}
@@ -812,7 +839,7 @@ export const BlankStandardClassesPanel = () => {
   return (
     <Card className="mb-5 p-5">
       <Eyebrow>Classes built from blank standards</Eyebrow>
-      <p className="mt-1 text-base text-base-content/65">
+      <p className="mt-1 text-base text-base-content/70">
         A blank standard has a title but no responsibilities, so a class bootstrapped from one is
         little more than a title. These are removed; the job waits for real JDs or the full
         standard. Any with saved JDs are kept.
@@ -850,13 +877,13 @@ export const BlankStandardClassesPanel = () => {
       ) : null}
       {classes ? (
         classes.length === 0 ? (
-          <p className="mt-3 text-base text-base-content/65">None — no class was built from a blank standard.</p>
+          <p className="mt-3 text-base text-base-content/70">None — no class was built from a blank standard.</p>
         ) : (
           <ul className="mt-3 max-h-80 divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300" data-testid="blank-classes">
             {classes.map((c) => (
               <li className="flex items-center justify-between gap-3 px-3 py-2" key={c.slug}>
                 <span className="text-base">
-                  {c.title} <span className="text-sm text-base-content/50 tnum">{c.ucJobCode}</span>
+                  {c.title} <span className="text-sm text-base-content/70 tnum">{c.ucJobCode}</span>
                 </span>
                 {c.savedJds > 0 ? (
                   <Badge tone="yellow">
@@ -885,7 +912,7 @@ export const SupersessionPanel = () => {
       <div className="flex items-center justify-between gap-3">
         <div>
           <Eyebrow>Superseded by a union title</Eyebrow>
-          <p className="mt-1 text-base text-base-content/65">
+          <p className="mt-1 text-base text-base-content/70">
             Non-represented classes replaced by a union-designated successor —
             RP, CX, TX, RX or HX after the title. Retiring one refiles its JDs
             under the successor, then merges, renames or removes the old class;
@@ -937,7 +964,7 @@ export const SupersessionPanel = () => {
           ) : null}
         </div>
       ) : shown && shown.profiles.length === 0 ? (
-        <p className="mt-3 text-base text-base-content/65">
+        <p className="mt-3 text-base text-base-content/70">
           Nothing to retire — no class is filed under a superseded code.
         </p>
       ) : null}
@@ -952,7 +979,7 @@ export const SupersessionPanel = () => {
                 <div className="truncate text-base font-semibold">
                   {p.title} ({p.code})
                 </div>
-                <div className="text-sm text-base-content/65 tnum">
+                <div className="text-sm text-base-content/70 tnum">
                   {retireOutcome(p)}
                   {p.corpusJds
                     ? ` · ${p.corpusJds} corpus JD${p.corpusJds === 1 ? '' : 's'}`
@@ -1074,7 +1101,7 @@ export const BootstrapPanel = () => {
       <div className="flex items-center justify-between gap-3">
         <div>
           <Eyebrow>Bootstrap from a standard</Eyebrow>
-          <p className="mt-1 text-base text-base-content/65">
+          <p className="mt-1 text-base text-base-content/70">
             Create a starter envelope for a class that has an official standard but{' '}
             <span className="font-semibold">no job descriptions yet</span>. It is marked
             standard-derived (% time is estimated) and converges to a learned envelope once
@@ -1142,20 +1169,20 @@ export const BootstrapPanel = () => {
         </div>
       ) : null}
       {running ? (
-        <p className="mt-2 text-sm text-base-content/50">
+        <p className="mt-2 text-sm text-base-content/70">
           Creating {Object.values(status).filter((v) => v === 'done').length} of{' '}
           {all.length}… each envelope is a model call.
         </p>
       ) : null}
       {leftOut > 0 ? (
-        <p className="mt-3 text-base text-base-content/65" data-testid="bootstrap-left-out">
+        <p className="mt-3 text-base text-base-content/70" data-testid="bootstrap-left-out">
           Only classes on UC Davis payroll are listed. {leftOut} standard
           {leftOut === 1 ? ' is' : 's are'} left out: their titles aren&apos;t used at UC Davis, so
           an envelope for them could never be used.
         </p>
       ) : null}
       {bootstrap.data?.blank ? (
-        <p className="mt-2 text-base text-base-content/65" data-testid="bootstrap-blank">
+        <p className="mt-2 text-base text-base-content/70" data-testid="bootstrap-blank">
           {bootstrap.data.blank} more {bootstrap.data.blank === 1 ? 'is' : 'are'} blank — a title
           but no responsibilities — so there&apos;s nothing to build from. Add the full standard on
           the Codes page, or ingest JDs for the class.
@@ -1163,7 +1190,7 @@ export const BootstrapPanel = () => {
       ) : null}
       {candidates ? (
         candidates.length === 0 ? (
-          <p className="mt-3 text-base text-base-content/65">
+          <p className="mt-3 text-base text-base-content/70">
             No candidates — every standard for a class on UC Davis payroll already has a profile.
           </p>
         ) : (
@@ -1176,16 +1203,20 @@ export const BootstrapPanel = () => {
                 placeholder="Filter by title…"
                 value={filter}
               />
-              <span className="whitespace-nowrap text-base text-base-content/50">
+              <span className="whitespace-nowrap text-base text-base-content/70">
                 {shown.length} of {candidates.length}
               </span>
             </div>
-            <ul className="max-h-[360px] divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300">
+            <ul
+              aria-label="Standards to bootstrap"
+              className="max-h-[360px] divide-y divide-base-300 overflow-y-auto rounded-lg border border-base-300"
+              tabIndex={0}
+            >
               {shown.map((c) => (
                 <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={c.title}>
                   <div className="min-w-0">
                     <div className="truncate text-base font-semibold">{c.title}</div>
-                    <div className="text-sm text-base-content/65 tnum">
+                    <div className="text-sm text-base-content/70 tnum">
                       Code {c.code}
                       {c.family ? ` · ${c.family}` : ''}
                       {c.grade ? ` · ${c.grade}` : ''}

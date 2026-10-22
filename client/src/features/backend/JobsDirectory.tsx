@@ -11,6 +11,7 @@ import { SiteBadge } from '@/shared/ui/SiteNote.tsx';
 import { Badge, Card, Eyebrow, Note } from '@/shared/ui/primitives.tsx';
 import { downloadExcelCsv, toExcelCsv } from '@/lib/csv.ts';
 import { Link } from '@tanstack/react-router';
+import { useDialog } from '@/shared/ui/useDialog.ts';
 import { useState } from 'react';
 
 /** How many jobs the list renders before asking for a filter. */
@@ -128,7 +129,7 @@ export const JobsDirectory = ({ initialCode }: { initialCode?: string }) => {
           />
         </div>
         {jobs.data && classFilter === 'none' && shown.length > 0 ? (
-          <p className="mt-2 text-base text-base-content/65" data-testid="jobs-needs">
+          <p className="mt-2 text-base text-base-content/70" data-testid="jobs-needs">
             Needed: {shown.filter((j) => needsOf(j) === 'Ready to bootstrap').length} ready to bootstrap ·{' '}
             {shown.filter((j) => j.standard?.blank).length} JDs or the full standard (blank standard) ·{' '}
             {shown.filter((j) => !j.standard).length} JDs or a standard
@@ -143,7 +144,7 @@ export const JobsDirectory = ({ initialCode }: { initialCode?: string }) => {
               : ''}
           </p>
         ) : jobs.isPending ? (
-          <p className="mt-3 text-base text-base-content/65">Loading…</p>
+          <p className="mt-3 text-base text-base-content/70">Loading…</p>
         ) : null}
         {jobs.error ? (
           <div className="mt-3">
@@ -174,7 +175,7 @@ export const JobsDirectory = ({ initialCode }: { initialCode?: string }) => {
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-base font-semibold">{j.title}</span>
-                    <span className="flex flex-wrap items-center gap-1.5 text-sm text-base-content/65 tnum">
+                    <span className="flex flex-wrap items-center gap-1.5 text-sm text-base-content/70 tnum">
                       {j.code}
                       {j.active ? null : <Badge tone="muted">not active</Badge>}
                       {j.site ? <SiteBadge site={j.site} /> : null}
@@ -185,18 +186,18 @@ export const JobsDirectory = ({ initialCode }: { initialCode?: string }) => {
                     {j.class ? (
                       <>
                         <span className="block truncate">{j.class.title}</span>
-                        <span className="text-sm text-base-content/65">
+                        <span className="text-sm text-base-content/70">
                           {j.class.corpusSize > 0 ? `${j.class.corpusSize} JDs` : 'starter envelope'}
                         </span>
                         {j.class.fromBlankStandard ? <Badge tone="yellow">built from a blank standard</Badge> : null}
                       </>
                     ) : needsOf(j) ? (
                       <>
-                        <span className="block text-base-content/50">—</span>
-                        <span className="text-sm text-base-content/65">Needs: {needsOf(j)}</span>
+                        <span className="block text-base-content/70">—</span>
+                        <span className="text-sm text-base-content/70">Needs: {needsOf(j)}</span>
                       </>
                     ) : (
-                      <span className="text-base-content/50">—</span>
+                      <span className="text-base-content/70">—</span>
                     )}
                   </span>
                   <span className="min-w-0 text-base">
@@ -208,7 +209,7 @@ export const JobsDirectory = ({ initialCode }: { initialCode?: string }) => {
                         {j.standard.fromSuccessor ? <Badge tone="muted">successor&apos;s</Badge> : null}
                       </>
                     ) : (
-                      <span className="text-base-content/50">—</span>
+                      <span className="text-base-content/70">—</span>
                     )}
                   </span>
                 </button>
@@ -216,13 +217,13 @@ export const JobsDirectory = ({ initialCode }: { initialCode?: string }) => {
             ))}
           </ul>
           {shown.length > LIMIT ? (
-            <p className="px-4 py-2.5 text-sm text-base-content/50">
+            <p className="px-4 py-2.5 text-sm text-base-content/70">
               Showing the first {LIMIT} of {shown.length} — search or filter to narrow.
             </p>
           ) : null}
         </Card>
       ) : jobs.data ? (
-        <p className="text-base text-base-content/65">No jobs match.</p>
+        <p className="text-base text-base-content/70">No jobs match.</p>
       ) : null}
 
       {current ? <JobDialog job={current} onClose={() => setOpen(null)} /> : null}
@@ -281,9 +282,9 @@ const CtFacts = ({ ct }: { ct: JobCt }) => (
   <div className="mt-2 rounded-lg bg-base-200 px-3 py-2 text-base" data-testid="ct-facts">
     <div>
       <span className="font-semibold">{ct.title}</span>{' '}
-      <span className="text-sm text-base-content/65">(CT listing)</span>
+      <span className="text-sm text-base-content/70">(CT listing)</span>
     </div>
-    <div className="text-sm text-base-content/65">
+    <div className="text-sm text-base-content/70">
       {[
         `${ct.family} · ${ct.function}`,
         `level ${ct.level}${ct.supervisory ? ' — supervises' : ''}`,
@@ -313,7 +314,7 @@ const ActiveCheckbox = ({ job }: { job: JobRow }) => {
       <label className="flex cursor-pointer items-center gap-2 text-base text-base-content">
         <input
           checked={job.active}
-          className="checkbox checkbox-sm checkbox-primary"
+          className="checkbox checkbox-primary"
           disabled={setActive.isPending}
           onChange={(e) => setActive.mutate({ active: e.target.checked, code: job.code })}
           type="checkbox"
@@ -327,7 +328,7 @@ const ActiveCheckbox = ({ job }: { job: JobRow }) => {
       </label>
       {setActive.error ? <span className="text-sm text-error">{messageOf(setActive.error)}</span> : null}
       {setActive.data?.supersessionChanges.map((c) => (
-        <span className="text-sm text-warning" key={c}>
+        <span className="text-sm text-warning-ink" key={c}>
           {c}
         </span>
       ))}
@@ -340,6 +341,7 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
   const [editing, setEditing] = useState(false);
   const create = useBootstrapClass();
   const [created, setCreated] = useState<string | null>(null);
+  const box = useDialog<HTMLDivElement>(onClose);
 
   const bootstrap = () => {
     if (!job.standard) {
@@ -359,13 +361,13 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
 
   return (
     <div aria-labelledby="job-dialog-title" aria-modal className="modal modal-open" role="dialog">
-      <div className="modal-box max-w-3xl">
+      <div className="modal-box max-w-3xl" ref={box}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-2xl font-bold" id="job-dialog-title">
               {job.title}
             </h2>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-base text-base-content/65 tnum">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-base text-base-content/70 tnum">
               {job.code}
               {job.family ? ` · ${job.family}` : ''}
               {job.grade ? ` · ${job.grade}` : ''}
@@ -376,7 +378,7 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
             </div>
             {job.ct ? <CtFacts ct={job.ct} /> : null}
             {job.supersededBy ? (
-              <p className="mt-1 text-base text-warning">Superseded by {job.supersededBy}: its JDs go to that class.</p>
+              <p className="mt-1 text-base text-warning-ink">Superseded by {job.supersededBy}: its JDs go to that class.</p>
             ) : null}
           </div>
           <button aria-label="Close" className="btn btn-ghost btn-sm" onClick={onClose} type="button">
@@ -392,7 +394,7 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
                 <Link className="font-semibold text-primary hover:underline" params={{ slug: job.class.slug }} to="/class/$slug">
                   {job.class.title}
                 </Link>
-                <div className="text-base-content/65">
+                <div className="text-base-content/70">
                   {job.class.corpusSize > 0 ? (
                     <Link
                       className="text-primary hover:underline"
@@ -406,11 +408,11 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
                   )}
                 </div>
                 {job.class.fromBlankStandard ? (
-                  <p className="mt-1 text-warning">Built from a blank standard: little more than a title went into it.</p>
+                  <p className="mt-1 text-warning-ink">Built from a blank standard: little more than a title went into it.</p>
                 ) : null}
               </div>
             ) : (
-              <p className="mt-1 text-base text-base-content/65">No class yet.</p>
+              <p className="mt-1 text-base text-base-content/70">No class yet.</p>
             )}
           </div>
           <div>
@@ -424,7 +426,7 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
                 >
                   {job.standard.title}
                 </Link>
-                <div className="text-base-content/65">
+                <div className="text-base-content/70">
                   {job.standard.fromSuccessor
                     ? `Its successor's (${job.supersededBy}) — where its JDs now go`
                     : job.standard.how === 'hand'
@@ -432,14 +434,14 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
                       : 'Its title matches the job'}
                 </div>
                 {job.standard.blank ? (
-                  <p className="mt-1 text-warning" data-testid="blank-standard">
+                  <p className="mt-1 text-warning-ink" data-testid="blank-standard">
                     Blank: it has a title but no responsibilities, so it can&apos;t be used to build an
                     envelope. Replace it with the full standard, or ingest JDs for this job.
                   </p>
                 ) : null}
               </div>
             ) : (
-              <p className="mt-1 text-base text-base-content/65">No standard yet.</p>
+              <p className="mt-1 text-base text-base-content/70">No standard yet.</p>
             )}
           </div>
         </div>
@@ -470,7 +472,7 @@ const JobDialog = ({ job, onClose }: { job: JobRow; onClose: () => void }) => {
           </div>
         )}
       </div>
-      <button aria-label="Close dialog" className="modal-backdrop" onClick={onClose} type="button" />
+      <button aria-label="Close dialog" className="modal-backdrop" onClick={onClose} tabIndex={-1} type="button" />
     </div>
   );
 };
@@ -499,7 +501,7 @@ const StandardForm = ({ job, onDone }: { job: JobRow; onDone: () => void }) => {
   return (
     <div className="mt-5 border-t border-base-300 pt-4" data-testid="standard-form">
       <Eyebrow>{job.standard ? 'Replace the standard' : 'Add the standard'}</Eyebrow>
-      <p className="mt-1 text-base text-base-content/65">
+      <p className="mt-1 text-base text-base-content/70">
         Drop in the standard&apos;s Word export and the AI will copy its sections into the fields
         below — or type them. Review everything, then save. One item per line.
       </p>
