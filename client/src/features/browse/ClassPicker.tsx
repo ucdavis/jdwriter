@@ -36,6 +36,9 @@ export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
         placeholder="Search job title or code…"
         value={query}
       />
+      <p className="sr-only" role="status">
+        {query.trim() ? `${filtered.length} class${filtered.length === 1 ? '' : 'es'} match.` : ''}
+      </p>
       {/* At least 320px, and as tall as the card has room for. The list is laid out inside an
           absolutely positioned box, so its many rows never make the card taller — they scroll. */}
       <div className="relative mt-2 min-h-[320px] flex-1">
@@ -62,7 +65,7 @@ export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
                   <span className="truncate text-base font-semibold">{c.title}</span>
                   {c.site ? <SiteBadge site={c.site} /> : null}
                 </span>
-                <span className="text-sm text-base-content/65 tnum">
+                <span className="text-sm text-base-content/70 tnum">
                   Code {c.ucJobCode}
                   {c.ready
                     ? c.bargainingUnit
@@ -78,19 +81,19 @@ export const ClassPicker = ({ classes }: { classes: ClassListItem[] }) => {
             </button>
           ))}
           {hidden > 0 ? (
-            <div className="px-3 py-2.5 text-center text-sm text-base-content/50">
+            <div className="px-3 py-2.5 text-center text-sm text-base-content/70">
               +{hidden.toLocaleString()} more in-use titles — refine your search to narrow
               the list.
             </div>
           ) : null}
           {filtered.length === 0 ? (
-            <div className="px-3 py-6 text-center text-base text-base-content/65">
+            <div className="px-3 py-6 text-center text-base text-base-content/70">
               No matching classes.
             </div>
           ) : null}
         </div>
       </div>
-      <p className="mt-2 text-sm text-base-content/65 tnum" data-testid="classes-available">
+      <p className="mt-2 text-sm text-base-content/70 tnum" data-testid="classes-available">
         {available.toLocaleString()} class{available === 1 ? '' : 'es'} available
       </p>
     </div>

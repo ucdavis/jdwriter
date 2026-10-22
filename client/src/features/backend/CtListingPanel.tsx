@@ -22,7 +22,7 @@ export const CtListingPanel = () => {
   return (
     <Card className="mb-5 p-5">
       <Eyebrow>CT title code listing</Eyebrow>
-      <p className="mt-1 text-base text-base-content/65">
+      <p className="mt-1 text-base text-base-content/70">
         The UC Career Tracks title code listing report (PDF). It supplies each code&apos;s full title, level,
         family, grade and origin, and is trusted over what the app has: it adds codes the reference lacks,
         updates grades and families, decides who may supervise, and moves a standard to the code it gives
@@ -53,7 +53,7 @@ export const CtListingPanel = () => {
             type="file"
           />
         </label>
-        {preview.isPending ? <span className="text-base text-base-content/65">Reading the report…</span> : null}
+        {preview.isPending ? <span className="text-base text-base-content/70">Reading the report…</span> : null}
       </div>
 
       {preview.error || apply.error ? (
@@ -127,7 +127,7 @@ const ListingPlan = ({
                 <Link className="font-semibold text-primary hover:underline" params={{ slug: c.slug }} to="/backend/edit/$slug">
                   {c.title}
                 </Link>{' '}
-                <span className="text-sm text-base-content/65">— {c.why}</span>
+                <span className="text-sm text-base-content/70">— {c.why}</span>
               </li>
             ))}
           </ul>
@@ -154,13 +154,13 @@ const Details = ({ items, label, total }: { items: string[]; label: string; tota
       <summary className="cursor-pointer">
         {label} <Badge tone="muted">{total ?? items.length}</Badge>
       </summary>
-      <ul className="mt-1 max-h-48 list-disc overflow-y-auto pl-5 text-sm">
+      <ul aria-label={label} className="mt-1 max-h-48 list-disc overflow-y-auto pl-5 text-sm" tabIndex={0}>
         {items.map((i) => (
           <li key={i}>{i}</li>
         ))}
       </ul>
       {total !== undefined && total > items.length ? (
-        <p className="text-sm text-base-content/50">and {total - items.length} more</p>
+        <p className="text-sm text-base-content/70">and {total - items.length} more</p>
       ) : null}
     </details>
   );

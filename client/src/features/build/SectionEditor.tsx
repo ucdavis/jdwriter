@@ -52,7 +52,7 @@ export const SectionEditor = ({
         <Badge tone="muted">{keptCount} selected</Badge>
       </div>
       {items.length === 0 ? (
-        <p className="mt-2 text-base text-base-content/50">
+        <p className="mt-2 text-base text-base-content/70">
           None in the standard for this class.
         </p>
       ) : null}
@@ -86,7 +86,7 @@ export const SectionEditor = ({
 
 /** Why an addition was not included, shown under the box it was typed in. */
 export const AddRefusal = ({ text }: { text: string }) => (
-  <p className="mt-2 text-base text-warning" data-testid="add-refusal" role="status">
+  <p className="mt-2 text-base text-warning-ink" data-testid="add-refusal" role="status">
     {text}
   </p>
 );

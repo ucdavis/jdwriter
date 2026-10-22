@@ -1,4 +1,5 @@
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { isAdmin } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { coverageQueryOptions } from '@/queries/classes.ts';
@@ -27,6 +28,7 @@ export const Route = createFileRoute('/(authenticated)/backend/jds/$slug')({
  * is the target the envelope is designed around.
  */
 function CoveragePage() {
+  usePageTitle('Class coverage · Back end');
   return (
     <AdminOnly>
       <CoverageContent />
@@ -50,7 +52,7 @@ function CoverageContent() {
 
       {!coverage ? (
         <Card className="p-6">
-          <p className="text-base text-base-content/65">
+          <p className="text-base text-base-content/70">
             No coverage report for this class — it has no ingested JDs yet.
           </p>
         </Card>
@@ -61,17 +63,17 @@ function CoverageContent() {
             <div className="mt-2 grid grid-cols-3 gap-4">
               <div>
                 <div className="text-3xl font-bold tnum">{coverage.n}</div>
-                <div className="text-base text-base-content/65">JDs compared</div>
+                <div className="text-base text-base-content/70">JDs compared</div>
               </div>
               <div>
                 <div className="text-3xl font-bold tnum">{coverage.meanCoverage}%</div>
-                <div className="text-base text-base-content/65">mean coverage</div>
+                <div className="text-base text-base-content/70">mean coverage</div>
               </div>
               <div>
                 <div className="text-3xl font-bold tnum">
                   {Math.round(coverage.wellCoveredPct * 100)}%
                 </div>
-                <div className="text-base text-base-content/65">at ≥90% covered</div>
+                <div className="text-base text-base-content/70">at ≥90% covered</div>
               </div>
             </div>
           </Card>
@@ -93,7 +95,7 @@ function CoverageContent() {
                       {j.sourceFile.replace(/\.html$/i, '')}
                     </Link>
                     {j.uncovered.length > 0 ? (
-                      <span className="text-base-content/65">
+                      <span className="text-base-content/70">
                         {' '}
                         · idiosyncratic:{' '}
                         {j.uncovered.map((u) => `${u.name} (${u.pct}%)`).join(', ')}

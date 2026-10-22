@@ -1,4 +1,5 @@
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { Card, PageHeader } from '@/shared/ui/primitives.tsx';
 import { classProfileQueryOptions, useClassProfile } from '@/queries/classes.ts';
 import { createFileRoute } from '@tanstack/react-router';
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/(authenticated)/backend/standard/$slug')(
 });
 
 function StandardPage() {
+  usePageTitle('Job standard · Back end');
   const { slug } = Route.useParams();
   const { data: profile } = useClassProfile(slug);
 
@@ -39,7 +41,7 @@ function StandardPage() {
            families. That is a coverage fact about our sources, not a failure to match, so
            it reads as information rather than as an error. */
         <Card className="p-6">
-          <p className="text-base text-base-content/65">
+          <p className="text-base text-base-content/70">
             No official standard is linked to this class. The job-standard workbooks cover
             19 of the families in the corpus, so most classes legitimately have none —
             ingest the family workbook on the back end if one exists.

@@ -1,3 +1,4 @@
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import {
   BlankStandardClassesPanel,
   BootstrapPanel,
@@ -25,6 +26,7 @@ export const Route = createFileRoute('/(authenticated)/backend/standards')({
 /* eslint-enable perfectionist/sort-objects */
 
 function StandardsPage() {
+  usePageTitle('Standards · Back end');
   const { open, q } = Route.useSearch();
   return (
     <AdminOnly>

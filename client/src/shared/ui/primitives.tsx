@@ -35,15 +35,15 @@ export type Tone =
 
 const toneClass: Record<Tone, string> = {
   accent: 'text-primary bg-primary/10',
-  green: 'text-success bg-success/10',
+  green: 'text-success-ink bg-success/10',
   // DaisyUI has one warning role; the POC distinguished yellow from orange by
   // severity, so orange borrows error at low opacity to stay visibly hotter.
-  muted: 'text-base-content/60 bg-base-300/60',
+  muted: 'text-base-content/75 bg-base-300/60',
   orange: 'text-error bg-error/10',
-  purple: 'text-secondary bg-secondary/15',
+  purple: 'text-secondary-ink bg-secondary/15',
   red: 'text-error bg-error/10',
-  teal: 'text-info bg-info/10',
-  yellow: 'text-warning bg-warning/10',
+  teal: 'text-info-ink bg-info/10',
+  yellow: 'text-warning-ink bg-warning/10',
 };
 
 export const Badge = ({
@@ -54,7 +54,7 @@ export const Badge = ({
   tone?: Tone;
 }) => (
   <span
-    className={`inline-flex items-center rounded-full px-2.5 py-[3px] text-sm font-semibold ${toneClass[tone]}`}
+    className={`inline-flex max-w-full items-center rounded-full px-2.5 py-[3px] text-sm font-semibold ${toneClass[tone]}`}
   >
     {children}
   </span>
@@ -76,10 +76,11 @@ export const Note = ({
     tone === 'red'
       ? 'bg-error/10 border-error/20 text-error'
       : tone === 'green'
-        ? 'bg-success/10 border-success/20 text-success'
-        : 'bg-warning/10 border-warning/20 text-warning';
+        ? 'bg-success/10 border-success/20 text-success-ink'
+        : 'bg-warning/10 border-warning/20 text-warning-ink';
   return (
-    <div className={`rounded-lg border px-3.5 py-2.5 text-base ${cls}`}>
+    // An error is announced as it appears (WCAG 4.1.3); the other tones are read in their place.
+    <div className={`rounded-lg border px-3.5 py-2.5 text-base ${cls}`} role={tone === 'red' ? 'alert' : undefined}>
       {children}
     </div>
   );
@@ -113,7 +114,7 @@ export const PageHeader = ({
     {eyebrow ? <div className="eyebrow mt-2">{eyebrow}</div> : null}
     <h1 className="mt-1 text-3xl font-bold tracking-tight">{title}</h1>
     {sub ? (
-      <p className="mt-1.5 max-w-2xl text-base text-base-content/65">{sub}</p>
+      <p className="mt-1.5 max-w-2xl text-base text-base-content/70">{sub}</p>
     ) : null}
   </div>
 );
@@ -143,7 +144,7 @@ export const Fact = ({
     <Eyebrow>{label}</Eyebrow>
     <div className="mt-0.5 text-base font-semibold">{value}</div>
     {agreement < 1 ? (
-      <div className="mt-0.5 text-sm text-base-content/50 tnum">
+      <div className="mt-0.5 text-sm text-base-content/70 tnum">
         {Math.round(agreement * 100)}% agreement
       </div>
     ) : null}

@@ -1,4 +1,5 @@
 import { Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { FinalJd } from '@/features/build/FinalJd.tsx';
 import { savedJdQueryOptions, useDeleteJd } from '@/queries/jds.ts';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
@@ -17,6 +18,7 @@ function SavedJdPage() {
   const remove = useDeleteJd();
   const navigate = useNavigate();
   const name = jd.workingTitle || jd.title;
+  usePageTitle(`${name} · My JDs`);
 
   return (
     <>
@@ -27,7 +29,7 @@ function SavedJdPage() {
       />
 
       {jd.assembled ? null : (
-        <p className="mb-3 text-base text-warning" data-testid="not-assembled">
+        <p className="mb-3 text-base text-warning-ink" data-testid="not-assembled">
           Draft — saved before it was assembled. Continue editing to finish it.
         </p>
       )}

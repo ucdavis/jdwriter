@@ -1,4 +1,5 @@
 import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { StandardDetail } from '@/features/build/StandardDetail.tsx';
 import { SiteNote } from '@/shared/ui/SiteNote.tsx';
 import { useState } from 'react';
@@ -75,6 +76,7 @@ function ClassPage() {
       : null;
   const { data: profile } = useClassProfile(slug);
   const isAdmin = useIsAdmin();
+  usePageTitle(profile ? `${profile.title} · Build a JD` : 'Build a JD');
 
   if (!profile) {
     return null;
@@ -113,7 +115,7 @@ function ClassPage() {
         />
       ) : (
         <Card className="p-6">
-          <p className="text-base text-base-content/65">
+          <p className="text-base text-base-content/70">
             This class has no envelope yet, so there is nothing to tailor. Ingest its JDs
             or bootstrap it from an official standard on the back end first.
           </p>
@@ -186,7 +188,7 @@ const EnvelopeOverview = ({
           {/* The standard's detail page is part of the back end, so only admins get the link. */}
           {isAdmin ? (
             <Link
-              className="mt-2 inline-block text-base font-semibold text-info hover:underline"
+              className="mt-2 inline-block text-base font-semibold text-info-ink hover:underline"
               params={{ slug: profile.slug }}
               to="/backend/standard/$slug"
             >
@@ -198,13 +200,13 @@ const EnvelopeOverview = ({
 
       {showOutside ? (
         <div className="mt-4 rounded-lg border border-warning/30 bg-warning/5 p-3.5" data-testid="outside-envelope">
-          <div className="text-sm font-semibold uppercase tracking-wide text-warning">
+          <div className="text-sm font-semibold uppercase tracking-wide text-warning-ink">
             Not part of this class — work like this suggests a different class
           </div>
           <ul className="mt-2 space-y-1">
             {outside.map((o) => (
               <li className="flex gap-2 text-base text-base-content/75" key={o}>
-                <span className="text-warning">⚠</span>
+                <span className="text-warning-ink">⚠</span>
                 <span>{o}</span>
               </li>
             ))}
@@ -217,7 +219,7 @@ const EnvelopeOverview = ({
 
 const FactChip = ({ label, value }: { label: string; value: string }) => (
   <div className="flex gap-1.5">
-    <dt className="text-base-content/55">{label}</dt>
+    <dt className="text-base-content/70">{label}</dt>
     <dd className="font-semibold tnum">{value}</dd>
   </div>
 );

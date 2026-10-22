@@ -1,4 +1,5 @@
 import { DescriptionClassifier } from '@/features/classify/DescriptionClassifier.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { PageHeader } from '@/shared/ui/primitives.tsx';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -7,6 +8,7 @@ export const Route = createFileRoute('/(authenticated)/classify')({
 });
 
 function ClassifyPage() {
+  usePageTitle('Classify a job description');
   return (
     <>
       <PageHeader

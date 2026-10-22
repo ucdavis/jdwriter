@@ -1,4 +1,5 @@
 import { Badge, Card, PageHeader } from '@/shared/ui/primitives.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { useIsAdmin } from '@/shared/ui/AppShell.tsx';
 import { type JdScope, savedJdsQueryOptions, useDeleteJd, useSavedJds } from '@/queries/jds.ts';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/(authenticated)/jds/')({
 const when = (iso: string) => new Date(iso).toLocaleDateString();
 
 function SavedJdsPage() {
+  usePageTitle('My JDs');
   const isAdmin = useIsAdmin();
   const [scope, setScope] = useState<JdScope>('mine');
   const [order, setOrder] = useState<'newest' | 'oldest'>('newest');
@@ -79,7 +81,7 @@ function SavedJdsPage() {
       {!isPending && jds.length === 0 ? (
         <Card className="flex flex-col items-center p-8 text-center">
           <img alt="" className="mb-4 h-16 w-16 rounded-xl" src={asset('icon-192.png')} />
-          <p className="max-w-md text-base text-base-content/65">
+          <p className="max-w-md text-base text-base-content/70">
             Nothing saved yet. Pick a class on the start page and build a job description — it
             is saved as soon as you assemble it.
           </p>
@@ -97,14 +99,14 @@ function SavedJdsPage() {
                 >
                   <div className="min-w-0">
                     <div className="truncate text-base font-semibold">{name}</div>
-                    <div className="text-base text-base-content/65">
+                    <div className="text-base text-base-content/70">
                       {j.title} · code <span className="tnum">{j.ucJobCode}</span>
                       {j.department ? ` · ${j.department}` : ''}
                       {scope === 'all' && j.createdBy ? ` · by ${j.createdBy}` : ''}
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <span className="text-base text-base-content/50">
+                  <div className="flex flex-wrap items-center gap-3 sm:shrink-0">
+                    <span className="text-base text-base-content/70">
                       Created {when(j.createdAt)}
                     </span>
                     <Badge tone={j.status === 'ready' ? 'green' : 'yellow'}>

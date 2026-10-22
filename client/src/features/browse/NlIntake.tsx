@@ -82,10 +82,21 @@ export const NlIntake = () => {
             Clear
           </button>
         ) : null}
-        <span className="text-sm text-base-content/50">
+        <span className="text-sm text-base-content/70">
           Your description is matched against every ingested job class.
         </span>
       </div>
+
+      {/* Announced as matching starts and when its suggestions land (WCAG 4.1.3). */}
+      <p className="sr-only" role="status">
+        {match.isPending
+          ? 'Matching…'
+          : matches
+            ? matches.length === 0
+              ? 'No close match.'
+              : `${matches.length} suggested class${matches.length === 1 ? '' : 'es'}.`
+            : ''}
+      </p>
 
       {match.error ? (
         <div className="mt-3">
@@ -97,7 +108,7 @@ export const NlIntake = () => {
         <div className="mt-4">
           <div className="eyebrow mb-2">Suggested classes</div>
           {matches.length === 0 ? (
-            <p className="text-base text-base-content/65">
+            <p className="text-base text-base-content/70">
               No close match. Try the search on the right.
             </p>
           ) : (
@@ -115,7 +126,7 @@ export const NlIntake = () => {
                     <span className="text-base font-semibold">{m.title}</span>
                     <Badge tone={toneFor(m.confidence)}>{m.confidence}% match</Badge>
                   </div>
-                  <div className="mt-1 text-base text-base-content/65">
+                  <div className="mt-1 text-base text-base-content/70">
                     {m.rationale}
                   </div>
                   <SiteNote linked={false} site={m.site} siteTwins={m.siteTwins} />

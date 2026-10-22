@@ -1,3 +1,4 @@
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import {
   PendingRebuildsPanel,
   QualificationRulesPanel,
@@ -101,6 +102,7 @@ const matches = (c: ClassSummary, q: string) => {
 };
 
 function BackendPage() {
+  usePageTitle('Envelopes · Back end');
   return (
     <AdminOnly>
       <EnvelopeIndex />
@@ -147,7 +149,7 @@ function EnvelopeIndex() {
 
       {classes.length === 0 ? (
         <Card className="p-6">
-          <p className="text-base text-base-content/65">
+          <p className="text-base text-base-content/70">
             No envelopes yet.{' '}
             <Link
               className="font-semibold text-primary hover:underline"
@@ -192,7 +194,7 @@ function EnvelopeIndex() {
                 );
               })}
             </div>
-            <label className="ml-auto flex items-center gap-2 text-base text-base-content/65">
+            <label className="ml-auto flex items-center gap-2 text-base text-base-content/70">
               Sort
               <select
                 className="select select-sm select-bordered"
@@ -213,7 +215,7 @@ function EnvelopeIndex() {
 
           {shown.length === 0 ? (
             <Card className="p-6">
-              <p className="text-base text-base-content/65">
+              <p className="text-base text-base-content/70">
                 No classes match.{' '}
                 <button
                   className="font-semibold text-primary hover:underline"
@@ -251,7 +253,7 @@ function SummaryRow({ c, newJds }: { c: ClassSummary; newJds: number }) {
           <div className="flex flex-wrap items-center gap-2">
             {c.standardLinked && hasJds ? (
               <span
-                className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-success/10 text-base font-bold text-success"
+                className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-success/10 text-base font-bold text-success-ink"
                 title="All components ingested — JDs + official standard"
               >
                 ✓
@@ -277,7 +279,7 @@ function SummaryRow({ c, newJds }: { c: ClassSummary; newJds: number }) {
               </Badge>
             ) : null}
           </div>
-          <div className="mt-0.5 text-base text-base-content/65">
+          <div className="mt-0.5 text-base text-base-content/70">
             {[c.ctJobFamily, c.ctJobFunction, c.personnelProgram]
               .filter(Boolean)
               .join(' · ')}
@@ -303,7 +305,7 @@ function SummaryRow({ c, newJds }: { c: ClassSummary; newJds: number }) {
             Edit envelope
           </Link>
           <Link
-            className="text-base font-semibold text-base-content/65 hover:underline"
+            className="text-base font-semibold text-base-content/70 hover:underline"
             params={{ slug: c.slug }}
             to="/class/$slug"
           >
@@ -315,7 +317,7 @@ function SummaryRow({ c, newJds }: { c: ClassSummary; newJds: number }) {
       {reingest.error ? (
         <p className="mt-1 text-base text-error">{messageOf(reingest.error)}</p>
       ) : reingest.isSuccess ? (
-        <p className="mt-1 text-base text-success">Re-ingested from all of its JDs.</p>
+        <p className="mt-1 text-base text-success-ink">Re-ingested from all of its JDs.</p>
       ) : null}
 
       <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-base">
@@ -352,7 +354,7 @@ function SummaryRow({ c, newJds }: { c: ClassSummary; newJds: number }) {
 
 const Fact = ({ label, value }: { label: string; value: string }) => (
   <div className="flex gap-1.5">
-    <dt className="text-base-content/50">{label}</dt>
+    <dt className="text-base-content/70">{label}</dt>
     <dd className="font-semibold tnum">{value}</dd>
   </div>
 );

@@ -1,4 +1,5 @@
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { isAdmin } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -34,6 +35,7 @@ export const Route = createFileRoute('/(authenticated)/backend/jd/$slug/$')({
  * the drift the review-and-nudge workflow exists to pull back toward standard.
  */
 function JdReviewPage() {
+  usePageTitle('JD coverage · Back end');
   return (
     <AdminOnly>
       <JdReviewContent />
@@ -77,11 +79,11 @@ function JdReviewContent() {
           <h2 className="mt-1 text-xl font-bold">
             {record.workingTitle || record.ucJobTitle}
           </h2>
-          <div className="mt-1 text-base text-base-content/65">
+          <div className="mt-1 text-base text-base-content/70">
             {record.ucJobTitle} · code <span className="tnum">{record.ucJobCode}</span>
             {record.departmentName ? ` · ${record.departmentName}` : ''}
           </div>
-          <div className="mt-1 text-base text-base-content/65">
+          <div className="mt-1 text-base text-base-content/70">
             {meta}
             {record.supervises ? ' · supervises' : ''}
             {record.leads ? ' · leads' : ''}
@@ -135,7 +137,7 @@ function JdReviewContent() {
                     <ul className="ml-4 mt-1 space-y-0.5">
                       {r.duties.map((d) => (
                         <li
-                          className="list-disc text-sm leading-snug text-base-content/65"
+                          className="list-disc text-sm leading-snug text-base-content/70"
                           key={d}
                         >
                           {d}
@@ -159,7 +161,7 @@ function JdReviewContent() {
                   <ul className="ml-4 mt-1 space-y-0.5">
                     {r.duties.slice(0, 5).map((d) => (
                       <li
-                        className="list-disc text-sm leading-snug text-base-content/65"
+                        className="list-disc text-sm leading-snug text-base-content/70"
                         key={d}
                       >
                         {d}
@@ -169,7 +171,7 @@ function JdReviewContent() {
                 </li>
               ))}
               {!envelope ? (
-                <li className="text-base text-base-content/65">No envelope yet.</li>
+                <li className="text-base text-base-content/70">No envelope yet.</li>
               ) : null}
             </ul>
           </Card>
@@ -195,7 +197,7 @@ function JdReviewContent() {
 
 const QualList = ({ items, label }: { items: string[]; label: string }) => (
   <div>
-    <div className="mb-1 text-sm font-semibold uppercase tracking-wide text-base-content/50">
+    <div className="mb-1 text-sm font-semibold uppercase tracking-wide text-base-content/70">
       {label}
     </div>
     {items.length ? (
@@ -207,7 +209,7 @@ const QualList = ({ items, label }: { items: string[]; label: string }) => (
         ))}
       </ul>
     ) : (
-      <span className="text-base text-base-content/50">—</span>
+      <span className="text-base text-base-content/70">—</span>
     )}
   </div>
 );
@@ -236,7 +238,7 @@ const ReviewedCheckbox = ({ slug, sourceFile }: { slug: string; sourceFile: stri
           type="checkbox"
         />
         Reviewed
-        <span className="text-sm text-base-content/65">
+        <span className="text-sm text-base-content/70">
           {review
             ? review.kind === 'rewritten'
               ? `— rewritten to fit ${review.rewrittenTo ?? 'a class'}`

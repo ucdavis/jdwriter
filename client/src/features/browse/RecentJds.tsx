@@ -20,7 +20,7 @@ export const RecentJds = () => {
         ) : null}
       </div>
       {isPending ? null : recent.length === 0 ? (
-        <p className="mt-2 text-base text-base-content/65">
+        <p className="mt-2 text-base text-base-content/70">
           Job descriptions you build will appear here.
         </p>
       ) : (
@@ -36,7 +36,7 @@ export const RecentJds = () => {
                   <span className="block truncate text-base font-semibold">
                     {j.workingTitle || j.title}
                   </span>
-                  <span className="text-sm text-base-content/65">
+                  <span className="text-sm text-base-content/70">
                     {j.title} · {new Date(j.createdAt).toLocaleDateString()}
                   </span>
                 </span>

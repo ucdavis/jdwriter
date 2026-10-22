@@ -124,7 +124,7 @@ export const AllocationBar = ({
                       <li key={`${r.functionName}-${i}`}>
                         <button onClick={() => giveAllTo(i)} type="button">
                           <span className="truncate">{r.functionName}</span>
-                          <span className="ml-auto tnum text-base-content/50">
+                          <span className="ml-auto tnum text-base-content/70">
                             {r.pctTime}% → {Math.max(0, r.pctTime + delta)}%
                           </span>
                         </button>
@@ -139,7 +139,7 @@ export const AllocationBar = ({
       </div>
 
       {balanced ? null : (
-        <p className="mt-2 text-base text-base-content/65">
+        <p className="mt-2 text-base text-base-content/70">
           {short ? (
             <>
               Dropping a responsibility frees up its share of time. Decide where that{' '}

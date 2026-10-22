@@ -22,7 +22,7 @@ export const AppFooter = () => (
       className="pointer-events-none absolute bottom-0 right-0 hidden h-[200px] w-auto select-none md:block"
       src={asset('tools-blue.svg')}
     />
-    <div className="relative mx-auto flex min-h-[220px] max-w-[1100px] flex-col items-center justify-center gap-3 px-8 py-10">
+    <div className="relative mx-auto flex min-h-[220px] max-w-[1100px] flex-col items-center justify-center gap-3 px-4 py-10 sm:px-8">
       <a href="https://caes.ucdavis.edu/" rel="noreferrer" target="_blank">
         <img
           alt="UC Davis College of Agricultural and Environmental Sciences"
@@ -30,7 +30,7 @@ export const AppFooter = () => (
           src={asset('caes.svg')}
         />
       </a>
-      <p className="text-base text-base-content/60">
+      <p className="text-base text-base-content/70">
         Created in association with{' '}
         <a
           className="underline hover:text-primary"

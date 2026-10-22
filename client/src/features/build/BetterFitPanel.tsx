@@ -28,13 +28,13 @@ export const BetterFitPanel = ({
           </span>
         ) : null}
       </div>
-      {rationale ? <div className="mt-1 text-base text-base-content/65">{rationale}</div> : null}
+      {rationale ? <div className="mt-1 text-base text-base-content/70">{rationale}</div> : null}
       {suggestedSlug ? (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <Link className="btn btn-primary btn-sm" params={{ slug: suggestedSlug }} to="/class/$slug">
             Look at {suggestedClass} →
           </Link>
-          <span className="text-sm text-base-content/50">
+          <span className="text-sm text-base-content/70">
             Opens its standard fresh — save a draft first to keep this build.
           </span>
         </div>
@@ -46,6 +46,6 @@ export const BetterFitPanel = ({
         No class fits clearly better — <span className="font-semibold">{currentTitle}</span> is still
         the best match.
       </div>
-      {rationale ? <div className="mt-1 text-base text-base-content/65">{rationale}</div> : null}
+      {rationale ? <div className="mt-1 text-base text-base-content/70">{rationale}</div> : null}
     </div>
   );

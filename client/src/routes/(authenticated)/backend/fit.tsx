@@ -1,4 +1,5 @@
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { isAdmin } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, Note, PageHeader } from '@/shared/ui/primitives.tsx';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -28,6 +29,7 @@ export const Route = createFileRoute('/(authenticated)/backend/fit')({
  * marked on its own page as belonging — shows as reviewed instead, below the ones still to do.
  */
 function FitPage() {
+  usePageTitle('Reclassification · Back end');
   return (
     <AdminOnly>
       <FitContent />
@@ -59,16 +61,16 @@ function FitContent() {
           <Eyebrow>Summary</Eyebrow>
           <div className="mt-2 flex items-baseline gap-3">
             <span className="text-3xl font-bold tnum">{misfits.length}</span>
-            <span className="text-base text-base-content/65">
+            <span className="text-base text-base-content/70">
               of {totalJds} JDs fit their assigned class below {threshold}% ·{' '}
               {Math.round((1 - misfits.length / (totalJds || 1)) * 100)}% fit well
             </span>
           </div>
-          <p className="mt-1 text-base text-base-content/65" data-testid="fit-progress">
+          <p className="mt-1 text-base text-base-content/70" data-testid="fit-progress">
             {open.length} to review · {reviewed.length} reviewed
           </p>
           {misfits.length > CAP ? (
-            <p className="mt-1 text-sm text-base-content/50">
+            <p className="mt-1 text-sm text-base-content/70">
               Showing the {CAP} worst-fitting.
             </p>
           ) : null}
@@ -80,7 +82,7 @@ function FitContent() {
           ))}
           {misfits.length === 0 ? (
             <Card className="p-6">
-              <p className="text-base text-base-content/65">
+              <p className="text-base text-base-content/70">
                 Every JD fits its class at ≥{threshold}%. No reclassification candidates.
               </p>
             </Card>
@@ -117,12 +119,12 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
               {misfit.sourceFile.replace(/\.html$/i, '')}
             </Link>
           </div>
-          <div className="mt-1 text-base text-base-content/65">
+          <div className="mt-1 text-base text-base-content/70">
             Currently: <span className="font-semibold text-base-content">{misfit.classTitle}</span>{' '}
             (code <span className="tnum">{misfit.ucJobCode}</span>)
           </div>
           {misfit.idiosyncratic.length > 0 ? (
-            <div className="mt-1 text-sm text-base-content/65">
+            <div className="mt-1 text-sm text-base-content/70">
               Idiosyncratic work:{' '}
               {misfit.idiosyncratic.map((u) => `${u.name} (${u.pct}%)`).join(', ')}
             </div>
@@ -131,7 +133,7 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
         {misfit.reviewed ? (
           <div className="flex shrink-0 flex-col items-end text-right" data-testid="fit-review">
             <Badge tone="green">Reviewed</Badge>
-            <span className="mt-1 text-sm text-base-content/65">
+            <span className="mt-1 text-sm text-base-content/70">
               {misfit.reviewed.kind === 'rewritten'
                 ? `Rewritten to fit ${misfit.reviewed.rewrittenTo ?? 'a class'}`
                 : 'Belongs in this class'}
@@ -183,7 +185,7 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
       {matches ? (
         <div className="mt-3 rounded-lg border border-base-300 bg-base-200 p-3">
           {bestIsCurrent ? (
-            <div className="text-base text-base-content/65">
+            <div className="text-base text-base-content/70">
               Best fit is still{' '}
               <span className="font-semibold text-base-content">{misfit.classTitle}</span> —
               the low coverage is genuinely idiosyncratic work, not a wrong class.
@@ -215,11 +217,11 @@ const MisfitRow = ({ misfit }: { misfit: Misfit }) => {
                   ? 'Rewriting…'
                   : `Rewrite to fit ${best.title}`}
               </button>
-              <div className="mt-1 text-base text-base-content/65">{best.rationale}</div>
+              <div className="mt-1 text-base text-base-content/70">{best.rationale}</div>
             </div>
           ) : null}
           {matches.length > 1 ? (
-            <div className="mt-2 text-sm text-base-content/50">
+            <div className="mt-2 text-sm text-base-content/70">
               Also:{' '}
               {matches
                 .slice(1, 3)
@@ -253,7 +255,7 @@ const RewriteResult = ({ result }: { result: FitRewriteResponse }) => (
       </Link>
     </div>
     {result.outside.length > 0 ? (
-      <div className="mt-2 text-base text-base-content/65">
+      <div className="mt-2 text-base text-base-content/70">
         Left out — outside this class:
         <ul className="mt-1 list-disc pl-5">
           {result.outside.map((o) => (

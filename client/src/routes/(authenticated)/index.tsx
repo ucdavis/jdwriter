@@ -1,4 +1,5 @@
 import { ClassPicker } from '@/features/browse/ClassPicker.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { NlIntake } from '@/features/browse/NlIntake.tsx';
 import { RecentJds } from '@/features/browse/RecentJds.tsx';
 import { Card, Eyebrow, PageHeader } from '@/shared/ui/primitives.tsx';
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/(authenticated)/')({
 });
 
 function Home() {
+  usePageTitle(null);
   const { data } = useClassList();
   const classes = data?.classes ?? [];
 
@@ -28,7 +30,7 @@ function Home() {
         <div className="flex flex-col gap-5">
           <Card className="p-5">
             <Eyebrow>AI-powered request</Eyebrow>
-            <p className="mb-3 mt-1 text-base text-base-content/65">
+            <p className="mb-3 mt-1 text-base text-base-content/70">
               Describe what you need in plain language.
             </p>
             <NlIntake />
@@ -40,7 +42,7 @@ function Home() {
             leaving blank space when the AI request beside it expands with results. */}
         <Card className="flex flex-col p-5">
           <Eyebrow>Browse job classes</Eyebrow>
-          <p className="mb-3 mt-1 text-base text-base-content/65">
+          <p className="mb-3 mt-1 text-base text-base-content/70">
             Select the job class below to start.
           </p>
           <ClassPicker classes={classes} />
@@ -51,7 +53,7 @@ function Home() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <Eyebrow>Already have a description?</Eyebrow>
-            <p className="mt-1 max-w-xl text-base text-base-content/65">
+            <p className="mt-1 max-w-xl text-base text-base-content/70">
               Many units already have something written. Drop in the Word file, PDF or
               Position Description workbook and we&apos;ll match it to a class with a
               confidence level, a level check, and the duties that fall outside it.

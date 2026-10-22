@@ -1,4 +1,5 @@
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
+import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { isAdmin } from '@/queries/user.ts';
 import { Badge, Card, Eyebrow, Note, PageHeader } from '@/shared/ui/primitives.tsx';
 import {
@@ -35,6 +36,7 @@ export const Route = createFileRoute('/(authenticated)/backend/settings')({
 });
 
 function SettingsPage() {
+  usePageTitle('Settings · Back end');
   return (
     <AdminOnly>
       <PageHeader
@@ -66,7 +68,7 @@ function PackagePanel() {
   return (
     <Card className="mt-5 p-5">
       <Eyebrow>Environment package</Eyebrow>
-      <p className="mt-1 text-base text-base-content/65">
+      <p className="mt-1 text-base text-base-content/70">
         Everything built here, in one file: every envelope and class in full, the job codes and which
         are active, the standards and match decisions, every job description with the original it was
         read from, and the envelope rules. Accounts, admins, the API key and authors&apos; saved JDs
@@ -75,7 +77,7 @@ function PackagePanel() {
         names and leaves the originals out.
       </p>
       {info.data ? (
-        <p className="mt-1 text-base text-base-content/65" data-testid="package-accepts">
+        <p className="mt-1 text-base text-base-content/70" data-testid="package-accepts">
           This environment imports{' '}
           {info.data.acceptsRealData && info.data.acceptsScrubbed
             ? 'both kinds (development).'
@@ -110,7 +112,7 @@ function PackagePanel() {
             type="file"
           />
         </label>
-        {preview.isPending ? <span className="text-base text-base-content/65">Comparing with what&apos;s here…</span> : null}
+        {preview.isPending ? <span className="text-base text-base-content/70">Comparing with what&apos;s here…</span> : null}
       </div>
 
       {preview.error || apply.error ? (
@@ -130,7 +132,7 @@ function PackagePanel() {
                 ? 'Everything in it is already here: there is nothing to import.'
                 : 'Nothing has changed yet. Where both have a record, the more recently changed one is kept; nothing here is removed.'}
           </p>
-          <div className="mt-2 overflow-x-auto">
+          <div aria-label="What the import would change" className="mt-2 overflow-x-auto" role="region" tabIndex={0}>
             <table className="table table-sm">
               <thead>
                 <tr>
@@ -183,7 +185,7 @@ function PackagePanel() {
                 Cancel
               </button>
               {apply.isPending ? (
-                <span className="text-base text-base-content/65">A whole environment can take a minute.</span>
+                <span className="text-base text-base-content/70">A whole environment can take a minute.</span>
               ) : null}
             </div>
           ) : null}
@@ -212,11 +214,11 @@ const SectionDetails = ({ section }: { section: PackageSection }) => {
       </summary>
       {lists.map((l) => (
         <div className="mt-1 pl-4" key={l.label}>
-          <div className="text-sm font-semibold text-base-content/65">
+          <div className="text-sm font-semibold text-base-content/70">
             {l.label}
             {l.items.length < l.n ? ` (first ${l.items.length} of ${l.n})` : ''}
           </div>
-          <ul className="max-h-48 list-disc overflow-y-auto pl-5 text-sm">
+          <ul aria-label={l.label} className="max-h-48 list-disc overflow-y-auto pl-5 text-sm" tabIndex={0}>
             {l.items.map((i) => (
               <li key={i}>{i}</li>
             ))}
@@ -240,7 +242,7 @@ function AdminsPanel() {
   return (
     <Card className="p-5">
       <Eyebrow>Admins</Eyebrow>
-      <p className="mt-1 text-base text-base-content/65">
+      <p className="mt-1 text-base text-base-content/70">
         Add an admin by UC Davis login ID (the part before @ucdavis.edu). It takes effect on
         their next request — they don&apos;t need to have signed in before, or to sign out and
         back in.
@@ -282,10 +284,10 @@ function AdminsPanel() {
               <div className="text-base font-semibold">
                 {a.loginId}
                 {a.displayName ? (
-                  <span className="font-normal text-base-content/65"> · {a.displayName}</span>
+                  <span className="font-normal text-base-content/70"> · {a.displayName}</span>
                 ) : null}
               </div>
-              <div className="text-sm text-base-content/65">
+              <div className="text-sm text-base-content/70">
                 {a.lastSeenAt ? `Last seen ${when(a.lastSeenAt)}` : 'Has not signed in yet'}
                 {a.grantedAt
                   ? ` · added ${when(a.grantedAt)}${a.grantedBy ? ` by ${a.grantedBy}` : ''}`
@@ -341,12 +343,12 @@ function ApiKeyPanel() {
       <Eyebrow>AI provider</Eyebrow>
       <div className="mt-2 text-base" data-testid="ai-provider">
         <span className="font-semibold">{status ? provider : 'Loading…'}</span>
-        {status?.model ? <span className="text-base-content/65"> · {status.model}</span> : null}
+        {status?.model ? <span className="text-base-content/70"> · {status.model}</span> : null}
         {status?.endpoint ? (
-          <span className="text-base-content/50"> · {status.endpoint}</span>
+          <span className="text-base-content/70"> · {status.endpoint}</span>
         ) : null}
       </div>
-      <p className="mt-1 text-base text-base-content/55">
+      <p className="mt-1 text-base text-base-content/70">
         Which provider receives JD text is set per environment in server configuration
         (<code>Llm:Provider</code>), not here.
       </p>
@@ -376,13 +378,13 @@ function ApiKeyPanel() {
       ) : null}
 
       {status?.keyEntryAllowed === false ? (
-        <p className="mt-3 text-base text-base-content/65" data-testid="key-vault-only">
+        <p className="mt-3 text-base text-base-content/70" data-testid="key-vault-only">
           Keys for this environment are managed in Azure Key Vault and can&apos;t be entered or
           changed here.
         </p>
       ) : (
         <>
-          <p className="mt-3 text-base text-base-content/65">
+          <p className="mt-3 text-base text-base-content/70">
             A key entered here is checked with {provider}, stored encrypted, and used in place
             of the one in server configuration until it is removed. It can&apos;t be viewed again
             — only its last four characters are shown. Every change is logged.
@@ -426,7 +428,7 @@ function ApiKeyPanel() {
             ) : null}
           </form>
           {status?.source === 'app' ? (
-            <p className="mt-2 text-sm text-base-content/50">
+            <p className="mt-2 text-sm text-base-content/70">
               {status.configurationHasKey
                 ? 'Removing it switches back to the key in server configuration.'
                 : 'There is no key in server configuration, so removing this one turns model features off.'}
@@ -443,7 +445,7 @@ function ApiKeyPanel() {
 
       {status && status.audit.length > 0 ? (
         <div className="mt-4">
-          <div className="text-sm font-semibold uppercase tracking-wide text-base-content/50">
+          <div className="text-sm font-semibold uppercase tracking-wide text-base-content/70">
             Key changes
           </div>
           <ul className="mt-1 space-y-0.5 text-base" data-testid="key-audit">
@@ -479,7 +481,7 @@ function DataProtectionPanel() {
               : 'Encryption at rest could not be determined.'}
         </span>
       </div>
-      <p className="mt-3 text-base text-base-content/65">
+      <p className="mt-3 text-base text-base-content/70">
         Uploaded job description exports and the JD corpus carry position numbers and
         reporting lines. They are kept only in the database — never on the server&apos;s disk —
         so database encryption covers them. The API key entered above is additionally

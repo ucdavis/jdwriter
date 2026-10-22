@@ -153,10 +153,10 @@ export const StandardsList = ({ initialOpen, initialQuery }: { initialOpen?: str
       </Card>
 
       {isLoading ? (
-        <p className="text-base text-base-content/65">Loading standards…</p>
+        <p className="text-base text-base-content/70">Loading standards…</p>
       ) : shown.length === 0 ? (
         <Card className="p-6">
-          <p className="text-base text-base-content/65">No standards match.</p>
+          <p className="text-base text-base-content/70">No standards match.</p>
         </Card>
       ) : (
         <Card>
@@ -171,7 +171,7 @@ export const StandardsList = ({ initialOpen, initialQuery }: { initialOpen?: str
                       {s.how === 'hand' ? <Badge tone="teal">matched by hand</Badge> : null}
                       {s.code && !s.onPayroll ? <Badge tone="muted">not on payroll</Badge> : null}
                     </div>
-                    <div className="mt-0.5 text-base text-base-content/65">
+                    <div className="mt-0.5 text-base text-base-content/70">
                       {s.code ? (
                         <>
                           <Link
@@ -187,7 +187,7 @@ export const StandardsList = ({ initialOpen, initialQuery }: { initialOpen?: str
                         'Not attached to a job code'
                       )}
                     </div>
-                    <div className="text-sm text-base-content/50 tnum">
+                    <div className="text-sm text-base-content/70 tnum">
                       {[s.grade && `Grade ${s.grade.replace(/^grade\s*/i, '')}`, s.flsa, s.union && `Unit ${s.union}`]
                         .filter(Boolean)
                         .join(' · ')}
@@ -283,7 +283,7 @@ const NoClass = ({ standard: s }: { standard: StandardRow }) => {
 const OpenStandard = ({ title }: { title: string }) => {
   const { data, error, isLoading } = useStandardByTitle(title);
   if (isLoading) {
-    return <p className="mt-2 text-base text-base-content/65">Loading…</p>;
+    return <p className="mt-2 text-base text-base-content/70">Loading…</p>;
   }
 
   if (error || !data) {

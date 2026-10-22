@@ -2,6 +2,25 @@
 @plugin "daisyui";
 @import '@ucdavis/gunrock-tailwind/imports.css';
 
+/* daisyUI greys table headers to 60%, 3.8:1; 75% reads at 5.9:1. Unlayered, so it wins. */
+.table thead th {
+  color: color-mix(in oklch, var(--color-base-content) 75%, transparent);
+}
+
+/*
+  Text inks: the theme's status colours, darkened for TEXT so it reads at 4.5:1 or better (WCAG 1.4.3)
+  on white, on the page's grey and on each colour's own pale tint. The theme's green, orange, yellow
+  and light blue are fills; as text they measured 1.3 to 2.6:1. Use text-success-ink and the rest for
+  words, and keep text-success and the rest for fills and borders. Faded grey text stops at
+  text-base-content/70 for the same reason: /65 is 4.35:1, /50 is 2.9:1.
+*/
+@theme {
+  --color-success-ink: #26701b;
+  --color-warning-ink: #9a4f00;
+  --color-secondary-ink: #6e5c00;
+  --color-info-ink: #00698a;
+}
+
 /*
   The POC hand-rolled the "Walter" UC Davis palette as raw hex in a @theme block.
   That is replaced here by gunrock, the official Aggie design system, which already
