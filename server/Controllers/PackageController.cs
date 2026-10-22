@@ -47,26 +47,27 @@ public class PackageController : ApiControllerBase
     [HttpPost("preview")]
     [RequestSizeLimit(MaxPackageBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxPackageBytes)]
-    public Task<IActionResult> Preview(IFormFile file, CancellationToken ct) =>
-        Run(file, (p, c) => _importer.PreviewAsync(p, c), ct);
+    public Task<IActionResult> Preview(CancellationToken ct) =>
+        Run((p, c) => _importer.PreviewAsync(p, c), ct);
 
     /// <summary>Import the package, as the preview described, in one transaction. The file is sent again: nothing is held between the two.</summary>
     [HttpPost("apply")]
     [RequestSizeLimit(MaxPackageBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxPackageBytes)]
-    public Task<IActionResult> Apply(IFormFile file, CancellationToken ct) =>
-        Run(file, (p, c) => _importer.ApplyAsync(p, c), ct);
+    public Task<IActionResult> Apply(CancellationToken ct) =>
+        Run((p, c) => _importer.ApplyAsync(p, c), ct);
 
-    private async Task<IActionResult> Run(IFormFile? file, Func<EnvironmentPackage, CancellationToken, Task<ImportPlan>> act, CancellationToken ct)
+    private async Task<IActionResult> Run(Func<EnvironmentPackage, CancellationToken, Task<ImportPlan>> act, CancellationToken ct)
     {
-        if (file is null || file.Length == 0)
+        var file = (await UploadsAsync(MaxPackageBytes, ct)).FirstOrDefault();
+        if (file is null || file.Bytes.Length == 0)
         {
             return BadRequest(new { message = "Choose a package file to import." });
         }
 
         try
         {
-            await using var stream = file.OpenReadStream();
+            await using var stream = new MemoryStream(file.Bytes);
             var package = await _importer.ReadAsync(stream, ct);
             return Ok(await act(package, ct));
         }

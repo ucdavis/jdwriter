@@ -179,20 +179,18 @@ public class ClassifyController : ApiControllerBase
     [HttpPost("extract")]
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(WebHardening.ModelPolicy)]
     [RequestSizeLimit(MaxUploadBytes)]
-    public async Task<IActionResult> Extract(IFormFile? file, CancellationToken ct)
+    public async Task<IActionResult> Extract(CancellationToken ct)
     {
-        if (file is null || file.Length == 0)
+        var file = (await UploadsAsync(MaxUploadBytes, ct)).FirstOrDefault();
+        if (file is null || file.Bytes.Length == 0)
         {
             return BadRequest(new { message = "Choose a file to upload." });
         }
 
-        using var ms = new MemoryStream();
-        await file.CopyToAsync(ms, ct);
-
         Extraction extraction;
         try
         {
-            extraction = TextExtractor.Extract(ms.ToArray(), file.FileName, file.ContentType ?? "");
+            extraction = TextExtractor.Extract(file.Bytes, file.Name, file.ContentType);
         }
         catch (ExtractionException ex)
         {

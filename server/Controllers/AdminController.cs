@@ -129,21 +129,15 @@ public class AdminController : ApiControllerBase
     [HttpPost("uploads")]
     [RequestSizeLimit(MaxUploadBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxUploadBytes, ValueCountLimit = 10_000)]
-    public async Task<IActionResult> Upload([FromForm] List<IFormFile> files, CancellationToken ct)
+    public async Task<IActionResult> Upload(CancellationToken ct)
     {
+        var files = await UploadsAsync(MaxUploadBytes, ct);
         if (files.Count == 0)
         {
             return BadRequest(new { message = "Choose one or more HRTMS export files (.html) to upload." });
         }
 
-        var read = new List<(string Name, byte[] Bytes)>(files.Count);
-        foreach (var file in files)
-        {
-            using var buffer = new MemoryStream();
-            await file.CopyToAsync(buffer, ct);
-            read.Add((file.FileName, buffer.ToArray()));
-        }
-
+        List<(string Name, byte[] Bytes)> read = [.. files.Select(f => (f.Name, f.Bytes))];
         var outcomes = await _uploads.UploadAsync(read, await User.IdAsync(_db, ct), ct);
         return Ok(new { files = outcomes });
     }
@@ -159,17 +153,16 @@ public class AdminController : ApiControllerBase
     [HttpPost("uploads/documents")]
     [RequestSizeLimit(MaxDocumentBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxDocumentBytes)]
-    public async Task<IActionResult> ImportDocument(IFormFile? file, CancellationToken ct)
+    public async Task<IActionResult> ImportDocument(CancellationToken ct)
     {
-        if (file is null || file.Length == 0)
+        var file = (await UploadsAsync(MaxDocumentBytes, ct)).FirstOrDefault();
+        if (file is null || file.Bytes.Length == 0)
         {
             return BadRequest(new { message = "Choose a job description document (.docx, .pdf or .txt) to add." });
         }
 
-        using var buffer = new MemoryStream();
-        await file.CopyToAsync(buffer, ct);
         var outcome = await _documents.ImportAsync(
-            file.FileName, buffer.ToArray(), file.ContentType ?? "", await User.IdAsync(_db, ct), ct);
+            file.Name, file.Bytes, file.ContentType, await User.IdAsync(_db, ct), ct);
         return Ok(outcome);
     }
 
@@ -351,20 +344,15 @@ public class AdminController : ApiControllerBase
     [HttpPost("standards/upload")]
     [RequestSizeLimit(MaxUploadBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxUploadBytes, ValueCountLimit = 10_000)]
-    public async Task<IActionResult> UploadStandards([FromForm] List<IFormFile> files, CancellationToken ct)
+    public async Task<IActionResult> UploadStandards(CancellationToken ct)
     {
+        var files = await UploadsAsync(MaxUploadBytes, ct);
         if (files.Count == 0)
         {
             return BadRequest(new { message = "Choose one or more Job Builder standards workbooks (.xlsx) to upload." });
         }
 
-        var read = new List<(string Name, byte[] Bytes)>(files.Count);
-        foreach (var file in files)
-        {
-            using var buffer = new MemoryStream();
-            await file.CopyToAsync(buffer, ct);
-            read.Add((file.FileName, buffer.ToArray()));
-        }
+        List<(string Name, byte[] Bytes)> read = [.. files.Select(f => (f.Name, f.Bytes))];
 
         var report = await _standardsImporter.MergeAsync(read, await User.IdAsync(_db, ct), ct);
         var index = await _standards.GetIndexAsync(ct);
@@ -484,9 +472,10 @@ public class AdminController : ApiControllerBase
     [HttpPost("standards/read")]
     [RequestSizeLimit(MaxDocumentBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxDocumentBytes)]
-    public async Task<IActionResult> ReadStandard(IFormFile? file, CancellationToken ct)
+    public async Task<IActionResult> ReadStandard(CancellationToken ct)
     {
-        if (file is null || file.Length == 0)
+        var file = (await UploadsAsync(MaxDocumentBytes, ct)).FirstOrDefault();
+        if (file is null || file.Bytes.Length == 0)
         {
             return BadRequest(new { message = "Choose the standard's Word document." });
         }
@@ -496,11 +485,9 @@ public class AdminController : ApiControllerBase
             return StatusCode(503, new { message = "Reading a standard is unavailable — no AI provider is configured." });
         }
 
-        using var buffer = new MemoryStream();
-        await file.CopyToAsync(buffer, ct);
         try
         {
-            var text = TextExtractor.Extract(buffer.ToArray(), file.FileName, file.ContentType ?? "").Text;
+            var text = TextExtractor.Extract(file.Bytes, file.Name, file.ContentType).Text;
             return Ok(await _manualStandards.ReadAsync(text, ct));
         }
         catch (ExtractionException ex)

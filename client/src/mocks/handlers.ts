@@ -234,6 +234,9 @@ export const handlers = [
     })
   ),
 
+  // Uploads go straight to the app, as without blob storage configured.
+  http.post('/api/uploads/stage', () => HttpResponse.json({ direct: true as const })),
+
   // No archived JDs by default: the builder opens on the envelope with no picker.
   http.get('/api/classes/:slug/archive', () => HttpResponse.json<ArchiveResponse>({ jds: [] })),
 
