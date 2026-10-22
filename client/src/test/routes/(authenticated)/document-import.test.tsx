@@ -94,6 +94,26 @@ describe('add job descriptions', () => {
     vi.restoreAllMocks();
   });
 
+  it('says plainly when the campus security filter blocks a file before it reaches JDWriter', async () => {
+    const user = userEvent.setup();
+    testServer.use(
+      http.post(
+        '/api/admin/uploads/documents',
+        () =>
+          new HttpResponse('<!DOCTYPE html><title>Attention Required! | Cloudflare</title><h1>Sorry, you have been blocked</h1>', {
+            headers: { 'Content-Type': 'text/html' },
+            status: 403,
+          })
+      )
+    );
+    renderRoute({ initialPath: '/backend/descriptions' });
+
+    await user.upload(await screen.findByLabelText('Add job description documents'), new File(['a'], 'jd.docx'));
+
+    expect(await screen.findByText(/security filter blocked this before it reached JDWriter/)).toBeInTheDocument();
+    expect(screen.queryByText(/HTTP 403/)).not.toBeInTheDocument();
+  });
+
   it('shows imported JDs in the rebuild queue', async () => {
     testServer.use(
       http.get('/api/admin/uploads/pending', () =>

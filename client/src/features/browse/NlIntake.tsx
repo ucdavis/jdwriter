@@ -13,6 +13,11 @@ export const messageOf = (error: unknown): string => {
     if (body && typeof body === 'object' && 'message' in body) {
       return body.message;
     }
+    // The campus address sits behind a security filter (Cloudflare) that refuses some requests —
+    // usually something in an uploaded file's contents — with its own page. JDWriter never saw it.
+    if (error.status === 403 && typeof body === 'string' && /cloudflare|<html/i.test(body)) {
+      return 'The campus network’s security filter blocked this before it reached JDWriter — usually because of something in the file’s contents. Try again later, or contact the JDWriter team through Help at the bottom of the page.';
+    }
     return error.status >= 500
       ? 'Something went wrong on our side. Try again.'
       : error.message;
