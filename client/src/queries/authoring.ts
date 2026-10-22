@@ -1,4 +1,5 @@
 import { fetchJson } from '../lib/api.ts';
+import { uploadBody } from '../lib/uploads.ts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   AssembledJd,
@@ -37,12 +38,10 @@ export const useIntakeMatch = () =>
  */
 export const useExtractDocument = () =>
   useMutation({
-    mutationFn: (file: File) => {
-      const body = new FormData();
-      body.append('file', file);
+    mutationFn: async (file: File) => {
       // No Content-Type header — the browser must set the multipart boundary itself.
       return fetchJson<ExtractResponse>('/api/classify/extract', {
-        body,
+        body: await uploadBody([file]),
         method: 'POST',
       });
     },

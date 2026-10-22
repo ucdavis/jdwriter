@@ -112,6 +112,19 @@ Without them the panels show a `400` naming the missing setting. That is deliber
 empty list: a deployed environment may simply not have the HRTMS exports, and "nothing to ingest"
 would be a lie.
 
+### Uploads through blob storage (optional)
+
+In Azure, uploads go to blob storage first (see [Deploying](DEPLOYMENT.md#6-upload-storage)).
+Locally they go straight to the app, unless you want to exercise that path:
+
+```bash
+npm run storage:up          # Azurite, Azure Storage's emulator, on 127.0.0.1:10000
+```
+
+Then set `Uploads__ConnectionString="UseDevelopmentStorage=true"` in `server/.env` and restart. The
+app creates the container and Azurite's CORS rules itself. `npm run storage:down` stops Azurite;
+remove the setting to go back to direct uploads.
+
 ## Working on the UI without a backend
 
 The client was built against `docs/API-CONTRACT.md` with MSW mocks before the API existed, and

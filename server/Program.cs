@@ -13,6 +13,7 @@ using Server.Core.Profiles;
 using Server.Core.Standards;
 using Server.Core.Notification;
 using Server.Core.Titles;
+using Server.Core.Uploads;
 using Server.Helpers;
 using Server.Services;
 
@@ -88,6 +89,14 @@ try
     builder.Services.AddScoped<AuthoredJdStore>();
     builder.Services.AddSingleton<EnvelopeCheckCache>();
     builder.Services.AddScoped<IUserService, UserService>();
+
+    // Uploads go to blob storage first when it is configured (in Azure, so they never meet the front
+    // door's firewall), and straight to the app when it isn't (local development, tests).
+    var uploadOptions = builder.Configuration.GetSection(UploadOptions.Section).Get<UploadOptions>() ?? new UploadOptions();
+    builder.Services.AddSingleton(uploadOptions);
+    builder.Services.AddSingleton<IUploadStaging>(_ =>
+        uploadOptions.Enabled ? new BlobUploadStaging(uploadOptions) : new DirectUploads());
+    builder.Services.AddScoped<UploadReader>();
 
     // The title reference is read on nearly every corpus path and rebuilt only on import, so the
     // built index is cached rather than reconstructed per request.
@@ -239,7 +248,7 @@ try
     }
 
     app.UseForwardedHeaders();
-    app.UseSecurityHeaders();
+    app.UseSecurityHeaders(uploadOptions.BrowserOrigin());
 
     // The app's mount point: "" at a host's root, "/jdwriter" under CAES People. Everything after
     // this sees paths relative to it — routing, static files, the sign-in callback, and the auth

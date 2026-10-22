@@ -42,32 +42,31 @@ public class CodesController : ApiControllerBase
     [HttpPost("ct-listing/preview")]
     [RequestSizeLimit(MaxListingBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxListingBytes)]
-    public Task<IActionResult> PreviewCtListing(IFormFile file, CancellationToken ct) =>
-        RunCtListing(file, (rows, c) => _ctListing.PreviewAsync(rows, c), ct);
+    public Task<IActionResult> PreviewCtListing(CancellationToken ct) =>
+        RunCtListing((rows, c) => _ctListing.PreviewAsync(rows, c), ct);
 
     /// <summary>Import the listing, as the preview described. The file is sent again: nothing is held between.</summary>
     [HttpPost("ct-listing/apply")]
     [RequestSizeLimit(MaxListingBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxListingBytes)]
-    public async Task<IActionResult> ApplyCtListing(IFormFile file, CancellationToken ct)
+    public async Task<IActionResult> ApplyCtListing(CancellationToken ct)
     {
         var userId = await User.IdAsync(_db, ct);
-        return await RunCtListing(file, (rows, c) => _ctListing.ApplyAsync(rows, userId, c), ct);
+        return await RunCtListing((rows, c) => _ctListing.ApplyAsync(rows, userId, c), ct);
     }
 
     private async Task<IActionResult> RunCtListing(
-        IFormFile? file, Func<List<CtListingRow>, CancellationToken, Task<CtListingPlan>> act, CancellationToken ct)
+        Func<List<CtListingRow>, CancellationToken, Task<CtListingPlan>> act, CancellationToken ct)
     {
-        if (file is null || file.Length == 0)
+        var file = (await UploadsAsync(MaxListingBytes, ct)).FirstOrDefault();
+        if (file is null || file.Bytes.Length == 0)
         {
             return BadRequest(new { message = "Choose the listing report (PDF) to import." });
         }
 
         try
         {
-            using var buffer = new MemoryStream();
-            await file.CopyToAsync(buffer, ct);
-            return Ok(await act(CtListingImport.Read(buffer.ToArray()), ct));
+            return Ok(await act(CtListingImport.Read(file.Bytes), ct));
         }
         catch (CtListingRefusedException ex)
         {

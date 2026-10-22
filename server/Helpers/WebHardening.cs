@@ -45,7 +45,8 @@ public static class WebHardening
     /// frame it, where forms and the base URL may point, plugins. The full script/style policy is sent
     /// report-only until it has been checked in a browser; then it should be enforced.
     /// </summary>
-    public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app) =>
+    /// <param name="uploadOrigin">The blob storage origin the browser uploads to, when staging is on.</param>
+    public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app, string? uploadOrigin = null) =>
         app.Use(async (context, next) =>
         {
             context.Response.OnStarting(() =>
@@ -60,7 +61,7 @@ public static class WebHardening
                     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
                     + "img-src 'self' data: https://ucdcdn.blob.core.windows.net https://ucdcdn.azureedge.net; "
                     + "font-src 'self' data: https://ucdcdn.blob.core.windows.net https://ucdcdn.azureedge.net; "
-                    + "connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'";
+                    + $"connect-src 'self'{(uploadOrigin is null ? "" : " " + uploadOrigin)}; frame-ancestors 'self'; base-uri 'self'; object-src 'none'";
                 return Task.CompletedTask;
             });
             await next();

@@ -8,6 +8,8 @@
     "db:up": "docker compose -p jdwriter_devcontainer -f .devcontainer/docker-compose.yml up -d sql",
     "db:down": "docker compose -p jdwriter_devcontainer -f .devcontainer/docker-compose.yml stop sql",
     "db:logs": "docker compose -p jdwriter_devcontainer -f .devcontainer/docker-compose.yml logs -f sql",
+    "storage:up": "docker compose -p jdwriter_devcontainer -f .devcontainer/docker-compose.yml up -d azurite",
+    "storage:down": "docker compose -p jdwriter_devcontainer -f .devcontainer/docker-compose.yml stop azurite",
     "deployment-settings:sync": "node scripts/sync-deployment-settings.mts --write",
     "deployment-settings:check": "npm run deployment-settings:typecheck && node scripts/sync-deployment-settings.mts --check",
     "deployment-settings:typecheck": "tsc -p tsconfig.scripts.json --noEmit",

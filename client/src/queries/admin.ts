@@ -1,4 +1,5 @@
 import { fetchJson } from '../lib/api.ts';
+import { uploadBody } from '../lib/uploads.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AnalyticsReport,
@@ -86,11 +87,8 @@ export const useJobs = (scope: JobsScope) => useQuery(jobsQueryOptions(scope));
 /** Read a Word (or PDF, or text) export of a job standard into its sections, for review. */
 export const useReadStandard = () =>
   useMutation({
-    mutationFn: (file: File) => {
-      const body = new FormData();
-      body.append('file', file, file.name);
-      return fetchJson<StandardDraft>('/api/admin/standards/read', { body, method: 'POST' });
-    },
+    mutationFn: async (file: File) =>
+      fetchJson<StandardDraft>('/api/admin/standards/read', { body: await uploadBody([file]), method: 'POST' }),
   });
 
 /** Save a job's standard, entered or reviewed by hand. */
@@ -222,11 +220,8 @@ export const useUploadedPending = () => useQuery(uploadedPendingQueryOptions());
  */
 export const useImportDocument = () =>
   useMutation({
-    mutationFn: (file: File) => {
-      const body = new FormData();
-      body.append('file', file, file.name);
-      return fetchJson<UploadOutcome>('/api/admin/uploads/documents', { body, method: 'POST' });
-    },
+    mutationFn: async (file: File) =>
+      fetchJson<UploadOutcome>('/api/admin/uploads/documents', { body: await uploadBody([file]), method: 'POST' }),
   });
 
 /**
@@ -276,13 +271,9 @@ export const useSecurityStatus = () => useQuery(securityQueryOptions());
 export const useUploadStandards = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (files: File[]) => {
-      const body = new FormData();
-      for (const file of files) {
-        body.append('files', file, file.name);
-      }
+    mutationFn: async (files: File[]) => {
       return fetchJson<StandardsUploadResponse>('/api/admin/standards/upload', {
-        body,
+        body: await uploadBody(files, 'files'),
         method: 'POST',
       });
     },
@@ -402,11 +393,8 @@ export const useStandardByTitle = (title: string | null) =>
 export const usePackageInfo = () =>
   useQuery({ queryFn: () => fetchJson<PackageInfo>('/api/admin/package/info'), queryKey: ['admin', 'package', 'info'] as const });
 
-const sendPackage = (path: string, file: File) => {
-  const body = new FormData();
-  body.append('file', file, file.name);
-  return fetchJson<PackagePlan>(path, { body, method: 'POST' });
-};
+const sendPackage = async (path: string, file: File) =>
+  fetchJson<PackagePlan>(path, { body: await uploadBody([file]), method: 'POST' });
 
 /** What importing an environment package would do here. Writes nothing. */
 export const usePackagePreview = () =>
@@ -429,11 +417,8 @@ export const useCtListingStatus = () =>
     queryKey: ['admin', 'ct-listing'] as const,
   });
 
-const sendListing = (path: string, file: File) => {
-  const body = new FormData();
-  body.append('file', file, file.name);
-  return fetchJson<CtListingPlan>(path, { body, method: 'POST' });
-};
+const sendListing = async (path: string, file: File) =>
+  fetchJson<CtListingPlan>(path, { body: await uploadBody([file]), method: 'POST' });
 
 /** What importing a Career Tracks listing would change. Writes nothing. */
 export const useCtListingPreview = () =>

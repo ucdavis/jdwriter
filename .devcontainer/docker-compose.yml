@@ -42,8 +42,22 @@ services:
       # this file. The app container reaches SQL over the compose network, not this port.
       - "127.0.0.1:14333:1433"
 
+  # Optional: Azure Storage's emulator, to run uploads through blob staging as Azure does. Start it
+  # with `npm run storage:up` and set Uploads__ConnectionString=UseDevelopmentStorage=true; without
+  # it, uploads go straight to the app. See docs/RUNNING-LOCALLY.md.
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000 --skipApiVersionCheck
+    volumes:
+      - azurite-data:/data
+    networks:
+      - dev
+    ports:
+      - "127.0.0.1:10000:10000"
+
 volumes:
   sql-data:
+  azurite-data:
   devcontainer-node-modules:
   devcontainer-dotnet-tools:
 
