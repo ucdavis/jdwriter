@@ -20,6 +20,10 @@
     <PackageReference Include="Mjml.Net" Version="4.11.0" />
     <PackageReference Include="PdfPig" Version="0.1.16" />
     <PackageReference Include="Razor.Templating.Core" Version="3.1.0" />
+    <!-- Pinned above what MimeKit and Microsoft.Data.SqlClient bring in (10.0.0): CVE-2026-84008 (high)
+         and CVE-2026-70162 (moderate), both .NET denial of service, fixed in 10.0.13. Drop the pin once
+         both depend on a fixed version. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
 </Project>
