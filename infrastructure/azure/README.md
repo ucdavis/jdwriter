@@ -8,6 +8,13 @@ GitHub Actions is the primary deployment path. Follow [Azure deployment setup](.
 
 Local `deploy_test.sh` and `deploy_prod.sh` are secondary operator tools. They apply runtime settings as part of deployment and do not perform the GitHub workflow's explicit application health check. Verify `/health` and sign-in after using them.
 
+## Shared upload storage
+
+Use [the upload-storage guide](../../docs/UPLOAD-STORAGE.md) to provision one account in
+`rg-jdwriter-prod`, with `uploads` for the production app and `test` for local development.
+`upload-storage.bicep` deploys only storage and scoped access to the existing app identity.
+It does not deploy the app, reset app settings, or change SQL.
+
 ## Production SQL connectivity
 
 Fresh production provisioning does not establish an application network access path to SQL. The template creates SQL with public network access enabled, but its broad Azure-services firewall rule is enabled only in test. It does not create private endpoints or App Service VNet integration.
