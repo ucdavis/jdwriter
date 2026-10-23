@@ -6,6 +6,14 @@ import { clearSessionState, setSessionState, useSessionState } from '@/lib/sessi
 import { useNavigate } from '@tanstack/react-router';
 import type { ApiError, IntakeResponse } from '@/lib/contracts.ts';
 
+/**
+ * Refused by the security filter in front of the campus address (Cloudflare), with its own page —
+ * usually over something in an uploaded file's contents. JDWriter never saw the request. Pasting the
+ * file's text instead usually gets through.
+ */
+export const blockedByFilter = (error: unknown): boolean =>
+  error instanceof HttpError && error.status === 403 && typeof error.body === 'string' && /cloudflare|<html/i.test(error.body);
+
 /** 4xx messages are written for the user, so they are shown verbatim. */
 export const messageOf = (error: unknown): string => {
   if (error instanceof HttpError) {
@@ -13,9 +21,7 @@ export const messageOf = (error: unknown): string => {
     if (body && typeof body === 'object' && 'message' in body) {
       return body.message;
     }
-    // The campus address sits behind a security filter (Cloudflare) that refuses some requests —
-    // usually something in an uploaded file's contents — with its own page. JDWriter never saw it.
-    if (error.status === 403 && typeof body === 'string' && /cloudflare|<html/i.test(body)) {
+    if (blockedByFilter(error)) {
       return 'The campus network’s security filter blocked this before it reached JDWriter — usually because of something in the file’s contents. Try again later, or contact the JDWriter team through Help at the bottom of the page.';
     }
     return error.status >= 500

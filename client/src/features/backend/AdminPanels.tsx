@@ -1,5 +1,5 @@
 import { Badge, Card, Eyebrow, Note } from '@/shared/ui/primitives.tsx';
-import { messageOf } from '@/features/browse/NlIntake.tsx';
+import { blockedByFilter, messageOf } from '@/features/browse/NlIntake.tsx';
 import {
   useBootstrapCandidates,
   useBlankStandardClasses,
@@ -176,6 +176,8 @@ const isDocument = (file: File) =>
   DOCUMENT_TYPES.some((ext) => file.name.toLowerCase().endsWith(ext));
 
 type DocumentRow = {
+  /** Refused by the campus security filter before it reached JDWriter. */
+  blocked?: boolean;
   detail: string | null;
   name: string;
   status: 'added' | 'duplicate' | 'failed' | 'running' | 'waiting';
@@ -195,10 +197,53 @@ export const DocumentImportPanel = () => {
   const [rows, setRows] = useState<DocumentRow[]>([]);
   const [skipped, setSkipped] = useState(0);
   const [running, setRunning] = useState(false);
+  const [pasted, setPasted] = useState('');
+  const [pasteOpen, setPasteOpen] = useState(false);
   const stop = useRef(false);
 
   const update = (i: number, row: Partial<DocumentRow>) =>
     setRows((r) => r.map((x, k) => (k === i ? { ...x, ...row } : x)));
+
+  const importOne = async (i: number, file: File) => {
+    update(i, { status: 'running' });
+    try {
+      const outcome = await importDocument.mutateAsync(file);
+      update(i, {
+        detail:
+          outcome.result === 'added'
+            ? `${outcome.title ?? ''} (${outcome.ucJobCode ?? ''}) · ${
+                outcome.readBy === 'ai' ? 'read by AI (unrecognized layout)' : 'parsed'
+              }`
+            : outcome.result === 'duplicate'
+              ? 'Already added'
+              : outcome.error,
+        status: outcome.result,
+      });
+    } catch (error_) {
+      const blocked = blockedByFilter(error_);
+      update(i, { blocked, detail: messageOf(error_), status: 'failed' });
+      if (blocked) {
+        // Its text usually gets through where the file didn't: offer the box to paste it in.
+        setPasteOpen(true);
+      }
+    }
+  };
+
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] });
+    void queryClient.invalidateQueries({ queryKey: ['admin', 'corpus'] });
+  };
+
+  // A pasted JD is read like a text file: its stated title files it, and the AI reads its layout.
+  const addPasted = async () => {
+    const i = rows.length;
+    setRows((r) => [...r, { detail: null, name: 'Pasted text', status: 'waiting' }]);
+    setRunning(true);
+    await importOne(i, new File([pasted], 'Pasted job description.txt', { type: 'text/plain' }));
+    setRunning(false);
+    setPasted('');
+    refresh();
+  };
 
   const run = async (list: FileList | null) => {
     const all = [...(list ?? [])];
@@ -216,28 +261,11 @@ export const DocumentImportPanel = () => {
         break;
       }
 
-      update(i, { status: 'running' });
-      try {
-        const outcome = await importDocument.mutateAsync(file);
-        update(i, {
-          detail:
-            outcome.result === 'added'
-              ? `${outcome.title ?? ''} (${outcome.ucJobCode ?? ''}) · ${
-                  outcome.readBy === 'ai' ? 'read by AI (unrecognized layout)' : 'parsed'
-                }`
-              : outcome.result === 'duplicate'
-                ? 'Already added'
-                : outcome.error,
-          status: outcome.result,
-        });
-      } catch (error_) {
-        update(i, { detail: messageOf(error_), status: 'failed' });
-      }
+      await importOne(i, file);
     }
 
     setRunning(false);
-    void queryClient.invalidateQueries({ queryKey: ['admin', 'uploads', 'pending'] });
-    void queryClient.invalidateQueries({ queryKey: ['admin', 'corpus'] });
+    refresh();
   };
 
   const done = rows.filter((r) => r.status !== 'waiting' && r.status !== 'running').length;
@@ -356,6 +384,35 @@ export const DocumentImportPanel = () => {
           </>
         ) : null}
       </div>
+
+      <details className="mt-3" onToggle={(e) => setPasteOpen(e.currentTarget.open)} open={pasteOpen}>
+        <summary className="cursor-pointer text-base font-semibold">Paste a job description&apos;s text instead</summary>
+        {rows.some((r) => r.blocked) ? (
+          <div className="mt-2">
+            <Note tone="yellow">
+              The campus network&apos;s security filter blocked a file before it reached JDWriter. Its text
+              usually gets through: open the document, select all of it (Ctrl-A, or ⌘-A on a Mac), copy it,
+              and paste it here.
+            </Note>
+          </div>
+        ) : null}
+        <textarea
+          aria-label="Pasted job description"
+          className="textarea textarea-bordered mt-2 w-full text-base"
+          onChange={(e) => setPasted(e.target.value)}
+          placeholder="The whole job description, as copied from the document — its title, responsibilities and qualifications."
+          rows={8}
+          value={pasted}
+        />
+        <button
+          className="btn btn-outline btn-sm mt-2"
+          disabled={running || pasted.trim() === ''}
+          onClick={() => void addPasted()}
+          type="button"
+        >
+          Add pasted job description
+        </button>
+      </details>
 
       {/* Announced as a folder starts and finishes, not file by file (WCAG 4.1.3). */}
       <p className="sr-only" role="status">

@@ -1,7 +1,7 @@
 import { SiteNote } from '@/shared/ui/SiteNote.tsx';
 import { Badge, Card, Eyebrow, Meter, Note } from '@/shared/ui/primitives.tsx';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { messageOf } from '@/features/browse/NlIntake.tsx';
+import { blockedByFilter, messageOf } from '@/features/browse/NlIntake.tsx';
 import { ProposedCompare } from './ProposedCompare.tsx';
 import { useClassify, useExtractDocument, useStartJdFromClass } from '@/queries/authoring.ts';
 import { useRef, useState, type DragEvent } from 'react';
@@ -70,6 +70,7 @@ export const DescriptionClassifier = () => {
   const depth = useRef(0);
 
   const extract = useExtractDocument();
+  const textBox = useRef<HTMLTextAreaElement>(null);
   const classify = useClassify();
   const start = useStartJdFromClass();
   const navigate = useNavigate();
@@ -189,6 +190,7 @@ export const DescriptionClassifier = () => {
               setFile(null);
             }}
             placeholder="Drag an Excel, Word, or PDF file here, or paste the full job description — summary, responsibilities, qualifications…"
+            ref={textBox}
             rows={12}
             value={text}
           />
@@ -219,7 +221,18 @@ export const DescriptionClassifier = () => {
 
         {extract.error ? (
           <div className="mt-3">
-            <Note tone="red">{messageOf(extract.error)}</Note>
+            <Note tone="red">
+              {messageOf(extract.error)}
+              {blockedByFilter(extract.error) ? (
+                <span className="mt-2 block" data-testid="paste-instead">
+                  Pasting the text usually gets through: open the document, select all of it (Ctrl-A, or
+                  ⌘-A on a Mac), copy it, and paste it into the box above.{' '}
+                  <button className="font-semibold underline" onClick={() => textBox.current?.focus()} type="button">
+                    Paste the text instead
+                  </button>
+                </span>
+              ) : null}
+            </Note>
           </div>
         ) : null}
 

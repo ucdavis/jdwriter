@@ -52,6 +52,28 @@ describe('classify', () => {
     expect(screen.queryByText('Clear match')).not.toBeInTheDocument();
   });
 
+  it('offers to paste the text when the campus security filter blocks the file', async () => {
+    const user = userEvent.setup();
+    testServer.use(
+      http.post(
+        '/api/classify/extract',
+        () =>
+          new HttpResponse('<!DOCTYPE html><title>Attention Required! | Cloudflare</title>', {
+            headers: { 'Content-Type': 'text/html' },
+            status: 403,
+          })
+      )
+    );
+    renderRoute({ initialPath: '/classify' });
+    await waitFor(() => screen.getByLabelText('Job description text'));
+
+    await user.upload(screen.getByLabelText('Upload a job description file'), new File(['pd'], 'PD.docx'));
+
+    expect(await screen.findByTestId('paste-instead')).toHaveTextContent('Pasting the text usually gets through');
+    await user.click(screen.getByRole('button', { name: 'Paste the text instead' }));
+    expect(screen.getByLabelText('Job description text')).toHaveFocus();
+  });
+
   it('names an un-ingested proposal a corpus gap rather than a disagreement', async () => {
     const user = userEvent.setup();
     renderRoute({ initialPath: '/classify' });
