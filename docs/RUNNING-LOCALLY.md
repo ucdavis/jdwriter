@@ -115,7 +115,10 @@ would be a lie.
 ### Uploads through blob storage (optional)
 
 In Azure, uploads go to blob storage first (see [Deploying](DEPLOYMENT.md#6-upload-storage)).
-Locally they go straight to the app, unless you want to exercise that path:
+Locally they go straight to the app, unless you want to exercise that path. Developers granted access
+to the shared account's `test` container use it with an `az login`, as
+[UPLOAD-STORAGE.md](UPLOAD-STORAGE.md#access-and-configuration) describes. Without access, use
+Azurite:
 
 ```bash
 npm run storage:up          # Azurite, Azure Storage's emulator, on 127.0.0.1:10000

@@ -156,44 +156,21 @@ sessions.
 
 ## 6. Upload storage
 
-Files are uploaded through blob storage, not through the app's front door. Campus Cloudflare's web
-application firewall refuses some Word documents outright, and files belong in storage anyway:
-1. The browser asks the app for a write-only link to one new, randomly named blob, valid for ten
-   minutes.
-2. The browser puts the file there.
-3. The upload request names the blob. The app reads the file, deletes it, and carries on as before.
+Files are uploaded through blob storage, not through the app's front door: campus Cloudflare's web
+application firewall refuses some Word documents outright. The browser asks the app for a ten-minute,
+write-only link to one new, randomly named blob, puts the file there, and the upload request names
+the blob; the app reads the file, deletes it, and carries on as before. Without
+`Uploads__BlobServiceUri` the app takes uploads directly, as in local development.
 
-**Configure Azure** creates the storage account (`st…`), its private `uploads` container, CORS
-rules, and a lifecycle rule deleting anything left behind after a day. It also sets
-`Uploads__BlobServiceUri` on the App Service. Shared-key access is off: the app signs links with a
-user-delegation key from its own managed identity.
-
-**One manual step, once per environment:** grant the web app's managed identity **Storage Blob Data
-Contributor** on the storage account. The deployment identity has Contributor, which can't create
-role assignments. Either:
-- rerun **Configure Azure** with `assignStorageRoles=true` as an identity that can create role
-  assignments (Owner, User Access Administrator or Role Based Access Control Administrator), or
-- run it once by hand, with the names from the deployment outputs:
-
-  ```bash
-  az role assignment create \
-    --assignee-object-id "$(az webapp identity show -g <rg> -n <webAppName> --query principalId -o tsv)" \
-    --assignee-principal-type ServicePrincipal \
-    --role "Storage Blob Data Contributor" \
-    --scope "$(az storage account show -g <rg> -n <uploadStorageAccountName> --query id -o tsv)"
-  ```
-
-Until the role is in place, an upload fails with a clear message rather than a 403 from the front
-door. `uploadCorsOrigins` lists the browser origins besides the App Service's own address; prod
-allows `https://people.caes.ucdavis.edu`. Without `Uploads__BlobServiceUri`, the app takes uploads
-directly, as it does in local development.
+The storage account, its containers, CORS, lifecycle rule, roles and local developer access are in
+[UPLOAD-STORAGE.md](UPLOAD-STORAGE.md).
 
 ## Where sensitive data lives
 
 | Data                                                                  | Where                                                                                      | Protection                                                                                                                                    |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | JD corpus, uploaded HRTMS exports (position numbers, reporting lines) | Azure SQL only — never the App Service disk                                                | TDE (encryption at rest); admin-only endpoints                                                                                                |
-| Uploads in transit                                                    | Private blob container, seconds to minutes: the app deletes each file as it reads it        | Encrypted at rest; no public access; no shared keys; write-only links for one random blob name; lifecycle deletes leftovers within a day |
+| Uploads in transit                                                    | Private blob container, seconds to minutes: the app deletes each file as it reads it        | Encrypted at rest; no public access; no shared keys; short-lived write-only links for one random blob name; leftovers eligible for lifecycle deletion after a day |
 | Saved JDs, envelopes                                                  | Azure SQL                                                                                  | TDE                                                                                                                                           |
 | Provider key entered in the app                                       | Azure SQL                                                                                  | Encrypted by ASP.NET Core Data Protection before storage, plus TDE; write-only; one per provider; every change audited (who, when, last four) |
 | Provider key from configuration                                       | Key Vault, via an App Service Key Vault reference (recommended), or an App Service setting | Vault access by the app's managed identity only; never returned or logged                                                                     |

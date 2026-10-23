@@ -1,3 +1,5 @@
+using Azure.Core;
+using Azure.Identity;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
@@ -95,7 +97,19 @@ try
     var uploadOptions = builder.Configuration.GetSection(UploadOptions.Section).Get<UploadOptions>() ?? new UploadOptions();
     builder.Services.AddSingleton(uploadOptions);
     builder.Services.AddSingleton<IUploadStaging>(_ =>
-        uploadOptions.Enabled ? new BlobUploadStaging(uploadOptions) : new DirectUploads());
+    {
+        if (!uploadOptions.Enabled)
+        {
+            return new DirectUploads();
+        }
+
+        // Chosen, not probed: on App Service its own managed identity; on a developer's machine their
+        // sign-in (az login), never a managed identity, whose probe there only times out.
+        TokenCredential credential = builder.Environment.IsDevelopment()
+            ? new DefaultAzureCredential(new DefaultAzureCredentialOptions { ExcludeManagedIdentityCredential = true })
+            : new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned);
+        return new BlobUploadStaging(uploadOptions, credential);
+    });
     builder.Services.AddScoped<UploadReader>();
 
     // The title reference is read on nearly every corpus path and rebuilt only on import, so the

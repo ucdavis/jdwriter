@@ -101,9 +101,10 @@ class its stated title resolves to; never guessed on ambiguity) — and an
 originals are kept as bytes in the **database only** (Azure SQL encrypts at rest), never written to
 disk, never logged — HRTMS file names embed position numbers. In Azure, an upload passes through a
 private blob container on its way in (decided 2026-10-22, so uploads never meet the campus front
-door's WAF): the browser puts it there with a write-only link for one randomly named blob, the app
-reads it and deletes it at once, and a lifecycle rule removes anything abandoned within a day. Blob
-names carry no file names. Nothing is kept there.
+door's WAF): the browser puts it there with a short-lived, write-only link for one randomly named
+blob, the app reads it and deletes it at once, and a lifecycle rule makes anything abandoned eligible
+for deletion after a day. Blob names carry no file names; links and original file names are never
+logged. Nothing is kept there. Storage, roles and local access: `docs/UPLOAD-STORAGE.md` (#72).
 
 Rebuilding a class regenerates its envelope **even if an admin edited it by hand** — a product
 decision (2026-10-02): edits are superseded as JDs written against them flow back in. The admin
