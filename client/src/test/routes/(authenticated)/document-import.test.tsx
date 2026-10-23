@@ -114,6 +114,37 @@ describe('add job descriptions', () => {
     expect(screen.queryByText(/HTTP 403/)).not.toBeInTheDocument();
   });
 
+  it('offers to paste a blocked file’s text instead, and adds the pasted JD', async () => {
+    const user = userEvent.setup();
+    const bodies: string[] = [];
+    testServer.use(
+      http.post('/api/admin/uploads/documents', async ({ request }) => {
+        const body = await request.text();
+        bodies.push(body);
+        // jsdom's FormData drops file names and contents on the way to MSW; the type survives.
+        return body.includes('Content-Type: text/plain')
+          ? HttpResponse.json(outcome({ readBy: 'ai', title: 'ACCESS AND ENGMT MGR 1', ucJobCode: '005604' }))
+          : new HttpResponse('<!DOCTYPE html><title>Attention Required! | Cloudflare</title>', {
+              headers: { 'Content-Type': 'text/html' },
+              status: 403,
+            });
+      })
+    );
+    renderRoute({ initialPath: '/backend/descriptions' });
+
+    await user.upload(await screen.findByLabelText('Add job description documents'), new File(['a'], 'jd.docx'));
+    expect(await screen.findByText(/blocked a file before it reached JDWriter/)).toBeInTheDocument();
+    const box = screen.getByRole('textbox', { name: 'Pasted job description' });
+    expect(box).toBeVisible();
+
+    await user.type(box, 'ACCESS AND ENGMT MGR 1. Leads the access program.');
+    await user.click(screen.getByRole('button', { name: 'Add pasted job description' }));
+    expect(await screen.findByText('ACCESS AND ENGMT MGR 1 (005604) · read by AI (unrecognized layout)')).toBeInTheDocument();
+    expect(bodies).toHaveLength(2);
+    expect(bodies[1]).toContain('Content-Type: text/plain');
+    expect(box).toHaveValue('');
+  });
+
   it('shows imported JDs in the rebuild queue', async () => {
     testServer.use(
       http.get('/api/admin/uploads/pending', () =>
