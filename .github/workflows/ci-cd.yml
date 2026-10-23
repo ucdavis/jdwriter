@@ -58,6 +58,7 @@ jobs:
         run: |
           az bicep build --file infrastructure/azure/main.bicep --stdout > /dev/null
           az bicep build --file infrastructure/azure/github-oidc.bicep --stdout > /dev/null
+          az bicep build --file infrastructure/azure/upload-storage.bicep --stdout > /dev/null
 
       - name: Restore frontend dependencies
         working-directory: client

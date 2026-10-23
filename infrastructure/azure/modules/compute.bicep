@@ -26,6 +26,12 @@ param appInsightsConnectionString string
 @description('Application Insights instrumentation key for platform telemetry.')
 param appInsightsInstrumentationKey string
 
+@description('Blob endpoint uploads are staged in; empty sends uploads to the app directly.')
+param uploadBlobServiceUri string = ''
+
+@description('Container uploads are staged in.')
+param uploadContainerName string = 'uploads'
+
 var baseAppSettings = [
   {
     name: 'ASPNETCORE_ENVIRONMENT'
@@ -50,6 +56,14 @@ var baseAppSettings = [
   {
     name: 'APPLICATIONINSIGHTS_AGENT_EXTENSION_VERSION'
     value: '~3'
+  }
+  {
+    name: 'Uploads__BlobServiceUri'
+    value: uploadBlobServiceUri
+  }
+  {
+    name: 'Uploads__Container'
+    value: uploadContainerName
   }
 ]
 

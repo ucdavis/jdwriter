@@ -59,6 +59,19 @@ param sqlAllowAzureServices bool = env == 'test'
 @description('Public network access for SQL server.')
 param sqlPublicNetworkAccess string = 'Enabled'
 
+@description('Browser origins, besides the App Service\'s own address, allowed to upload files to blob storage: the front door the app is served through.')
+param uploadCorsOrigins array = env == 'prod' ? [
+  'https://people.caes.ucdavis.edu'
+  'http://localhost:5173'
+  'http://127.0.0.1:5173'
+] : [
+  'http://localhost:5173'
+  'http://127.0.0.1:5173'
+]
+
+@description('Grant the web app\'s identity Storage Blob Delegator on the account and Storage Blob Data Contributor on uploads only. Requires permission to create role assignments; with Contributor alone, leave this off and deploy upload-storage.bicep once as an operator.')
+param assignStorageRoles bool = false
+
 var appNameSafe = toLower(replace(replace(appName, ' ', ''), '_', ''))
 var nameToken = substring(uniqueString(resourceGroup().id, appName, env), 0, 6)
 var normalizedExpectedSubscriptionId = toLower(expectedSubscriptionId)
@@ -69,6 +82,8 @@ var deploymentGuardPassed = !empty(expectedSubscriptionId) && normalizedCurrentS
 var sqlServerName = toLower('sql-${appNameSafe}-${env}-${nameToken}')
 var webAppName = toLower('web-${appNameSafe}-${env}-${nameToken}')
 var appInsightsName = toLower('appi-${appNameSafe}-${env}-${nameToken}')
+// Storage names allow only lowercase letters and digits, at most 24.
+var storageAccountName = take(toLower('st${replace(appNameSafe, '-', '')}${env}${nameToken}'), 24)
 var logAnalyticsWorkspaceName = toLower('log-${appNameSafe}-${env}-${nameToken}')
 
 var resourceTags = union(tags, {
@@ -124,6 +139,18 @@ var sqlServerHostnameSuffix = environment().suffixes.sqlServerHostname
 var sqlServerFqdn = '${sqlServerName}${startsWith(sqlServerHostnameSuffix, '.') ? '' : '.'}${sqlServerHostnameSuffix}'
 var sqlConnectionString = 'Server=tcp:${sqlServerFqdn},1433;Initial Catalog=${sqlDatabaseName};Persist Security Info=False;User ID=${sqlAdminLogin};Password=${sqlAdminPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
 
+module storage 'modules/storage.bicep' = if (deploymentGuardPassed) {
+  name: 'storage-${env}'
+  params: {
+    name: storageAccountName
+    location: location
+    tags: resourceTags
+    corsOrigins: union([
+      'https://${webAppName}.azurewebsites.net'
+    ], uploadCorsOrigins)
+  }
+}
+
 module compute 'modules/compute.bicep' = if (deploymentGuardPassed) {
   name: 'compute-${env}'
   dependsOn: [
@@ -139,6 +166,17 @@ module compute 'modules/compute.bicep' = if (deploymentGuardPassed) {
     environmentName: env
     appInsightsConnectionString: appInsights!.properties.ConnectionString
     appInsightsInstrumentationKey: appInsights!.properties.InstrumentationKey
+    uploadBlobServiceUri: storage!.outputs.blobEndpoint
+    uploadContainerName: storage!.outputs.containerName
+  }
+}
+
+module storageAccess 'modules/storage-role-assignment.bicep' = if (deploymentGuardPassed && assignStorageRoles) {
+  name: 'storage-access-${env}'
+  params: {
+    storageAccountName: storage!.outputs.accountName
+    principalId: compute!.outputs.principalId
+    containerName: storage!.outputs.containerName
   }
 }
 
@@ -151,3 +189,5 @@ output logAnalyticsWorkspaceName string = deploymentGuardPassed ? logAnalyticsWo
 output sqlDatabaseName string = sqlDatabaseName
 output sqlServerName string = deploymentGuardPassed ? sql!.outputs.serverName : ''
 output webAppName string = deploymentGuardPassed ? compute!.outputs.webAppName : ''
+output uploadStorageAccountName string = deploymentGuardPassed ? storage!.outputs.accountName : ''
+output uploadBlobEndpoint string = deploymentGuardPassed ? storage!.outputs.blobEndpoint : ''
