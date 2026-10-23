@@ -52,8 +52,9 @@ public sealed class StagedUploadException(string message) : Exception(message);
 /// <summary>
 /// Uploads that go to blob storage first, never through the front door's web application firewall:
 /// the browser puts each file straight into a private container with a short-lived, write-only link
-/// for one blob, and the app then takes it — reads it and deletes it. A storage lifecycle rule
-/// removes anything left behind (a closed tab) within a day.
+/// for one blob, and the app then takes it — reads it and deletes it. Anything left behind (a closed
+/// tab) becomes eligible for deletion by the storage lifecycle rule after a day. A link is a bearer
+/// credential, reusable until it expires; it is never logged.
 /// </summary>
 public interface IUploadStaging
 {
@@ -89,6 +90,7 @@ public sealed partial class BlobUploadStaging : IUploadStaging
     private readonly bool _local;
     private bool _localReady;
 
+    /// <param name="credential">Who signs the links: the app's managed identity in Azure, a developer's sign-in locally.</param>
     public BlobUploadStaging(UploadOptions options, TokenCredential? credential = null)
     {
         _options = options;

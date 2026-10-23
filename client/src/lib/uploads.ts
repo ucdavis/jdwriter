@@ -4,7 +4,7 @@ type StageResponse = { direct: true } | { slots: Array<{ blob: string; url: stri
 
 /**
  * The body of an upload request. Where the server stages uploads (in Azure), each file is put
- * straight into blob storage with a one-time, write-only link, and the request only names the
+ * straight into blob storage with a short-lived, write-only link for one blob, and the request only names the
  * blobs — so files never pass through the campus front door's firewall, which refuses some
  * documents. Where it doesn't (local development), the files are the body, as before.
  */
