@@ -23,6 +23,13 @@ Besides the template's `AZURE_*` variables and `SQL_ADMIN_PASSWORD`:
 All are declared in `infrastructure/azure/deployment-settings.json` and applied to the App Service by
 the **Configure Azure** workflow. Run it after setting or changing them.
 
+> **Configure Azure replaces every App Service setting.** Its infrastructure step sets the app's
+> settings wholesale, and its runtime step re-adds only what this GitHub environment defines. A setting
+> added by hand in the Azure portal — a provider key above all — is gone after the next run. Put keys
+> here, as a secret holding the key or a Key Vault reference (below), or enter them in the app's
+> Settings, which stores them in the database. (Learned 2026-10-24, when a run dropped prod's
+> `OPENAI_API_KEY`.)
+
 ### Keys in Key Vault
 
 Set the key secret's value to a Key Vault reference instead of the key:

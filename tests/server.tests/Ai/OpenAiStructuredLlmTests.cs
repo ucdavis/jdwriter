@@ -263,4 +263,25 @@ public class OpenAiStructuredLlmTests
 
         (await verifier.VerifyAsync("azure-key-0000000000000000")).Should().Contain("did not answer in time");
     }
+
+    [Theory]
+    [InlineData("https://api.openai.com/v1", true)]
+    [InlineData("https://us.api.openai.com/v1", true)]
+    [InlineData("http://localhost:11434/v1", false)]
+    [InlineData("https://models.caes.example/v1", false)]
+    public void OpenAI_s_own_API_needs_a_key_even_reached_as_OpenAI_compatible(string endpoint, bool required)
+    {
+        var options = new LlmOptions { Provider = LlmProvider.OpenAiCompatible, Endpoint = endpoint, Model = "gpt-6-luna" };
+
+        options.KeyRequired.Should().Be(required);
+        if (required)
+        {
+            // A lost key reads as missing — not "this server does not need one" while every call is refused.
+            options.ConfigurationProblem(null).Should().Be("no key (OPENAI_API_KEY)");
+        }
+        else
+        {
+            options.ConfigurationProblem(null).Should().BeNull();
+        }
+    }
 }
