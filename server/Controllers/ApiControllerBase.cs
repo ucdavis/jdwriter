@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Server.Core.Ai;
 using Server.Core.Uploads;
 using Server.Helpers;
 
@@ -11,6 +12,7 @@ namespace Server.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [StagedUploadRefused]
+[AiServiceFailed]
 public class ApiControllerBase : ControllerBase
 {
     /// <summary>
@@ -19,6 +21,29 @@ public class ApiControllerBase : ControllerBase
     /// </summary>
     protected Task<List<UploadedFile>> UploadsAsync(long maxBytesEach, CancellationToken ct) =>
         HttpContext.RequestServices.GetRequiredService<UploadReader>().ReadAsync(Request, maxBytesEach, ct);
+}
+
+/// <summary>
+/// The AI provider refused or failed a call that its endpoint doesn't handle itself — a rejected
+/// key, a spent quota, an outage. Logged with the provider's detail; the user is told plainly, rather
+/// than shown a bare 500. Endpoints with their own wording catch it first.
+/// </summary>
+public sealed class AiServiceFailedAttribute : ExceptionFilterAttribute
+{
+    public override void OnException(ExceptionContext context)
+    {
+        if (context.Exception is StructuredLlmException failed)
+        {
+            context.HttpContext.RequestServices.GetRequiredService<ILogger<AiServiceFailedAttribute>>()
+                .LogError(failed, "The AI provider failed a call");
+            context.Result = new ObjectResult(new
+            {
+                message = "The AI service didn't return a usable answer, so this couldn't be completed. Try again in a moment; if it keeps happening, ask a JDWriter administrator to check the AI provider in Settings.",
+            })
+            { StatusCode = StatusCodes.Status502BadGateway };
+            context.ExceptionHandled = true;
+        }
+    }
 }
 
 /// <summary>A staged upload that can't be used is the user's to fix: a 400 that says why.</summary>

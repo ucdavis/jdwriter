@@ -162,10 +162,7 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
             },
         };
 
-        var host = new Uri(_options.Endpoint).Host;
-        var openAiEndpoint = host.Equals("api.openai.com", StringComparison.OrdinalIgnoreCase)
-            || host.EndsWith(".api.openai.com", StringComparison.OrdinalIgnoreCase);
-        if (_options.Provider == LlmProvider.AzureOpenAi || openAiEndpoint)
+        if (_options.Provider == LlmProvider.AzureOpenAi || _options.HostedOpenAi)
         {
             // OpenAI reasoning models reject max_tokens, including on regional endpoints.
             body["max_completion_tokens"] = request.MaxTokens;

@@ -62,8 +62,21 @@ public sealed class LlmOptions
         _ => "ANTHROPIC_API_KEY",
     };
 
-    /// <summary>A local OpenAI-compatible server usually needs no key; every hosted provider does.</summary>
-    public bool KeyRequired => Provider != LlmProvider.OpenAiCompatible;
+    /// <summary>
+    /// OpenAI's own API, at api.openai.com or a regional host such as us.api.openai.com, as opposed
+    /// to a local or self-hosted OpenAI-compatible server.
+    /// </summary>
+    public bool HostedOpenAi =>
+        Uri.TryCreate(Endpoint, UriKind.Absolute, out var uri)
+        && (uri.Host.Equals("api.openai.com", StringComparison.OrdinalIgnoreCase)
+            || uri.Host.EndsWith(".api.openai.com", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// A local OpenAI-compatible server usually needs no key; every hosted provider does — OpenAI's
+    /// own API included, even reached as "OpenAI-compatible". Treating that as keyless once let a
+    /// lost key read as "this server does not need one" while every call was refused.
+    /// </summary>
+    public bool KeyRequired => Provider != LlmProvider.OpenAiCompatible || HostedOpenAi;
 
     /// <summary>
     /// Why this configuration cannot make calls with <paramref name="key"/>, or null when it can.
