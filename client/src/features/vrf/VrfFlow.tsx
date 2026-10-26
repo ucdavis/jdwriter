@@ -116,7 +116,7 @@ export const VrfFlow = ({ jdId }: { jdId?: number }) => {
           <Grid>
             <Choice form={form} label="Action requested" name="actionRequested" options={ACTIONS} update={update} />
             <Choice form={form} label="How will you fill the role?" name="fillMethod" options={FILL_METHODS} update={update} />
-            <Text form={form} hint="If there isn't one, write N/A" label="Position number" name="positionNumber" required update={update} />
+            <Text form={form} hint="Leave blank if there isn't one" label="Position number" name="positionNumber" update={update} />
             {replacesSomeone(form) ? (
               <Text form={form} hint="mm/dd/yyyy" label="Date vacated or expiration date" name="dateVacated" required update={update} />
             ) : null}

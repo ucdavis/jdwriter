@@ -58,6 +58,7 @@ public class VrfTests
         {
             f.HrbpName = "";
             f.SalaryMin = "";
+            f.PositionNumber = "";
         }), new DateOnly(2026, 10, 26))).ToDictionary(r => r.Label, r => r.Value);
 
         rows["HR Business Partner Name"].Should().Be(VrfDocx.NotProvided);
@@ -66,6 +67,7 @@ public class VrfTests
         rows["Date Vacated or Expiration Date"].Should().Be("N/A (new position)");
         rows["Is the funding for this contract secured?"].Should().Be("N/A (not a contract)");
         rows["Job Opening ID"].Should().Be("—");
+        rows["Position Number"].Should().Be("N/A", "no one should have to type N/A");
     }
 
     [Fact]

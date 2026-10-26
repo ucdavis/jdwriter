@@ -113,7 +113,8 @@ public static class VrfCatalog
         new("Position", "Division/School/College", f => f.Division, true),
         new("Request", "Action Requested", f => f.ActionRequested, true),
         new("Request", "How the role will be filled", f => f.FillMethod, true),
-        new("Request", "Position Number", f => f.PositionNumber, true),
+        // The campus form wants "N/A" when there's no number; the author just leaves it blank.
+        new("Request", "Position Number", f => f.PositionNumber.Trim().Length > 0 ? f.PositionNumber : "N/A", false),
         new("Request", "Date Vacated or Expiration Date", f => f.DateVacated, true, f => ReplacesSomeone(f) ? null : "N/A (new position)"),
         new("Request", "Job Opening ID", f => f.JobOpeningId, false),
         new("Position", "Payroll Title", f => f.PayrollTitle, true),
