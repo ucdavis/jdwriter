@@ -164,6 +164,66 @@ public class OpenAiStructuredLlmTests
         JsonNode.Parse(h2.SentBody!)!["reasoning_effort"]!.GetValue<string>().Should().Be("low");
     }
 
+    /// <summary>Answers in turn, recording what was sent.</summary>
+    private sealed class SequenceHandler(params (HttpStatusCode Status, string Body)[] replies) : HttpMessageHandler
+    {
+        private int _next;
+        public List<string> Sent { get; } = [];
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Sent.Add(await request.Content!.ReadAsStringAsync(ct));
+            var (status, body) = replies[Math.Min(_next++, replies.Length - 1)];
+            return new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+        }
+    }
+
+    private static readonly LlmOptions HostedOpenAi = new()
+    {
+        Provider = LlmProvider.OpenAiCompatible, Endpoint = "https://us.api.openai.com/v1", Model = "gpt-6-luna",
+    };
+
+    [Fact]
+    public async Task OpenAI_s_own_API_gets_each_call_s_effort_without_being_configured_and_a_local_server_does_not()
+    {
+        var ok = Completion("""{"category":"x","confidence":1,"parts":[]}""");
+        var (hosted, h1) = Make(HostedOpenAi, "k-000000000000000000000", HttpStatusCode.OK, ok);
+        await hosted.StructuredAsync<Answer>(new StructuredRequest { System = "s", User = "u", Effort = LlmEffort.Low });
+        JsonNode.Parse(h1.SentBody!)!["reasoning_effort"]!.GetValue<string>().Should().Be("low");
+
+        var local = new LlmOptions { Provider = LlmProvider.OpenAiCompatible, Endpoint = "http://localhost:11434/v1", Model = "qwen3.8:latest" };
+        var (l, h2) = Make(local, null, HttpStatusCode.OK, ok);
+        await l.StructuredAsync<Answer>(Request);
+        JsonNode.Parse(h2.SentBody!)!["reasoning_effort"].Should().BeNull();
+    }
+
+    [Fact]
+    public async Task A_model_that_refuses_reasoning_effort_is_retried_without_it_once_and_never_sent_it_again()
+    {
+        var ok = Completion("""{"category":"x","confidence":1,"parts":[]}""");
+        var handler = new SequenceHandler(
+            (HttpStatusCode.BadRequest, """{"error":{"message":"Unsupported parameter: 'reasoning_effort' is not supported with this model."}}"""),
+            (HttpStatusCode.OK, ok));
+        var llm = new OpenAiStructuredLlm(new Factory(handler), new FixedKey("k-000000000000000000000"), HostedOpenAi, NullLogger<OpenAiStructuredLlm>.Instance);
+
+        (await llm.StructuredAsync<Answer>(Request)).Category.Should().Be("x");
+        await llm.StructuredAsync<Answer>(Request);
+
+        handler.Sent.Select(b => JsonNode.Parse(b)!["reasoning_effort"] != null).Should().Equal(true, false, false);
+    }
+
+    [Fact]
+    public async Task Another_bad_request_is_not_retried()
+    {
+        var handler = new SequenceHandler((HttpStatusCode.BadRequest, """{"error":{"message":"Invalid schema."}}"""));
+        var llm = new OpenAiStructuredLlm(new Factory(handler), new FixedKey("k-000000000000000000000"), HostedOpenAi, NullLogger<OpenAiStructuredLlm>.Instance);
+
+        var act = () => llm.StructuredAsync<Answer>(Request);
+
+        (await act.Should().ThrowAsync<StructuredLlmException>()).Which.Message.Should().Contain("Invalid schema");
+        handler.Sent.Should().ContainSingle();
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.Unauthorized, "{}", "rejected the credentials")]
     [InlineData(HttpStatusCode.BadRequest, """{"error":{"message":"The API deployment for this resource does not exist."}}""", "deployment for this resource does not exist")]

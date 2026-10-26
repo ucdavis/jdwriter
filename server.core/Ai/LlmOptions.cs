@@ -42,9 +42,10 @@ public sealed class LlmOptions
     public string ApiVersion { get; init; } = "2024-10-21";
 
     /// <summary>
-    /// Send the call's effort level as <c>reasoning_effort</c>. Only reasoning models accept it
-    /// (other models reject the request), so it is off unless the deployment is known to take it.
-    /// Anthropic ignores this — its effort setting is always sent.
+    /// Send the call's effort level as <c>reasoning_effort</c> to a server other than OpenAI's own
+    /// API. OpenAI's API always gets it (its reasoning models take it; a model that refuses it is
+    /// retried without, once). A local or self-hosted model may reject it, so for those it is off
+    /// unless the deployment is known to take it. Anthropic ignores this — its effort is always sent.
     /// </summary>
     public bool SendReasoningEffort { get; init; }
 
