@@ -153,43 +153,17 @@ describe('a finished JD', () => {
     expect(screen.getByRole('button', { name: '⤓ Download PDF' })).toBeEnabled();
   });
 
-  it('begins the Workforce Management request with the JD attached', async () => {
-    testServer.use(
-      http.get('/api/jds/12', () => HttpResponse.json(savedJd())),
-      http.get('/api/links', () =>
-        HttpResponse.json({ wfmUrl: 'https://people.example.edu/wfm/requests/new' })
-      )
-    );
-    renderRoute({ initialPath: '/jds/12' });
-
-    const steps = await screen.findByRole('region', {
-      name: 'Take this job description to the Workforce Management request',
-    });
-    const start = await within(steps).findByRole('link', {
-      name: 'Begin working on the Workforce Management request →',
-    });
-
-    // WFM is told where the JD comes from, and the absolute URL to fetch it from.
-    const url = new URL(start.getAttribute('href')!);
-    expect(url.origin + url.pathname).toBe('https://people.example.edu/wfm/requests/new');
-    expect(url.searchParams.get('source')).toBe('jdwriter');
-    expect(url.searchParams.get('jd')).toBe(`${window.location.origin}/api/jds/12/handoff`);
-
-    expect(steps).toHaveTextContent('Job description (done)');
-    expect(steps).toHaveTextContent('submit it all as one complete package');
-  });
-
-  it('offers the JD as Markdown and JSON until the workforce management tool is live', async () => {
+  it('tells the author to attach the JD to an AggieService ticket for DISSC, and what comes next', async () => {
     testServer.use(http.get('/api/jds/12', () => HttpResponse.json(savedJd())));
     renderRoute({ initialPath: '/jds/12' });
 
-    const steps = await screen.findByRole('region', {
-      name: 'Take this job description to the Workforce Management request',
-    });
-    expect(await within(steps).findByText(/not available yet/)).toBeInTheDocument();
-    expect(within(steps).queryByRole('link', { name: /Begin working on the Workforce/ })).not.toBeInTheDocument();
-    expect(within(steps).getByRole('link', { name: 'Markdown' })).toHaveAttribute('href', '/api/jds/12/markdown');
-    expect(within(steps).getByRole('link', { name: 'JSON' })).toHaveAttribute('href', '/api/jds/12/handoff');
+    const steps = await screen.findByRole('region', { name: 'Send this job description to DISSC' });
+    expect(within(steps).getByRole('link', { name: '⤓ Download the Word document' })).toHaveAttribute('href', '/api/jds/12/docx');
+    expect(within(steps).getByRole('link', { name: 'AggieService' })).toHaveAttribute('href', 'https://aggieservice.ucdavis.edu/s/');
+    expect(within(steps).getByRole('link', { name: 'disscrequest@ucdavis.edu' })).toHaveAttribute('href', 'mailto:disscrequest@ucdavis.edu');
+    expect(steps).toHaveTextContent('a vacancy request form, then classification by Compensation, then recruitment');
+    expect(steps).toHaveTextContent('Your DISSC representative will reach out through AggieService');
+    expect(steps).not.toHaveTextContent('Workforce Management');
   });
 
   it('offers neither the hand-off nor Word for a JD that is not ready', async () => {

@@ -1,5 +1,5 @@
 import type { EnvelopeCheckResponse } from '@/lib/contracts.ts';
-import { Badge, Card, Note } from '@/shared/ui/primitives.tsx';
+import { Badge, Card, Note, SlowNote } from '@/shared/ui/primitives.tsx';
 import { Link } from '@tanstack/react-router';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { BetterFitPanel } from './BetterFitPanel.tsx';
@@ -91,14 +91,17 @@ export const CheckResult = ({
       {/* Only when the build doesn't fit and no better class was named: offered on a build that
           fits, it reads as doubt about a passing check. */}
       {fits(check.verdict) || check.suggestedClass || check.betterFitChecked || betterFit.data ? null : (
-        <button
-          className="btn btn-outline btn-sm"
-          disabled={betterFit.isPending}
-          onClick={onLookForBetterFit}
-          type="button"
-        >
-          {betterFit.isPending ? 'Looking…' : 'Look for a better fit'}
-        </button>
+        <>
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={betterFit.isPending}
+            onClick={onLookForBetterFit}
+            type="button"
+          >
+            {betterFit.isPending ? 'Looking…' : 'Look for a better fit'}
+          </button>
+          <SlowNote show={betterFit.isPending} />
+        </>
       )}
     </div>
   </Card>

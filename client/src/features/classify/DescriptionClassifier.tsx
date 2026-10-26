@@ -1,5 +1,5 @@
 import { SiteNote } from '@/shared/ui/SiteNote.tsx';
-import { Badge, Card, Eyebrow, Meter, Note } from '@/shared/ui/primitives.tsx';
+import { Badge, Card, Eyebrow, Meter, Note, SlowNote } from '@/shared/ui/primitives.tsx';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { blockedByFilter, messageOf } from '@/features/browse/NlIntake.tsx';
 import { ProposedCompare } from './ProposedCompare.tsx';
@@ -259,6 +259,7 @@ export const DescriptionClassifier = () => {
           >
             {classify.isPending ? 'Classifying…' : 'Classify this description'}
           </button>
+          <SlowNote show={classify.isPending} />
           {text || result ? (
             <button
               className="btn btn-ghost btn-sm"
@@ -404,6 +405,7 @@ const MatchCard = ({
       >
         {starting ? 'Starting your JD…' : 'Start a JD from this class →'}
       </button>
+      <SlowNote show={starting} />
       <span className="text-sm text-base-content/70">
         Uses this class&apos;s standard and merges in your description&apos;s work. Opens as a
         draft you can edit.

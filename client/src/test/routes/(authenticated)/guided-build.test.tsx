@@ -146,6 +146,26 @@ describe('the guided build', () => {
     expect(screen.getByRole('button', { name: 'Check my duties' })).toBeDisabled();
   });
 
+  it('says a check can take a minute or so while it runs', async () => {
+    const user = userEvent.setup();
+    const { promise: answered, resolve: release } = Promise.withResolvers<void>();
+    testServer.use(
+      http.post('/api/build/check', async () => {
+        await answered;
+        return HttpResponse.json(verdict('in_envelope'));
+      })
+    );
+    open();
+    await fillDepartment(user);
+
+    await user.click(await screen.findByRole('button', { name: 'Check my duties' }));
+    expect(await screen.findByTestId('slow-note')).toHaveTextContent('This can take a minute or so.');
+
+    release();
+    await screen.findByRole('button', { name: /^Continue/ });
+    expect(screen.queryByTestId('slow-note')).not.toBeInTheDocument();
+  });
+
   it('does not check twice when nothing changed since the duties check', async () => {
     const user = userEvent.setup();
     const checks = countChecks('in_envelope');
@@ -190,7 +210,7 @@ describe('the guided build', () => {
 
     expect(await screen.findByTestId('build-outcome')).toHaveTextContent('Great! Your JD passed.');
     expect(screen.getByRole('button', { name: '⤓ Download PDF' })).toBeEnabled();
-    expect(screen.getByRole('region', { name: /Workforce Management/ })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Send this job description to DISSC' })).toBeInTheDocument();
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('Your JD');
 
     await user.click(screen.getByRole('button', { name: 'Make changes' }));
