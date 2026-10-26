@@ -11,26 +11,26 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as authenticatedRouteRouteImport } from './routes/(authenticated)/route'
 import { Route as authenticatedIndexRouteImport } from './routes/(authenticated)/index'
-import { Route as authenticatedVrfRouteImport } from './routes/(authenticated)/vrf'
-import { Route as authenticatedClassifyRouteImport } from './routes/(authenticated)/classify'
 import { Route as authenticatedBackendRouteRouteImport } from './routes/(authenticated)/backend/route'
-import { Route as authenticatedJdsIndexRouteImport } from './routes/(authenticated)/jds.index'
+import { Route as authenticatedClassifyRouteImport } from './routes/(authenticated)/classify'
+import { Route as authenticatedVrfRouteImport } from './routes/(authenticated)/vrf'
 import { Route as authenticatedBackendIndexRouteImport } from './routes/(authenticated)/backend/index'
-import { Route as authenticatedJdsIdRouteImport } from './routes/(authenticated)/jds.$id'
-import { Route as authenticatedClassSlugRouteImport } from './routes/(authenticated)/class.$slug'
-import { Route as authenticatedBackendStandardsRouteImport } from './routes/(authenticated)/backend/standards'
-import { Route as authenticatedBackendSettingsRouteImport } from './routes/(authenticated)/backend/settings'
-import { Route as authenticatedBackendJobsRouteImport } from './routes/(authenticated)/backend/jobs'
-import { Route as authenticatedBackendFitRouteImport } from './routes/(authenticated)/backend/fit'
-import { Route as authenticatedBackendCorpusRouteImport } from './routes/(authenticated)/backend/corpus'
-import { Route as authenticatedBackendCodesRouteImport } from './routes/(authenticated)/backend/codes'
 import { Route as authenticatedBackendAnalyticsRouteImport } from './routes/(authenticated)/backend/analytics'
+import { Route as authenticatedBackendCodesRouteImport } from './routes/(authenticated)/backend/codes'
+import { Route as authenticatedBackendCorpusRouteImport } from './routes/(authenticated)/backend/corpus'
+import { Route as authenticatedBackendFitRouteImport } from './routes/(authenticated)/backend/fit'
+import { Route as authenticatedBackendJobsRouteImport } from './routes/(authenticated)/backend/jobs'
+import { Route as authenticatedBackendSettingsRouteImport } from './routes/(authenticated)/backend/settings'
+import { Route as authenticatedBackendStandardsRouteImport } from './routes/(authenticated)/backend/standards'
+import { Route as authenticatedClassSlugRouteImport } from './routes/(authenticated)/class.$slug'
+import { Route as authenticatedJdsIndexRouteImport } from './routes/(authenticated)/jds.index'
+import { Route as authenticatedJdsIdRouteImport } from './routes/(authenticated)/jds.$id'
 import { Route as authenticatedBackendDescriptionsIndexRouteImport } from './routes/(authenticated)/backend/descriptions.index'
-import { Route as authenticatedClassSlugBuildRouteImport } from './routes/(authenticated)/class.$slug.build'
-import { Route as authenticatedBackendStandardSlugRouteImport } from './routes/(authenticated)/backend/standard.$slug'
-import { Route as authenticatedBackendJdsSlugRouteImport } from './routes/(authenticated)/backend/jds.$slug'
-import { Route as authenticatedBackendEditSlugRouteImport } from './routes/(authenticated)/backend/edit.$slug'
 import { Route as authenticatedBackendDescriptionsIdRouteImport } from './routes/(authenticated)/backend/descriptions.$id'
+import { Route as authenticatedBackendEditSlugRouteImport } from './routes/(authenticated)/backend/edit.$slug'
+import { Route as authenticatedBackendJdsSlugRouteImport } from './routes/(authenticated)/backend/jds.$slug'
+import { Route as authenticatedBackendStandardSlugRouteImport } from './routes/(authenticated)/backend/standard.$slug'
+import { Route as authenticatedClassSlugBuildRouteImport } from './routes/(authenticated)/class.$slug.build'
 import { Route as authenticatedBackendJdSlugSplatRouteImport } from './routes/(authenticated)/backend/jd.$slug.$'
 
 const authenticatedRouteRoute = authenticatedRouteRouteImport.update({
@@ -42,25 +42,20 @@ const authenticatedIndexRoute = authenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
-const authenticatedVrfRoute = authenticatedVrfRouteImport.update({
-  id: '/vrf',
-  path: '/vrf',
-  getParentRoute: () => authenticatedRouteRoute,
-} as any)
-const authenticatedClassifyRoute = authenticatedClassifyRouteImport.update({
-  id: '/classify',
-  path: '/classify',
-  getParentRoute: () => authenticatedRouteRoute,
-} as any)
 const authenticatedBackendRouteRoute =
   authenticatedBackendRouteRouteImport.update({
     id: '/backend',
     path: '/backend',
     getParentRoute: () => authenticatedRouteRoute,
   } as any)
-const authenticatedJdsIndexRoute = authenticatedJdsIndexRouteImport.update({
-  id: '/jds/',
-  path: '/jds/',
+const authenticatedClassifyRoute = authenticatedClassifyRouteImport.update({
+  id: '/classify',
+  path: '/classify',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any)
+const authenticatedVrfRoute = authenticatedVrfRouteImport.update({
+  id: '/vrf',
+  path: '/vrf',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
 const authenticatedBackendIndexRoute =
@@ -69,43 +64,10 @@ const authenticatedBackendIndexRoute =
     path: '/',
     getParentRoute: () => authenticatedBackendRouteRoute,
   } as any)
-const authenticatedJdsIdRoute = authenticatedJdsIdRouteImport.update({
-  id: '/jds/$id',
-  path: '/jds/$id',
-  getParentRoute: () => authenticatedRouteRoute,
-} as any)
-const authenticatedClassSlugRoute = authenticatedClassSlugRouteImport.update({
-  id: '/class/$slug',
-  path: '/class/$slug',
-  getParentRoute: () => authenticatedRouteRoute,
-} as any)
-const authenticatedBackendStandardsRoute =
-  authenticatedBackendStandardsRouteImport.update({
-    id: '/standards',
-    path: '/standards',
-    getParentRoute: () => authenticatedBackendRouteRoute,
-  } as any)
-const authenticatedBackendSettingsRoute =
-  authenticatedBackendSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => authenticatedBackendRouteRoute,
-  } as any)
-const authenticatedBackendJobsRoute =
-  authenticatedBackendJobsRouteImport.update({
-    id: '/jobs',
-    path: '/jobs',
-    getParentRoute: () => authenticatedBackendRouteRoute,
-  } as any)
-const authenticatedBackendFitRoute = authenticatedBackendFitRouteImport.update({
-  id: '/fit',
-  path: '/fit',
-  getParentRoute: () => authenticatedBackendRouteRoute,
-} as any)
-const authenticatedBackendCorpusRoute =
-  authenticatedBackendCorpusRouteImport.update({
-    id: '/corpus',
-    path: '/corpus',
+const authenticatedBackendAnalyticsRoute =
+  authenticatedBackendAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
     getParentRoute: () => authenticatedBackendRouteRoute,
   } as any)
 const authenticatedBackendCodesRoute =
@@ -114,34 +76,60 @@ const authenticatedBackendCodesRoute =
     path: '/codes',
     getParentRoute: () => authenticatedBackendRouteRoute,
   } as any)
-const authenticatedBackendAnalyticsRoute =
-  authenticatedBackendAnalyticsRouteImport.update({
-    id: '/analytics',
-    path: '/analytics',
+const authenticatedBackendCorpusRoute =
+  authenticatedBackendCorpusRouteImport.update({
+    id: '/corpus',
+    path: '/corpus',
     getParentRoute: () => authenticatedBackendRouteRoute,
   } as any)
+const authenticatedBackendFitRoute = authenticatedBackendFitRouteImport.update({
+  id: '/fit',
+  path: '/fit',
+  getParentRoute: () => authenticatedBackendRouteRoute,
+} as any)
+const authenticatedBackendJobsRoute =
+  authenticatedBackendJobsRouteImport.update({
+    id: '/jobs',
+    path: '/jobs',
+    getParentRoute: () => authenticatedBackendRouteRoute,
+  } as any)
+const authenticatedBackendSettingsRoute =
+  authenticatedBackendSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => authenticatedBackendRouteRoute,
+  } as any)
+const authenticatedBackendStandardsRoute =
+  authenticatedBackendStandardsRouteImport.update({
+    id: '/standards',
+    path: '/standards',
+    getParentRoute: () => authenticatedBackendRouteRoute,
+  } as any)
+const authenticatedClassSlugRoute = authenticatedClassSlugRouteImport.update({
+  id: '/class/$slug',
+  path: '/class/$slug',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any)
+const authenticatedJdsIndexRoute = authenticatedJdsIndexRouteImport.update({
+  id: '/jds/',
+  path: '/jds/',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any)
+const authenticatedJdsIdRoute = authenticatedJdsIdRouteImport.update({
+  id: '/jds/$id',
+  path: '/jds/$id',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any)
 const authenticatedBackendDescriptionsIndexRoute =
   authenticatedBackendDescriptionsIndexRouteImport.update({
     id: '/descriptions/',
     path: '/descriptions/',
     getParentRoute: () => authenticatedBackendRouteRoute,
   } as any)
-const authenticatedClassSlugBuildRoute =
-  authenticatedClassSlugBuildRouteImport.update({
-    id: '/build',
-    path: '/build',
-    getParentRoute: () => authenticatedClassSlugRoute,
-  } as any)
-const authenticatedBackendStandardSlugRoute =
-  authenticatedBackendStandardSlugRouteImport.update({
-    id: '/standard/$slug',
-    path: '/standard/$slug',
-    getParentRoute: () => authenticatedBackendRouteRoute,
-  } as any)
-const authenticatedBackendJdsSlugRoute =
-  authenticatedBackendJdsSlugRouteImport.update({
-    id: '/jds/$slug',
-    path: '/jds/$slug',
+const authenticatedBackendDescriptionsIdRoute =
+  authenticatedBackendDescriptionsIdRouteImport.update({
+    id: '/descriptions/$id',
+    path: '/descriptions/$id',
     getParentRoute: () => authenticatedBackendRouteRoute,
   } as any)
 const authenticatedBackendEditSlugRoute =
@@ -150,11 +138,23 @@ const authenticatedBackendEditSlugRoute =
     path: '/edit/$slug',
     getParentRoute: () => authenticatedBackendRouteRoute,
   } as any)
-const authenticatedBackendDescriptionsIdRoute =
-  authenticatedBackendDescriptionsIdRouteImport.update({
-    id: '/descriptions/$id',
-    path: '/descriptions/$id',
+const authenticatedBackendJdsSlugRoute =
+  authenticatedBackendJdsSlugRouteImport.update({
+    id: '/jds/$slug',
+    path: '/jds/$slug',
     getParentRoute: () => authenticatedBackendRouteRoute,
+  } as any)
+const authenticatedBackendStandardSlugRoute =
+  authenticatedBackendStandardSlugRouteImport.update({
+    id: '/standard/$slug',
+    path: '/standard/$slug',
+    getParentRoute: () => authenticatedBackendRouteRoute,
+  } as any)
+const authenticatedClassSlugBuildRoute =
+  authenticatedClassSlugBuildRouteImport.update({
+    id: '/build',
+    path: '/build',
+    getParentRoute: () => authenticatedClassSlugRoute,
   } as any)
 const authenticatedBackendJdSlugSplatRoute =
   authenticatedBackendJdSlugSplatRouteImport.update({
@@ -178,13 +178,13 @@ export interface FileRoutesByFullPath {
   '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
   '/jds/$id': typeof authenticatedJdsIdRoute
   '/backend/': typeof authenticatedBackendIndexRoute
-  '/jds': typeof authenticatedJdsIndexRoute
+  '/jds/': typeof authenticatedJdsIndexRoute
   '/backend/descriptions/$id': typeof authenticatedBackendDescriptionsIdRoute
   '/backend/edit/$slug': typeof authenticatedBackendEditSlugRoute
   '/backend/jds/$slug': typeof authenticatedBackendJdsSlugRoute
   '/backend/standard/$slug': typeof authenticatedBackendStandardSlugRoute
   '/class/$slug/build': typeof authenticatedClassSlugBuildRoute
-  '/backend/descriptions': typeof authenticatedBackendDescriptionsIndexRoute
+  '/backend/descriptions/': typeof authenticatedBackendDescriptionsIndexRoute
   '/backend/jd/$slug/$': typeof authenticatedBackendJdSlugSplatRoute
 }
 export interface FileRoutesByTo {
@@ -253,13 +253,13 @@ export interface FileRouteTypes {
     | '/class/$slug'
     | '/jds/$id'
     | '/backend/'
-    | '/jds'
+    | '/jds/'
     | '/backend/descriptions/$id'
     | '/backend/edit/$slug'
     | '/backend/jds/$slug'
     | '/backend/standard/$slug'
     | '/class/$slug/build'
-    | '/backend/descriptions'
+    | '/backend/descriptions/'
     | '/backend/jd/$slug/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -331,11 +331,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedIndexRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
-    '/(authenticated)/vrf': {
-      id: '/(authenticated)/vrf'
-      path: '/vrf'
-      fullPath: '/vrf'
-      preLoaderRoute: typeof authenticatedVrfRouteImport
+    '/(authenticated)/backend': {
+      id: '/(authenticated)/backend'
+      path: '/backend'
+      fullPath: '/backend'
+      preLoaderRoute: typeof authenticatedBackendRouteRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
     '/(authenticated)/classify': {
@@ -345,18 +345,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedClassifyRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
-    '/(authenticated)/backend': {
-      id: '/(authenticated)/backend'
-      path: '/backend'
-      fullPath: '/backend'
-      preLoaderRoute: typeof authenticatedBackendRouteRouteImport
-      parentRoute: typeof authenticatedRouteRoute
-    }
-    '/(authenticated)/jds/': {
-      id: '/(authenticated)/jds/'
-      path: '/jds'
-      fullPath: '/jds'
-      preLoaderRoute: typeof authenticatedJdsIndexRouteImport
+    '/(authenticated)/vrf': {
+      id: '/(authenticated)/vrf'
+      path: '/vrf'
+      fullPath: '/vrf'
+      preLoaderRoute: typeof authenticatedVrfRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
     '/(authenticated)/backend/': {
@@ -366,53 +359,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedBackendIndexRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
     }
-    '/(authenticated)/jds/$id': {
-      id: '/(authenticated)/jds/$id'
-      path: '/jds/$id'
-      fullPath: '/jds/$id'
-      preLoaderRoute: typeof authenticatedJdsIdRouteImport
-      parentRoute: typeof authenticatedRouteRoute
-    }
-    '/(authenticated)/class/$slug': {
-      id: '/(authenticated)/class/$slug'
-      path: '/class/$slug'
-      fullPath: '/class/$slug'
-      preLoaderRoute: typeof authenticatedClassSlugRouteImport
-      parentRoute: typeof authenticatedRouteRoute
-    }
-    '/(authenticated)/backend/standards': {
-      id: '/(authenticated)/backend/standards'
-      path: '/standards'
-      fullPath: '/backend/standards'
-      preLoaderRoute: typeof authenticatedBackendStandardsRouteImport
-      parentRoute: typeof authenticatedBackendRouteRoute
-    }
-    '/(authenticated)/backend/settings': {
-      id: '/(authenticated)/backend/settings'
-      path: '/settings'
-      fullPath: '/backend/settings'
-      preLoaderRoute: typeof authenticatedBackendSettingsRouteImport
-      parentRoute: typeof authenticatedBackendRouteRoute
-    }
-    '/(authenticated)/backend/jobs': {
-      id: '/(authenticated)/backend/jobs'
-      path: '/jobs'
-      fullPath: '/backend/jobs'
-      preLoaderRoute: typeof authenticatedBackendJobsRouteImport
-      parentRoute: typeof authenticatedBackendRouteRoute
-    }
-    '/(authenticated)/backend/fit': {
-      id: '/(authenticated)/backend/fit'
-      path: '/fit'
-      fullPath: '/backend/fit'
-      preLoaderRoute: typeof authenticatedBackendFitRouteImport
-      parentRoute: typeof authenticatedBackendRouteRoute
-    }
-    '/(authenticated)/backend/corpus': {
-      id: '/(authenticated)/backend/corpus'
-      path: '/corpus'
-      fullPath: '/backend/corpus'
-      preLoaderRoute: typeof authenticatedBackendCorpusRouteImport
+    '/(authenticated)/backend/analytics': {
+      id: '/(authenticated)/backend/analytics'
+      path: '/analytics'
+      fullPath: '/backend/analytics'
+      preLoaderRoute: typeof authenticatedBackendAnalyticsRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
     }
     '/(authenticated)/backend/codes': {
@@ -422,39 +373,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedBackendCodesRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
     }
-    '/(authenticated)/backend/analytics': {
-      id: '/(authenticated)/backend/analytics'
-      path: '/analytics'
-      fullPath: '/backend/analytics'
-      preLoaderRoute: typeof authenticatedBackendAnalyticsRouteImport
+    '/(authenticated)/backend/corpus': {
+      id: '/(authenticated)/backend/corpus'
+      path: '/corpus'
+      fullPath: '/backend/corpus'
+      preLoaderRoute: typeof authenticatedBackendCorpusRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
+    }
+    '/(authenticated)/backend/fit': {
+      id: '/(authenticated)/backend/fit'
+      path: '/fit'
+      fullPath: '/backend/fit'
+      preLoaderRoute: typeof authenticatedBackendFitRouteImport
+      parentRoute: typeof authenticatedBackendRouteRoute
+    }
+    '/(authenticated)/backend/jobs': {
+      id: '/(authenticated)/backend/jobs'
+      path: '/jobs'
+      fullPath: '/backend/jobs'
+      preLoaderRoute: typeof authenticatedBackendJobsRouteImport
+      parentRoute: typeof authenticatedBackendRouteRoute
+    }
+    '/(authenticated)/backend/settings': {
+      id: '/(authenticated)/backend/settings'
+      path: '/settings'
+      fullPath: '/backend/settings'
+      preLoaderRoute: typeof authenticatedBackendSettingsRouteImport
+      parentRoute: typeof authenticatedBackendRouteRoute
+    }
+    '/(authenticated)/backend/standards': {
+      id: '/(authenticated)/backend/standards'
+      path: '/standards'
+      fullPath: '/backend/standards'
+      preLoaderRoute: typeof authenticatedBackendStandardsRouteImport
+      parentRoute: typeof authenticatedBackendRouteRoute
+    }
+    '/(authenticated)/class/$slug': {
+      id: '/(authenticated)/class/$slug'
+      path: '/class/$slug'
+      fullPath: '/class/$slug'
+      preLoaderRoute: typeof authenticatedClassSlugRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/jds/': {
+      id: '/(authenticated)/jds/'
+      path: '/jds'
+      fullPath: '/jds/'
+      preLoaderRoute: typeof authenticatedJdsIndexRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/jds/$id': {
+      id: '/(authenticated)/jds/$id'
+      path: '/jds/$id'
+      fullPath: '/jds/$id'
+      preLoaderRoute: typeof authenticatedJdsIdRouteImport
+      parentRoute: typeof authenticatedRouteRoute
     }
     '/(authenticated)/backend/descriptions/': {
       id: '/(authenticated)/backend/descriptions/'
       path: '/descriptions'
-      fullPath: '/backend/descriptions'
+      fullPath: '/backend/descriptions/'
       preLoaderRoute: typeof authenticatedBackendDescriptionsIndexRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
     }
-    '/(authenticated)/class/$slug/build': {
-      id: '/(authenticated)/class/$slug/build'
-      path: '/build'
-      fullPath: '/class/$slug/build'
-      preLoaderRoute: typeof authenticatedClassSlugBuildRouteImport
-      parentRoute: typeof authenticatedClassSlugRoute
-    }
-    '/(authenticated)/backend/standard/$slug': {
-      id: '/(authenticated)/backend/standard/$slug'
-      path: '/standard/$slug'
-      fullPath: '/backend/standard/$slug'
-      preLoaderRoute: typeof authenticatedBackendStandardSlugRouteImport
-      parentRoute: typeof authenticatedBackendRouteRoute
-    }
-    '/(authenticated)/backend/jds/$slug': {
-      id: '/(authenticated)/backend/jds/$slug'
-      path: '/jds/$slug'
-      fullPath: '/backend/jds/$slug'
-      preLoaderRoute: typeof authenticatedBackendJdsSlugRouteImport
+    '/(authenticated)/backend/descriptions/$id': {
+      id: '/(authenticated)/backend/descriptions/$id'
+      path: '/descriptions/$id'
+      fullPath: '/backend/descriptions/$id'
+      preLoaderRoute: typeof authenticatedBackendDescriptionsIdRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
     }
     '/(authenticated)/backend/edit/$slug': {
@@ -464,12 +450,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedBackendEditSlugRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
     }
-    '/(authenticated)/backend/descriptions/$id': {
-      id: '/(authenticated)/backend/descriptions/$id'
-      path: '/descriptions/$id'
-      fullPath: '/backend/descriptions/$id'
-      preLoaderRoute: typeof authenticatedBackendDescriptionsIdRouteImport
+    '/(authenticated)/backend/jds/$slug': {
+      id: '/(authenticated)/backend/jds/$slug'
+      path: '/jds/$slug'
+      fullPath: '/backend/jds/$slug'
+      preLoaderRoute: typeof authenticatedBackendJdsSlugRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
+    }
+    '/(authenticated)/backend/standard/$slug': {
+      id: '/(authenticated)/backend/standard/$slug'
+      path: '/standard/$slug'
+      fullPath: '/backend/standard/$slug'
+      preLoaderRoute: typeof authenticatedBackendStandardSlugRouteImport
+      parentRoute: typeof authenticatedBackendRouteRoute
+    }
+    '/(authenticated)/class/$slug/build': {
+      id: '/(authenticated)/class/$slug/build'
+      path: '/build'
+      fullPath: '/class/$slug/build'
+      preLoaderRoute: typeof authenticatedClassSlugBuildRouteImport
+      parentRoute: typeof authenticatedClassSlugRoute
     }
     '/(authenticated)/backend/jd/$slug/$': {
       id: '/(authenticated)/backend/jd/$slug/$'
