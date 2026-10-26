@@ -88,6 +88,12 @@ they are products of the system, so they live in the database and nowhere in the
 MSW fixture keeps the shape of three real profiles with every piece of envelope text synthetic.
 Position Descriptions are cleared for commit; the one real PD in `pd.json` has no position numbers.
 
+The **Vacancy Request Form** (`/vrf`, decided 2026-10-26) is download-only: answers live in the
+browser's in-memory page state until reload, and the Word file is built on the server from the
+request and sent straight back — never stored, never logged. The campus form asks nothing about
+the former incumbent, so neither does this. The magic wand sends the AI only the position, the
+request and the author's notes for that one narrative.
+
 Seed the real corpus into `prod` only. `test` gets a scrubbed subset (`jdw-cli migrate-poc --scrub`).
 
 ### The corpus grows in use

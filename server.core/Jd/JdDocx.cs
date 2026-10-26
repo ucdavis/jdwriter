@@ -102,7 +102,7 @@ public static class JdDocx
     /// valid, and Word opens either — but Apple's reader, behind Quick Look, Pages and Mail previews,
     /// refuses the absolute form with "the file isn't in the correct format".
     /// </summary>
-    private static byte[] RelativeTargets(byte[] package)
+    internal static byte[] RelativeTargets(byte[] package)
     {
         using var stream = new MemoryStream();
         stream.Write(package);

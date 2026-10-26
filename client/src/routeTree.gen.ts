@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as authenticatedRouteRouteImport } from './routes/(authenticated)/route'
 import { Route as authenticatedIndexRouteImport } from './routes/(authenticated)/index'
+import { Route as authenticatedVrfRouteImport } from './routes/(authenticated)/vrf'
 import { Route as authenticatedClassifyRouteImport } from './routes/(authenticated)/classify'
 import { Route as authenticatedBackendRouteRouteImport } from './routes/(authenticated)/backend/route'
 import { Route as authenticatedJdsIndexRouteImport } from './routes/(authenticated)/jds.index'
@@ -39,6 +40,11 @@ const authenticatedRouteRoute = authenticatedRouteRouteImport.update({
 const authenticatedIndexRoute = authenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any)
+const authenticatedVrfRoute = authenticatedVrfRouteImport.update({
+  id: '/vrf',
+  path: '/vrf',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
 const authenticatedClassifyRoute = authenticatedClassifyRouteImport.update({
@@ -160,6 +166,7 @@ const authenticatedBackendJdSlugSplatRoute =
 export interface FileRoutesByFullPath {
   '/backend': typeof authenticatedBackendRouteRouteWithChildren
   '/classify': typeof authenticatedClassifyRoute
+  '/vrf': typeof authenticatedVrfRoute
   '/': typeof authenticatedIndexRoute
   '/backend/analytics': typeof authenticatedBackendAnalyticsRoute
   '/backend/codes': typeof authenticatedBackendCodesRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/classify': typeof authenticatedClassifyRoute
+  '/vrf': typeof authenticatedVrfRoute
   '/': typeof authenticatedIndexRoute
   '/backend/analytics': typeof authenticatedBackendAnalyticsRoute
   '/backend/codes': typeof authenticatedBackendCodesRoute
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/(authenticated)': typeof authenticatedRouteRouteWithChildren
   '/(authenticated)/backend': typeof authenticatedBackendRouteRouteWithChildren
   '/(authenticated)/classify': typeof authenticatedClassifyRoute
+  '/(authenticated)/vrf': typeof authenticatedVrfRoute
   '/(authenticated)/': typeof authenticatedIndexRoute
   '/(authenticated)/backend/analytics': typeof authenticatedBackendAnalyticsRoute
   '/(authenticated)/backend/codes': typeof authenticatedBackendCodesRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/backend'
     | '/classify'
+    | '/vrf'
     | '/'
     | '/backend/analytics'
     | '/backend/codes'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/classify'
+    | '/vrf'
     | '/'
     | '/backend/analytics'
     | '/backend/codes'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/(authenticated)'
     | '/(authenticated)/backend'
     | '/(authenticated)/classify'
+    | '/(authenticated)/vrf'
     | '/(authenticated)/'
     | '/(authenticated)/backend/analytics'
     | '/(authenticated)/backend/codes'
@@ -317,6 +329,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof authenticatedIndexRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/vrf': {
+      id: '/(authenticated)/vrf'
+      path: '/vrf'
+      fullPath: '/vrf'
+      preLoaderRoute: typeof authenticatedVrfRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
     '/(authenticated)/classify': {
@@ -522,6 +541,7 @@ const authenticatedClassSlugRouteWithChildren =
 interface authenticatedRouteRouteChildren {
   authenticatedBackendRouteRoute: typeof authenticatedBackendRouteRouteWithChildren
   authenticatedClassifyRoute: typeof authenticatedClassifyRoute
+  authenticatedVrfRoute: typeof authenticatedVrfRoute
   authenticatedIndexRoute: typeof authenticatedIndexRoute
   authenticatedClassSlugRoute: typeof authenticatedClassSlugRouteWithChildren
   authenticatedJdsIdRoute: typeof authenticatedJdsIdRoute
@@ -531,6 +551,7 @@ interface authenticatedRouteRouteChildren {
 const authenticatedRouteRouteChildren: authenticatedRouteRouteChildren = {
   authenticatedBackendRouteRoute: authenticatedBackendRouteRouteWithChildren,
   authenticatedClassifyRoute: authenticatedClassifyRoute,
+  authenticatedVrfRoute: authenticatedVrfRoute,
   authenticatedIndexRoute: authenticatedIndexRoute,
   authenticatedClassSlugRoute: authenticatedClassSlugRouteWithChildren,
   authenticatedJdsIdRoute: authenticatedJdsIdRoute,
