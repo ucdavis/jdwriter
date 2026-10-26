@@ -101,6 +101,12 @@ describe('the vacancy request form', () => {
     await user.selectOptions(action, 'New Contract Appt');
     await user.click(screen.getByRole('button', { name: /^3\. Budget/ }));
     expect(screen.getByRole('combobox', { name: /funding for this contract secured/ })).toBeInTheDocument();
+
+    // The budget source is a dropdown like the rest; Other opens a box to type it.
+    const source = screen.getByRole('combobox', { name: /^Budget source/ });
+    expect(screen.queryByRole('textbox', { name: /Which source/ })).not.toBeInTheDocument();
+    await user.selectOptions(source, 'Other');
+    expect(field(/Which source/)).toBeInTheDocument();
   });
 
   it('offers the magic wand once a few words are written, drafts the paragraph, and can undo it', async () => {

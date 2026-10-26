@@ -24,6 +24,9 @@ public sealed class VrfForm
     public string Fte { get; set; } = "";
     public string FundingSecured { get; set; } = "";
     public string BudgetSource { get; set; } = "";
+
+    /// <summary>The source, typed, when the list's "Other" was chosen.</summary>
+    public string BudgetSourceOther { get; set; } = "";
     public string FundingSources { get; set; } = "";
     public string SalaryGrade { get; set; } = "";
     public string SalaryMin { get; set; } = "";
@@ -126,7 +129,7 @@ public static class VrfCatalog
         new("Request", "Number of Indirect Reports Supervised", f => f.IndirectReports, false),
         new("Request", "FTE", f => f.Fte, true),
         new("Budget", "Is the funding for this contract secured?", f => f.FundingSecured, false, f => IsContract(f) ? null : "N/A (not a contract)"),
-        new("Budget", "Budget Source", f => f.BudgetSource, true),
+        new("Budget", "Budget Source", f => f.BudgetSource == "Other" && f.BudgetSourceOther.Trim().Length > 0 ? $"Other: {f.BudgetSourceOther.Trim()}" : f.BudgetSource, true),
         new("Budget", "Sources of Funding (if multiple)", f => f.FundingSources, false),
         new("Salary", "Salary Grade/Steps", f => f.SalaryGrade, false),
         new("Salary", "Salary Range Minimum (Annual)", f => f.SalaryMin, false),

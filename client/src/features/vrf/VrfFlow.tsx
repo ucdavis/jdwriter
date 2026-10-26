@@ -133,17 +133,15 @@ export const VrfFlow = ({ jdId }: { jdId?: number }) => {
         <Card className="p-5">
           <Eyebrow>Budget</Eyebrow>
           <Grid>
-            <Text form={form} hint="The primary funding for this request" label="Budget source" list="vrf-budget-sources" name="budgetSource" required update={update} />
+            <Choice form={form} label="Budget source" name="budgetSource" options={BUDGET_SOURCES} update={update} />
+            {form.budgetSource === 'Other' ? (
+              <Text form={form} label="Which source?" name="budgetSourceOther" required update={update} />
+            ) : null}
             <Text form={form} hint="If more than one — e.g. student fees, a grant" label="Sources of funding" name="fundingSources" update={update} />
             {isContract(form) ? (
               <Choice form={form} label="Is the funding for this contract secured?" name="fundingSecured" optional options={['Yes', 'No']} update={update} />
             ) : null}
           </Grid>
-          <datalist id="vrf-budget-sources">
-            {BUDGET_SOURCES.map((s) => (
-              <option key={s} value={s} />
-            ))}
-          </datalist>
           <div className="mt-5">
             <Eyebrow>Salary range</Eyebrow>
             <p className="mt-1 text-base text-base-content/70">Optional — HR can fill these in.</p>
@@ -463,7 +461,6 @@ const Text = ({
   form,
   hint,
   label,
-  list,
   name,
   required = false,
   type = 'text',
@@ -472,7 +469,6 @@ const Text = ({
   form: VrfForm;
   hint?: string;
   label: string;
-  list?: string;
   name: TextKey;
   required?: boolean;
   type?: 'email' | 'text';
@@ -487,7 +483,6 @@ const Text = ({
     <input
       aria-required={required || undefined}
       className="input input-bordered mt-1 w-full text-base"
-      list={list}
       onChange={(e) => update({ [name]: e.target.value })}
       type={type}
       value={form[name]}
