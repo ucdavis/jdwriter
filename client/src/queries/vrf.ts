@@ -1,6 +1,7 @@
 import { fetchJson, HttpError } from '../lib/api.ts';
 import { appUrl } from '../lib/basePath.ts';
 import { useMutation } from '@tanstack/react-query';
+import type { AnnualRange } from '../lib/contracts.ts';
 import type { NarrativeKey, VrfForm } from '../features/vrf/vrfModel.ts';
 
 /** What a narrative is about: the position and the request, never who held the position before. */
@@ -76,3 +77,14 @@ export const downloadVrf = async (form: VrfForm) => {
 };
 
 export const useDownloadVrf = () => useMutation({ mutationFn: downloadVrf });
+
+/**
+ * The Career Tracks annual range for a salary grade ("Grade 20"), or null: a represented title
+ * ("STEPS"), a grade the scale lacks, or no scale imported yet.
+ */
+export const salaryRangeQueryOptions = (grade: string) => ({
+  enabled: grade.trim() !== '',
+  queryFn: () => fetchJson<{ range: AnnualRange | null }>(`/api/vrf/salary-range?grade=${encodeURIComponent(grade.trim())}`),
+  queryKey: ['vrf', 'salary-range', grade.trim()] as const,
+  staleTime: Infinity,
+});

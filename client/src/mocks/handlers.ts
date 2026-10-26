@@ -852,6 +852,8 @@ export const handlers = [
   ),
 
   http.get('/api/admin/codes/ct-listing', () => HttpResponse.json({ codes: 0, importedAt: null })),
+  http.get('/api/admin/codes/salary-scale', () => HttpResponse.json({ grades: [], importedAt: null })),
+  http.get('/api/vrf/salary-range', () => HttpResponse.json({ range: null })),
 
   http.get('/api/admin/package/info', () => HttpResponse.json({ acceptsRealData: true, acceptsScrubbed: true })),
 

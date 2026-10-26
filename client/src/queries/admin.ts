@@ -2,6 +2,7 @@ import { fetchJson } from '../lib/api.ts';
 import { uploadBody } from '../lib/uploads.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  AnnualRange,
   AiCall,
   AnalyticsReport,
   ClassStandard,
@@ -441,3 +442,25 @@ export const aiCallsQueryOptions = () => ({
   queryFn: () => fetchJson<{ calls: AiCall[] }>('/api/admin/settings/ai-calls'),
   queryKey: ['admin', 'ai-calls'] as const,
 });
+
+export type SalaryScaleStatus = { grades: AnnualRange[]; importedAt: string | null };
+
+/** The Career Tracks salary ranges as stored, highest grade first. */
+export const useSalaryScale = () =>
+  useQuery({
+    queryFn: () => fetchJson<SalaryScaleStatus>('/api/admin/codes/salary-scale'),
+    queryKey: ['admin', 'salary-scale'] as const,
+  });
+
+/** Replace the Career Tracks salary ranges with Compensation's workbook. */
+export const useImportSalaryScale = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) =>
+      fetchJson<SalaryScaleStatus>('/api/admin/codes/salary-scale', { body: await uploadBody([file]), method: 'POST' }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['admin', 'salary-scale'], data);
+      void queryClient.invalidateQueries({ queryKey: ['vrf', 'salary-range'] });
+    },
+  });
+};

@@ -88,6 +88,56 @@ describe('the vacancy request form', () => {
     expect(field(/^Salary grade/)).toHaveValue('STEPS');
   });
 
+  it('fills the salary range from a Career Tracks grade, once, and leaves a represented title to HR', async () => {
+    const user = userEvent.setup();
+    const asked: string[] = [];
+    testServer.use(
+      http.get('/api/jds/12', () => HttpResponse.json(finished({ bargainingUnit: '99', salaryGrade: 'Grade 20' }))),
+      http.get('/api/vrf/salary-range', ({ request }) => {
+        asked.push(new URL(request.url).searchParams.get('grade') ?? '');
+        return HttpResponse.json({
+          range: { effectiveDate: '2026-07-01', grade: 20, maximum: 123_000, midpoint: 100_000, minimum: 77_000, note: 'Geo Diff 112% for Non-Represented Staff', scale: 'Career Tracks' },
+        });
+      })
+    );
+    renderRoute({ initialPath: '/vrf?jd=12' });
+    await screen.findByTestId('vrf-filled');
+    await user.click(screen.getByRole('button', { name: /^3\. Budget/ }));
+
+    await waitFor(() => expect(field(/^Minimum \(annual\)/)).toHaveValue('$77,000'));
+    expect(field(/^Midpoint \(annual\)/)).toHaveValue('$100,000');
+    expect(field(/^Maximum \(annual\)/)).toHaveValue('$123,000');
+    expect(screen.getByTestId('salary-note')).toHaveTextContent('From the Career Tracks ranges for Grade 20, effective July 1, 2026 (Geo Diff 112%). HR confirms the final range.');
+    expect(asked).toContain('Grade 20');
+
+    // Cleared on purpose, it stays cleared.
+    for (const name of [/^Minimum \(annual\)/, /^Midpoint \(annual\)/, /^Maximum \(annual\)/]) {
+      await user.clear(field(name));
+    }
+    await user.click(screen.getByRole('button', { name: /^2\. The request/ }));
+    await user.click(screen.getByRole('button', { name: /^3\. Budget/ }));
+    expect(field(/^Minimum \(annual\)/)).toHaveValue('');
+  });
+
+  it('says a represented title is on its union’s step scale, and asks for no range', async () => {
+    const user = userEvent.setup();
+    let asked = false;
+    testServer.use(
+      http.get('/api/jds/12', () => HttpResponse.json(finished())),
+      http.get('/api/vrf/salary-range', () => {
+        asked = true;
+        return HttpResponse.json({ range: null });
+      })
+    );
+    renderRoute({ initialPath: '/vrf?jd=12' });
+    await screen.findByTestId('vrf-filled');
+    await user.click(screen.getByRole('button', { name: /^3\. Budget/ }));
+
+    expect(screen.getByTestId('salary-note')).toHaveTextContent('Represented titles are paid on their union’s step scale — HR fills this in.');
+    expect(field(/^Minimum \(annual\)/)).toHaveValue('');
+    expect(asked).toBe(false);
+  });
+
   it('asks only what applies: the vacated date for a backfill, the funding question for a contract', async () => {
     const user = userEvent.setup();
     renderRoute({ initialPath: '/vrf' });

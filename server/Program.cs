@@ -166,6 +166,7 @@ try
     builder.Services.AddScoped<StandardsDirectory>();
     builder.Services.AddScoped<CodeActivity>();
     builder.Services.AddScoped<CtListingImport>();
+    builder.Services.AddScoped<SalaryScales>();
     builder.Services.AddScoped<Server.Core.Package.EnvironmentPackages>();
     builder.Services.AddScoped<Server.Core.Package.PackageImporter>();
     builder.Services.AddSingleton(Server.Core.Package.PackageOptions.For(

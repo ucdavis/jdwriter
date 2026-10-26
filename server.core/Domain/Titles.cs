@@ -146,3 +146,34 @@ public class Supersession
     public string ToCode { get; set; } = "";
     public string ToTitle { get; set; } = "";
 }
+
+/// <summary>
+/// One row of a salary structure: a grade's range for one pay type. Career Tracks ranges (UC Davis,
+/// non-represented, with its geographic differential) come from Compensation's workbook; represented
+/// step scales would sit beside them under their own scale name.
+/// </summary>
+public class SalaryRange
+{
+    public int Id { get; set; }
+
+    /// <summary>"Career Tracks" today.</summary>
+    public string Scale { get; set; } = "";
+
+    public int Grade { get; set; }
+
+    /// <summary>Annual, Monthly, Biweekly or Hourly.</summary>
+    public string PayType { get; set; } = "";
+
+    public decimal Minimum { get; set; }
+    public decimal FirstQuartile { get; set; }
+    public decimal Midpoint { get; set; }
+    public decimal ThirdQuartile { get; set; }
+    public decimal Maximum { get; set; }
+
+    public DateOnly? EffectiveDate { get; set; }
+
+    /// <summary>What the workbook says about the scale, e.g. "Geo Diff 112% for Non-Represented Staff".</summary>
+    public string Note { get; set; } = "";
+
+    public DateTimeOffset ImportedAt { get; set; }
+}
