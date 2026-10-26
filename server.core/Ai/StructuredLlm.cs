@@ -146,7 +146,13 @@ public sealed class StructuredLlm : IStructuredLlm
             Messages = [new() { Role = Role.User, Content = request.User }],
         };
 
+        var clock = System.Diagnostics.Stopwatch.StartNew();
         var response = await Client().Messages.Create(parameters, cancellationToken: ct);
+
+        // The same per-call line as the OpenAI path, so the two can be compared.
+        _logger.LogInformation("[ai] {Label} {Ms}ms in={In} out={Out} effort={Effort} provider=Anthropic",
+            label, clock.ElapsedMilliseconds, response.Usage.InputTokens, response.Usage.OutputTokens,
+            request.Effort.ToString().ToLowerInvariant());
 
         if (_tokenDebug)
         {

@@ -27,6 +27,12 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
     private readonly ILogger<OpenAiStructuredLlm> _logger;
     private readonly bool _tokenDebug;
 
+    /// <summary>
+    /// Set when the model refuses reasoning_effort: every later call leaves it out. A refusal costs
+    /// one retry, once — never a failed call.
+    /// </summary>
+    private volatile bool _effortRefused;
+
     public OpenAiStructuredLlm(IHttpClientFactory http, IApiKeySource keys, LlmOptions options, ILogger<OpenAiStructuredLlm> logger)
     {
         _http = http;
@@ -42,19 +48,22 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
     /// </summary>
     public bool HasApiKey => _options.ConfigurationProblem(_keys.Current) == null;
 
-    public async Task<T> StructuredAsync<T>(StructuredRequest request, CancellationToken ct = default)
-    {
-        var label = request.Label ?? "call";
-        var key = _keys.Current;
-        var problem = _options.ConfigurationProblem(key);
-        if (problem != null)
-        {
-            throw new StructuredLlmException($"{label}: the AI provider is not usable — {problem}.");
-        }
+    /// <summary>
+    /// Whether to send each call's effort as reasoning_effort: always to OpenAI's own API, whose
+    /// reasoning models take it, and to another server only when configured — a local model may
+    /// reject it. Without it, every call thinks at the model's default, the quick ones included.
+    /// </summary>
+    private bool SendsEffort => !_effortRefused && (_options.SendReasoningEffort || _options.HostedOpenAi);
 
+    /// <summary>A 400 that names reasoning_effort: the model doesn't take the parameter.</summary>
+    private static bool RefusesEffort(string body) => body.Contains("reasoning_effort", StringComparison.OrdinalIgnoreCase);
+
+    private async Task<(HttpResponseMessage Response, string Text)> SendAsync(
+        Type type, StructuredRequest request, string? key, bool withEffort, CancellationToken ct)
+    {
         using var message = new HttpRequestMessage(HttpMethod.Post, Url())
         {
-            Content = new StringContent(Body(typeof(T), request).ToJsonString(), Encoding.UTF8, "application/json"),
+            Content = new StringContent(Body(type, request, withEffort).ToJsonString(), Encoding.UTF8, "application/json"),
         };
 
         if (!string.IsNullOrEmpty(key))
@@ -69,8 +78,34 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
             }
         }
 
-        using var response = await _http.CreateClient(HttpClientName).SendAsync(message, ct);
-        var text = await response.Content.ReadAsStringAsync(ct);
+        var response = await _http.CreateClient(HttpClientName).SendAsync(message, ct);
+        return (response, await response.Content.ReadAsStringAsync(ct));
+    }
+
+    public async Task<T> StructuredAsync<T>(StructuredRequest request, CancellationToken ct = default)
+    {
+        var label = request.Label ?? "call";
+        var key = _keys.Current;
+        var problem = _options.ConfigurationProblem(key);
+        if (problem != null)
+        {
+            throw new StructuredLlmException($"{label}: the AI provider is not usable — {problem}.");
+        }
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var withEffort = SendsEffort;
+        var (response, text) = await SendAsync(typeof(T), request, key, withEffort, ct);
+        if (withEffort && response.StatusCode == HttpStatusCode.BadRequest && RefusesEffort(text))
+        {
+            // This model doesn't take reasoning_effort: carry on without it, now and from now on.
+            _effortRefused = true;
+            _logger.LogWarning("{Label}: the model refused reasoning_effort; calls now go without it", label);
+            response.Dispose();
+            withEffort = false;
+            (response, text) = await SendAsync(typeof(T), request, key, withEffort, ct);
+        }
+
+        using var _ = response;
 
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
@@ -102,6 +137,12 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
             throw new StructuredLlmException($"{label}: the AI provider's response was not a chat completion.");
         }
 
+        // One line per call, metadata only: how long it took and what it cost, to find the slow ones.
+        _logger.LogInformation(
+            "[ai] {Label} {Ms}ms in={In} out={Out} reasoning={Reasoning} effort={Effort} provider={Provider}",
+            label, clock.ElapsedMilliseconds, root["usage"]?["prompt_tokens"], root["usage"]?["completion_tokens"],
+            root["usage"]?["completion_tokens_details"]?["reasoning_tokens"],
+            withEffort ? request.Effort.ToString().ToLowerInvariant() : "default", _options.Provider);
         if (_tokenDebug)
         {
             _logger.LogInformation("[tok] {Label} in={In} out={Out} provider={Provider}",
@@ -141,7 +182,7 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
         ? $"{_options.Endpoint}/openai/deployments/{Uri.EscapeDataString(_options.EffectiveModel)}/chat/completions?api-version={Uri.EscapeDataString(_options.ApiVersion)}"
         : $"{_options.Endpoint}/chat/completions";
 
-    internal JsonObject Body(Type type, StructuredRequest request)
+    internal JsonObject Body(Type type, StructuredRequest request, bool withEffort)
     {
         var body = new JsonObject
         {
@@ -178,7 +219,7 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
             body["model"] = _options.EffectiveModel;
         }
 
-        if (_options.SendReasoningEffort)
+        if (withEffort)
         {
             body["reasoning_effort"] = request.Effort.ToString().ToLowerInvariant();
         }
