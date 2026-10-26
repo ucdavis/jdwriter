@@ -76,7 +76,7 @@ public class VrfTests
         var rows = Rows(VrfDocx.Build(Form(f =>
         {
             f.ActionRequested = "Backfill Position";
-            f.DateVacated = "09/30/2026";
+            f.DateVacated = "2026-09-30";
             f.Reasons = ["Backfilling a vacancy", "Other"];
             f.OtherReason = "Grant deliverables due in spring.";
         }), new DateOnly(2026, 10, 26))).ToDictionary(r => r.Label, r => r.Value);
@@ -117,7 +117,8 @@ public class VrfTests
             .And.Contain("- Payroll title: LAB AST 1 (009605)")
             .And.Contain("- Action: Backfill Position")
             .And.Contain("Manager's notes: trials stall, two grad students lose data");
-        VrfNarrative.System.Should().Contain("do not invent figures, dates, names, funding sources, or cost savings");
+        VrfNarrative.System.Should().Contain("do not invent figures, dates, names, funding sources, or cost savings")
+            .And.Contain("one full, professional paragraph of 4-5 sentences");
     }
 
     [Fact]

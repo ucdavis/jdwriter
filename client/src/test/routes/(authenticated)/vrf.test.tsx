@@ -94,9 +94,10 @@ describe('the vacancy request form', () => {
     await user.click(await screen.findByRole('button', { name: /^2\. The request/ }));
     const action = screen.getByRole('combobox', { name: /^Action requested/ });
 
-    expect(screen.queryByRole('textbox', { name: /Date vacated/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Date vacated/)).not.toBeInTheDocument();
     await user.selectOptions(action, 'Backfill Position');
-    expect(field(/Date vacated/)).toBeInTheDocument();
+    // A date picker, not a box to type a date into.
+    expect(screen.getByLabelText(/Date vacated/)).toHaveAttribute('type', 'date');
 
     await user.selectOptions(action, 'New Contract Appt');
     await user.click(screen.getByRole('button', { name: /^3\. Budget/ }));

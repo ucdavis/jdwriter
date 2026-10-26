@@ -118,7 +118,7 @@ export const VrfFlow = ({ jdId }: { jdId?: number }) => {
             <Choice form={form} label="How will you fill the role?" name="fillMethod" options={FILL_METHODS} update={update} />
             <Text form={form} hint="Leave blank if there isn't one" label="Position number" name="positionNumber" update={update} />
             {replacesSomeone(form) ? (
-              <Text form={form} hint="mm/dd/yyyy" label="Date vacated or expiration date" name="dateVacated" required update={update} />
+              <Text form={form} label="Date vacated or expiration date" name="dateVacated" required type="date" update={update} />
             ) : null}
             <Text form={form} hint="If there is one" label="Job opening ID" name="jobOpeningId" update={update} />
             <Text form={form} hint="How many of these positions you're requesting" label="Number of vacancies" name="vacancies" required update={update} />
@@ -133,7 +133,7 @@ export const VrfFlow = ({ jdId }: { jdId?: number }) => {
         <Card className="p-5">
           <Eyebrow>Budget</Eyebrow>
           <Grid>
-            <Choice form={form} label="Budget source" name="budgetSource" options={BUDGET_SOURCES} update={update} />
+            <Choice form={form} hint="The primary funding for this request" label="Budget source" name="budgetSource" options={BUDGET_SOURCES} update={update} />
             {form.budgetSource === 'Other' ? (
               <Text form={form} label="Which source?" name="budgetSourceOther" required update={update} />
             ) : null}
@@ -471,7 +471,7 @@ const Text = ({
   label: string;
   name: TextKey;
   required?: boolean;
-  type?: 'email' | 'text';
+  type?: 'date' | 'email' | 'text';
   update: (patch: Partial<VrfForm>) => void;
 }) => (
   <label className="block">
@@ -479,7 +479,6 @@ const Text = ({
       {label}
       {required ? <Req /> : null}
     </span>
-    {hint ? <span className="mt-0.5 block text-sm text-base-content/70">{hint}</span> : null}
     <input
       aria-required={required || undefined}
       className="input input-bordered mt-1 w-full text-base"
@@ -487,11 +486,14 @@ const Text = ({
       type={type}
       value={form[name]}
     />
+    {/* Below the box, so boxes side by side line up whether or not each has a hint. */}
+    {hint ? <span className="mt-1 block text-sm text-base-content/70">{hint}</span> : null}
   </label>
 );
 
 const Choice = ({
   form,
+  hint,
   label,
   name,
   optional = false,
@@ -499,6 +501,7 @@ const Choice = ({
   update,
 }: {
   form: VrfForm;
+  hint?: string;
   label: string;
   name: TextKey;
   optional?: boolean;
@@ -521,5 +524,6 @@ const Choice = ({
         <option key={o}>{o}</option>
       ))}
     </select>
+    {hint ? <span className="mt-1 block text-sm text-base-content/70">{hint}</span> : null}
   </label>
 );

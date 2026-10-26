@@ -5,14 +5,12 @@ import { Eyebrow } from '@/shared/ui/primitives.tsx';
 import type { ReactNode } from 'react';
 
 const AGGIESERVICE = 'https://aggieservice.ucdavis.edu/s/';
-const DISSC_EMAIL = 'disscrequest@ucdavis.edu';
 
 /**
  * What happens after a JD is finished, as the process runs today. JDWriter can't file the request
- * itself — there's no ticket or email integration yet — so the author downloads the JD and attaches
- * it to an AggieService ticket for DISSC, or emails it. A vacancy request comes first, then
- * classification by Compensation, then recruitment; the DISSC representative follows up in
- * AggieService.
+ * itself — there's no ticket integration yet — so the author downloads the JD and attaches it to
+ * an AggieService ticket for the Service Channel. A vacancy request comes first, then classification
+ * by Compensation, then recruitment; the Service Channel representative follows up in AggieService.
  */
 export const NextSteps = ({ result }: { result: AssembledJd }) => {
   const id = result.authoredJdId;
@@ -27,7 +25,7 @@ export const NextSteps = ({ result }: { result: AssembledJd }) => {
     >
       <Eyebrow>Next steps</Eyebrow>
       <h2 className="mt-1 text-base font-bold" id="next-steps-heading">
-        Send this job description to DISSC
+        Send this job description to the Service Channel
       </h2>
       <ol className="mt-3 space-y-3 text-base">
         <Step n={1} title="Download it">
@@ -48,15 +46,11 @@ export const NextSteps = ({ result }: { result: AssembledJd }) => {
           <a className="text-primary underline" href={AGGIESERVICE} rel="noreferrer" target="_blank">
             AggieService
           </a>
-          , or email them to{' '}
-          <a className="text-primary underline" href={`mailto:${DISSC_EMAIL}`}>
-            {DISSC_EMAIL}
-          </a>
           .
         </Step>
         <Step n={4} title="What happens next">
           The process today is a vacancy request form, then classification by Compensation, then
-          recruitment. Your DISSC representative will reach out through AggieService with any
+          recruitment. Your Service Channel representative will reach out through AggieService with any
           questions.
         </Step>
       </ol>

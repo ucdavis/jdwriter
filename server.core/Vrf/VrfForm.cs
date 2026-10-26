@@ -88,6 +88,13 @@ public static class VrfCatalog
         "Other",
     ];
 
+    /// <summary>A date as the campus form writes it (mm/dd/yyyy); the browser's date picker sends yyyy-mm-dd.</summary>
+    public static string UsDate(string value) =>
+        DateOnly.TryParseExact(value.Trim(), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var d)
+            ? d.ToString("MM/dd/yyyy", System.Globalization.CultureInfo.InvariantCulture)
+            : value;
+
     /// <summary>A position someone held: the date it was vacated or expires matters.</summary>
     public static bool ReplacesSomeone(VrfForm f) =>
         f.ActionRequested is "Backfill Position" or "Contract/Limited Extension or Career Conversion" or "Retiree/Rehire";
@@ -118,7 +125,7 @@ public static class VrfCatalog
         new("Request", "How the role will be filled", f => f.FillMethod, true),
         // The campus form wants "N/A" when there's no number; the author just leaves it blank.
         new("Request", "Position Number", f => f.PositionNumber.Trim().Length > 0 ? f.PositionNumber : "N/A", false),
-        new("Request", "Date Vacated or Expiration Date", f => f.DateVacated, true, f => ReplacesSomeone(f) ? null : "N/A (new position)"),
+        new("Request", "Date Vacated or Expiration Date", f => UsDate(f.DateVacated), true, f => ReplacesSomeone(f) ? null : "N/A (new position)"),
         new("Request", "Job Opening ID", f => f.JobOpeningId, false),
         new("Position", "Payroll Title", f => f.PayrollTitle, true),
         new("Position", "Job Code", f => f.JobCode, true),
