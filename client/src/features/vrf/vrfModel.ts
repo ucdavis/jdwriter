@@ -176,7 +176,6 @@ const REQUIRED: Required[] = [
   { key: 'bargainingUnit', label: 'Bargaining unit', step: 'position' },
   { key: 'actionRequested', label: 'Action requested', step: 'request' },
   { key: 'fillMethod', label: 'How the role will be filled', step: 'request' },
-  { key: 'positionNumber', label: 'Position number (or N/A)', step: 'request' },
   { applies: replacesSomeone, key: 'dateVacated', label: 'Date vacated or expiration date', step: 'request' },
   { key: 'vacancies', label: 'Number of vacancies', step: 'request' },
   { key: 'fte', label: 'FTE', step: 'request' },
