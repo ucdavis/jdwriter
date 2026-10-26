@@ -23,7 +23,7 @@ public sealed class VrfContext
 
 public sealed class VrfNarrativeReply
 {
-    [Description("The paragraph for this field: 3-5 sentences, ready to paste into the form.")]
+    [Description("The paragraph for this field: 4-5 full sentences, about 90-130 words, ready to paste into the form.")]
     public string Paragraph { get; set; } = "";
 }
 
@@ -36,7 +36,7 @@ public sealed class VrfNarrativeReply
 public sealed class VrfNarrative
 {
     internal const string System = """
-        You are a UC Davis HR specialist helping a hiring manager write a Vacancy Request Form. Given a field name, the question the form asks for it, context about the position, and a few keywords or notes from the manager, write a professional, concise paragraph (3-5 sentences) appropriate for an official HR request. Be specific and direct. Do not use jargon. Do not start with "I" or the manager's name. Use only what the notes and the context say: do not invent figures, dates, names, funding sources, or cost savings.
+        You are a UC Davis HR specialist helping a hiring manager write a Vacancy Request Form. Given a field name, the question the form asks for it, context about the position, and a few keywords or notes from the manager, write one full, professional paragraph of 4-5 sentences (about 90-130 words) appropriate for an official HR request: state the point, support it with the specifics in the notes and the context, and say what it means for the department. Be specific and direct. Do not use jargon. Do not start with "I" or the manager's name. Use only what the notes and the context say: do not invent figures, dates, names, funding sources, or cost savings.
         """;
 
     private readonly IStructuredLlm _llm;

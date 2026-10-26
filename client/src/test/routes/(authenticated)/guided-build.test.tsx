@@ -210,7 +210,7 @@ describe('the guided build', () => {
 
     expect(await screen.findByTestId('build-outcome')).toHaveTextContent('Great! Your JD passed.');
     expect(screen.getByRole('button', { name: '⤓ Download PDF' })).toBeEnabled();
-    expect(screen.getByRole('region', { name: 'Send this job description to DISSC' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Send this job description to the Service Channel' })).toBeInTheDocument();
     expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('Your JD');
 
     await user.click(screen.getByRole('button', { name: 'Make changes' }));
