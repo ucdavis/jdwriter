@@ -213,6 +213,42 @@ public class OpenAiStructuredLlmTests
     }
 
     [Fact]
+    public async Task Each_call_is_recorded_for_the_admin_with_its_time_tokens_and_effort_and_no_content()
+    {
+        var calls = new AiCallLog();
+        var body = new JsonObject
+        {
+            ["choices"] = new JsonArray { new JsonObject { ["finish_reason"] = "stop", ["message"] = new JsonObject { ["content"] = """{"category":"x","confidence":1,"parts":[]}""" } } },
+            ["usage"] = new JsonObject { ["prompt_tokens"] = 1200, ["completion_tokens"] = 900, ["completion_tokens_details"] = new JsonObject { ["reasoning_tokens"] = 700 } },
+        }.ToJsonString();
+        var handler = new SequenceHandler((HttpStatusCode.OK, body), (HttpStatusCode.InternalServerError, "{}"));
+        var llm = new OpenAiStructuredLlm(new Factory(handler), new FixedKey("k-000000000000000000000"), HostedOpenAi, NullLogger<OpenAiStructuredLlm>.Instance, calls);
+
+        await llm.StructuredAsync<Answer>(new StructuredRequest { System = "secret prompt", User = "secret text", Label = "classify.rank", Effort = LlmEffort.Medium });
+        var fail = () => llm.StructuredAsync<Answer>(new StructuredRequest { System = "s", User = "u", Label = "classify.distill", Effort = LlmEffort.Low });
+        await fail.Should().ThrowAsync<StructuredLlmException>();
+
+        var recent = calls.Recent();
+        recent.Select(c => (c.Label, c.Outcome)).Should().Equal(("classify.distill", "failed: HTTP 500"), ("classify.rank", "ok"));
+        recent[1].Should().BeEquivalentTo(new { InputTokens = 1200L, OutputTokens = 900L, ReasoningTokens = 700L, Effort = "medium", Provider = "OpenAiCompatible" });
+        System.Text.Json.JsonSerializer.Serialize(recent).Should().NotContain("secret");
+    }
+
+    [Fact]
+    public void The_call_log_keeps_only_the_newest()
+    {
+        var calls = new AiCallLog();
+        for (var i = 0; i < AiCallLog.Capacity + 5; i++)
+        {
+            calls.Record(new AiCall(DateTimeOffset.UtcNow, $"call {i}", i, null, null, null, "low", "Anthropic", "ok"));
+        }
+
+        var recent = calls.Recent();
+        recent.Should().HaveCount(AiCallLog.Capacity);
+        recent[0].Label.Should().Be($"call {AiCallLog.Capacity + 4}");
+    }
+
+    [Fact]
     public async Task Another_bad_request_is_not_retried()
     {
         var handler = new SequenceHandler((HttpStatusCode.BadRequest, """{"error":{"message":"Invalid schema."}}"""));

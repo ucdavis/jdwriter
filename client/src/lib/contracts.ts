@@ -632,6 +632,19 @@ export type StandardRow = {
 };
 
 /** A re-read of the imported Word documents with the layout parser. */
+/** One recent AI call, as measured on the server. Metadata only. */
+export type AiCall = {
+  at: string;
+  effort: string;
+  inputTokens: number | null;
+  label: string;
+  ms: number;
+  outcome: string;
+  outputTokens: number | null;
+  provider: string;
+  reasoningTokens: number | null;
+};
+
 export type ReparseSummary = {
   discarded: Array<{ fileName: string; reason: string }>;
   refiled: Array<{ fileName: string; reason: string }>;

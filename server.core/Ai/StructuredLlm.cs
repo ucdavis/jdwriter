@@ -83,8 +83,11 @@ public sealed class StructuredLlm : IStructuredLlm
     private readonly object _clientLock = new();
     private (string Key, AnthropicClient Client)? _client;
 
-    public StructuredLlm(ILogger<StructuredLlm> logger, IApiKeySource keys, LlmOptions? options = null)
+    private readonly AiCallLog? _calls;
+
+    public StructuredLlm(ILogger<StructuredLlm> logger, IApiKeySource keys, LlmOptions? options = null, AiCallLog? calls = null)
     {
+        _calls = calls;
         // The configured model, or the one the prompts were tuned on.
         _model = options?.EffectiveModel is { Length: > 0 } m ? m : Model;
         _logger = logger;
@@ -148,6 +151,10 @@ public sealed class StructuredLlm : IStructuredLlm
 
         var clock = System.Diagnostics.Stopwatch.StartNew();
         var response = await Client().Messages.Create(parameters, cancellationToken: ct);
+
+        _calls?.Record(new AiCall(DateTimeOffset.UtcNow, label, clock.ElapsedMilliseconds,
+            response.Usage.InputTokens, response.Usage.OutputTokens, null,
+            request.Effort.ToString().ToLowerInvariant(), "Anthropic", "ok"));
 
         // The same per-call line as the OpenAI path, so the two can be compared.
         _logger.LogInformation("[ai] {Label} {Ms}ms in={In} out={Out} effort={Effort} provider=Anthropic",

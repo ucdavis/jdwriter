@@ -126,6 +126,7 @@ try
     var llmOptions = LlmOptions.From(builder.Configuration);
     builder.Services.AddSingleton(llmOptions);
     builder.Services.AddSingleton<IApiKeySource, ApiKeySource>();
+    builder.Services.AddSingleton<AiCallLog>();
     builder.Services.AddScoped<ApiKeySettings>();
     builder.Services.AddHttpClient(OpenAiStructuredLlm.HttpClientName, c => c.Timeout = TimeSpan.FromMinutes(5));
     if (llmOptions.Provider == LlmProvider.Anthropic)

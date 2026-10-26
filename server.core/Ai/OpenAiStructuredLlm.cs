@@ -33,8 +33,11 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
     /// </summary>
     private volatile bool _effortRefused;
 
-    public OpenAiStructuredLlm(IHttpClientFactory http, IApiKeySource keys, LlmOptions options, ILogger<OpenAiStructuredLlm> logger)
+    private readonly AiCallLog? _calls;
+
+    public OpenAiStructuredLlm(IHttpClientFactory http, IApiKeySource keys, LlmOptions options, ILogger<OpenAiStructuredLlm> logger, AiCallLog? calls = null)
     {
+        _calls = calls;
         _http = http;
         _keys = keys;
         _options = options;
@@ -54,6 +57,18 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
     /// reject it. Without it, every call thinks at the model's default, the quick ones included.
     /// </summary>
     private bool SendsEffort => !_effortRefused && (_options.SendReasoningEffort || _options.HostedOpenAi);
+
+    private static long? Number(JsonNode? node)
+    {
+        try
+        {
+            return node?.GetValue<long>();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or FormatException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>A 400 that names reasoning_effort: the model doesn't take the parameter.</summary>
     private static bool RefusesEffort(string body) => body.Contains("reasoning_effort", StringComparison.OrdinalIgnoreCase);
@@ -114,6 +129,9 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
 
         if (!response.IsSuccessStatusCode)
         {
+            _calls?.Record(new AiCall(DateTimeOffset.UtcNow, label, clock.ElapsedMilliseconds, null, null, null,
+                withEffort ? request.Effort.ToString().ToLowerInvariant() : "default", _options.Provider.ToString(),
+                $"failed: HTTP {(int)response.StatusCode}"));
             // The provider's own message helps diagnose a bad deployment name or schema; it never
             // contains the key, which travels only in a header.
             throw new StructuredLlmException(
@@ -143,6 +161,11 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
             label, clock.ElapsedMilliseconds, root["usage"]?["prompt_tokens"], root["usage"]?["completion_tokens"],
             root["usage"]?["completion_tokens_details"]?["reasoning_tokens"],
             withEffort ? request.Effort.ToString().ToLowerInvariant() : "default", _options.Provider);
+        _calls?.Record(new AiCall(DateTimeOffset.UtcNow, label, clock.ElapsedMilliseconds,
+            Number(root["usage"]?["prompt_tokens"]), Number(root["usage"]?["completion_tokens"]),
+            Number(root["usage"]?["completion_tokens_details"]?["reasoning_tokens"]),
+            withEffort ? request.Effort.ToString().ToLowerInvariant() : _effortRefused ? "refused — default" : "default",
+            _options.Provider.ToString(), "ok"));
         if (_tokenDebug)
         {
             _logger.LogInformation("[tok] {Label} in={In} out={Out} provider={Provider}",
