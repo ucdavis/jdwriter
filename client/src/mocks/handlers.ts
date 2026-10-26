@@ -691,6 +691,8 @@ export const handlers = [
     HttpResponse.json<SecurityStatus>({ databaseEncryptedAtRest: true })
   ),
 
+  http.get('/api/admin/settings/ai-calls', () => HttpResponse.json({ calls: [] })),
+
   http.get('/api/admin/settings/api-key', () =>
     HttpResponse.json<ApiKeyStatus>({
       ...mockKeyStatus,

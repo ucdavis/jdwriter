@@ -207,6 +207,10 @@ public class AdminController : ApiControllerBase
     // ---------------------------------------------------------------- Anthropic API key
 
     /// <summary>Which key is in use and where it came from. Never the key itself.</summary>
+    /// <summary>The last AI calls, newest first: how long each took and what it cost. No content.</summary>
+    [HttpGet("settings/ai-calls")]
+    public IActionResult AiCalls([FromServices] AiCallLog calls) => Ok(new { calls = calls.Recent() });
+
     [HttpGet("settings/api-key")]
     public async Task<IActionResult> ApiKeyStatus(CancellationToken ct) =>
         Ok(await _apiKey.GetStatusAsync(ct));

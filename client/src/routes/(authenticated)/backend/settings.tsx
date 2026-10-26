@@ -15,10 +15,12 @@ import {
   useRevokeAdmin,
   useSecurityStatus,
   useSetApiKey,
+  aiCallsQueryOptions,
 } from '@/queries/admin.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { appUrl } from '@/lib/basePath.ts';
 import { createFileRoute } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { RouterContext } from '@/main.tsx';
 import type { LlmProvider, PackageSection } from '@/lib/contracts.ts';
@@ -46,6 +48,7 @@ function SettingsPage() {
       />
       <AdminsPanel />
       <ApiKeyPanel />
+      <AiCallsPanel />
       <PackagePanel />
       <DataProtectionPanel />
     </AdminOnly>
@@ -487,6 +490,69 @@ function DataProtectionPanel() {
         so database encryption covers them. The API key entered above is additionally
         encrypted by the application before it is stored.
       </p>
+    </Card>
+  );
+}
+
+const tokens = (v: number | null) => (v === null ? '—' : v.toLocaleString());
+
+/**
+ * How long the AI calls are taking: the last 50 on this server, newest first, measured where they're
+ * made. Time an AI step by running it, then refreshing here. Metadata only, and gone on restart.
+ */
+function AiCallsPanel() {
+  const calls = useQuery(aiCallsQueryOptions());
+  const rows = calls.data?.calls ?? [];
+
+  return (
+    <Card className="mt-5 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Eyebrow>Recent AI calls</Eyebrow>
+        <button className="btn btn-ghost btn-sm" disabled={calls.isFetching} onClick={() => void calls.refetch()} type="button">
+          {calls.isFetching ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </div>
+      <p className="mt-1 text-base text-base-content/70">
+        The last {50} calls on this server, newest first: how long each took and what it used. Run a step — Classify,
+        say — then refresh. Kept in memory only, with no content; a restart clears it.
+      </p>
+      {rows.length === 0 ? (
+        <p className="mt-3 text-base text-base-content/70" data-testid="ai-calls-empty">
+          No AI calls since the server last started.
+        </p>
+      ) : (
+        <div aria-label="Recent AI calls" className="mt-3 overflow-x-auto" role="region" tabIndex={0}>
+          <table className="table table-sm" data-testid="ai-calls">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Call</th>
+                <th className="text-right">Time</th>
+                <th className="text-right">Tokens in</th>
+                <th className="text-right">Out</th>
+                <th className="text-right">Of which thinking</th>
+                <th>Effort</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((c, i) => (
+                // Calls have no id; newest first, so the position is stable between refreshes.
+                <tr key={`${c.at}-${i}`}>
+                  <td className="whitespace-nowrap">{new Date(c.at).toLocaleTimeString()}</td>
+                  <td className="font-mono text-sm">{c.label}</td>
+                  <td className="text-right tnum">{(c.ms / 1000).toFixed(1)} s</td>
+                  <td className="text-right tnum">{tokens(c.inputTokens)}</td>
+                  <td className="text-right tnum">{tokens(c.outputTokens)}</td>
+                  <td className="text-right tnum">{tokens(c.reasoningTokens)}</td>
+                  <td>{c.effort}</td>
+                  <td className={c.outcome === 'ok' ? '' : 'text-error'}>{c.outcome}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Card>
   );
 }

@@ -2,6 +2,7 @@ import { fetchJson } from '../lib/api.ts';
 import { uploadBody } from '../lib/uploads.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  AiCall,
   AnalyticsReport,
   ClassStandard,
   CtListingPlan,
@@ -434,3 +435,9 @@ export const useCtListingApply = () => {
   });
 };
 
+
+/** The last AI calls on this server, newest first: time, tokens and effort. Admin-only; no content. */
+export const aiCallsQueryOptions = () => ({
+  queryFn: () => fetchJson<{ calls: AiCall[] }>('/api/admin/settings/ai-calls'),
+  queryKey: ['admin', 'ai-calls'] as const,
+});
