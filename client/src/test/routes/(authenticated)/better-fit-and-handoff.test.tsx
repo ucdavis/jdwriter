@@ -159,6 +159,7 @@ describe('a finished JD', () => {
 
     const steps = await screen.findByRole('region', { name: 'Send this job description to DISSC' });
     expect(within(steps).getByRole('link', { name: '⤓ Download the Word document' })).toHaveAttribute('href', '/api/jds/12/docx');
+    expect(within(steps).getByRole('link', { name: 'Start the Vacancy Request Form →' })).toHaveAttribute('href', '/vrf?jd=12');
     expect(within(steps).getByRole('link', { name: 'AggieService' })).toHaveAttribute('href', 'https://aggieservice.ucdavis.edu/s/');
     expect(within(steps).getByRole('link', { name: 'disscrequest@ucdavis.edu' })).toHaveAttribute('href', 'mailto:disscrequest@ucdavis.edu');
     expect(steps).toHaveTextContent('a vacancy request form, then classification by Compensation, then recruitment');

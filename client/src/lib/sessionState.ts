@@ -27,6 +27,9 @@ export const setSessionState = <T,>(key: string, value: T) => {
   emit();
 };
 
+/** The value now, outside render — for work that finishes after a wait and must not undo edits made meanwhile. */
+export const getSessionState = <T,>(key: string, initial: T): T => (values.has(key) ? (values.get(key) as T) : initial);
+
 /** Forget every value whose key starts with the prefix: a page's "Clear". */
 export const clearSessionState = (prefix: string) => {
   for (const key of values.keys()) {

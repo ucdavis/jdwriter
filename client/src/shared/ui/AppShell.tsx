@@ -69,6 +69,12 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
           >
             My JDs
           </Link>
+          <Link
+            className="whitespace-nowrap text-base font-semibold text-white/75 hover:text-ucd-gold"
+            to="/vrf"
+          >
+            Vacancy request
+          </Link>
           {isAdmin ? (
             <Link
               className="whitespace-nowrap text-base font-semibold text-white/75 hover:text-ucd-gold"

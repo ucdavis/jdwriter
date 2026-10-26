@@ -1,5 +1,6 @@
 import type { AssembledJd } from '@/lib/contracts.ts';
 import { appUrl } from '@/lib/basePath.ts';
+import { Link } from '@tanstack/react-router';
 import { Eyebrow } from '@/shared/ui/primitives.tsx';
 import type { ReactNode } from 'react';
 
@@ -34,18 +35,26 @@ export const NextSteps = ({ result }: { result: AssembledJd }) => {
             ⤓ Download the Word document
           </a>
         </Step>
-        <Step n={2} title="Include it in your AggieService ticket">
-          Attach the job description when you create your ticket in{' '}
+        <Step n={2} title="Fill in the Vacancy Request Form">
+          It starts with this position filled in; the rest takes a few minutes.
+          <div>
+            <Link className="btn btn-outline btn-sm mt-1" search={{ jd: id }} to="/vrf">
+              Start the Vacancy Request Form →
+            </Link>
+          </div>
+        </Step>
+        <Step n={3} title="Include them in your AggieService ticket">
+          Attach the job description, the Vacancy Request Form and an org chart when you create your ticket in{' '}
           <a className="text-primary underline" href={AGGIESERVICE} rel="noreferrer" target="_blank">
             AggieService
           </a>
-          , or email it to{' '}
+          , or email them to{' '}
           <a className="text-primary underline" href={`mailto:${DISSC_EMAIL}`}>
             {DISSC_EMAIL}
           </a>
           .
         </Step>
-        <Step n={3} title="What happens next">
+        <Step n={4} title="What happens next">
           The process today is a vacancy request form, then classification by Compensation, then
           recruitment. Your DISSC representative will reach out through AggieService with any
           questions.

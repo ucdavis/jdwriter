@@ -111,6 +111,7 @@ try
         return new BlobUploadStaging(uploadOptions, credential);
     });
     builder.Services.AddScoped<UploadReader>();
+    builder.Services.AddScoped<Server.Core.Vrf.VrfNarrative>();
 
     // The title reference is read on nearly every corpus path and rebuilt only on import, so the
     // built index is cached rather than reconstructed per request.
