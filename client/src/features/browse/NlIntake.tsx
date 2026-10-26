@@ -1,5 +1,5 @@
 import { SiteNote } from '@/shared/ui/SiteNote.tsx';
-import { Badge, Note } from '@/shared/ui/primitives.tsx';
+import { Badge, Note, SlowNote } from '@/shared/ui/primitives.tsx';
 import { HttpError } from '@/lib/api.ts';
 import { useIntakeMatch } from '@/queries/authoring.ts';
 import { clearSessionState, setSessionState, useSessionState } from '@/lib/sessionState.ts';
@@ -80,6 +80,7 @@ export const NlIntake = () => {
         >
           {match.isPending ? 'Matching…' : 'Find matching class'}
         </button>
+        <SlowNote show={match.isPending} />
         {text || result ? (
           <button
             className="btn btn-ghost btn-sm"

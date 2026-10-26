@@ -1,4 +1,4 @@
-import { Card, Eyebrow, Field, Note } from '@/shared/ui/primitives.tsx';
+import { Card, Eyebrow, Field, Note, SlowNote } from '@/shared/ui/primitives.tsx';
 import { AllocationBar } from './AllocationBar.tsx';
 import { CheckResult } from './CheckResult.tsx';
 import { DutiesEditor } from './DutiesEditor.tsx';
@@ -374,14 +374,17 @@ export const BuildFlow = ({
                 {dutiesCurrent?.verdict === 'out_of_envelope' ? 'Continue anyway →' : 'Continue to requirements →'}
               </button>
             ) : (
-              <button
-                className="btn btn-primary btn-sm"
-                disabled={busy || !ready}
-                onClick={checkDuties}
-                type="button"
-              >
-                {busy ? 'Checking…' : 'Check my duties'}
-              </button>
+              <>
+                <button
+                  className="btn btn-primary btn-sm"
+                  disabled={busy || !ready}
+                  onClick={checkDuties}
+                  type="button"
+                >
+                  {busy ? 'Checking…' : 'Check my duties'}
+                </button>
+                <SlowNote show={busy} />
+              </>
             )}
             {draftButton}
             {gateReason ? (
@@ -458,6 +461,7 @@ export const BuildFlow = ({
             >
               {busy ? 'Checking and assembling…' : accepted ? 'Assemble anyway →' : 'Assemble the JD →'}
             </button>
+            <SlowNote show={busy} />
             {draftButton}
             {gateReason ? (
               <span className="text-base text-warning-ink" data-testid="build-gate-reason">

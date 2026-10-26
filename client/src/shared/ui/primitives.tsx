@@ -64,6 +64,17 @@ export const Eyebrow = ({ children }: { children: ReactNode }) => (
   <div className="eyebrow">{children}</div>
 );
 
+/**
+ * Beside an AI step while it runs. They take a while — the model weighs the request against many
+ * classes — and a button that just says "Checking…" for a minute reads as stuck.
+ */
+export const SlowNote = ({ show }: { show: boolean }) =>
+  show ? (
+    <span className="text-sm text-base-content/70" data-testid="slow-note">
+      This can take a minute or so.
+    </span>
+  ) : null;
+
 /** An inline message. Errors and warnings are the only two the POC used. */
 export const Note = ({
   children,

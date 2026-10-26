@@ -1,4 +1,4 @@
-import { Badge } from '@/shared/ui/primitives.tsx';
+import { Badge, SlowNote } from '@/shared/ui/primitives.tsx';
 import type { ArchivedJd } from '@/lib/contracts.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { useArchive, useStartFromArchive } from '@/queries/classes.ts';
@@ -133,6 +133,7 @@ const ArchiveDialog = ({ jds, onClose, slug }: { jds: ArchivedJd[]; onClose: () 
               <button className="btn btn-primary" disabled={start.isPending} onClick={() => workFrom(chosen)} type="button">
                 {start.isPending ? 'Placing its duties…' : 'Work from this JD'}
               </button>
+              <SlowNote show={start.isPending} />
             </div>
           </>
         ) : (
