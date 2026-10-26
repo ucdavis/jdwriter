@@ -632,6 +632,17 @@ export type StandardRow = {
 };
 
 /** A re-read of the imported Word documents with the layout parser. */
+/** A salary grade's annual range on the Career Tracks structure. */
+export type AnnualRange = {
+  effectiveDate: string | null;
+  grade: number;
+  maximum: number;
+  midpoint: number;
+  minimum: number;
+  note: string;
+  scale: string;
+};
+
 /** One recent AI call, as measured on the server. Metadata only. */
 export type AiCall = {
   at: string;

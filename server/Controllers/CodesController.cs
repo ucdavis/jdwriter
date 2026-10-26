@@ -38,6 +38,39 @@ public class CodesController : ApiControllerBase
         return Ok(new { codes = count, importedAt = count == 0 ? (DateTimeOffset?)null : await _db.CtTitles.MaxAsync(t => t.ImportedAt, ct) });
     }
 
+    /// <summary>The Career Tracks salary ranges as stored: each grade's annual range, and when they took effect.</summary>
+    [HttpGet("salary-scale")]
+    public async Task<IActionResult> SalaryScale([FromServices] SalaryScales scales, CancellationToken ct)
+    {
+        var grades = await scales.AnnualAsync(ct);
+        var importedAt = grades.Count == 0 ? (DateTimeOffset?)null : await _db.SalaryRanges.MaxAsync(s => s.ImportedAt, ct);
+        return Ok(new { grades, importedAt });
+    }
+
+    /// <summary>Replace the Career Tracks salary ranges with Compensation's workbook (.xlsx).</summary>
+    [HttpPost("salary-scale")]
+    [RequestSizeLimit(MaxListingBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxListingBytes)]
+    public async Task<IActionResult> ImportSalaryScale([FromServices] SalaryScales scales, CancellationToken ct)
+    {
+        var file = (await UploadsAsync(MaxListingBytes, ct)).FirstOrDefault();
+        if (file is null || file.Bytes.Length == 0)
+        {
+            return BadRequest(new { message = "Choose the Career Tracks salary ranges workbook (.xlsx) to import." });
+        }
+
+        try
+        {
+            await scales.ImportAsync(SalaryScales.Read(file.Bytes), ct);
+        }
+        catch (SalaryScaleRefusedException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+
+        return await SalaryScale(scales, ct);
+    }
+
     /// <summary>What importing a Career Tracks title code listing would change. Writes nothing.</summary>
     [HttpPost("ct-listing/preview")]
     [RequestSizeLimit(MaxListingBytes)]

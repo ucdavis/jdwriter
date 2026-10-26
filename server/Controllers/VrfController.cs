@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Server.Core.Domain;
+using Server.Core.Titles;
 using Server.Core.Vrf;
 using Server.Helpers;
 
@@ -22,6 +23,17 @@ public class VrfController : ApiControllerBase
     private readonly VrfNarrative _narrative;
 
     public VrfController(VrfNarrative narrative) => _narrative = narrative;
+
+    /// <summary>
+    /// The Career Tracks annual range for a salary grade ("Grade 20"), to fill the form's salary range.
+    /// A represented title's grade is "STEPS": it has no range here, and HR fills it in.
+    /// </summary>
+    [HttpGet("salary-range")]
+    public async Task<IActionResult> SalaryRange([FromQuery] string? grade, [FromServices] SalaryScales scales, CancellationToken ct)
+    {
+        var range = await scales.ForGradeAsync(grade ?? "", ct);
+        return Ok(new { range });
+    }
 
     public sealed class NarrativeRequest
     {

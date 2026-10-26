@@ -1,4 +1,5 @@
 import { CtListingPanel } from '@/features/backend/CtListingPanel.tsx';
+import { SalaryScalePanel } from '@/features/backend/SalaryScalePanel.tsx';
 import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
 import { JobsDirectory } from '@/features/backend/JobsDirectory.tsx';
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
@@ -26,6 +27,7 @@ function JobsPage() {
         title="Codes"
       />
       <CtListingPanel />
+      <SalaryScalePanel />
       <JobsDirectory initialCode={code} key={code ?? ''} />
     </AdminOnly>
   );

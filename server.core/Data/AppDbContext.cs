@@ -13,6 +13,7 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<JdFitReview> JdFitReviews => Set<JdFitReview>();
     public DbSet<CtTitle> CtTitles => Set<CtTitle>();
+    public DbSet<SalaryRange> SalaryRanges => Set<SalaryRange>();
 
     // ---- official standards
     public DbSet<JobStandard> JobStandards => Set<JobStandard>();
@@ -129,6 +130,19 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
             e.Property(x => x.ToTitle).HasMaxLength(TitleLen);
             // One successor per retired code, or the remap is not a function.
             e.HasIndex(x => x.FromCode).IsUnique();
+        });
+
+        b.Entity<SalaryRange>(e =>
+        {
+            e.Property(x => x.Scale).HasMaxLength(60);
+            e.Property(x => x.PayType).HasMaxLength(20);
+            e.Property(x => x.Note).HasMaxLength(300);
+            foreach (var p in new[] { nameof(SalaryRange.Minimum), nameof(SalaryRange.FirstQuartile), nameof(SalaryRange.Midpoint), nameof(SalaryRange.ThirdQuartile), nameof(SalaryRange.Maximum) })
+            {
+                e.Property(p).HasPrecision(12, 4);
+            }
+
+            e.HasIndex(x => new { x.Scale, x.Grade, x.PayType }).IsUnique();
         });
 
         b.Entity<CtTitle>(e =>

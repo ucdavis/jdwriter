@@ -4,6 +4,7 @@ import { classListQueryOptions, classProfileQueryOptions } from '@/queries/class
 import { useExtractDocument } from '@/queries/authoring.ts';
 import { savedJdQueryOptions, useSavedJds } from '@/queries/jds.ts';
 import { contextOf, useDownloadVrf } from '@/queries/vrf.ts';
+import { SalaryRangeNote } from './SalaryRangeNote.tsx';
 import { useUser } from '@/shared/auth/UserContext.tsx';
 import { Card, Eyebrow, Note, SlowNote } from '@/shared/ui/primitives.tsx';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -144,7 +145,7 @@ export const VrfFlow = ({ jdId }: { jdId?: number }) => {
           </Grid>
           <div className="mt-5">
             <Eyebrow>Salary range</Eyebrow>
-            <p className="mt-1 text-base text-base-content/70">Optional — HR can fill these in.</p>
+            <SalaryRangeNote form={form} update={update} />
             <Grid>
               <Text form={form} label="Minimum (annual)" name="salaryMin" update={update} />
               <Text form={form} label="Midpoint (annual)" name="salaryMid" update={update} />
