@@ -13,6 +13,8 @@ export type VrfForm = {
   bargainingUnit: string;
   budgetConsideration: string;
   budgetSource: string;
+  /** The source, typed, when the list's "Other" is chosen. */
+  budgetSourceOther: string;
   criticalRole: string;
   dateVacated: string;
   department: string;
@@ -54,6 +56,7 @@ export const emptyVrf = (): VrfForm => ({
   bargainingUnit: '',
   budgetConsideration: '',
   budgetSource: '',
+  budgetSourceOther: '',
   criticalRole: '',
   dateVacated: '',
   department: '',
@@ -115,8 +118,16 @@ export const REASONS = [
   'Other',
 ];
 
-/** Suggestions only: the campus form's own list hasn't been confirmed, so any source can be typed. */
-export const BUDGET_SOURCES = ['19900 - State', '20000 - Federal', '25000 - Endowment/Gift', '33000 - Recharge', 'Student Fees', 'Grant'];
+/** Provisional: the campus form's own list hasn't been confirmed. "Other" lets any source be typed. */
+export const BUDGET_SOURCES = [
+  '19900 - State',
+  '20000 - Federal',
+  '25000 - Endowment/Gift',
+  '33000 - Recharge',
+  'Student Fees',
+  'Grant',
+  'Other',
+];
 
 /** A position someone held: when it was vacated, or when it expires, matters. */
 export const replacesSomeone = (f: VrfForm) =>
@@ -180,6 +191,7 @@ const REQUIRED: Required[] = [
   { key: 'vacancies', label: 'Number of vacancies', step: 'request' },
   { key: 'fte', label: 'FTE', step: 'request' },
   { key: 'budgetSource', label: 'Budget source', step: 'budget' },
+  { applies: (f) => f.budgetSource === 'Other', key: 'budgetSourceOther', label: 'The budget source, typed', step: 'budget' },
   { key: 'reasons', label: 'Reason(s) for recruitment', step: 'why' },
   { applies: (f) => f.reasons.includes('Other'), key: 'otherReason', label: 'The other reason, explained', step: 'why' },
   ...NARRATIVES.map((n) => ({ key: n.key, label: n.label, step: 'why' as const })),

@@ -87,6 +87,18 @@ public class VrfTests
     }
 
     [Fact]
+    public void A_budget_source_typed_under_Other_is_written_out()
+    {
+        var rows = Rows(VrfDocx.Build(Form(f =>
+        {
+            f.BudgetSource = "Other";
+            f.BudgetSourceOther = "USDA cooperative agreement";
+        }), new DateOnly(2026, 10, 26))).ToDictionary(r => r.Label, r => r.Value);
+
+        rows["Budget Source"].Should().Be("Other: USDA cooperative agreement");
+    }
+
+    [Fact]
     public void The_file_is_named_by_its_title()
     {
         VrfDocx.FileName(Form()).Should().Be("VRF - Greenhouse Assistant.docx");
