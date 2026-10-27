@@ -102,6 +102,52 @@ describe('classify', () => {
     ).toBeInTheDocument();
   });
 
+  it('never sends the proposed code with the ranking, and assesses it afterwards in its own request', async () => {
+    const user = userEvent.setup();
+    const classifyBodies: unknown[] = [];
+    const proposedBodies: Array<{ ourPick: string; proposedCode: string }> = [];
+    const gate: { open?: () => void } = {};
+    const assessed = new Promise<void>((resolve) => {
+      gate.open = resolve;
+    });
+    testServer.use(
+      http.post('/api/classify', async ({ request }) => {
+        classifyBodies.push(await request.clone().json());
+        return undefined;
+      }),
+      http.post('/api/classify/proposed', async ({ request }) => {
+        proposedBodies.push((await request.json()) as { ourPick: string; proposedCode: string });
+        await assessed;
+        return HttpResponse.json({
+          proposed: {
+            basis: 'standard', code: '7399', contradicts: [], fits: 'partly', missing: [],
+            summary: 'Assessed on its own merits, after the ranking.', supports: [], title: 'Project Policy Analyst 4',
+          },
+        });
+      })
+    );
+    renderRoute({ initialPath: '/classify' });
+    await waitFor(() => screen.getByLabelText('Job description text'));
+    await user.upload(
+      screen.getByLabelText('Upload a job description file'),
+      new File(['pd'], 'PD.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    );
+    await waitFor(() => screen.getByText('PD_Evaluation_Analyst_final.xlsx'));
+    await user.click(screen.getByRole('button', { name: 'Classify this description' }));
+
+    // The ranking shows first, with the assessment still on its way.
+    expect(await screen.findByTestId('proposed-pending')).toHaveTextContent('Assessing Project Policy Analyst 4 on its own merits');
+    expect(classifyBodies).toHaveLength(1);
+    expect(JSON.stringify(classifyBodies[0])).not.toContain('7399');
+    expect(proposedBodies).toHaveLength(1);
+    expect(proposedBodies[0].proposedCode).toBe('7399');
+    expect(proposedBodies[0].ourPick).not.toBe('');
+
+    gate.open?.();
+    expect(await screen.findByText('Assessed on its own merits, after the ranking.')).toBeInTheDocument();
+    expect(screen.queryByTestId('proposed-pending')).not.toBeInTheDocument();
+  });
+
   it('starts a JD from a recommended class with the description merged in', async () => {
     const user = userEvent.setup();
     let sent: ClassifyStartRequest | null = null;

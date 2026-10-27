@@ -58,6 +58,30 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
     /// </summary>
     private bool SendsEffort => !_effortRefused && (_options.SendReasoningEffort || _options.HostedOpenAi);
 
+    internal const int BusyRetries = 2;
+
+    /// <summary>The most a call waits on a busy provider, all told.</summary>
+    internal static TimeSpan BusyBudget { get; set; } = TimeSpan.FromSeconds(20);
+
+    private static bool Busy(HttpResponseMessage response, string body) =>
+        (response.StatusCode == HttpStatusCode.TooManyRequests && !body.Contains("insufficient_quota", StringComparison.OrdinalIgnoreCase))
+        || response.StatusCode == HttpStatusCode.ServiceUnavailable;
+
+    /// <summary>How long the provider asks us to wait: OpenAI's retry-after-ms, else Retry-After, else 2s.</summary>
+    internal static TimeSpan RetryAfter(HttpResponseMessage response)
+    {
+        if (response.Headers.TryGetValues("retry-after-ms", out var ms)
+            && double.TryParse(ms.FirstOrDefault(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var millis)
+            && millis >= 0)
+        {
+            return TimeSpan.FromMilliseconds(Math.Min(millis, BusyBudget.TotalMilliseconds));
+        }
+
+        var after = response.Headers.RetryAfter;
+        var wait = after?.Delta ?? (after?.Date is { } date ? date - DateTimeOffset.UtcNow : TimeSpan.FromSeconds(2));
+        return wait < TimeSpan.Zero ? TimeSpan.Zero : wait;
+    }
+
     private static long? Number(JsonNode? node)
     {
         try
@@ -120,7 +144,33 @@ public sealed class OpenAiStructuredLlm : IStructuredLlm
             (response, text) = await SendAsync(typeof(T), request, key, withEffort, ct);
         }
 
+        // Busy (rate limited or overloaded): wait as long as the provider asks, a couple of times,
+        // within a budget that keeps the whole request short of the campus proxy's time limit. A
+        // spent quota is also a 429, but waiting won't fix it.
+        for (var retry = 0; Busy(response, text) && retry < BusyRetries; retry++)
+        {
+            var wait = RetryAfter(response);
+            if (clock.Elapsed + wait > BusyBudget)
+            {
+                break;
+            }
+
+            _logger.LogWarning("{Label}: the AI provider is busy (HTTP {Status}); retrying in {Ms}ms",
+                label, (int)response.StatusCode, (long)wait.TotalMilliseconds);
+            response.Dispose();
+            await Task.Delay(wait, ct);
+            (response, text) = await SendAsync(typeof(T), request, key, withEffort, ct);
+        }
+
         using var _ = response;
+
+        if (Busy(response, text))
+        {
+            _calls?.Record(new AiCall(DateTimeOffset.UtcNow, label, clock.ElapsedMilliseconds, null, null, null,
+                withEffort ? request.Effort.ToString().ToLowerInvariant() : "default", _options.Provider.ToString(),
+                $"busy: HTTP {(int)response.StatusCode}"));
+            throw new StructuredLlmBusyException($"{label}: the AI provider is busy — {ProviderError(text)}");
+        }
 
         if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {

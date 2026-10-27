@@ -26,6 +26,7 @@ import type {
   FitRewriteResponse,
   RetirementResult,
   BuildRequest,
+  ClassifyProposedRequest,
   ClassifyRequest,
   ClassifyResponse,
   ClassListResponse,
@@ -430,24 +431,6 @@ export const handlers = [
         title: p.title,
         ucJobCode: p.ucJobCode,
       })),
-      proposed: body.proposedCode
-        ? {
-            basis: 'standard',
-            code: body.proposedCode,
-            contradicts: [
-              {
-                evidence: 'reports findings to principal investigators',
-                point: 'No policy analysis or programme administration is described.',
-              },
-            ],
-            fits: 'partly',
-            missing: ['Policy development', 'Programme budget responsibility'],
-            summary:
-              'The description supports analytical work but not the policy and programme scope this class expects.',
-            supports: ['Independent analysis of complex data'],
-            title: 'Project Policy Analyst 4',
-          }
-        : undefined,
       verdict: 'clear',
       verdictNote:
         'One class fits clearly, with a small amount of work that falls outside it.',
@@ -456,6 +439,30 @@ export const handlers = [
 
   // No production address for the workforce management tool yet.
   http.get('/api/links', () => HttpResponse.json({ wfmUrl: null })),
+
+  // The unit's proposed code, assessed after the ranking in its own request.
+  http.post('/api/classify/proposed', async ({ request }) => {
+    const body = (await request.json()) as ClassifyProposedRequest;
+    await delay(600);
+    return HttpResponse.json({
+      proposed: {
+        basis: 'standard',
+        code: body.proposedCode,
+        contradicts: [
+          {
+            evidence: 'reports findings to principal investigators',
+            point: 'No policy analysis or programme administration is described.',
+          },
+        ],
+        fits: 'partly',
+        missing: ['Policy development', 'Programme budget responsibility'],
+        summary:
+          'The description supports analytical work but not the policy and programme scope this class expects.',
+        supports: ['Independent analysis of complex data'],
+        title: 'Project Policy Analyst 4',
+      },
+    });
+  }),
 
   http.post('/api/classify/start-jd', async ({ request }) => {
     const { slug } = (await request.json()) as ClassifyStartRequest;

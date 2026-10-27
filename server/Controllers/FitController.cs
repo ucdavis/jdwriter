@@ -225,7 +225,7 @@ public class FitController : ApiControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (StructuredLlmException ex)
+        catch (StructuredLlmException ex) when (ex is not StructuredLlmBusyException)
         {
             // The provider's own error text can name deployments or configuration; it is logged, and
             // the author gets a message that is useful without it.
