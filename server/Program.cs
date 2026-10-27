@@ -141,7 +141,9 @@ try
     }
 
     // ---- data access
-    builder.Services.AddScoped<IClassProfileRepository, ClassProfileRepository>();
+    builder.Services.AddScoped<IClassProfileRepository>(sp => new ClassProfileRepository(
+        sp.GetRequiredService<AppDbContext>(), sp.GetRequiredService<ITitleCodeService>(),
+        sp.GetRequiredService<ProfileCache>(), sp.GetRequiredService<IServiceScopeFactory>()));
     builder.Services.AddScoped<IStandardsStore, StandardsStore>();
     builder.Services.AddScoped<StandardsImporter>();
 
@@ -205,7 +207,12 @@ try
         throw new InvalidOperationException(message);
     }
 
-    builder.Services.AddDbContextPool<AppDbContext>(o => o.UseSqlServer(conn, opt => opt.MigrationsAssembly("server.core")));
+    // The profile cache is dropped by any save that touches a profile table: see ProfileCache.
+    builder.Services.AddSingleton<ProfileCache>();
+    builder.Services.AddSingleton<ProfileCacheInvalidator>();
+    builder.Services.AddDbContextPool<AppDbContext>((sp, o) => o
+        .UseSqlServer(conn, opt => opt.MigrationsAssembly("server.core"))
+        .AddInterceptors(sp.GetRequiredService<ProfileCacheInvalidator>()));
 
     builder.Services
         .AddHealthChecks()

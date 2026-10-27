@@ -281,8 +281,16 @@ export type ClassifyVerdict = 'clear' | 'close-call' | 'level-mismatch' | 'weak'
 
 export type ClassifyRequest = {
   description: string;
-  /** Sent SEPARATELY from the description so it cannot leak into the ranking prompt. */
-  proposedCode?: string | null;
+};
+
+/**
+ * The unit's proposed code, assessed in its own request once the ranking is back: never part of
+ * the classify request, so it cannot reach the ranking prompt.
+ */
+export type ClassifyProposedRequest = {
+  distilled: DistilledJd;
+  ourPick: string;
+  proposedCode: string;
 };
 
 /**
@@ -307,7 +315,6 @@ export type ClassifyResponse = {
   /** Job code the submission was saved to the corpus under; null when not filed. */
   filedUnder?: string | null;
   matches: ClassifyMatch[];
-  proposed?: ProposedAssessment;
   verdict: ClassifyVerdict;
   verdictNote: string;
 };

@@ -36,9 +36,20 @@ public sealed class StructuredRequest
 /// A structured call that did not produce a result. Separate from a transport failure because the
 /// remedies are different and the caller usually wants to say so.
 /// </summary>
-public sealed class StructuredLlmException : Exception
+public class StructuredLlmException : Exception
 {
     public StructuredLlmException(string message) : base(message)
+    {
+    }
+}
+
+/// <summary>
+/// The provider is too busy right now (rate limited or overloaded) and stayed so through the retries:
+/// worth trying again in a minute, unlike other failures.
+/// </summary>
+public sealed class StructuredLlmBusyException : StructuredLlmException
+{
+    public StructuredLlmBusyException(string message) : base(message)
     {
     }
 }

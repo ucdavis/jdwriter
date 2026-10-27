@@ -1,10 +1,11 @@
 import { fetchJson } from '../lib/api.ts';
 import { uploadBody } from '../lib/uploads.ts';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
   AssembledJd,
   BetterFitResponse,
   BuildRequest,
+  ClassifyProposedRequest,
   ClassifyRequest,
   ClassifyResponse,
   ClassifyStartRequest,
@@ -21,6 +22,7 @@ import type {
   FitSuggestResponse,
   IntakeRequest,
   IntakeResponse,
+  ProposedAssessment,
 } from '../lib/contracts.ts';
 
 const post = <TBody, TResult>(url: string) => (body: TBody) =>
@@ -50,6 +52,23 @@ export const useExtractDocument = () =>
 export const useClassify = () =>
   useMutation({
     mutationFn: post<ClassifyRequest, ClassifyResponse>('/api/classify'),
+  });
+
+/**
+ * The unit's proposed code, assessed against a ranked description. Asked for once the ranking is
+ * back — a second request, so neither runs long — and kept for the session, so leaving the page
+ * and returning doesn't ask again. Not retried: each try is a model call.
+ */
+export const proposedAssessmentQueryOptions = (body: ClassifyProposedRequest) =>
+  queryOptions({
+    queryFn: () =>
+      fetchJson<{ proposed: ProposedAssessment | null }>('/api/classify/proposed', {
+        body: JSON.stringify(body),
+        method: 'POST',
+      }),
+    queryKey: ['classify', 'proposed', body] as const,
+    retry: false,
+    staleTime: Infinity,
   });
 
 /**

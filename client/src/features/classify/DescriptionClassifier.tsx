@@ -3,13 +3,20 @@ import { Badge, Card, Eyebrow, Meter, Note, SlowNote } from '@/shared/ui/primiti
 import { Link, useNavigate } from '@tanstack/react-router';
 import { blockedByFilter, messageOf } from '@/features/browse/NlIntake.tsx';
 import { ProposedCompare } from './ProposedCompare.tsx';
-import { useClassify, useExtractDocument, useStartJdFromClass } from '@/queries/authoring.ts';
+import {
+  proposedAssessmentQueryOptions,
+  useClassify,
+  useExtractDocument,
+  useStartJdFromClass,
+} from '@/queries/authoring.ts';
+import { useQuery } from '@tanstack/react-query';
 import { useRef, useState, type DragEvent } from 'react';
 import { clearSessionState, setSessionState, useSessionState } from '@/lib/sessionState.ts';
 import type {
   ClassifyMatch,
   ClassifyResponse,
   ClassifyVerdict,
+  DistilledJd,
   ExtractResponse,
   LevelFit,
 } from '@/lib/contracts.ts';
@@ -242,12 +249,8 @@ export const DescriptionClassifier = () => {
             disabled={classify.isPending || !text.trim()}
             onClick={() =>
               void classify
-                .mutateAsync({
-                  description: text,
-                  // Sent SEPARATELY from the description so it cannot reach the ranking
-                  // prompt. The server keeps it out; the client keeps it out of `text`.
-                  proposedCode: file?.proposed?.code ?? null,
-                })
+                // The proposed code is not sent: it is assessed afterwards, on its own.
+                .mutateAsync({ description: text })
                 // Stored from the request itself, so a result arriving after the page was
                 // left is still there on return.
                 .then((r) => setSessionState(`${KEY}result`, r))
@@ -316,11 +319,7 @@ export const DescriptionClassifier = () => {
               .
             </p>
             {file?.proposed && top ? (
-              <ProposedCompare
-                assessment={result.proposed}
-                got={top.title}
-                proposed={file.proposed}
-              />
+              <ProposedSection distilled={result.distilled} got={top.title} proposed={file.proposed} />
             ) : null}
           </Card>
 
@@ -441,3 +440,28 @@ const FunctionList = ({
     )}
   </div>
 );
+
+/**
+ * The unit's proposed code, argued only after the ranking is back, in its own request: the
+ * ranking never saw it, and neither request runs long. Asked for as soon as this shows.
+ */
+const ProposedSection = ({
+  distilled,
+  got,
+  proposed,
+}: {
+  distilled: DistilledJd;
+  got: string;
+  proposed: NonNullable<ExtractResponse['proposed']>;
+}) => {
+  const assessment = useQuery(proposedAssessmentQueryOptions({ distilled, ourPick: got, proposedCode: proposed.code }));
+  return (
+    <ProposedCompare
+      assessment={assessment.data?.proposed ?? undefined}
+      error={assessment.error ? messageOf(assessment.error) : null}
+      got={got}
+      pending={assessment.isFetching}
+      proposed={proposed}
+    />
+  );
+};

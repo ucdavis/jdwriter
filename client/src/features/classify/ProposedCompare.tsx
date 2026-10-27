@@ -1,4 +1,4 @@
-import { Badge } from '@/shared/ui/primitives.tsx';
+import { Badge, SlowNote } from '@/shared/ui/primitives.tsx';
 import type { ProposedAssessment } from '@/lib/contracts.ts';
 
 type Proposed = { code: string; ingested: boolean; title: string };
@@ -19,11 +19,17 @@ type Proposed = { code: string; ingested: boolean; title: string };
  */
 export const ProposedCompare = ({
   assessment,
+  error = null,
   got,
+  pending = false,
   proposed,
 }: {
   assessment?: ProposedAssessment;
+  /** Why the assessment couldn't be had; the comparison above still stands. */
+  error?: string | null;
   got: string;
+  /** The assessment is asked for after the ranking, and is on its way. */
+  pending?: boolean;
   proposed: Proposed;
 }) => {
   const label = proposed.title || `job code ${proposed.code}`;
@@ -57,7 +63,22 @@ export const ProposedCompare = ({
         </p>
       ) : null}
 
-      {assessment ? (
+      {pending ? (
+        <div className="mt-2.5" data-testid="proposed-pending">
+          <p className="text-base text-base-content/70" role="status">
+            Assessing {label} on its own merits…
+          </p>
+          <SlowNote show />
+        </div>
+      ) : null}
+
+      {error && !pending ? (
+        <p className="mt-2.5 text-base text-error" role="alert">
+          Couldn&apos;t assess {label}: {error}
+        </p>
+      ) : null}
+
+      {assessment && !pending ? (
         <div className="mt-2.5">
           <p className="text-base">{assessment.summary}</p>
           {assessment.comparedAs ? (

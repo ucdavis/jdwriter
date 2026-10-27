@@ -174,7 +174,14 @@ public class OpenAiStructuredLlmTests
         {
             Sent.Add(await request.Content!.ReadAsStringAsync(ct));
             var (status, body) = replies[Math.Min(_next++, replies.Length - 1)];
-            return new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+            var response = new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+            if (status == HttpStatusCode.TooManyRequests)
+            {
+                // As OpenAI says it: wait this long. Kept tiny so the test is quick.
+                response.Headers.Add("retry-after-ms", "5");
+            }
+
+            return response;
         }
     }
 
@@ -246,6 +253,53 @@ public class OpenAiStructuredLlmTests
         var recent = calls.Recent();
         recent.Should().HaveCount(AiCallLog.Capacity);
         recent[0].Label.Should().Be($"call {AiCallLog.Capacity + 4}");
+    }
+
+    private static readonly string BusyBody = """{"error":{"message":"Rate limit reached for requests","type":"requests","code":"rate_limit_exceeded"}}""";
+
+    [Fact]
+    public async Task A_busy_provider_is_waited_on_and_retried()
+    {
+        var ok = Completion("""{"category":"x","confidence":1,"parts":[]}""");
+        var handler = new SequenceHandler((HttpStatusCode.TooManyRequests, BusyBody), (HttpStatusCode.TooManyRequests, BusyBody), (HttpStatusCode.OK, ok));
+        var llm = new OpenAiStructuredLlm(new Factory(handler), new FixedKey("k-000000000000000000000"), HostedOpenAi, NullLogger<OpenAiStructuredLlm>.Instance);
+
+        var answer = await llm.StructuredAsync<Answer>(new StructuredRequest { System = "s", User = "u" });
+
+        answer.Category.Should().Be("x");
+        handler.Sent.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public async Task A_provider_still_busy_after_the_retries_says_so_and_a_spent_quota_is_not_retried()
+    {
+        var busy = new SequenceHandler((HttpStatusCode.TooManyRequests, BusyBody));
+        var llm = new OpenAiStructuredLlm(new Factory(busy), new FixedKey("k-000000000000000000000"), HostedOpenAi, NullLogger<OpenAiStructuredLlm>.Instance);
+        var call = () => llm.StructuredAsync<Answer>(new StructuredRequest { System = "s", User = "u" });
+        await call.Should().ThrowAsync<StructuredLlmBusyException>();
+        busy.Sent.Should().HaveCount(1 + OpenAiStructuredLlm.BusyRetries);
+
+        var spent = new SequenceHandler((HttpStatusCode.TooManyRequests, """{"error":{"message":"You exceeded your current quota","code":"insufficient_quota"}}"""));
+        var quota = new OpenAiStructuredLlm(new Factory(spent), new FixedKey("k-000000000000000000000"), HostedOpenAi, NullLogger<OpenAiStructuredLlm>.Instance);
+        var spentCall = () => quota.StructuredAsync<Answer>(new StructuredRequest { System = "s", User = "u" });
+        (await spentCall.Should().ThrowAsync<StructuredLlmException>()).Which.Should().NotBeOfType<StructuredLlmBusyException>();
+        spent.Sent.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void The_wait_is_what_the_provider_asks_capped_by_the_budget()
+    {
+        using var ms = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        ms.Headers.Add("retry-after-ms", "1500");
+        OpenAiStructuredLlm.RetryAfter(ms).Should().Be(TimeSpan.FromMilliseconds(1500));
+
+        using var seconds = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        seconds.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromSeconds(3));
+        OpenAiStructuredLlm.RetryAfter(seconds).Should().Be(TimeSpan.FromSeconds(3));
+
+        using var huge = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        huge.Headers.Add("retry-after-ms", "600000");
+        OpenAiStructuredLlm.RetryAfter(huge).Should().Be(OpenAiStructuredLlm.BusyBudget);
     }
 
     [Fact]

@@ -15,11 +15,18 @@ namespace Server.Controllers;
 /// <summary>
 /// A unit already has a written description and wants to know where it classifies.
 ///
-/// <paramref name="ProposedCode"/> arrives SEPARATELY from the text on purpose, and never reaches
-/// the ranking prompt. A model shown the classification the unit wants ratifies it, which makes the
-/// confidence number meaningless; it is argued afterwards by a second call instead.
+/// The unit's proposed code is not part of this request at all: a model shown the classification
+/// the unit wants ratifies it, which makes the confidence number meaningless. It is argued
+/// afterwards, in its own request (<see cref="ClassifyProposedRequest"/>), once the ranking is
+/// settled — which also keeps each request well inside the campus proxy's time limit.
 /// </summary>
-public sealed record ClassifyRequest(string Description, string? ProposedCode);
+public sealed record ClassifyRequest(string Description);
+
+/// <summary>
+/// The unit's proposed code, assessed against the description already ranked: its distilled
+/// reading, and the class the ranking chose (<paramref name="OurPick"/>) to compare with.
+/// </summary>
+public sealed record ClassifyProposedRequest(DistilledJd Distilled, string ProposedCode, string OurPick);
 
 /// <summary>
 /// Start a JD in <paramref name="Slug"/> from the description just classified. The distilled form is
@@ -87,7 +94,7 @@ public class ClassifyController : ApiControllerBase
         }
 
         var profiles = await _profiles.GetAllAsync(ct);
-        var result = await _classifier.ClassifyAsync(body.Description, profiles, body.ProposedCode, ct);
+        var result = await _classifier.ClassifyAsync(body.Description, profiles, proposedCode: null, ct);
 
         // Site classes (Health Center, Student Health) are labelled, and a match's site twins named.
         var titles = await _titleCodes.GetAsync(ct);
@@ -110,6 +117,36 @@ public class ClassifyController : ApiControllerBase
         }
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// The unit's proposed code, argued after the ranking and compared with it. The page asks for it
+    /// once the ranking has come back; the ranking never saw the code.
+    /// </summary>
+    [HttpPost("proposed")]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting(WebHardening.ModelPolicy)]
+    public async Task<IActionResult> Proposed(ClassifyProposedRequest body, CancellationToken ct)
+    {
+        var problem = RequestLimits.Distilled(body.Distilled);
+        if (problem is not null)
+        {
+            return BadRequest(new { message = problem });
+        }
+
+        var code = (body.ProposedCode ?? "").Trim();
+        var pick = (body.OurPick ?? "").Trim();
+        if (code.Length == 0 || code.Length > 20 || pick.Length == 0 || pick.Length > 200)
+        {
+            return BadRequest(new { message = "Send the proposed job code and the class the description classified as." });
+        }
+
+        if (!_llm.HasApiKey)
+        {
+            return StatusCode(503, new { message = "Classification is unavailable — no API key is configured." });
+        }
+
+        var profiles = await _profiles.GetAllAsync(ct);
+        return Ok(new { proposed = await _classifier.AssessProposedAsync(body.Distilled, code, profiles, pick, ct) });
     }
 
     /// <summary>
@@ -149,7 +186,7 @@ public class ClassifyController : ApiControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-        catch (StructuredLlmException ex)
+        catch (StructuredLlmException ex) when (ex is not StructuredLlmBusyException)
         {
             // The provider's own error text can name deployments or configuration; it is logged, and
             // the author gets a message that is useful without it.

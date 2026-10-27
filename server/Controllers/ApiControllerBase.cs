@@ -32,6 +32,19 @@ public sealed class AiServiceFailedAttribute : ExceptionFilterAttribute
 {
     public override void OnException(ExceptionContext context)
     {
+        if (context.Exception is StructuredLlmBusyException busy)
+        {
+            context.HttpContext.RequestServices.GetRequiredService<ILogger<AiServiceFailedAttribute>>()
+                .LogWarning(busy, "The AI provider was busy through the retries");
+            context.Result = new ObjectResult(new
+            {
+                message = "The AI service is busy right now. Nothing was lost — try again in a minute.",
+            })
+            { StatusCode = StatusCodes.Status503ServiceUnavailable };
+            context.ExceptionHandled = true;
+            return;
+        }
+
         if (context.Exception is StructuredLlmException failed)
         {
             context.HttpContext.RequestServices.GetRequiredService<ILogger<AiServiceFailedAttribute>>()

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Server.Core.Data;
 using Server.Core.Domain;
@@ -122,11 +123,16 @@ public sealed class ClassProfileRepository : IClassProfileRepository
 {
     private readonly AppDbContext _db;
     private readonly ITitleCodeService _titleCodes;
+    private readonly ProfileCache? _cache;
+    private readonly IServiceScopeFactory? _scopes;
 
-    public ClassProfileRepository(AppDbContext db, ITitleCodeService titleCodes)
+    public ClassProfileRepository(
+        AppDbContext db, ITitleCodeService titleCodes, ProfileCache? cache = null, IServiceScopeFactory? scopes = null)
     {
         _db = db;
         _titleCodes = titleCodes;
+        _cache = cache;
+        _scopes = scopes;
     }
 
     /// <summary>
@@ -163,8 +169,28 @@ public sealed class ClassProfileRepository : IClassProfileRepository
         return candidates.FirstOrDefault(p => TitleCodeIndex.Pad(p.UcJobCode) == padded);
     }
 
-    public async Task<List<ClassProfile>> GetAllAsync(CancellationToken ct = default) =>
-        await FullGraph(_db.ClassProfiles.AsNoTracking())
+    /// <summary>
+    /// Every profile's full graph, ordered by title. Held in memory when a <see cref="ProfileCache"/>
+    /// is given (the app); shared between requests, so read it and never modify it.
+    /// </summary>
+    public async Task<List<ClassProfile>> GetAllAsync(CancellationToken ct = default)
+    {
+        if (_cache is null || _scopes is null)
+        {
+            return await LoadAllAsync(_db, ct);
+        }
+
+        // The shared load runs in its own scope, uncancelled: the request that started it may end
+        // first, and others are waiting on it.
+        return await _cache.GetAsync(async () =>
+        {
+            await using var scope = _scopes.CreateAsyncScope();
+            return await LoadAllAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>(), CancellationToken.None);
+        }, ct);
+    }
+
+    private static Task<List<ClassProfile>> LoadAllAsync(AppDbContext db, CancellationToken ct) =>
+        FullGraph(db.ClassProfiles.AsNoTracking())
             .OrderBy(p => p.Title)
             .ToListAsync(ct);
 
