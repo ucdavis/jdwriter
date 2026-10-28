@@ -94,6 +94,11 @@ request and sent straight back — never stored, never logged. The campus form a
 the former incumbent, so neither does this. The magic wand sends the AI only the position, the
 request and the author's notes for that one narrative.
 
+**Problem reports** (decided 2026-10-28): CRU hosts JDWriter and carries its Azure costs, but not
+its support. The footer's "Report a problem" goes to the app's own admins (Back end → Reports), never
+to CRU's help desk. Reports — kind, message, page path (no query string), browser, sender — live in
+the database only and are never logged: a message may quote a job description.
+
 Seed the real corpus into `prod` only. `test` gets a scrubbed subset (`jdw-cli migrate-poc --scrub`).
 
 ### The corpus grows in use

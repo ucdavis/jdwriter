@@ -639,6 +639,24 @@ export type StandardRow = {
 };
 
 /** A re-read of the imported Word documents with the layout parser. */
+/** What a report from the footer's "Report a problem" is. */
+export type ReportKind = 'Bug' | 'Question' | 'Request';
+
+/** A problem report, as the back end's Reports inbox lists it. */
+export type ProblemReport = {
+  browser: string;
+  createdAt: string;
+  from: string | null;
+  fromEmail: string | null;
+  id: number;
+  kind: ReportKind;
+  message: string;
+  note: string;
+  page: string;
+  resolved: boolean;
+  resolvedAt: string | null;
+};
+
 /** A salary grade's annual range on the Career Tracks structure. */
 export type AnnualRange = {
   effectiveDate: string | null;

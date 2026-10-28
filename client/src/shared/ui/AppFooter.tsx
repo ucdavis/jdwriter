@@ -1,7 +1,9 @@
 import { asset } from '@/lib/basePath.ts';
+import { ReportProblem } from './ReportProblem.tsx';
 
 /**
- * The CAES People footer: the college lockup, who built it, and where to get help. It sits on the
+ * The CAES People footer: the college lockup, who built it, and how to report a problem — to the
+ * JDWriter team, not CRU's help desk: CRU hosts the app but doesn't take its support. It sits on the
  * page's own gray, with no band or rule of its own, as the other CAES apps' footers do. The corner art
  * is JDWriter's own — writing tools, gold on the left and blues on the right — in the layout the
  * other CAES apps share (Leaves has leaves), so the family reads as one while each app is its own.
@@ -43,14 +45,7 @@ export const AppFooter = () => (
         <span aria-hidden className="mx-2 text-base-content/30">
           |
         </span>
-        <a
-          className="underline hover:text-primary"
-          href="https://caeshelp.ucdavis.edu/?appname=JDWriter"
-          rel="noreferrer"
-          target="_blank"
-        >
-          Help
-        </a>
+        <ReportProblem />
       </p>
     </div>
   </footer>

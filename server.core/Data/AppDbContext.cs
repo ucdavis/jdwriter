@@ -14,6 +14,7 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
     public DbSet<JdFitReview> JdFitReviews => Set<JdFitReview>();
     public DbSet<CtTitle> CtTitles => Set<CtTitle>();
     public DbSet<SalaryRange> SalaryRanges => Set<SalaryRange>();
+    public DbSet<ProblemReport> ProblemReports => Set<ProblemReport>();
 
     // ---- official standards
     public DbSet<JobStandard> JobStandards => Set<JobStandard>();
@@ -130,6 +131,17 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
             e.Property(x => x.ToTitle).HasMaxLength(TitleLen);
             // One successor per retired code, or the remap is not a function.
             e.HasIndex(x => x.FromCode).IsUnique();
+        });
+
+        b.Entity<ProblemReport>(e =>
+        {
+            e.Property(x => x.Kind).HasMaxLength(20);
+            e.Property(x => x.Message).HasMaxLength(ProblemReport.MaxMessage);
+            e.Property(x => x.Page).HasMaxLength(ProblemReport.MaxPage);
+            e.Property(x => x.Browser).HasMaxLength(ProblemReport.MaxBrowser);
+            e.Property(x => x.Note).HasMaxLength(ProblemReport.MaxNote);
+            e.HasOne(x => x.CreatedBy).WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => new { x.Resolved, x.CreatedAt });
         });
 
         b.Entity<SalaryRange>(e =>

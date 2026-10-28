@@ -1,4 +1,7 @@
+import { openReportsQueryOptions } from '@/queries/reports.ts';
 import { useIsAdmin } from '@/shared/ui/AppShell.tsx';
+import { OpenCount } from '@/shared/ui/OpenCount.tsx';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 
 const tabs = [
@@ -8,6 +11,7 @@ const tabs = [
   { exact: false, label: 'Descriptions', to: '/backend/descriptions' },
   { exact: false, label: 'Reclassification', to: '/backend/fit' },
   { exact: false, label: 'Analytics', to: '/backend/analytics' },
+  { exact: false, label: 'Reports', to: '/backend/reports' },
   { exact: false, label: 'Settings', to: '/backend/settings' },
 ] as const;
 
@@ -18,6 +22,7 @@ const tabs = [
  */
 export const BackendNav = () => {
   const isAdmin = useIsAdmin();
+  const open = useQuery({ ...openReportsQueryOptions(), enabled: isAdmin }).data?.open ?? 0;
   if (!isAdmin) {
     return null;
   }
@@ -42,6 +47,7 @@ export const BackendNav = () => {
           to={t.to}
         >
           {t.label}
+          {t.to === '/backend/reports' ? <OpenCount open={open} /> : null}
         </Link>
       ))}
     </nav>

@@ -1,6 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import { appUrl, asset } from '@/lib/basePath.ts';
 import { AppFooter } from './AppFooter.tsx';
+import { OpenCount } from './OpenCount.tsx';
+import { openReportsQueryOptions } from '@/queries/reports.ts';
+import { useQuery } from '@tanstack/react-query';
 import { useUser } from '@/shared/auth/UserContext.tsx';
 import type { ReactNode } from 'react';
 
@@ -81,6 +84,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
               to="/backend"
             >
               Back end
+              <OpenReports />
             </Link>
           ) : null}
           <a
@@ -123,4 +127,10 @@ export const AdminOnly = ({ children }: { children: ReactNode }) => {
   }
 
   return <>{children}</>;
+};
+
+/** Open problem reports, on the admin's Back end link, so a new one is noticed from any page. */
+const OpenReports = () => {
+  const open = useQuery(openReportsQueryOptions()).data?.open ?? 0;
+  return <OpenCount open={open} />;
 };
