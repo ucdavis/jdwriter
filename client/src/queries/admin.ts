@@ -2,6 +2,7 @@ import { fetchJson } from '../lib/api.ts';
 import { uploadBody } from '../lib/uploads.ts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  AccessEntry,
   AnnualRange,
   AiCall,
   AnalyticsReport,
@@ -32,6 +33,7 @@ import type {
   StandardMatchReview,
   RetirementResult,
   StandardsIngestResponse,
+  WaitingEntry,
 } from '../lib/contracts.ts';
 
 export const useIngestStandards = () => {
@@ -462,5 +464,46 @@ export const useImportSalaryScale = () => {
       queryClient.setQueryData(['admin', 'salary-scale'], data);
       void queryClient.invalidateQueries({ queryKey: ['vrf', 'salary-range'] });
     },
+  });
+};
+
+/** Who may use JDWriter, and who has signed in without access. */
+export const useAccessList = () =>
+  useQuery({
+    queryFn: () => fetchJson<{ approved: AccessEntry[]; waiting: WaitingEntry[] }>('/api/admin/access'),
+    queryKey: ['admin', 'access'] as const,
+  });
+
+/** Access changes: the list, the reports inbox (requests resolve) and its badge all move. */
+const accessChanged = (queryClient: ReturnType<typeof useQueryClient>) =>
+  Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['admin', 'access'] }),
+    queryClient.invalidateQueries({ queryKey: ['admin', 'reports'] }),
+  ]);
+
+export const useGrantAccess = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (loginId: string) =>
+      fetchJson<{ loginId: string }>('/api/admin/access', { body: JSON.stringify({ loginId }), method: 'POST' }),
+    onSuccess: () => accessChanged(queryClient),
+  });
+};
+
+export const useRevokeAccess = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (loginId: string) =>
+      fetchJson<{ ok: true }>(`/api/admin/access/${encodeURIComponent(loginId)}`, { method: 'DELETE' }),
+    onSuccess: () => accessChanged(queryClient),
+  });
+};
+
+/** Approve everyone who has signed in without access: once, when the allow-list starts. */
+export const useApproveWaiting = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => fetchJson<{ approved: number }>('/api/admin/access/approve-waiting', { method: 'POST' }),
+    onSuccess: () => accessChanged(queryClient),
   });
 };

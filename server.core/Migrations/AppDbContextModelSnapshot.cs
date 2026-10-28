@@ -22,6 +22,35 @@ namespace server.core.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Server.Core.Domain.AccessGrant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("GrantedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("GrantedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LoginId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GrantedByUserId");
+
+                    b.HasIndex("LoginId")
+                        .IsUnique();
+
+                    b.ToTable("AccessGrants");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.AdminGrant", b =>
                 {
                     b.Property<int>("Id")
@@ -1980,6 +2009,16 @@ namespace server.core.Migrations
                     b.HasIndex("TitleKey");
 
                     b.ToTable("TitleCodes");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AccessGrant", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AppUser", "GrantedBy")
+                        .WithMany()
+                        .HasForeignKey("GrantedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("GrantedBy");
                 });
 
             modelBuilder.Entity("Server.Core.Domain.AdminGrant", b =>

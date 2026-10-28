@@ -13,6 +13,7 @@ import { Route as authenticatedRouteRouteImport } from './routes/(authenticated)
 import { Route as authenticatedIndexRouteImport } from './routes/(authenticated)/index'
 import { Route as authenticatedBackendRouteRouteImport } from './routes/(authenticated)/backend/route'
 import { Route as authenticatedClassifyRouteImport } from './routes/(authenticated)/classify'
+import { Route as authenticatedRequestAccessRouteImport } from './routes/(authenticated)/request-access'
 import { Route as authenticatedVrfRouteImport } from './routes/(authenticated)/vrf'
 import { Route as authenticatedBackendIndexRouteImport } from './routes/(authenticated)/backend/index'
 import { Route as authenticatedBackendAnalyticsRouteImport } from './routes/(authenticated)/backend/analytics'
@@ -54,6 +55,12 @@ const authenticatedClassifyRoute = authenticatedClassifyRouteImport.update({
   path: '/classify',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
+const authenticatedRequestAccessRoute =
+  authenticatedRequestAccessRouteImport.update({
+    id: '/request-access',
+    path: '/request-access',
+    getParentRoute: () => authenticatedRouteRoute,
+  } as any)
 const authenticatedVrfRoute = authenticatedVrfRouteImport.update({
   id: '/vrf',
   path: '/vrf',
@@ -173,6 +180,7 @@ const authenticatedBackendJdSlugSplatRoute =
 export interface FileRoutesByFullPath {
   '/backend': typeof authenticatedBackendRouteRouteWithChildren
   '/classify': typeof authenticatedClassifyRoute
+  '/request-access': typeof authenticatedRequestAccessRoute
   '/vrf': typeof authenticatedVrfRoute
   '/': typeof authenticatedIndexRoute
   '/backend/analytics': typeof authenticatedBackendAnalyticsRoute
@@ -197,6 +205,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/classify': typeof authenticatedClassifyRoute
+  '/request-access': typeof authenticatedRequestAccessRoute
   '/vrf': typeof authenticatedVrfRoute
   '/': typeof authenticatedIndexRoute
   '/backend/analytics': typeof authenticatedBackendAnalyticsRoute
@@ -224,6 +233,7 @@ export interface FileRoutesById {
   '/(authenticated)': typeof authenticatedRouteRouteWithChildren
   '/(authenticated)/backend': typeof authenticatedBackendRouteRouteWithChildren
   '/(authenticated)/classify': typeof authenticatedClassifyRoute
+  '/(authenticated)/request-access': typeof authenticatedRequestAccessRoute
   '/(authenticated)/vrf': typeof authenticatedVrfRoute
   '/(authenticated)/': typeof authenticatedIndexRoute
   '/(authenticated)/backend/analytics': typeof authenticatedBackendAnalyticsRoute
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/backend'
     | '/classify'
+    | '/request-access'
     | '/vrf'
     | '/'
     | '/backend/analytics'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/classify'
+    | '/request-access'
     | '/vrf'
     | '/'
     | '/backend/analytics'
@@ -301,6 +313,7 @@ export interface FileRouteTypes {
     | '/(authenticated)'
     | '/(authenticated)/backend'
     | '/(authenticated)/classify'
+    | '/(authenticated)/request-access'
     | '/(authenticated)/vrf'
     | '/(authenticated)/'
     | '/(authenticated)/backend/analytics'
@@ -356,6 +369,13 @@ declare module '@tanstack/react-router' {
       path: '/classify'
       fullPath: '/classify'
       preLoaderRoute: typeof authenticatedClassifyRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/request-access': {
+      id: '/(authenticated)/request-access'
+      path: '/request-access'
+      fullPath: '/request-access'
+      preLoaderRoute: typeof authenticatedRequestAccessRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
     '/(authenticated)/vrf': {
@@ -563,6 +583,7 @@ const authenticatedClassSlugRouteWithChildren =
 interface authenticatedRouteRouteChildren {
   authenticatedBackendRouteRoute: typeof authenticatedBackendRouteRouteWithChildren
   authenticatedClassifyRoute: typeof authenticatedClassifyRoute
+  authenticatedRequestAccessRoute: typeof authenticatedRequestAccessRoute
   authenticatedVrfRoute: typeof authenticatedVrfRoute
   authenticatedIndexRoute: typeof authenticatedIndexRoute
   authenticatedClassSlugRoute: typeof authenticatedClassSlugRouteWithChildren
@@ -573,6 +594,7 @@ interface authenticatedRouteRouteChildren {
 const authenticatedRouteRouteChildren: authenticatedRouteRouteChildren = {
   authenticatedBackendRouteRoute: authenticatedBackendRouteRouteWithChildren,
   authenticatedClassifyRoute: authenticatedClassifyRoute,
+  authenticatedRequestAccessRoute: authenticatedRequestAccessRoute,
   authenticatedVrfRoute: authenticatedVrfRoute,
   authenticatedIndexRoute: authenticatedIndexRoute,
   authenticatedClassSlugRoute: authenticatedClassSlugRouteWithChildren,

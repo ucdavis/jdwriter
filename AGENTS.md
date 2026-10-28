@@ -99,6 +99,13 @@ its support. The footer's "Report a problem" goes to the app's own admins (Back 
 to CRU's help desk. Reports — kind, message, page path (no query string), browser, sender — live in
 the database only and are never logged: a message may quote a job description.
 
+**Access is an allow-list in the app** (decided 2026-10-28, at CRU's request — not gated in Azure).
+The Author role goes only to approved campus logins (`AccessGrants`) and admins; anyone else who
+signs in gets no role, is sent to `/request-access`, and every endpoint refuses them. That works only
+because every controller requires a role — `Every_endpoint_but_the_users_own_account_and_sign_in_requires_a_role`
+guards it; a new controller must ask for `Author` or `Admin`, never just `[Authorize]`. Access requests
+are problem reports of kind `Access`, approved from Reports or Settings.
+
 Seed the real corpus into `prod` only. `test` gets a scrubbed subset (`jdw-cli migrate-poc --scrub`).
 
 ### The corpus grows in use

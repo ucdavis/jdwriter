@@ -98,6 +98,27 @@ public class ReportsController : ApiControllerBase
     public async Task<IActionResult> OpenCount(CancellationToken ct) =>
         Ok(new { open = await _db.ProblemReports.CountAsync(r => !r.Resolved, ct) });
 
+    /// <summary>Approve an access request: its sender joins the allow-list, and it's resolved.</summary>
+    [HttpPost("/api/admin/reports/{id:int}/approve-access")]
+    [Authorize(Roles = AppRoles.Admin)]
+    public async Task<IActionResult> ApproveAccess(int id, [FromServices] Server.Core.Access.AppAccess access, CancellationToken ct)
+    {
+        var report = await _db.ProblemReports.Include(r => r.CreatedBy).FirstOrDefaultAsync(r => r.Id == id, ct);
+        if (report is null || report.Kind != ProblemReport.Access)
+        {
+            return NotFound(new { message = "No such access request." });
+        }
+
+        var login = report.CreatedBy?.LoginId;
+        if (string.IsNullOrEmpty(login))
+        {
+            return BadRequest(new { message = "This request has no campus login to approve; add them by login under Settings → Who can use JDWriter." });
+        }
+
+        await access.GrantAsync(login, await User.IdAsync(_db, ct), ct);
+        return Ok(new { loginId = login });
+    }
+
     /// <summary>Resolve or reopen a report, with the admin's note.</summary>
     [HttpPost("/api/admin/reports/{id:int}/status")]
     [Authorize(Roles = AppRoles.Admin)]
