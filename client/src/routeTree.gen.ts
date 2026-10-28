@@ -20,6 +20,7 @@ import { Route as authenticatedBackendCodesRouteImport } from './routes/(authent
 import { Route as authenticatedBackendCorpusRouteImport } from './routes/(authenticated)/backend/corpus'
 import { Route as authenticatedBackendFitRouteImport } from './routes/(authenticated)/backend/fit'
 import { Route as authenticatedBackendJobsRouteImport } from './routes/(authenticated)/backend/jobs'
+import { Route as authenticatedBackendReportsRouteImport } from './routes/(authenticated)/backend/reports'
 import { Route as authenticatedBackendSettingsRouteImport } from './routes/(authenticated)/backend/settings'
 import { Route as authenticatedBackendStandardsRouteImport } from './routes/(authenticated)/backend/standards'
 import { Route as authenticatedClassSlugRouteImport } from './routes/(authenticated)/class.$slug'
@@ -91,6 +92,12 @@ const authenticatedBackendJobsRoute =
   authenticatedBackendJobsRouteImport.update({
     id: '/jobs',
     path: '/jobs',
+    getParentRoute: () => authenticatedBackendRouteRoute,
+  } as any)
+const authenticatedBackendReportsRoute =
+  authenticatedBackendReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
     getParentRoute: () => authenticatedBackendRouteRoute,
   } as any)
 const authenticatedBackendSettingsRoute =
@@ -173,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/backend/corpus': typeof authenticatedBackendCorpusRoute
   '/backend/fit': typeof authenticatedBackendFitRoute
   '/backend/jobs': typeof authenticatedBackendJobsRoute
+  '/backend/reports': typeof authenticatedBackendReportsRoute
   '/backend/settings': typeof authenticatedBackendSettingsRoute
   '/backend/standards': typeof authenticatedBackendStandardsRoute
   '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
@@ -196,6 +204,7 @@ export interface FileRoutesByTo {
   '/backend/corpus': typeof authenticatedBackendCorpusRoute
   '/backend/fit': typeof authenticatedBackendFitRoute
   '/backend/jobs': typeof authenticatedBackendJobsRoute
+  '/backend/reports': typeof authenticatedBackendReportsRoute
   '/backend/settings': typeof authenticatedBackendSettingsRoute
   '/backend/standards': typeof authenticatedBackendStandardsRoute
   '/class/$slug': typeof authenticatedClassSlugRouteWithChildren
@@ -222,6 +231,7 @@ export interface FileRoutesById {
   '/(authenticated)/backend/corpus': typeof authenticatedBackendCorpusRoute
   '/(authenticated)/backend/fit': typeof authenticatedBackendFitRoute
   '/(authenticated)/backend/jobs': typeof authenticatedBackendJobsRoute
+  '/(authenticated)/backend/reports': typeof authenticatedBackendReportsRoute
   '/(authenticated)/backend/settings': typeof authenticatedBackendSettingsRoute
   '/(authenticated)/backend/standards': typeof authenticatedBackendStandardsRoute
   '/(authenticated)/class/$slug': typeof authenticatedClassSlugRouteWithChildren
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/backend/corpus'
     | '/backend/fit'
     | '/backend/jobs'
+    | '/backend/reports'
     | '/backend/settings'
     | '/backend/standards'
     | '/class/$slug'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/backend/corpus'
     | '/backend/fit'
     | '/backend/jobs'
+    | '/backend/reports'
     | '/backend/settings'
     | '/backend/standards'
     | '/class/$slug'
@@ -296,6 +308,7 @@ export interface FileRouteTypes {
     | '/(authenticated)/backend/corpus'
     | '/(authenticated)/backend/fit'
     | '/(authenticated)/backend/jobs'
+    | '/(authenticated)/backend/reports'
     | '/(authenticated)/backend/settings'
     | '/(authenticated)/backend/standards'
     | '/(authenticated)/class/$slug'
@@ -394,6 +407,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedBackendJobsRouteImport
       parentRoute: typeof authenticatedBackendRouteRoute
     }
+    '/(authenticated)/backend/reports': {
+      id: '/(authenticated)/backend/reports'
+      path: '/reports'
+      fullPath: '/backend/reports'
+      preLoaderRoute: typeof authenticatedBackendReportsRouteImport
+      parentRoute: typeof authenticatedBackendRouteRoute
+    }
     '/(authenticated)/backend/settings': {
       id: '/(authenticated)/backend/settings'
       path: '/settings'
@@ -487,6 +507,7 @@ interface authenticatedBackendRouteRouteChildren {
   authenticatedBackendCorpusRoute: typeof authenticatedBackendCorpusRoute
   authenticatedBackendFitRoute: typeof authenticatedBackendFitRoute
   authenticatedBackendJobsRoute: typeof authenticatedBackendJobsRoute
+  authenticatedBackendReportsRoute: typeof authenticatedBackendReportsRoute
   authenticatedBackendSettingsRoute: typeof authenticatedBackendSettingsRoute
   authenticatedBackendStandardsRoute: typeof authenticatedBackendStandardsRoute
   authenticatedBackendIndexRoute: typeof authenticatedBackendIndexRoute
@@ -505,6 +526,7 @@ const authenticatedBackendRouteRouteChildren: authenticatedBackendRouteRouteChil
     authenticatedBackendCorpusRoute: authenticatedBackendCorpusRoute,
     authenticatedBackendFitRoute: authenticatedBackendFitRoute,
     authenticatedBackendJobsRoute: authenticatedBackendJobsRoute,
+    authenticatedBackendReportsRoute: authenticatedBackendReportsRoute,
     authenticatedBackendSettingsRoute: authenticatedBackendSettingsRoute,
     authenticatedBackendStandardsRoute: authenticatedBackendStandardsRoute,
     authenticatedBackendIndexRoute: authenticatedBackendIndexRoute,
