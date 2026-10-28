@@ -270,6 +270,54 @@ public class AdminController : ApiControllerBase
         }
     }
 
+    // ---------------------------------------------------------------- access allow-list
+
+    /// <summary>Who may use JDWriter, and who has signed in without access (those who asked first).</summary>
+    [HttpGet("access")]
+    public async Task<IActionResult> Access([FromServices] AppAccess access, CancellationToken ct)
+    {
+        var (approved, waiting) = await access.ListAsync(ct);
+        return Ok(new { approved, waiting });
+    }
+
+    /// <summary>
+    /// Approve a campus login: on that person's next page they can use the app. Resolves any access
+    /// request of theirs.
+    /// </summary>
+    [HttpPost("access")]
+    public async Task<IActionResult> GrantAccess(AdminGrantRequest body, [FromServices] AppAccess access, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(new { loginId = await access.GrantAsync(body.LoginId, await User.IdAsync(_db, ct), ct) });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Approve everyone who has signed in without access — once, when the allow-list starts.</summary>
+    [HttpPost("access/approve-waiting")]
+    public async Task<IActionResult> ApproveWaiting([FromServices] AppAccess access, CancellationToken ct)
+    {
+        var (_, waiting) = await access.ListAsync(ct);
+        var by = await User.IdAsync(_db, ct);
+        foreach (var w in waiting)
+        {
+            await access.GrantAsync(w.LoginId, by, ct);
+        }
+
+        return Ok(new { approved = waiting.Count });
+    }
+
+    [HttpDelete("access/{loginId}")]
+    public async Task<IActionResult> RevokeAccess(string loginId, [FromServices] AppAccess access, CancellationToken ct)
+    {
+        await access.RevokeAsync(loginId, ct);
+        return Ok(new { ok = true });
+    }
+
     [HttpDelete("admins/{loginId}")]
     public async Task<IActionResult> RevokeAdmin(string loginId, CancellationToken ct)
     {

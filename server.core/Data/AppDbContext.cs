@@ -15,6 +15,7 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
     public DbSet<CtTitle> CtTitles => Set<CtTitle>();
     public DbSet<SalaryRange> SalaryRanges => Set<SalaryRange>();
     public DbSet<ProblemReport> ProblemReports => Set<ProblemReport>();
+    public DbSet<AccessGrant> AccessGrants => Set<AccessGrant>();
 
     // ---- official standards
     public DbSet<JobStandard> JobStandards => Set<JobStandard>();
@@ -476,6 +477,14 @@ public partial class AppDbContext(DbContextOptions<AppDbContext> options) : DbCo
             e.Property(x => x.LastFour).HasMaxLength(4);
             e.HasOne(x => x.UpdatedBy).WithMany()
                 .HasForeignKey(x => x.UpdatedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<AccessGrant>(e =>
+        {
+            e.Property(x => x.LoginId).HasMaxLength(64);
+            e.HasIndex(x => x.LoginId).IsUnique();
+            e.HasOne(x => x.GrantedBy).WithMany()
+                .HasForeignKey(x => x.GrantedByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<AdminGrant>(e =>

@@ -1,7 +1,9 @@
 import { fetchJson } from '../lib/api.ts';
-import { type QueryClient, useQuery } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type User = {
+  /** When this person, not yet approved, asked for access; null if they haven't. */
+  accessRequestedAt?: string | null;
   email: string;
   iamId: string | null;
   id: string;
@@ -22,6 +24,27 @@ export const meQueryOptions = () => ({
  * else is an Author. Cosmetic: the server enforces it regardless.
  */
 export const ADMIN_ROLE = 'Admin';
+
+/**
+ * Using JDWriter at all. Only approved logins and admins have it (the allow-list); anyone else who
+ * signs in sees only the page to ask for access.
+ */
+export const AUTHOR_ROLE = 'Author';
+
+export const hasAccess = (user: Pick<User, 'roles'>) => user.roles.includes(AUTHOR_ROLE);
+
+/** Ask to use JDWriter: lands in the admins' Reports inbox. */
+export const useRequestAccess = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (message: string) =>
+      fetchJson<{ hasAccess: boolean; requestedAt: string | null }>('/api/user/access-request', {
+        body: JSON.stringify({ message }),
+        method: 'POST',
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users', 'me'] }),
+  });
+};
 
 /**
  * For route loaders that prefetch an admin-only endpoint. Prefetching it for anyone else
