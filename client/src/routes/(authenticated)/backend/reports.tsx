@@ -1,6 +1,6 @@
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import type { ProblemReport } from '@/lib/contracts.ts';
-import { reportsQueryOptions, useSetReportStatus, type ReportFilter } from '@/queries/reports.ts';
+import { reportsQueryOptions, useApproveAccess, useSetReportStatus, type ReportFilter } from '@/queries/reports.ts';
 import { AdminOnly } from '@/shared/ui/AppShell.tsx';
 import { Badge, Card, PageHeader } from '@/shared/ui/primitives.tsx';
 import { usePageTitle } from '@/shared/ui/usePageTitle.ts';
@@ -18,8 +18,8 @@ const FILTERS: Array<{ label: string; value: ReportFilter }> = [
   { label: 'All', value: 'all' },
 ];
 
-const tone = { Bug: 'red', Question: 'accent', Request: 'yellow' } as const;
-const kindLabel = { Bug: 'Something’s wrong', Question: 'Question', Request: 'Request' } as const;
+const tone = { Access: 'purple', Bug: 'red', Question: 'accent', Request: 'yellow' } as const;
+const kindLabel = { Access: 'Access request', Bug: 'Something’s wrong', Question: 'Question', Request: 'Request' } as const;
 
 /**
  * JDWriter's support inbox: what people sent from the footer's "Report a problem". The app's own
@@ -36,7 +36,7 @@ function ReportsPage() {
     <AdminOnly>
       <PageHeader
         eyebrow="Back end · support"
-        sub="Bug reports, requests and questions sent from “Report a problem” at the foot of every page. They come here, not to CRU’s help desk."
+        sub="Bug reports, requests and questions sent from “Report a problem” at the foot of every page, and requests to use JDWriter. They come here, not to CRU’s help desk."
         title="Reports"
       />
       <div aria-label="Show" className="join mb-4" role="group">
@@ -75,6 +75,9 @@ function ReportsPage() {
 const ReportCard = ({ report }: { report: ProblemReport }) => {
   const [note, setNote] = useState(report.note);
   const status = useSetReportStatus();
+  const approve = useApproveAccess();
+  const asksAccess = report.kind === 'Access' && !report.resolved;
+  const error = status.error ?? approve.error;
 
   return (
     <Card className="p-4">
@@ -107,13 +110,23 @@ const ReportCard = ({ report }: { report: ProblemReport }) => {
           />
         </label>
         <div className="mt-2 flex flex-wrap items-center gap-2">
+          {asksAccess ? (
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={approve.isPending}
+              onClick={() => approve.mutate(report.id)}
+              type="button"
+            >
+              {approve.isPending ? 'Approving…' : 'Approve access'}
+            </button>
+          ) : null}
           <button
-            className={`btn btn-sm ${report.resolved ? 'btn-outline' : 'btn-primary'}`}
+            className={`btn btn-sm ${report.resolved || asksAccess ? 'btn-outline' : 'btn-primary'}`}
             disabled={status.isPending}
             onClick={() => status.mutate({ id: report.id, note, resolved: !report.resolved })}
             type="button"
           >
-            {report.resolved ? 'Reopen' : 'Mark resolved'}
+            {report.resolved ? 'Reopen' : asksAccess ? 'Decline' : 'Mark resolved'}
           </button>
           {report.resolved && note !== report.note ? (
             <button
@@ -130,9 +143,9 @@ const ReportCard = ({ report }: { report: ProblemReport }) => {
               Resolved {new Date(report.resolvedAt).toLocaleDateString()}
             </span>
           ) : null}
-          {status.error ? (
+          {error ? (
             <span className="text-sm text-error" role="alert">
-              {messageOf(status.error)}
+              {messageOf(error)}
             </span>
           ) : null}
         </div>

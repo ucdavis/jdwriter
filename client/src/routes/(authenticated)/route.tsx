@@ -1,28 +1,50 @@
 import {
   createFileRoute,
   Outlet,
+  redirect,
   type ErrorComponentProps,
 } from '@tanstack/react-router';
 import { HttpError } from '../../lib/api.ts';
 import { RouterContext } from '../../main.tsx';
-import { meQueryOptions } from '../../queries/user.ts';
+import { hasAccess, meQueryOptions } from '../../queries/user.ts';
 import { AppShell } from '@/shared/ui/AppShell.tsx';
-import { UserProvider } from '@/shared/auth/UserContext.tsx';
+import { UserProvider, useUser } from '@/shared/auth/UserContext.tsx';
 import { appUrl, asset } from '@/lib/basePath.ts';
 
 export const Route = createFileRoute('/(authenticated)')({
-  beforeLoad: async ({ context }: { context: RouterContext }) => {
-    await context.queryClient.ensureQueryData(meQueryOptions());
+  // Not on the allow-list: only the page to ask for access, before any page's data is asked for
+  // (and refused). On it, someone who has access is sent on to the app.
+  beforeLoad: async ({ context, location }: { context: RouterContext; location: { pathname: string } }) => {
+    const me = await context.queryClient.ensureQueryData(meQueryOptions());
+    const asking = location.pathname === '/request-access';
+    if (!hasAccess(me) && !asking) {
+      throw redirect({ to: '/request-access' });
+    }
+    if (hasAccess(me) && asking) {
+      throw redirect({ to: '/' });
+    }
   },
   component: () => (
     <UserProvider>
-      <AppShell>
-        <Outlet />
-      </AppShell>
+      <Frame />
     </UserProvider>
   ),
   errorComponent: AuthenticatedRouteError,
 });
+
+/** The app's frame for those with access; the bare request page for those without. */
+function Frame() {
+  const user = useUser();
+  if (!hasAccess(user)) {
+    return <Outlet />;
+  }
+
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  );
+}
 
 function AuthenticatedRouteError({ error }: ErrorComponentProps<unknown>) {
   if (error instanceof HttpError && error.status === 403) {

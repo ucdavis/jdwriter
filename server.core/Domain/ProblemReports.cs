@@ -13,11 +13,15 @@ public class ProblemReport
     public const int MaxBrowser = 400;
     public const int MaxNote = 2000;
 
+    /// <summary>What anyone with access can send from the footer.</summary>
     public static readonly string[] Kinds = ["Bug", "Request", "Question"];
+
+    /// <summary>A request to use JDWriter, from someone not yet on the allow-list.</summary>
+    public const string Access = "Access";
 
     public int Id { get; set; }
 
-    /// <summary>Bug, Request or Question.</summary>
+    /// <summary>Bug, Request, Question, or Access (a request to use the app).</summary>
     public string Kind { get; set; } = "Bug";
 
     public string Message { get; set; } = "";

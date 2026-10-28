@@ -69,6 +69,22 @@ public class AdminGrant
 }
 
 /// <summary>
+/// The access allow-list: a campus login approved to use JDWriter (decided 2026-10-28 — access is
+/// gated in the app, not in Azure). Admins always have access and need no grant.
+/// </summary>
+public class AccessGrant
+{
+    public int Id { get; set; }
+
+    /// <summary>Normalized campus login id. Unique.</summary>
+    public string LoginId { get; set; } = "";
+
+    public int? GrantedByUserId { get; set; }
+    public AppUser? GrantedBy { get; set; }
+    public DateTimeOffset GrantedAt { get; set; }
+}
+
+/// <summary>
 /// Campus login ids: normalizing what an admin types, and deriving one from a signed-in user.
 /// </summary>
 public static partial class CampusLogin

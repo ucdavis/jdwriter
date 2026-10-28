@@ -37,3 +37,17 @@ export const useSetReportStatus = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'reports'] }),
   });
 };
+
+/** Approve an access request from the inbox: its sender joins the allow-list. */
+export const useApproveAccess = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      fetchJson<{ loginId: string }>(`/api/admin/reports/${id}/approve-access`, { method: 'POST' }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin', 'reports'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin', 'access'] }),
+      ]),
+  });
+};
