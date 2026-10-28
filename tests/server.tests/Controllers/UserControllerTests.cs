@@ -10,11 +10,11 @@ namespace Server.Tests.Controllers;
 public class UserControllerTests
 {
     [Fact]
-    public void Me_returns_iam_id_claim()
+    public async Task Me_returns_iam_id_claim()
     {
         var controller = CreateController("123456789");
 
-        var result = controller.Me();
+        var result = await controller.Me(default);
 
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         using var json = JsonDocument.Parse(JsonSerializer.Serialize(okResult.Value));
@@ -22,11 +22,11 @@ public class UserControllerTests
     }
 
     [Fact]
-    public void Me_returns_null_iam_id_when_claim_is_missing()
+    public async Task Me_returns_null_iam_id_when_claim_is_missing()
     {
         var controller = CreateController();
 
-        var result = controller.Me();
+        var result = await controller.Me(default);
 
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         using var json = JsonDocument.Parse(JsonSerializer.Serialize(okResult.Value));
@@ -49,7 +49,7 @@ public class UserControllerTests
 
         var user = new ClaimsPrincipal(new ClaimsIdentity(claims, "TestAuth"));
 
-        return new UserController
+        return new UserController(TestDbContextFactory.CreateInMemory())
         {
             ControllerContext = new ControllerContext
             {

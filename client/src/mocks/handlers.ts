@@ -864,6 +864,7 @@ export const handlers = [
   http.post('/api/reports', () => HttpResponse.json({ sent: true })),
   http.get('/api/admin/reports/open-count', () => HttpResponse.json({ open: 0 })),
   http.get('/api/admin/reports', () => HttpResponse.json({ open: 0, reports: [] })),
+  http.get('/api/admin/access', () => HttpResponse.json({ approved: [], waiting: [] })),
 
   http.get('/api/admin/package/info', () => HttpResponse.json({ acceptsRealData: true, acceptsScrubbed: true })),
 

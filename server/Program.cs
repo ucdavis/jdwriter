@@ -88,6 +88,7 @@ try
     // add scoped services here
     builder.Services.AddScoped<IDbInitializer, DbInitializer>();
     builder.Services.AddScoped<AdminAccess>();
+    builder.Services.AddScoped<AppAccess>();
     builder.Services.AddScoped<AuthoredJdStore>();
     builder.Services.AddSingleton<EnvelopeCheckCache>();
     builder.Services.AddScoped<IUserService, UserService>();

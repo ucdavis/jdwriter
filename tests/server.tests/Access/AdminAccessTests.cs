@@ -71,7 +71,7 @@ public class AdminAccessTests
     // ------------------------------------------------------------------ roles
 
     [Fact]
-    public async Task Everyone_is_an_author_and_only_the_whitelist_is_admin()
+    public async Task Only_the_allow_list_and_admins_are_authors_and_only_the_admin_list_is_admin()
     {
         using var db = TestDbContextFactory.CreateInMemory();
         var config = Config();
@@ -79,6 +79,10 @@ public class AdminAccessTests
 
         (await RolesFor(db, config, Principal("a", "rsmith@ucdavis.edu")))
             .Should().Equal(AppRoles.Admin, AppRoles.Author);
+        (await RolesFor(db, config, Principal("b", "someone@ucdavis.edu")))
+            .Should().BeEmpty("signing in with a campus account is not enough: access is an allow-list");
+
+        await new AppAccess(db, new AdminAccess(db, config)).GrantAsync("someone", null);
         (await RolesFor(db, config, Principal("b", "someone@ucdavis.edu")))
             .Should().Equal(AppRoles.Author);
     }
@@ -90,7 +94,7 @@ public class AdminAccessTests
         var config = Config("rsmith");
 
         (await RolesFor(db, config, Principal("x", "rsmith@elsewhere.edu")))
-            .Should().Equal(AppRoles.Author);
+            .Should().BeEmpty();
     }
 
     [Fact]
@@ -102,7 +106,7 @@ public class AdminAccessTests
         (await RolesFor(db, config, Principal("s1", "sample@example.test", LocalAuthentication.Scheme)))
             .Should().Contain(AppRoles.Admin);
         (await RolesFor(db, config, Principal("s2", "sample@example.test")))
-            .Should().Equal(AppRoles.Author);
+            .Should().BeEmpty();
     }
 
     [Fact]
@@ -117,7 +121,7 @@ public class AdminAccessTests
 
         await access.RevokeAsync("jdoe");
 
-        (await RolesFor(db, config, p)).Should().Equal(AppRoles.Author);
+        (await RolesFor(db, config, p)).Should().BeEmpty("a former admin isn't on the allow-list");
     }
 
     [Fact]

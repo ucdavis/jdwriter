@@ -16,6 +16,10 @@ import {
   useSecurityStatus,
   useSetApiKey,
   aiCallsQueryOptions,
+  useAccessList,
+  useApproveWaiting,
+  useGrantAccess,
+  useRevokeAccess,
 } from '@/queries/admin.ts';
 import { messageOf } from '@/features/browse/NlIntake.tsx';
 import { appUrl } from '@/lib/basePath.ts';
@@ -46,6 +50,7 @@ function SettingsPage() {
         sub="Who can reach the back end, the API key the app uses, and moving everything between environments. Everyone who signs in can author and classify."
         title="Settings"
       />
+      <AccessPanel />
       <AdminsPanel />
       <ApiKeyPanel />
       <AiCallsPanel />
@@ -233,6 +238,127 @@ const SectionDetails = ({ section }: { section: PackageSection }) => {
 };
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString() : null);
+
+/**
+ * The access allow-list (decided 2026-10-28: gated here, not in Azure). Admins always have access.
+ * Anyone else who signs in sees only a page to ask, and their request lands in Reports; it can be
+ * approved there or here. Changes take effect on the person's next page.
+ */
+function AccessPanel() {
+  const { data } = useAccessList();
+  const grant = useGrantAccess();
+  const revoke = useRevokeAccess();
+  const approveAll = useApproveWaiting();
+  const [loginId, setLoginId] = useState('');
+  const approved = data?.approved ?? [];
+  const waiting = data?.waiting ?? [];
+  const error = grant.error ?? revoke.error ?? approveAll.error;
+
+  return (
+    <Card className="mb-5 p-5">
+      <Eyebrow>Who can use JDWriter</Eyebrow>
+      <p className="mt-1 text-base text-base-content/70">
+        Only the people listed here, and the admins below, can use JDWriter. Anyone else who signs in is asked to
+        request access; their request comes to Reports. Add someone by UC Davis login ID — it takes effect on their
+        next page.
+      </p>
+
+      <form
+        className="mt-4 flex flex-wrap items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          grant.mutate(loginId, { onSuccess: () => setLoginId('') });
+        }}
+      >
+        <input
+          aria-label="UC Davis login ID to approve"
+          className="input input-sm input-bordered w-64"
+          onChange={(e) => setLoginId(e.target.value)}
+          placeholder="e.g. rsmith"
+          value={loginId}
+        />
+        <button className="btn btn-primary btn-sm" disabled={!loginId.trim() || grant.isPending} type="submit">
+          {grant.isPending ? 'Adding…' : 'Give access'}
+        </button>
+      </form>
+
+      {error ? (
+        <div className="mt-3">
+          <Note tone="red">{messageOf(error)}</Note>
+        </div>
+      ) : null}
+
+      {waiting.length > 0 ? (
+        <div className="mt-5" data-testid="access-waiting">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-base font-semibold">Signed in without access ({waiting.length})</h3>
+            <button
+              className="btn btn-outline btn-sm"
+              disabled={approveAll.isPending}
+              onClick={() => approveAll.mutate()}
+              type="button"
+            >
+              {approveAll.isPending ? 'Approving…' : `Approve all ${waiting.length}`}
+            </button>
+          </div>
+          <ul className="mt-2 divide-y divide-base-300 rounded-lg border border-base-300">
+            {waiting.map((w) => (
+              <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={w.loginId}>
+                <div className="min-w-0">
+                  <div className="text-base font-semibold">
+                    {w.loginId}
+                    {w.displayName ? <span className="font-normal text-base-content/70"> · {w.displayName}</span> : null}
+                    {w.requestedAt ? <span className="ml-2"><Badge tone="yellow">asked {when(w.requestedAt)}</Badge></span> : null}
+                  </div>
+                  <div className="text-sm text-base-content/70">{w.lastSeenAt ? `Last seen ${when(w.lastSeenAt)}` : ''}</div>
+                </div>
+                <button
+                  className="btn btn-primary btn-sm"
+                  disabled={grant.isPending}
+                  onClick={() => grant.mutate(w.loginId)}
+                  type="button"
+                >
+                  Approve
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      <h3 className="mt-5 text-base font-semibold">Approved ({approved.length})</h3>
+      {approved.length === 0 ? (
+        <p className="mt-1 text-base text-base-content/70">Nobody yet — only the admins can use JDWriter.</p>
+      ) : (
+        <ul className="mt-2 divide-y divide-base-300 rounded-lg border border-base-300" data-testid="access-approved">
+          {approved.map((a) => (
+            <li className="flex items-center justify-between gap-3 px-3 py-2.5" key={a.loginId}>
+              <div className="min-w-0">
+                <div className="text-base font-semibold">
+                  {a.loginId}
+                  {a.displayName ? <span className="font-normal text-base-content/70"> · {a.displayName}</span> : null}
+                </div>
+                <div className="text-sm text-base-content/70">
+                  {a.lastSeenAt ? `Last seen ${when(a.lastSeenAt)}` : 'Has not signed in yet'}
+                  {a.grantedAt ? ` · added ${when(a.grantedAt)}${a.grantedBy ? ` by ${a.grantedBy}` : ''}` : ''}
+                </div>
+              </div>
+              <button
+                aria-label={`Remove access for ${a.loginId}`}
+                className="btn btn-ghost btn-sm text-error"
+                disabled={revoke.isPending}
+                onClick={() => revoke.mutate(a.loginId)}
+                type="button"
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
 
 function AdminsPanel() {
   const { data } = useAdmins();

@@ -34,10 +34,16 @@ public class AuthenticationHelperTests : IDisposable
         services.AddSingleton<IConfiguration>(configuration);
         services.AddScoped(_ => TestDbContextFactory.CreateInMemory());
         services.AddScoped<Server.Core.Access.AdminAccess>();
+        services.AddScoped<Server.Core.Access.AppAccess>();
         services.AddScoped<IUserService, UserService>();
         services.AddAuthenticationServices(configuration, new TestEnvironment());
         _provider = services.BuildServiceProvider();
         _scope = _provider.CreateScope();
+
+        // The test person is on the allow-list: these tests are about how roles are applied.
+        var db = _scope.ServiceProvider.GetRequiredService<Server.Core.Data.AppDbContext>();
+        db.AccessGrants.Add(new AccessGrant { LoginId = "sampleuser", GrantedAt = DateTimeOffset.UtcNow });
+        db.SaveChanges();
     }
 
     [Theory]
@@ -174,6 +180,7 @@ public class AuthenticationHelperTests : IDisposable
         var claims = new List<Claim>
         {
             new("name", "Sample User"),
+            new("preferred_username", "sampleuser@ucdavis.edu"),
             new("ucdPersonIAMID", "sandbox-10001"),
         };
         if (userId != null)

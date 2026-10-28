@@ -639,8 +639,27 @@ export type StandardRow = {
 };
 
 /** A re-read of the imported Word documents with the layout parser. */
-/** What a report from the footer's "Report a problem" is. */
-export type ReportKind = 'Bug' | 'Question' | 'Request';
+/** What a report is: from the footer's "Report a problem", or a request to use the app. */
+export type ReportKind = 'Access' | 'Bug' | 'Question' | 'Request';
+
+/** A login on the access allow-list. */
+export type AccessEntry = {
+  displayName: string | null;
+  email: string | null;
+  grantedAt: string | null;
+  grantedBy: string | null;
+  lastSeenAt: string | null;
+  loginId: string;
+};
+
+/** Someone who has signed in without access, and when they asked, if they did. */
+export type WaitingEntry = {
+  displayName: string | null;
+  email: string | null;
+  lastSeenAt: string | null;
+  loginId: string;
+  requestedAt: string | null;
+};
 
 /** A problem report, as the back end's Reports inbox lists it. */
 export type ProblemReport = {

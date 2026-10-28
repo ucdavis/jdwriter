@@ -34,19 +34,22 @@ public class UserService : IUserService
     private readonly ILogger<UserService> _logger;
     private readonly AppDbContext _dbContext;
     private readonly AdminAccess _admins;
+    private readonly AppAccess _access;
 
-    public UserService(ILogger<UserService> logger, AppDbContext dbContext, AdminAccess admins)
+    public UserService(ILogger<UserService> logger, AppDbContext dbContext, AdminAccess admins, AppAccess? access = null)
     {
         _logger = logger;
         _dbContext = dbContext;
         _admins = admins;
+        _access = access ?? new AppAccess(dbContext, admins);
     }
 
     /// <summary>
     /// Record the user (creating the row on first sign-in) and work out their roles.
     ///
-    /// Authoring is self-service, so everyone gets Author. Admin is granted only by the whitelist,
-    /// because an admin edits the envelopes every author writes against.
+    /// Author goes to the approved logins and the admins (the allow-list, decided 2026-10-28);
+    /// anyone else gets no role, and every endpoint but their own account's refuses them. Admin is
+    /// granted only by the admin list, because an admin edits the envelopes every author writes against.
     /// </summary>
     private async Task<List<string>> GetRolesForUser(ClaimsPrincipal principal, string userId)
     {
@@ -76,9 +79,12 @@ public class UserService : IUserService
         user.LastSeenAt = DateTimeOffset.UtcNow;
         await _dbContext.SaveChangesAsync();
 
-        return await _admins.IsAdminAsync(loginId)
-            ? [AppRoles.Author, AppRoles.Admin]
-            : [AppRoles.Author];
+        if (await _admins.IsAdminAsync(loginId))
+        {
+            return [AppRoles.Author, AppRoles.Admin];
+        }
+
+        return await _access.HasAccessAsync(loginId) ? [AppRoles.Author] : [];
     }
 
     public async Task<ClaimsPrincipal?> UpdateUserPrincipalIfNeeded(ClaimsPrincipal principal)
