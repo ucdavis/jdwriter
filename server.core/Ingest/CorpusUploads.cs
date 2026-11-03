@@ -22,6 +22,9 @@ public sealed class UploadOutcome
 
     /// <summary>For a document: "parsed" (read straight from its layout) or "ai" (an unrecognized layout, read by the model).</summary>
     public string? ReadBy { get; set; }
+
+    /// <summary>For a document: a job code the JD added or marked active, for the admin to know.</summary>
+    public string? Note { get; set; }
 }
 
 /// <summary>A class with uploaded exports waiting to be ingested.</summary>

@@ -5,6 +5,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Caching.Memory;
 using Server.Core.Data;
 using Server.Core.Domain;
 using Server.Core.Ingest;
@@ -48,13 +49,14 @@ public class WordJobDescriptionsTests
     }
 
     /// <summary>An HRTMS job description export, as Word: label/value rows and the % TIME table.</summary>
-    private static byte[] HrtmsExport(string code = "009605", string position = "40000001", bool withDuties = true) => Docx(
+    private static byte[] HrtmsExport(
+        string code = "009605", string position = "40000001", bool withDuties = true, string title = "LAB AST 1") => Docx(
         new Table(
             Row(Cell("Business Unit (Location):"), Cell("DVCMP")),
             Row(Cell("Department Name:"), Cell("Synthetic Dept")),
             Row(Cell("Job Description Number"), Cell("100001")),
             Row(Cell("UCPath Position Number"), Cell(position)),
-            Row(Cell("UC Job Title:"), Cell("LAB AST 1")),
+            Row(Cell("UC Job Title:"), Cell(title)),
             Row(Cell("UC Job Code:"), Cell(code)),
             Row(Cell("Working Title:"), Cell("Greenhouse Technician")),
             Row(Cell("Salary Grade:"), Cell("Grade 17")),
@@ -280,5 +282,97 @@ public class WordJobDescriptionsTests
         jd.SourceFile.Should().Be(CorpusNames.Imported("sha1".PadRight(16, '0')), "the same name its class was built from");
         jd.Origin.Should().Be(CorpusOrigin.Imported);
         (await db.CorpusUploads.SingleAsync(u => u.Id == 2)).Status.Should().Be(CorpusUploadStatus.Failed, "only the old duties rule is revisited");
+    }
+
+    /// <summary>The real title service over a database holding these reference rows, so an import that changes the reference is seen.</summary>
+    private static (AppDbContext Db, CorpusDocuments Documents) HarnessOver(params TitleCode[] reference)
+    {
+        var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase($"vouch_{Guid.NewGuid():N}")
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+            .Options);
+        db.TitleCodes.AddRange(reference);
+        db.SaveChanges();
+        var titles = new TitleCodeService(db, new MemoryCache(new MemoryCacheOptions()));
+        return (db, new CorpusDocuments(db, titles, new CountingDistiller(), new FakeStructuredLlm()));
+    }
+
+    private static TitleCode Ref(string code, string title, string source = "both") => new()
+    {
+        Code = code, Title = title, Source = source,
+        TitleKey = TitleNormalizer.TitleKey(title), TitleCodeKey = TitleNormalizer.TitleCodeKey(title),
+    };
+
+    [Fact]
+    public async Task A_code_newer_than_the_reference_is_added_from_the_export_that_states_it()
+    {
+        var (db, documents) = HarnessOver(Ref("009605", "LAB AST 1"));
+
+        var outcome = await documents.ImportAsync("a.docx", HrtmsExport(code: "006438", title: "GREENHOUSE TECH 2"), DocxMime, null);
+
+        outcome.Result.Should().Be("added");
+        outcome.UcJobCode.Should().Be("006438");
+        outcome.Note.Should().Contain("GREENHOUSE TECH 2 (006438)").And.Contain("added");
+        var added = await db.TitleCodes.SingleAsync(t => t.Code == "006438");
+        added.Source.Should().Be(TitleCode.ExportSource);
+        added.Grade.Should().Be("Grade 17");
+        added.IsInUse.Should().BeTrue();
+        (await db.JobDescriptions.SingleAsync()).UcJobCode.Should().Be("006438");
+    }
+
+    [Fact]
+    public async Task A_code_the_reference_lists_off_payroll_is_marked_active_by_the_export()
+    {
+        var (db, documents) = HarnessOver(Ref("009605", "LAB AST 1", "matrix"));
+
+        var outcome = await documents.ImportAsync("a.docx", HrtmsExport(), DocxMime, userId: null);
+
+        outcome.Result.Should().Be("added");
+        outcome.Note.Should().Contain("marked it active");
+        (await db.CodeActiveOverrides.SingleAsync()).IsActive.Should().BeTrue();
+        (await db.TitleCodes.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task An_admins_not_active_is_not_overruled_by_an_export()
+    {
+        var (db, documents) = HarnessOver(Ref("009605", "LAB AST 1", "matrix"));
+        db.CodeActiveOverrides.Add(new CodeActiveOverride { UcJobCode = "009605", IsActive = false, DecidedAt = DateTimeOffset.UtcNow });
+        await db.SaveChangesAsync();
+
+        var outcome = await documents.ImportAsync("a.docx", HrtmsExport(), DocxMime, null);
+
+        outcome.Result.Should().Be("failed");
+        outcome.Error.Should().Contain("marked not active").And.Contain("Back end → Codes");
+        (await db.JobDescriptions.AnyAsync()).Should().BeFalse();
+        (await db.CodeActiveOverrides.SingleAsync()).IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task A_new_union_code_reports_the_class_it_supersedes()
+    {
+        var (_, documents) = HarnessOver(Ref("009605", "LAB AST 1"));
+
+        var outcome = await documents.ImportAsync("a.docx", HrtmsExport(code: "006438", title: "LAB AST 1 TX"), DocxMime, null);
+
+        outcome.Result.Should().Be("added");
+        outcome.Note.Should().Contain("LAB AST 1 (009605) is now superseded by LAB AST 1 TX (006438)");
+    }
+
+    [Fact]
+    public async Task An_incomplete_export_changes_no_codes()
+    {
+        var (db, documents) = HarnessOver(Ref("009605", "LAB AST 1"));
+        var empty = Docx(
+            new Table(
+                Row(Cell("UCPath Position Number"), Cell("40000003")),
+                Row(Cell("UC Job Title:"), Cell("GREENHOUSE TECH 2")),
+                Row(Cell("UC Job Code:"), Cell("006438"))),
+            new Paragraph(new Run(new Text("QUALIFICATIONS"))));
+
+        var outcome = await documents.ImportAsync("e.docx", empty, DocxMime, null);
+
+        outcome.Result.Should().Be("failed");
+        (await db.TitleCodes.CountAsync()).Should().Be(1);
     }
 }

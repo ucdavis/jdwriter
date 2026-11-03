@@ -551,6 +551,8 @@ export type IngestScanResponse = { configured: boolean; pending: PendingClass[] 
 export type UploadOutcome = {
   error: string | null;
   fileName: string;
+  /** For a document: a job code the JD added, or marked active, because the reference lacked it. */
+  note?: string | null;
   /** For a document: read straight from its layout, or (an unrecognized layout) by the AI. */
   readBy?: 'ai' | 'parsed' | null;
   result: 'added' | 'duplicate' | 'failed';
