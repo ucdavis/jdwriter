@@ -217,14 +217,21 @@ public sealed partial class CorpusDocuments
 
     /// <summary>
     /// File a JD parsed from its Word layout, as an in-unit export is filed: under the job code it
-    /// states (an export is authoritative about its own class), remapped if superseded, and only on
-    /// UC Davis payroll. A newer export of the same position replaces the earlier import of it.
+    /// states (an export is authoritative about its own class), remapped if superseded. A code the
+    /// title reference lacks or has off payroll is vouched for by the export first
+    /// (<see cref="VouchForCodeAsync"/>). A newer export of the same position replaces the earlier
+    /// import of it.
     /// </summary>
     private async Task<UploadOutcome> FileParsedAsync(
         UploadOutcome outcome, HrtmsRecord parsed, string name, byte[] bytes, string sha,
         TitleCodeIndex index, int? userId, CancellationToken ct)
     {
         outcome.ReadBy = "parsed";
+        if (WordJobDescriptions.Incomplete(parsed) is null)
+        {
+            (index, outcome.Note) = await VouchForCodeAsync(parsed, index, userId, ct);
+        }
+
         var (record, problem) = Entity(parsed, index);
         if (record is null)
         {
@@ -277,14 +284,94 @@ public sealed partial class CorpusDocuments
         }
 
         var code = index.ResolveCode(parsed.UcJobCode);
-        if (index.FindByCode(code) is not { IsInUse: true })
+        var filed = index.FindByCode(code);
+        if (filed is null || !filed.IsInUse)
         {
-            return (null, $"Its job code {code} isn't on UC Davis payroll, so it can't be used here.");
+            return (null, filed?.ActiveOverride == false
+                ? $"Its job code {code} is marked not active at UC Davis. Mark it active under Back end → Codes, then add this JD again."
+                : $"Its job code {code} isn't on UC Davis payroll, so it can't be used here.");
         }
 
         var record = parsed.ToEntity(code);
         record.Origin = CorpusOrigin.Imported;
         return (record, null);
+    }
+
+    /// <summary>
+    /// A JD export is UC Davis's own record of a position, so the job code it states is in use here
+    /// even when the title reference — older than the export — doesn't list it, or lists it off
+    /// payroll. Codes are issued faster than the reference is refreshed (006430–006463 postdate both
+    /// it and the July 2025 Career Tracks listing), and refusing such a JD left its class unbuildable.
+    ///
+    /// A code the reference lacks is added from the export's own title and grade, as
+    /// <see cref="TitleCode.ExportSource"/>; a later Career Tracks listing fills in its family. A
+    /// code it lists off payroll is marked active, as an admin would on the Codes page. An admin's
+    /// explicit "not active" is not overruled. Returns the index as it now stands, and a note for the
+    /// admin naming what changed, including any supersession the new code began.
+    /// </summary>
+    private async Task<(TitleCodeIndex Index, string? Note)> VouchForCodeAsync(
+        HrtmsRecord parsed, TitleCodeIndex index, int? userId, CancellationToken ct)
+    {
+        var code = TitleCodeIndex.Pad(parsed.UcJobCode);
+        var stated = index.FindByCode(code);
+        if (code == "000000" || (stated != null && stated.IsInUse))
+        {
+            return (index, null);
+        }
+
+        string note;
+        if (stated is null)
+        {
+            var title = parsed.UcJobTitle.Trim();
+            if (title.Length == 0)
+            {
+                // Without its title there is nothing to list the code under.
+                return (index, null);
+            }
+
+            _db.TitleCodes.Add(new TitleCode
+            {
+                Code = code,
+                Title = title,
+                TitleKey = TitleNormalizer.TitleKey(title),
+                TitleCodeKey = TitleNormalizer.TitleCodeKey(title),
+                Grade = parsed.SalaryGrade.Trim(),
+                Source = TitleCode.ExportSource,
+            });
+            note = $"{title} ({code}) was new to the job codes, so it was added from this JD.";
+        }
+        else
+        {
+            var existing = (await _db.CodeActiveOverrides.ToListAsync(ct))
+                .Where(o => TitleCodeIndex.Pad(o.UcJobCode) == code)
+                .ToList();
+            if (existing.Any(o => !o.IsActive))
+            {
+                return (index, null);
+            }
+
+            _db.CodeActiveOverrides.RemoveRange(existing);
+            _db.CodeActiveOverrides.Add(new CodeActiveOverride
+            {
+                UcJobCode = stated.Code,
+                IsActive = true,
+                DecidedByUserId = userId,
+                DecidedAt = DateTimeOffset.UtcNow,
+            });
+            note = $"{stated.Title} ({code}) wasn't listed as active at UC Davis, so this JD marked it active.";
+        }
+
+        await _db.SaveChangesAsync(ct);
+        _titleCodes.Invalidate();
+        var after = await _titleCodes.GetAsync(ct);
+
+        var was = index.AllSupersessions().Select(s => (s.FromCode, s.ToCode)).ToHashSet();
+        foreach (var s in after.AllSupersessions().Where(s => !was.Contains((s.FromCode, s.ToCode))))
+        {
+            note += $" {s.FromTitle} ({s.FromCode}) is now superseded by {s.ToTitle} ({s.ToCode}).";
+        }
+
+        return (after, note);
     }
 
     /// <summary>A newer export of a position replaces the earlier import of it, as in-unit re-exports do.</summary>

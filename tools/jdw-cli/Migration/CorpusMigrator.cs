@@ -109,6 +109,26 @@ public sealed class CorpusMigrator
 
         report.TitleCodes = entities.Count;
 
+        // Codes added in the app from JD exports that state them are newer than the reference, and
+        // the corpus is filed under them: they survive the reload, unless the reference now has them.
+        var known = entities.Select(t => TitleCodeIndex.Pad(t.Code)).ToHashSet(StringComparer.Ordinal);
+        var fromExports = (await _db.TitleCodes.AsNoTracking()
+                .Where(t => t.Source == TitleCode.ExportSource)
+                .ToListAsync(ct))
+            .Where(t => !known.Contains(TitleCodeIndex.Pad(t.Code)))
+            .Select(t => new TitleCode
+            {
+                Code = t.Code,
+                Title = t.Title,
+                TitleKey = t.TitleKey,
+                TitleCodeKey = t.TitleCodeKey,
+                Grade = t.Grade,
+                Function = t.Function,
+                Family = t.Family,
+                Source = t.Source,
+            })
+            .ToList();
+
         if (_write)
         {
             // The reference is replace-wholesale by nature: it is regenerated from a workbook plus
@@ -116,10 +136,11 @@ public sealed class CorpusMigrator
             // non-unique). Clearing first is what makes a re-run idempotent.
             await _db.TitleCodes.ExecuteDeleteAsync(ct);
             await AddInBatchesAsync(_db.TitleCodes, entities, ct);
+            await AddInBatchesAsync(_db.TitleCodes, fromExports, ct);
         }
 
         // Build the index from the in-memory rows so a dry run derives supersessions too.
-        return new TitleCodeIndex(entities);
+        return new TitleCodeIndex([.. entities, .. fromExports]);
     }
 
     private async Task MigrateSupersessionsAsync(

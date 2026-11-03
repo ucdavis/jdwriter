@@ -213,7 +213,7 @@ export const DocumentImportPanel = () => {
           outcome.result === 'added'
             ? `${outcome.title ?? ''} (${outcome.ucJobCode ?? ''}) · ${
                 outcome.readBy === 'ai' ? 'read by AI (unrecognized layout)' : 'parsed'
-              }`
+              }${outcome.note ? ` · ${outcome.note}` : ''}`
             : outcome.result === 'duplicate'
               ? 'Already added'
               : outcome.error,

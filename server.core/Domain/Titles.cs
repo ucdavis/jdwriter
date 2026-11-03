@@ -36,13 +36,19 @@ public class TitleCode
     public string Family { get; set; } = "";
 
     /// <summary>
-    /// Provenance: "matrix" (a title UCD could use), "payroll_list" (observed on payroll), or
-    /// "both". Only the latter two count as in use — see <see cref="IsInUse"/>.
+    /// Provenance: "matrix" (a title UCD could use), "payroll_list" (observed on payroll), "both",
+    /// or <see cref="ExportSource"/>. All but "matrix" count as in use — see <see cref="IsInUse"/>.
     /// </summary>
     public string Source { get; set; } = "";
 
-    /// <summary>Seen on UC Davis payroll, as the reference records it.</summary>
-    public bool OnPayroll => Source == "both" || Source == "payroll_list";
+    /// <summary>
+    /// A code the reference lacked, added from a UC Davis JD export that states it. An export is the
+    /// position's own record, so its code is on payroll here, however much newer than the reference.
+    /// </summary>
+    public const string ExportSource = "jd_export";
+
+    /// <summary>Seen on UC Davis payroll, as the reference or a JD export records it.</summary>
+    public bool OnPayroll => Source == "both" || Source == "payroll_list" || Source == ExportSource;
 
     /// <summary>
     /// An admin's call on whether the code is active at UC Davis, overriding the reference
