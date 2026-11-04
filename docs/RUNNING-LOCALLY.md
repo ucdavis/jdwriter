@@ -78,7 +78,8 @@ Sign in at <http://localhost:5173>. Local sign-in offers two fictional personas:
 | **Basic User** | Author | check that the back end is hidden and the admin gates hold |
 
 In development "sample" is whitelisted as an admin at startup. In a real environment admins come
-from `Admin__BootstrapLoginIds` (configuration) plus whoever is added on `/backend/settings`.
+from `Admin__BootstrapLoginIds` (configuration), the permanent admins committed in
+`server/appsettings.json` (`Admin:PermanentLoginIds`), and whoever is added on `/backend/settings`.
 
 ### Signing in as yourself
 

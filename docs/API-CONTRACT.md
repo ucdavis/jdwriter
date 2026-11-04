@@ -19,7 +19,8 @@ route below needs to handle unauthenticated itself.
 
 Roles are derived on every request, never stored: Author for everyone, Admin when the user's
 campus login id (from a `@ucdavis.edu` sign-in name) is whitelisted — either in configuration
-(`Admin:BootstrapLoginIds`, which cannot be removed from the app) or by an admin in Settings.
+(`Admin:BootstrapLoginIds`, set per environment in Azure, or `Admin:PermanentLoginIds`, committed
+in `server/appsettings.json`; neither can be removed from the app) or by an admin in Settings.
 Revoking an admin takes effect on their next request. Enforced server-side with
 `[Authorize(Roles = …)]`; the client also hides the back end from Authors, but that is cosmetic.
 

@@ -17,10 +17,11 @@ namespace Server.Tests.Access;
 /// </summary>
 public class AdminAccessTests
 {
-    private static IConfiguration Config(string? bootstrap = null) =>
+    private static IConfiguration Config(string? bootstrap = null, string? permanent = null) =>
         new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Admin:BootstrapLoginIds"] = bootstrap,
+            ["Admin:PermanentLoginIds"] = permanent,
         }).Build();
 
     private static ClaimsPrincipal Principal(string id, string username, string scheme = "AuthenticationTypes.Federation") =>
@@ -147,6 +148,44 @@ public class AdminAccessTests
         var revoke = () => access.RevokeAsync("rsmith");
         await revoke.Should().ThrowAsync<InvalidOperationException>().WithMessage("*configuration*");
         (await access.IsAdminAsync("rsmith")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Permanent_admins_add_to_the_bootstrap_admins_and_cannot_be_removed_in_the_app()
+    {
+        using var db = TestDbContextFactory.CreateInMemory();
+        var access = new AdminAccess(db, Config("rsmith", permanent: "jdoe, RSmith"));
+
+        var list = await access.ListAsync();
+        list.Select(e => (e.LoginId, e.FromConfiguration)).Should().Equal(("jdoe", true), ("rsmith", true));
+
+        var revoke = () => access.RevokeAsync("jdoe");
+        await revoke.Should().ThrowAsync<InvalidOperationException>().WithMessage("*configuration*");
+        (await access.IsAdminAsync("jdoe")).Should().BeTrue();
+    }
+
+    [Fact]
+    public void The_committed_permanent_admins_are_admins_in_every_environment()
+    {
+        // appsettings.json is read in every environment, and Azure sets only Admin__BootstrapLoginIds,
+        // so nothing in an environment's configuration replaces this list.
+        var config = new ConfigurationBuilder()
+            .AddJsonFile(Path.Combine(RepoRoot(), "server", "appsettings.json"))
+            .Build();
+
+        using var db = TestDbContextFactory.CreateInMemory();
+        new AdminAccess(db, config).ConfiguredAdmins.Should().Contain(["acgetchell", "bmceligot"]);
+    }
+
+    private static string RepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "server", "appsettings.json")))
+        {
+            dir = dir.Parent;
+        }
+
+        return dir?.FullName ?? throw new DirectoryNotFoundException("repository root not found");
     }
 
     [Fact]

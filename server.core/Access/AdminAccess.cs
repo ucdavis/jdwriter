@@ -11,8 +11,9 @@ public sealed class AdminEntry
     public string LoginId { get; set; } = "";
 
     /// <summary>
-    /// True for admins named in configuration (<c>Admin:BootstrapLoginIds</c>). They cannot be
-    /// removed from the app, which is what makes locking every admin out impossible.
+    /// True for admins named in configuration (<c>Admin:BootstrapLoginIds</c> or
+    /// <c>Admin:PermanentLoginIds</c>). They cannot be removed from the app, which is what makes
+    /// locking every admin out impossible.
     /// </summary>
     public bool FromConfiguration { get; set; }
 
@@ -25,8 +26,12 @@ public sealed class AdminEntry
 }
 
 /// <summary>
-/// The admin whitelist. Admin is the union of the configured bootstrap logins and the grants made
-/// in the app; everyone else who signs in is an Author.
+/// The admin whitelist. Admin is the union of the configured logins and the grants made in the
+/// app; everyone else who signs in is an Author. Two settings name configured admins:
+/// <c>Admin:BootstrapLoginIds</c> is set per environment in Azure, and
+/// <c>Admin:PermanentLoginIds</c> is committed in appsettings.json, so the app's own permanent
+/// admins can change without touching the Azure configuration CRU manages. Separate keys, because
+/// an environment variable replaces a JSON value of the same name rather than adding to it.
 /// </summary>
 public sealed class AdminAccess
 {
@@ -41,7 +46,7 @@ public sealed class AdminAccess
 
     /// <summary>Admins named in configuration, normalized. Invalid entries are ignored.</summary>
     public IReadOnlyList<string> ConfiguredAdmins =>
-        (_config["Admin:BootstrapLoginIds"] ?? "")
+        $"{_config["Admin:BootstrapLoginIds"]},{_config["Admin:PermanentLoginIds"]}"
             .Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries)
             .Select(CampusLogin.Normalize)
             .Where(x => x != null)
@@ -137,8 +142,8 @@ public sealed class AdminAccess
         if (ConfiguredAdmins.Contains(login))
         {
             throw new InvalidOperationException(
-                $"{login} is an admin by configuration (Admin:BootstrapLoginIds) and can only be "
-                + "removed there.");
+                $"{login} is an admin by configuration (Admin:BootstrapLoginIds or "
+                + "Admin:PermanentLoginIds) and can only be removed there.");
         }
 
         var grant = await _db.AdminGrants.FirstOrDefaultAsync(g => g.LoginId == login, ct);
