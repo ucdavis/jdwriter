@@ -748,8 +748,10 @@ export const handlers = [
           grantedBy: null,
           lastSeenAt: new Date().toISOString(),
           loginId: 'mockadmin',
+          permanent: false,
         },
       ],
+      canSetPermanent: true,
     })
   ),
 
@@ -759,6 +761,8 @@ export const handlers = [
   }),
 
   http.delete('/api/admin/admins/:loginId', () => HttpResponse.json({ ok: true as const })),
+
+  http.put('/api/admin/admins/:loginId/permanent', () => HttpResponse.json({ ok: true as const })),
 
   http.post('/api/admin/bootstrap', async ({ request }) => {
     const { title } = (await request.json()) as { title: string };

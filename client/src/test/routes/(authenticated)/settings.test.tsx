@@ -13,6 +13,7 @@ const entry = (loginId: string, over: Partial<AdminEntry> = {}): AdminEntry => (
   grantedBy: 'Mock Admin',
   lastSeenAt: null,
   loginId,
+  permanent: false,
   ...over,
 });
 
@@ -85,6 +86,51 @@ describe('settings: admin whitelist', () => {
 
     const granted = screen.getByText('jdoe').closest('li')!;
     expect(within(granted).getByRole('button', { name: 'Remove' })).toBeInTheDocument();
+  });
+
+  it('lets a configured admin make an admin permanent, which takes away Remove', async () => {
+    const user = userEvent.setup();
+    let admins: AdminEntry[] = [entry('rsmith', { fromConfiguration: true }), entry('jdoe')];
+    const put: Array<{ loginId: string; permanent: boolean }> = [];
+    testServer.use(
+      http.get('/api/admin/admins', () => HttpResponse.json({ admins, canSetPermanent: true })),
+      http.put('/api/admin/admins/:loginId/permanent', async ({ params, request }) => {
+        const { permanent } = (await request.json()) as { permanent: boolean };
+        put.push({ loginId: String(params.loginId), permanent });
+        admins = admins.map((a) => (a.loginId === params.loginId ? { ...a, permanent } : a));
+        return HttpResponse.json({ ok: true });
+      })
+    );
+    renderRoute({ initialPath: '/backend/settings' });
+
+    const row = () => screen.getByText('jdoe').closest('li')!;
+    await user.click(await within((await screen.findByText('jdoe')).closest('li')!).findByRole('button', { name: 'Make permanent' }));
+
+    await waitFor(() => expect(within(row()).getByText('permanent')).toBeInTheDocument());
+    expect(within(row()).queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
+    expect(within(row()).getByRole('button', { name: 'Clear permanent' })).toBeInTheDocument();
+    expect(put).toEqual([{ loginId: 'jdoe', permanent: true }]);
+  });
+
+  it('offers no permanent control to an admin who is not configured', async () => {
+    testServer.use(
+      http.get('/api/admin/admins', () =>
+        HttpResponse.json({
+          admins: [entry('jdoe', { permanent: true }), entry('other')],
+          canSetPermanent: false,
+        })
+      )
+    );
+    renderRoute({ initialPath: '/backend/settings' });
+
+    const permanent = (await screen.findByText('jdoe')).closest('li')!;
+    expect(within(permanent).getByText('permanent')).toBeInTheDocument();
+    expect(within(permanent).queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
+    expect(within(permanent).queryByRole('button', { name: 'Clear permanent' })).not.toBeInTheDocument();
+
+    const other = screen.getByText('other').closest('li')!;
+    expect(within(other).queryByRole('button', { name: 'Make permanent' })).not.toBeInTheDocument();
+    expect(within(other).getByRole('button', { name: 'Remove' })).toBeInTheDocument();
   });
 
   it('shows the server refusal verbatim', async () => {
