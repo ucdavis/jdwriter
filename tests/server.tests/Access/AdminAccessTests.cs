@@ -150,6 +150,58 @@ public class AdminAccessTests
     }
 
     [Fact]
+    public async Task Only_a_configured_admin_can_make_an_admin_permanent_or_clear_it()
+    {
+        using var db = TestDbContextFactory.CreateInMemory();
+        var access = new AdminAccess(db, Config("rsmith"));
+        await access.GrantAsync("jdoe", null);
+        await access.GrantAsync("other", null);
+
+        access.CanSetPermanent("rsmith").Should().BeTrue();
+        access.CanSetPermanent("other").Should().BeFalse("an admin granted in the app is not enough");
+
+        var byGranted = () => access.SetPermanentAsync("jdoe", true, actingLoginId: "other");
+        await byGranted.Should().ThrowAsync<InvalidOperationException>().WithMessage("*server configuration*");
+
+        await access.SetPermanentAsync("JDoe", true, actingLoginId: "rsmith");
+        (await access.ListAsync()).Single(e => e.LoginId == "jdoe").Permanent.Should().BeTrue();
+
+        await access.SetPermanentAsync("jdoe", false, actingLoginId: "rsmith");
+        (await access.ListAsync()).Single(e => e.LoginId == "jdoe").Permanent.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task A_permanent_admin_cannot_be_removed_until_it_is_cleared()
+    {
+        using var db = TestDbContextFactory.CreateInMemory();
+        var access = new AdminAccess(db, Config("rsmith"));
+        await access.GrantAsync("jdoe", null);
+        await access.SetPermanentAsync("jdoe", true, actingLoginId: "rsmith");
+
+        var revoke = () => access.RevokeAsync("jdoe", actingLoginId: "rsmith");
+        await revoke.Should().ThrowAsync<InvalidOperationException>().WithMessage("*permanent*");
+        (await access.IsAdminAsync("jdoe")).Should().BeTrue();
+
+        await access.SetPermanentAsync("jdoe", false, actingLoginId: "rsmith");
+        await access.RevokeAsync("jdoe", actingLoginId: "rsmith");
+        (await access.IsAdminAsync("jdoe")).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Permanent_applies_only_to_a_granted_admin()
+    {
+        using var db = TestDbContextFactory.CreateInMemory();
+        var access = new AdminAccess(db, Config("rsmith, jdoe"));
+
+        var configured = () => access.SetPermanentAsync("jdoe", true, actingLoginId: "rsmith");
+        await configured.Should().ThrowAsync<InvalidOperationException>().WithMessage("*already permanent*");
+
+        var nobody = () => access.SetPermanentAsync("nobody", true, actingLoginId: "rsmith");
+        await nobody.Should().ThrowAsync<InvalidOperationException>().WithMessage("*not an admin*");
+        (await db.AdminGrants.CountAsync()).Should().Be(0, "making someone permanent does not make them an admin");
+    }
+
+    [Fact]
     public async Task An_admin_cannot_remove_themselves()
     {
         using var db = TestDbContextFactory.CreateInMemory();

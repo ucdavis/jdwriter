@@ -66,6 +66,13 @@ public class AdminGrant
     public int? GrantedByUserId { get; set; }
     public AppUser? GrantedBy { get; set; }
     public DateTimeOffset GrantedAt { get; set; }
+
+    /// <summary>
+    /// A permanent admin cannot be removed in the app until this is cleared, and only an admin
+    /// named in configuration can set or clear it. Kept in the database rather than in committed
+    /// configuration so admin login ids are not published in the (public) repository.
+    /// </summary>
+    public bool Permanent { get; set; }
 }
 
 /// <summary>

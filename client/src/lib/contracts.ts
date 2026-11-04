@@ -1059,9 +1059,15 @@ export type AdminEntry = {
   grantedBy: string | null;
   lastSeenAt: string | null;
   loginId: string;
+  /** Granted in the app, but not removable until an admin named in configuration clears it. */
+  permanent: boolean;
 };
 
-export type AdminsResponse = { admins: AdminEntry[] };
+export type AdminsResponse = {
+  admins: AdminEntry[];
+  /** Whether the signed-in admin may make admins permanent, or clear it (configured admins only). */
+  canSetPermanent: boolean;
+};
 
 /** As SQL Server reports it; null when it cannot be determined. */
 export type SecurityStatus = { databaseEncryptedAtRest: boolean | null };

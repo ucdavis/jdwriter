@@ -16,6 +16,12 @@ public sealed class AdminEntry
     /// </summary>
     public bool FromConfiguration { get; set; }
 
+    /// <summary>
+    /// A grant made in the app that cannot be removed until an admin named in configuration
+    /// clears it.
+    /// </summary>
+    public bool Permanent { get; set; }
+
     public string? GrantedBy { get; set; }
     public DateTimeOffset? GrantedAt { get; set; }
 
@@ -67,6 +73,7 @@ public sealed class AdminAccess
             {
                 g.LoginId,
                 g.GrantedAt,
+                g.Permanent,
                 GrantedBy = g.GrantedBy != null ? (g.GrantedBy.DisplayName ?? g.GrantedBy.LoginId) : null,
             })
             .ToListAsync(ct);
@@ -87,6 +94,7 @@ public sealed class AdminAccess
                 {
                     LoginId = login,
                     FromConfiguration = configured.Contains(login),
+                    Permanent = grant?.Permanent ?? false,
                     GrantedBy = grant?.GrantedBy,
                     GrantedAt = grant?.GrantedAt,
                     DisplayName = user?.DisplayName,
@@ -121,10 +129,45 @@ public sealed class AdminAccess
         return login;
     }
 
+    /// <summary>Whether this login may make admins permanent, or clear it: configured admins only.</summary>
+    public bool CanSetPermanent(string? actingLoginId) =>
+        actingLoginId != null && ConfiguredAdmins.Contains(actingLoginId);
+
+    /// <summary>
+    /// Make a granted admin permanent, or clear it. Throws <see cref="InvalidOperationException"/>
+    /// with a user-facing message unless the acting admin is named in configuration, and for a
+    /// login that is configured (already permanent) or not an admin at all.
+    /// </summary>
+    public async Task SetPermanentAsync(
+        string loginId, bool permanent, string? actingLoginId, CancellationToken ct = default)
+    {
+        if (!CanSetPermanent(actingLoginId))
+        {
+            throw new InvalidOperationException(
+                "Only the admins set in server configuration can make an admin permanent, or clear it.");
+        }
+
+        var login = CampusLogin.Normalize(loginId) ?? loginId;
+        if (ConfiguredAdmins.Contains(login))
+        {
+            throw new InvalidOperationException(
+                $"{login} is an admin by configuration, which is already permanent.");
+        }
+
+        var grant = await _db.AdminGrants.FirstOrDefaultAsync(g => g.LoginId == login, ct)
+                    ?? throw new InvalidOperationException($"{login} is not an admin.");
+        if (grant.Permanent != permanent)
+        {
+            grant.Permanent = permanent;
+            await _db.SaveChangesAsync(ct);
+        }
+    }
+
     /// <summary>
     /// Remove a grant. Throws <see cref="InvalidOperationException"/> with a user-facing message
-    /// for a configured admin (removable only in configuration) and for the acting admin removing
-    /// themselves (which would end their own access mid-session; another admin has to do it).
+    /// for a configured admin (removable only in configuration), for a permanent admin (until an
+    /// admin named in configuration clears it), and for the acting admin removing themselves
+    /// (which would end their own access mid-session; another admin has to do it).
     /// </summary>
     public async Task RevokeAsync(string loginId, string? actingLoginId = null, CancellationToken ct = default)
     {
@@ -142,6 +185,13 @@ public sealed class AdminAccess
         }
 
         var grant = await _db.AdminGrants.FirstOrDefaultAsync(g => g.LoginId == login, ct);
+        if (grant != null && grant.Permanent)
+        {
+            throw new InvalidOperationException(
+                $"{login} is a permanent admin. An admin set in server configuration has to clear "
+                + "that before they can be removed.");
+        }
+
         if (grant != null)
         {
             _db.AdminGrants.Remove(grant);

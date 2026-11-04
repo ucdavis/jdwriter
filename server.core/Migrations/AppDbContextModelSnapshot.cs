@@ -70,6 +70,9 @@ namespace server.core.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<bool>("Permanent")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.HasIndex("GrantedByUserId");

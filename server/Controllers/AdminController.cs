@@ -17,6 +17,7 @@ public sealed record IngestClassRequest(string Code, string? CorpusDir);
 /// <summary>A class to bootstrap. <c>AllowNotActive</c> permits a job not active at UC Davis, by explicit choice only.</summary>
 public sealed record BootstrapRequest(string Title, bool AllowNotActive = false);
 public sealed record AdminGrantRequest(string LoginId);
+public sealed record AdminPermanentRequest(bool Permanent);
 public sealed record ApiKeyRequest(string Key);
 public sealed record UploadIngestRequest(string Code);
 
@@ -250,7 +251,11 @@ public class AdminController : ApiControllerBase
 
     [HttpGet("admins")]
     public async Task<IActionResult> Admins(CancellationToken ct) =>
-        Ok(new { admins = await _admins.ListAsync(ct) });
+        Ok(new
+        {
+            admins = await _admins.ListAsync(ct),
+            canSetPermanent = _admins.CanSetPermanent(Server.Services.UserService.LoginIdOf(User)),
+        });
 
     /// <summary>
     /// Whitelist a campus login. Takes effect on that person's next request — they need not have
@@ -324,6 +329,24 @@ public class AdminController : ApiControllerBase
         try
         {
             await _admins.RevokeAsync(loginId, Server.Services.UserService.LoginIdOf(User), ct);
+            return Ok(new { ok = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Make an admin permanent (not removable in the app), or clear it. Only an admin named in
+    /// configuration may.
+    /// </summary>
+    [HttpPut("admins/{loginId}/permanent")]
+    public async Task<IActionResult> SetAdminPermanent(string loginId, AdminPermanentRequest body, CancellationToken ct)
+    {
+        try
+        {
+            await _admins.SetPermanentAsync(loginId, body.Permanent, Server.Services.UserService.LoginIdOf(User), ct);
             return Ok(new { ok = true });
         }
         catch (InvalidOperationException ex)

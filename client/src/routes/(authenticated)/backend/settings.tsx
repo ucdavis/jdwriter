@@ -13,6 +13,7 @@ import {
   useClearApiKey,
   useGrantAdmin,
   useRevokeAdmin,
+  useSetAdminPermanent,
   useSecurityStatus,
   useSetApiKey,
   aiCallsQueryOptions,
@@ -364,9 +365,11 @@ function AdminsPanel() {
   const { data } = useAdmins();
   const grant = useGrantAdmin();
   const revoke = useRevokeAdmin();
+  const setPermanent = useSetAdminPermanent();
   const [loginId, setLoginId] = useState('');
   const admins = data?.admins ?? [];
-  const error = grant.error ?? revoke.error;
+  const canSetPermanent = data?.canSetPermanent ?? false;
+  const error = grant.error ?? revoke.error ?? setPermanent.error;
 
   return (
     <Card className="p-5">
@@ -374,7 +377,8 @@ function AdminsPanel() {
       <p className="mt-1 text-base text-base-content/70">
         Add an admin by UC Davis login ID (the part before @ucdavis.edu). It takes effect on
         their next request — they don&apos;t need to have signed in before, or to sign out and
-        back in.
+        back in. A permanent admin can&apos;t be removed until it is cleared, and only the admins
+        set in server configuration can make an admin permanent or clear it.
       </p>
 
       <form
@@ -426,14 +430,29 @@ function AdminsPanel() {
             {a.fromConfiguration ? (
               <Badge tone="muted">set in server configuration</Badge>
             ) : (
-              <button
-                className="btn btn-ghost btn-sm text-error"
-                disabled={revoke.isPending}
-                onClick={() => revoke.mutate(a.loginId)}
-                type="button"
-              >
-                Remove
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {a.permanent ? <Badge tone="muted">permanent</Badge> : null}
+                {canSetPermanent ? (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    disabled={setPermanent.isPending}
+                    onClick={() => setPermanent.mutate({ loginId: a.loginId, permanent: !a.permanent })}
+                    type="button"
+                  >
+                    {a.permanent ? 'Clear permanent' : 'Make permanent'}
+                  </button>
+                ) : null}
+                {a.permanent ? null : (
+                  <button
+                    className="btn btn-ghost btn-sm text-error"
+                    disabled={revoke.isPending}
+                    onClick={() => revoke.mutate(a.loginId)}
+                    type="button"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             )}
           </li>
         ))}

@@ -180,6 +180,18 @@ export const useRevokeAdmin = () => {
   });
 };
 
+export const useSetAdminPermanent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ loginId, permanent }: { loginId: string; permanent: boolean }) =>
+      fetchJson<{ ok: true }>(`/api/admin/admins/${encodeURIComponent(loginId)}/permanent`, {
+        body: JSON.stringify({ permanent }),
+        method: 'PUT',
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'admins'] }),
+  });
+};
+
 export const apiKeyQueryOptions = () => ({
   queryFn: () => fetchJson<ApiKeyStatus>('/api/admin/settings/api-key'),
   queryKey: ['admin', 'api-key'] as const,
