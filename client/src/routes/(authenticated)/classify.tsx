@@ -14,7 +14,7 @@ function ClassifyPage() {
       <PageHeader
         back={{ label: 'Start', to: '/' }}
         eyebrow="Classify an existing description"
-        sub="Drop in the description your unit already uses — a Word file, a PDF, or pasted text. We'll match it to a job class, tell you how confident we are, and show exactly which duties fall inside and outside that class."
+        sub="Drop in the description your unit already uses — a Word file, a PDF, or pasted text. AI reads it and matches it to a job class; we'll tell you how confident it is, and show exactly which duties fall inside and outside that class."
         title="Already have a description?"
       />
       <DescriptionClassifier />

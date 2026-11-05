@@ -21,6 +21,14 @@ describe('home', () => {
     expect(screen.getAllByRole('button', { name: /^Lab Ast 1/ })[0]).toBeEnabled();
   });
 
+  it('warns that the role description is read by AI, so nothing personal belongs in it', async () => {
+    renderRoute({ initialPath: '/' });
+
+    expect(await screen.findByText(/^AI reads your description/)).toHaveTextContent(
+      /Never enter personal information/
+    );
+  });
+
   it('says how to start, and counts the classes available at the bottom of the list', async () => {
     renderRoute({ initialPath: '/' });
 

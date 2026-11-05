@@ -1,4 +1,4 @@
-import { Card, Eyebrow, Field, Note, SlowNote } from '@/shared/ui/primitives.tsx';
+import { Card, Eyebrow, Field, NoPersonalInfo, Note, SlowNote } from '@/shared/ui/primitives.tsx';
 import { AllocationBar } from './AllocationBar.tsx';
 import { CheckResult } from './CheckResult.tsx';
 import { DutiesEditor } from './DutiesEditor.tsx';
@@ -285,6 +285,9 @@ export const BuildFlow = ({
             sure the total balances to 100% time. When you&apos;re done, check your duties: we&apos;ll
             show right here how each change fits the standard before you move on.
           </p>
+          <div className="mt-3">
+            <NoPersonalInfo lead="AI reads your edits, additions and notes to check them against the standard and write the final JD." />
+          </div>
           </div>
 
           <Card className="p-5">

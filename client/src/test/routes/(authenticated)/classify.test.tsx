@@ -31,6 +31,15 @@ describe('classify', () => {
     expect(screen.getByTestId('filed-under')).toHaveTextContent(/saved to the corpus for job code 006256/);
   });
 
+  it('says plainly that Classify uses AI and that nothing personal belongs in it', async () => {
+    renderRoute({ initialPath: '/classify' });
+
+    expect(await screen.findByText(/^Classify uses AI/)).toHaveTextContent(
+      /Never enter personal information: names, employee IDs, position numbers/
+    );
+    expect(screen.getByText(/AI reads it and matches it to a job class/)).toBeInTheDocument();
+  });
+
   it('reads a dropped file into the box WITHOUT classifying it', async () => {
     const user = userEvent.setup();
     renderRoute({ initialPath: '/classify' });

@@ -292,7 +292,7 @@ function AccessPanel() {
       {waiting.length > 0 ? (
         <div className="mt-5" data-testid="access-waiting">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-base font-semibold">Signed in without access ({waiting.length})</h3>
+            <h2 className="text-base font-semibold">Signed in without access ({waiting.length})</h2>
             <button
               className="btn btn-outline btn-sm"
               disabled={approveAll.isPending}
@@ -327,7 +327,7 @@ function AccessPanel() {
         </div>
       ) : null}
 
-      <h3 className="mt-5 text-base font-semibold">Approved ({approved.length})</h3>
+      <h2 className="mt-5 text-base font-semibold">Approved ({approved.length})</h2>
       {approved.length === 0 ? (
         <p className="mt-1 text-base text-base-content/70">Nobody yet — only the admins can use JDWriter.</p>
       ) : (

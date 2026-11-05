@@ -1,4 +1,4 @@
-import { Badge, Card, Eyebrow, Note } from '@/shared/ui/primitives.tsx';
+import { Badge, Card, Eyebrow, NoPersonalInfo, Note } from '@/shared/ui/primitives.tsx';
 import { blockedByFilter, messageOf } from '@/features/browse/NlIntake.tsx';
 import {
   useBootstrapCandidates,
@@ -335,6 +335,10 @@ export const DocumentImportPanel = () => {
           ) : null}
         </div>
       ) : null}
+
+      <div className="mt-3">
+        <NoPersonalInfo lead="AI may read these documents, and any pasted text, in full." />
+      </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <label className="btn btn-outline btn-sm">

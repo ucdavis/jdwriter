@@ -6,7 +6,7 @@ import { savedJdQueryOptions, useSavedJds } from '@/queries/jds.ts';
 import { contextOf, useDownloadVrf } from '@/queries/vrf.ts';
 import { SalaryRangeNote } from './SalaryRangeNote.tsx';
 import { useUser } from '@/shared/auth/UserContext.tsx';
-import { Card, Eyebrow, Note, SlowNote } from '@/shared/ui/primitives.tsx';
+import { Card, Eyebrow, NoPersonalInfo, Note, SlowNote } from '@/shared/ui/primitives.tsx';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ReactNode } from 'react';
 import { MagicWand } from './MagicWand.tsx';
@@ -184,6 +184,9 @@ export const VrfFlow = ({ jdId }: { jdId?: number }) => {
               <Text form={form} label="The other reason, explained" name="otherReason" required update={update} />
             </div>
           ) : null}
+          <div className="mt-5">
+            <NoPersonalInfo lead="The magic wand sends the position, the request and your notes for that answer to the AI." />
+          </div>
           {NARRATIVES.map((n) => (
             <div className="mt-5" key={n.key}>
               <label className="block">
