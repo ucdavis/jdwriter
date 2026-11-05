@@ -35,7 +35,7 @@ describe('classify', () => {
     renderRoute({ initialPath: '/classify' });
 
     expect(await screen.findByText(/^Classify uses AI/)).toHaveTextContent(
-      /Never enter personal information: names, employee IDs, position numbers/
+      /Please leave out personal information, such as names, employee IDs or position numbers/
     );
     expect(screen.getByText(/AI reads it and matches it to a job class/)).toBeInTheDocument();
   });

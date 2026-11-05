@@ -98,14 +98,14 @@ export const Note = ({
 };
 
 /**
- * Beside any box whose words reach the AI: what someone types, pastes or uploads there is sent to
- * the AI provider, so nothing that identifies a person belongs in it. `lead` says what the AI reads.
+ * Under any box whose words reach the AI: what someone types, pastes or uploads there is sent to
+ * the AI provider, so nothing that identifies a person belongs in it. Quiet grey text, not a
+ * warning box: it informs rather than alarms. `lead` says what the AI reads.
  */
 export const NoPersonalInfo = ({ lead }: { lead: string }) => (
-  <Note tone="yellow">
-    {lead} <strong>Never enter personal information</strong>: names, employee IDs, position numbers,
-    or anything else that identifies a person.
-  </Note>
+  <p className="text-sm text-base-content/70">
+    {lead} Please leave out personal information, such as names, employee IDs or position numbers.
+  </p>
 );
 
 /**

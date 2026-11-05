@@ -63,9 +63,6 @@ export const NlIntake = () => {
 
   return (
     <div>
-      <div className="mb-2">
-        <NoPersonalInfo lead="AI reads your description to find matching classes." />
-      </div>
       <textarea
         aria-label="Describe the role"
         className="textarea textarea-bordered w-full resize-none text-base"
@@ -74,6 +71,9 @@ export const NlIntake = () => {
         rows={3}
         value={text}
       />
+      <div className="mt-1">
+        <NoPersonalInfo lead="AI reads your description to find matching classes." />
+      </div>
       <div className="mt-2 flex items-center gap-3">
         <button
           className="btn btn-primary btn-sm"

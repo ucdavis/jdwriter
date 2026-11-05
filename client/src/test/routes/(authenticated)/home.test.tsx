@@ -25,7 +25,7 @@ describe('home', () => {
     renderRoute({ initialPath: '/' });
 
     expect(await screen.findByText(/^AI reads your description/)).toHaveTextContent(
-      /Never enter personal information/
+      /Please leave out personal information/
     );
   });
 
