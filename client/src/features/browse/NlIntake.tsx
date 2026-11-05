@@ -1,5 +1,5 @@
 import { SiteNote } from '@/shared/ui/SiteNote.tsx';
-import { Badge, Note, SlowNote } from '@/shared/ui/primitives.tsx';
+import { Badge, NoPersonalInfo, Note, SlowNote } from '@/shared/ui/primitives.tsx';
 import { HttpError } from '@/lib/api.ts';
 import { useIntakeMatch } from '@/queries/authoring.ts';
 import { clearSessionState, setSessionState, useSessionState } from '@/lib/sessionState.ts';
@@ -63,6 +63,9 @@ export const NlIntake = () => {
 
   return (
     <div>
+      <div className="mb-2">
+        <NoPersonalInfo lead="AI reads your description to find matching classes." />
+      </div>
       <textarea
         aria-label="Describe the role"
         className="textarea textarea-bordered w-full resize-none text-base"

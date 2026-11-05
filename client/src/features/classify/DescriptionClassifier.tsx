@@ -1,5 +1,5 @@
 import { SiteNote } from '@/shared/ui/SiteNote.tsx';
-import { Badge, Card, Eyebrow, Meter, Note, SlowNote } from '@/shared/ui/primitives.tsx';
+import { Badge, Card, Eyebrow, Meter, NoPersonalInfo, Note, SlowNote } from '@/shared/ui/primitives.tsx';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { blockedByFilter, messageOf } from '@/features/browse/NlIntake.tsx';
 import { ProposedCompare } from './ProposedCompare.tsx';
@@ -165,6 +165,10 @@ export const DescriptionClassifier = () => {
             ref={inputRef}
             type="file"
           />
+        </div>
+
+        <div className="mb-3">
+          <NoPersonalInfo lead="Classify uses AI: everything you paste or upload here is sent to the AI to be read and matched. Remove anything personal from the document first." />
         </div>
 
         <div
