@@ -72,7 +72,7 @@ export const NlIntake = () => {
         value={text}
       />
       <div className="mt-1">
-        <NoPersonalInfo lead="AI reads your description to find matching classes." />
+        <NoPersonalInfo lead="Your description is matched against every ingested job class. AI reads your description to find matching classes." />
       </div>
       <div className="mt-2 flex items-center gap-3">
         <button
@@ -97,9 +97,6 @@ export const NlIntake = () => {
             Clear
           </button>
         ) : null}
-        <span className="text-sm text-base-content/70">
-          Your description is matched against every ingested job class.
-        </span>
       </div>
 
       {/* Announced as matching starts and when its suggestions land (WCAG 4.1.3). */}
