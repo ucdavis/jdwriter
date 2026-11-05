@@ -167,10 +167,6 @@ export const DescriptionClassifier = () => {
           />
         </div>
 
-        <div className="mb-3">
-          <NoPersonalInfo lead="Classify uses AI: everything you paste or upload here is sent to the AI to be read and matched. Remove anything personal from the document first." />
-        </div>
-
         <div
           className={`relative rounded-lg transition-colors ${
             dragging ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100' : ''
@@ -214,6 +210,9 @@ export const DescriptionClassifier = () => {
               </span>
             </div>
           ) : null}
+        </div>
+        <div className="mt-1">
+          <NoPersonalInfo lead="Classify uses AI to read and match what you paste or upload." />
         </div>
 
         {file ? (

@@ -286,7 +286,7 @@ export const BuildFlow = ({
             show right here how each change fits the standard before you move on.
           </p>
           <div className="mt-3">
-            <NoPersonalInfo lead="AI reads your edits, additions and notes to check them against the standard and write the final JD." />
+            <NoPersonalInfo lead="AI reads your edits, additions and notes to check them and write the final JD." />
           </div>
           </div>
 
