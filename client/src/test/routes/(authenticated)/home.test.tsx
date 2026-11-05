@@ -24,7 +24,7 @@ describe('home', () => {
   it('warns that the role description is read by AI, so nothing personal belongs in it', async () => {
     renderRoute({ initialPath: '/' });
 
-    expect(await screen.findByText(/^AI reads your description/)).toHaveTextContent(
+    expect(await screen.findByText(/^Your description is matched against every ingested job class\. AI reads your description/)).toHaveTextContent(
       /Please leave out personal information/
     );
   });
