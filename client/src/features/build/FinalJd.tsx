@@ -192,6 +192,12 @@ export const FinalJd = ({
           <BulletSection items={jd.conditionsOfEmployment} title="Conditions of Employment" />
           <BulletSection items={jd.workEnvironment} title="Work Environment" />
           <BulletSection items={jd.physicalRequirements} title="Physical Requirements" />
+
+          {/* Same words as server.core/Ai/AiDisclosure.cs, which labels the Word files. */}
+          <p className="mt-5 border-t border-base-300 pt-3 text-sm text-base-content/70" data-testid="ai-disclosure">
+            Portions of this document were generated and/or assisted with the use of artificial intelligence (AI)
+            technologies.
+          </p>
         </Card>
       </div>
 

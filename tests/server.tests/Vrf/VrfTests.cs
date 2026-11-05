@@ -52,6 +52,15 @@ public class VrfTests
     }
 
     [Fact]
+    public void Every_page_carries_the_AI_label_in_its_footer()
+    {
+        using var doc = WordprocessingDocument.Open(new MemoryStream(VrfDocx.Build(Form(), new DateOnly(2026, 10, 26))), false);
+
+        doc.MainDocumentPart!.FooterParts.Should().ContainSingle()
+            .Which.Footer!.InnerText.Should().Be(Server.Core.Ai.AiDisclosure.Text);
+    }
+
+    [Fact]
     public void Blank_and_inapplicable_fields_say_why()
     {
         var rows = Rows(VrfDocx.Build(Form(f =>

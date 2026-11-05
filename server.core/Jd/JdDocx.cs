@@ -90,6 +90,7 @@ public static class JdDocx
             Section(body, "Work Environment", jd.WorkEnvironment);
             Section(body, "Physical Requirements", jd.PhysicalRequirements);
 
+            Server.Core.Ai.AiDisclosure.AddFooter(main, body);
             main.Document.Save();
         }
 

@@ -117,6 +117,18 @@ public class JdDocxTests
         doc.MainDocumentPart.NumberingDefinitionsPart.Should().NotBeNull();
     }
 
+    [Fact]
+    public void Every_page_carries_the_AI_label_in_its_footer()
+    {
+        using var doc = WordprocessingDocument.Open(new MemoryStream(JdDocx.Build(Saved())), false);
+        var main = doc.MainDocumentPart!;
+
+        main.FooterParts.Should().ContainSingle()
+            .Which.Footer!.InnerText.Should().Be(Server.Core.Ai.AiDisclosure.Text);
+        main.Document!.Body!.Elements<SectionProperties>().Single()
+            .Elements<FooterReference>().Single().Type!.Value.Should().Be(HeaderFooterValues.Default);
+    }
+
     [Theory]
     [InlineData("Greenhouse Tech", "009605", "Greenhouse Tech - 009605.docx")]
     [InlineData("Lab / Field: Tech?", "009605", "Lab - Field- Tech- - 009605.docx")]

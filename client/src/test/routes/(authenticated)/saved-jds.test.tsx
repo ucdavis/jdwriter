@@ -112,6 +112,15 @@ describe('saved JDs', () => {
     expect(screen.getByText('Supports greenhouse research.')).toBeInTheDocument();
   });
 
+  it('labels the JD, on screen and in print, as written with the help of AI', async () => {
+    testServer.use(http.get('/api/jds/:id', () => HttpResponse.json(saved())));
+    renderRoute({ initialPath: '/jds/7' });
+
+    expect(await screen.findByTestId('ai-disclosure')).toHaveTextContent(
+      'Portions of this document were generated and/or assisted with the use of artificial intelligence (AI) technologies.'
+    );
+  });
+
   it('shows a summary the author already rewrote as theirs', async () => {
     testServer.use(http.get('/api/jds/:id', () => HttpResponse.json(saved({ summaryEdited: true }))));
     renderRoute({ initialPath: '/jds/7' });
