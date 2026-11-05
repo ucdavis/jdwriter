@@ -58,6 +58,7 @@ public static class VrfDocx
                 body.Append(Paragraph($"{when}: {string.Join(", ", documents)}", "ListBullet"));
             }
 
+            Server.Core.Ai.AiDisclosure.AddFooter(main, body);
             main.Document.Save();
         }
 
