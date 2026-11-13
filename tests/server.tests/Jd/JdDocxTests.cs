@@ -129,6 +129,16 @@ public class JdDocxTests
             .Elements<FooterReference>().Single().Type!.Value.Should().Be(HeaderFooterValues.Default);
     }
 
+    [Fact]
+    public void It_carries_a_title_and_language_for_screen_readers_and_PDF_exports()
+    {
+        using var doc = WordprocessingDocument.Open(new MemoryStream(JdDocx.Build(Saved())), false);
+
+        doc.PackageProperties.Title.Should().Be("Greenhouse Tech - 009605");
+        doc.MainDocumentPart!.StyleDefinitionsPart!.Styles!.DocDefaults!.RunPropertiesDefault!.RunPropertiesBaseStyle!
+            .GetFirstChild<Languages>()!.Val!.Value.Should().Be("en-US");
+    }
+
     [Theory]
     [InlineData("Greenhouse Tech", "009605", "Greenhouse Tech - 009605.docx")]
     [InlineData("Lab / Field: Tech?", "009605", "Lab - Field- Tech- - 009605.docx")]

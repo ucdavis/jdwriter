@@ -20,6 +20,8 @@ public static class VrfDocx
         using var stream = new MemoryStream();
         using (var doc = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document))
         {
+            // Read aloud and shown in place of the file name by screen readers and PDF exports.
+            doc.PackageProperties.Title = Path.GetFileNameWithoutExtension(FileName(form));
             var main = doc.AddMainDocumentPart();
             AddStyles(main);
             var body = new Body();
@@ -168,7 +170,9 @@ public static class VrfDocx
             new DocDefaults(
                 new RunPropertiesDefault(new RunPropertiesBaseStyle(
                     new RunFonts { Ascii = "Calibri", HighAnsi = "Calibri", ComplexScript = "Calibri" },
-                    new FontSize { Val = "22" })),
+                    new FontSize { Val = "22" },
+                    // The language a screen reader speaks the text in.
+                    new Languages { Val = "en-US" })),
                 new ParagraphPropertiesDefault(new ParagraphPropertiesBaseStyle(
                     new SpacingBetweenLines { After = "120" }))),
             Style("Normal", "Normal", null, isDefault: true),

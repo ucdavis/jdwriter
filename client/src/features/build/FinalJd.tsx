@@ -3,7 +3,7 @@ import type { AssembledJd } from '@/lib/contracts.ts';
 import { Link } from '@tanstack/react-router';
 import { appUrl } from '@/lib/basePath.ts';
 import { NextSteps } from './NextSteps.tsx';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 /**
  * The finished job description — the artifact a supervisor hands to HR — plus the
@@ -38,6 +38,25 @@ export const FinalJd = ({
         : `Supervises: ${result.supervises ? 'Yes' : 'No'}`,
     result.leads == null ? null : `Leads: ${result.leads ? 'Yes' : 'No'}`,
   ].filter((x): x is string => x !== null);
+  // Save as PDF takes the page's title as the PDF's title and its default file name, so while
+  // printing the page is named for the JD, as the Word file is ("Analyst 3 - 005183").
+  const printTitle = `${result.workingTitle || result.title} - ${result.ucJobCode}`;
+  useEffect(() => {
+    let pageTitle = document.title;
+    const before = () => {
+      pageTitle = document.title;
+      document.title = printTitle;
+    };
+    const after = () => {
+      document.title = pageTitle;
+    };
+    window.addEventListener('beforeprint', before);
+    window.addEventListener('afterprint', after);
+    return () => {
+      window.removeEventListener('beforeprint', before);
+      window.removeEventListener('afterprint', after);
+    };
+  }, [printTitle]);
   const savedStatus = result.authoredJdId ? (
     <span className="text-base text-base-content/70" data-testid="saved-status">
       Saved as{' '}
@@ -123,7 +142,7 @@ export const FinalJd = ({
 
       {publishable && result.status === 'ready' ? <NextSteps result={result} /> : null}
 
-      <div id="jd-print">
+      <div data-testid="jd-print" id="jd-print">
         <Card className="p-6">
           <div className="flex items-center justify-between gap-3 border-b border-base-300 pb-3">
             <div>
@@ -161,17 +180,16 @@ export const FinalJd = ({
             <div className="space-y-3">
               {jd.keyResponsibilities.map((r) => (
                 <div key={r.functionName}>
-                  <div className="flex items-baseline gap-2">
+                  <h4 className="flex items-baseline gap-2">
                     <span className="w-10 text-base font-bold text-primary tnum">
                       {r.pctTime}%
-                    </span>
+                    </span>{' '}
                     <span className="text-base font-semibold">{r.functionName}</span>
-                  </div>
-                  <ul className="ml-12 mt-1 space-y-1">
+                  </h4>
+                  <ul className="ml-12 mt-1 list-disc space-y-1 pl-4 marker:text-primary">
                     {r.duties.map((d) => (
-                      <li className="flex gap-2 text-base" key={d}>
-                        <span className="text-primary">•</span>
-                        <span>{d}</span>
+                      <li className="text-base" key={d}>
+                        {d}
                       </li>
                     ))}
                   </ul>
@@ -181,7 +199,7 @@ export const FinalJd = ({
           </Section>
 
           <div className="mt-5 border-t border-base-300 pt-4">
-            <div className="eyebrow mb-2">Qualifications</div>
+            <h3 className="eyebrow mb-2">Qualifications</h3>
             <SubList items={jd.licensesCertifications} label="Licenses & Certifications" />
             <SubList items={jd.education} label="Education" />
             <SubList items={jd.workExperience} label="Work Experience" />
@@ -271,7 +289,7 @@ const Outcome = ({
 
 const Section = ({ children, title }: { children: ReactNode; title: string }) => (
   <div className="mt-5 border-t border-base-300 pt-4">
-    <div className="eyebrow mb-2">{title}</div>
+    <h3 className="eyebrow mb-2">{title}</h3>
     {children}
   </div>
 );
@@ -282,12 +300,11 @@ const SubList = ({ items, label }: { items: string[]; label: string }) => {
   }
   return (
     <div className="mt-3">
-      <div className="text-base font-semibold">{label}</div>
-      <ul className="mt-1 space-y-1">
+      <h4 className="text-base font-semibold">{label}</h4>
+      <ul className="mt-1 list-disc space-y-1 pl-4 marker:text-primary">
         {items.map((it) => (
-          <li className="flex gap-2 text-base" key={it}>
-            <span className="text-primary">•</span>
-            <span>{it}</span>
+          <li className="text-base" key={it}>
+            {it}
           </li>
         ))}
       </ul>
@@ -301,11 +318,10 @@ const BulletSection = ({ items, title }: { items: string[]; title: string }) => 
   }
   return (
     <Section title={title}>
-      <ul className="space-y-1.5">
+      <ul className="list-disc space-y-1.5 pl-4 marker:text-primary">
         {items.map((it) => (
-          <li className="flex gap-2 text-base" key={it}>
-            <span className="text-primary">•</span>
-            <span>{it}</span>
+          <li className="text-base" key={it}>
+            {it}
           </li>
         ))}
       </ul>

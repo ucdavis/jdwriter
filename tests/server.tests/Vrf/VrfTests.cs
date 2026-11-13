@@ -61,6 +61,16 @@ public class VrfTests
     }
 
     [Fact]
+    public void It_carries_a_title_and_language_for_screen_readers_and_PDF_exports()
+    {
+        using var doc = WordprocessingDocument.Open(new MemoryStream(VrfDocx.Build(Form(), new DateOnly(2026, 10, 26))), false);
+
+        doc.PackageProperties.Title.Should().Be("VRF - Greenhouse Assistant");
+        doc.MainDocumentPart!.StyleDefinitionsPart!.Styles!.DocDefaults!.RunPropertiesDefault!.RunPropertiesBaseStyle!
+            .GetFirstChild<Languages>()!.Val!.Value.Should().Be("en-US");
+    }
+
+    [Fact]
     public void Blank_and_inapplicable_fields_say_why()
     {
         var rows = Rows(VrfDocx.Build(Form(f =>
