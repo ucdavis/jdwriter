@@ -2,7 +2,7 @@ import { renderRoute, setupRouteTest } from '@/test/renderRoute.tsx';
 import { testServer } from '@/test/mswUtils.ts';
 import { fillDepartment } from '@/test/build.ts';
 import type { BuildRequest, EnvelopeCheckResponse, SavedJd } from '@/lib/contracts.ts';
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -166,6 +166,40 @@ describe('a finished JD', () => {
     expect(steps).toHaveTextContent('a vacancy request form, then classification by Compensation, then recruitment');
     expect(steps).toHaveTextContent('Your Service Channel representative will reach out through AggieService');
     expect(steps).not.toHaveTextContent('Workforce Management');
+  });
+
+  it('marks up its sections as headings and lists, which Save as PDF turns into tags a screen reader follows', async () => {
+    testServer.use(http.get('/api/jds/12', () => HttpResponse.json(savedJd())));
+    renderRoute({ initialPath: '/jds/12' });
+
+    const jd = await screen.findByTestId('jd-print');
+    expect(within(jd).getByRole('heading', { level: 2, name: 'Greenhouse Tech' })).toBeInTheDocument();
+    expect(within(jd).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+      'Job Summary',
+      'Key Responsibilities — Total 100%',
+      'Qualifications',
+    ]);
+    expect(within(jd).getAllByRole('heading', { level: 4 }).map((h) => h.textContent)).toEqual([
+      '100% Greenhouse Operations',
+      'Education',
+    ]);
+    // The bullet is a list marker, not a character a screen reader reads out.
+    expect(within(jd).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'Waters and records plants.',
+      'High school diploma.',
+    ]);
+  });
+
+  it('names the page for the JD while it prints, so the PDF takes its title and file name', async () => {
+    testServer.use(http.get('/api/jds/12', () => HttpResponse.json(savedJd())));
+    renderRoute({ initialPath: '/jds/12' });
+    await screen.findByTestId('jd-print');
+    const pageTitle = document.title;
+
+    fireEvent(window, new Event('beforeprint'));
+    expect(document.title).toBe('Greenhouse Tech - 009605');
+    fireEvent(window, new Event('afterprint'));
+    expect(document.title).toBe(pageTitle);
   });
 
   it('offers neither the hand-off nor Word for a JD that is not ready', async () => {
